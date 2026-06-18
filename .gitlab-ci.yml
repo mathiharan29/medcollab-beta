@@ -1,0 +1,50 @@
+# MedCollab GitLab CI — Flutter + backend validation
+# https://gitlab.com/mathiharan-project/MedCollab
+
+stages:
+  - validate
+  - build
+
+variables:
+  FLUTTER_IMAGE: ghcr.io/cirruslabs/flutter:3.29.2
+  API_BASE_URL: "https://api.example.com"
+
+.flutter_before:
+  before_script:
+    - cd medcollab-app
+    - flutter pub get
+
+flutter:analyze:
+  stage: validate
+  image: $FLUTTER_IMAGE
+  extends: .flutter_before
+  script:
+    - flutter analyze
+    - flutter test
+
+flutter:build-web:
+  stage: build
+  image: $FLUTTER_IMAGE
+  extends: .flutter_before
+  script:
+    - flutter build web --dart-define=API_BASE_URL=$API_BASE_URL
+  artifacts:
+    name: medcollab-web-$CI_COMMIT_SHORT_SHA
+    paths:
+      - medcollab-app/build/web/
+    expire_in: 7 days
+  rules:
+    - if: $CI_COMMIT_BRANCH == "master"
+
+backend:validate:
+  stage: validate
+  image: node:20-alpine
+  script:
+    - cd medcollab-backend
+    - npm ci
+    - node --check src/server.js
+    - node --check src/app.js
+  cache:
+    key: backend-npm-$CI_COMMIT_REF_SLUG
+    paths:
+      - medcollab-backend/node_modules/

@@ -1,0 +1,50 @@
+import 'package:medcollab_app/core/network/api_client.dart';
+import 'package:medcollab_app/core/router/app_router.dart';
+import 'package:medcollab_app/core/socket/socket_client.dart';
+import 'package:medcollab_app/core/storage/secure_storage_service.dart';
+import 'package:medcollab_app/features/auth/data/repositories/auth_repository.dart';
+import 'package:medcollab_app/features/auth/data/repositories/user_repository.dart';
+import 'package:medcollab_app/features/auth/presentation/bloc/auth_bloc.dart';
+
+class AppDependencies {
+  AppDependencies._();
+
+  static final AppDependencies instance = AppDependencies._();
+
+  late final SecureStorageService secureStorage;
+  late final ApiClient apiClient;
+  late final SocketClient socketClient;
+  late final AuthRepository authRepository;
+  late final UserRepository userRepository;
+  late final AuthBloc authBloc;
+  late final AppRouter appRouter;
+
+  bool _initialized = false;
+
+  void init() {
+    if (_initialized) return;
+
+    secureStorage = SecureStorageService();
+    apiClient = ApiClient(storage: secureStorage);
+    socketClient = SocketClient();
+    authRepository = AuthRepository(
+      apiClient: apiClient,
+      storage: secureStorage,
+      socketClient: socketClient,
+    );
+    userRepository = UserRepository(apiClient: apiClient);
+    authBloc = AuthBloc(
+      authRepository: authRepository,
+      userRepository: userRepository,
+    );
+    appRouter = AppRouter(authBloc: authBloc);
+
+    _initialized = true;
+  }
+
+  void dispose() {
+    appRouter.dispose();
+    authBloc.close();
+    socketClient.dispose();
+  }
+}
