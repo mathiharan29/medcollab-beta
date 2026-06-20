@@ -6,6 +6,7 @@ import 'package:medcollab_app/core/constants/app_enums.dart';
 import 'package:medcollab_app/core/constants/socket_events.dart';
 import 'package:medcollab_app/core/error/app_exception.dart';
 import 'package:medcollab_app/core/socket/socket_client.dart';
+import 'package:medcollab_app/core/utils/json_map_utils.dart';
 import 'package:medcollab_app/features/auth/data/models/user_model.dart';
 import 'package:medcollab_app/features/media/data/repositories/media_repository.dart';
 import 'package:medcollab_app/features/messages/data/models/message_delivery_state.dart';
@@ -32,6 +33,7 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
     _connectionSub = _socketClient.connectionStream.listen((connected) {
       if (connected) {
         _socketClient.joinChannel(channelId);
+        loadMessages(silent: true);
       }
     });
     if (_socketClient.isConnected) {
@@ -48,8 +50,10 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
 
   StreamSubscription<Map<String, dynamic>>? _messageSub;
 
-  Future<void> loadMessages() async {
-    emit(state.copyWith(isLoading: true, error: null));
+  Future<void> loadMessages({bool silent = false}) async {
+    if (!silent) {
+      emit(state.copyWith(isLoading: true, error: null));
+    }
     try {
       final page = await _messageRepository.getMessages(channelId);
       emit(
@@ -77,7 +81,6 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
       type: MessageType.text,
       content: MessageContent(text: trimmed),
       createdAt: DateTime.now(),
-      deliveryState: MessageDeliveryState.sending,
       localOnly: true,
     );
     _upsertRootMessage(optimistic);
@@ -88,7 +91,7 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
         channelId: channelId,
         text: trimmed,
       );
-      _replaceLocalMessage(tempId, message.copyWith(deliveryState: MessageDeliveryState.sent));
+      _replaceLocalMessage(tempId, message);
       emit(state.copyWith(isSending: false));
     } on AppException catch (e) {
       _markFailed(tempId);
@@ -120,7 +123,6 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
         mimeType: mimeType,
       ),
       createdAt: DateTime.now(),
-      deliveryState: MessageDeliveryState.sending,
       localOnly: true,
     );
     _upsertRootMessage(optimistic);
@@ -138,10 +140,7 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
         upload: upload,
         caption: caption,
       );
-      _replaceLocalMessage(
-        tempId,
-        message.copyWith(deliveryState: MessageDeliveryState.sent),
-      );
+      _replaceLocalMessage(tempId, message);
       emit(state.copyWith(isSending: false, isUploading: false));
     } on AppException catch (e) {
       _markFailed(tempId);
@@ -169,31 +168,46 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
   }
 
   void _replaceLocalMessage(String tempId, MessageModel message) {
-    final updated = state.messages
-        .where((m) => m.id != tempId && m.id != message.id)
-        .toList();
+    final updated = List<MessageModel>.from(state.messages);
+    updated.removeWhere(
+      (m) =>
+          m.id == tempId ||
+          m.id == message.id ||
+          (m.localOnly &&
+              m.sender.id == currentUserId &&
+              _messagesMatch(m, message)),
+    );
     updated.add(message);
-    updated.sort((a, b) {
-      final at = a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-      final bt = b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-      return at.compareTo(bt);
-    });
+    updated.sort(_compareByCreatedAt);
     emit(state.copyWith(messages: updated));
   }
 
   void _listenForSocketMessages() {
     _messageSub =
         _socketClient.onMapEvent(SocketEvents.newMessage).listen((data) {
-      try {
-        final message = MessageModel.fromJson(data);
-        final msgChannelId =
-            message.channelId.isNotEmpty ? message.channelId : channelId;
-        if (msgChannelId != channelId) return;
-        _handleIncomingMessage(message);
-      } catch (_) {
-        // Ignore malformed socket payloads.
-      }
+      final message = _parseSocketMessage(data);
+      if (message == null) return;
+
+      final msgChannelId = message.channelId.isNotEmpty
+          ? message.channelId
+          : data['channelId']?.toString() ?? '';
+      if (msgChannelId != channelId) return;
+      _handleIncomingMessage(message);
     });
+  }
+
+  MessageModel? _parseSocketMessage(Map<String, dynamic> data) {
+    try {
+      return MessageModel.fromJson(data);
+    } catch (_) {
+      final nested = asJsonMap(data['message']);
+      if (nested == null) return null;
+      try {
+        return MessageModel.fromJson(nested);
+      } catch (_) {
+        return null;
+      }
+    }
   }
 
   void _handleIncomingMessage(MessageModel message) {
@@ -201,7 +215,7 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
       _applyThreadReplyToRoot(message);
       return;
     }
-    _upsertRootMessage(message);
+    _upsertRootMessage(message, fromSocket: true);
   }
 
   void _applyThreadReplyToRoot(MessageModel reply) {
@@ -229,20 +243,44 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
     return '${text.substring(0, max)}…';
   }
 
-  void _upsertRootMessage(MessageModel message) {
-    final existing = state.messages.indexWhere((m) => m.id == message.id);
+  void _upsertRootMessage(MessageModel message, {bool fromSocket = false}) {
     final updated = List<MessageModel>.from(state.messages);
+
+    if (fromSocket && message.sender.id == currentUserId) {
+      updated.removeWhere(
+        (m) =>
+            m.localOnly &&
+            m.sender.id == currentUserId &&
+            _messagesMatch(m, message),
+      );
+    }
+
+    final existing = updated.indexWhere((m) => m.id == message.id);
     if (existing >= 0) {
       updated[existing] = message;
     } else {
       updated.add(message);
-      updated.sort((a, b) {
-        final at = a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-        final bt = b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-        return at.compareTo(bt);
-      });
+      updated.sort(_compareByCreatedAt);
     }
     emit(state.copyWith(messages: updated));
+  }
+
+  bool _messagesMatch(MessageModel a, MessageModel b) {
+    if (a.type != b.type) return false;
+    if (a.type == MessageType.text) {
+      return a.content.text?.trim() == b.content.text?.trim();
+    }
+    if (a.type == MessageType.image || a.type == MessageType.document) {
+      return a.content.fileName == b.content.fileName &&
+          a.content.text == b.content.text;
+    }
+    return a.displayText == b.displayText;
+  }
+
+  int _compareByCreatedAt(MessageModel a, MessageModel b) {
+    final at = a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+    final bt = b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+    return at.compareTo(bt);
   }
 
   @override

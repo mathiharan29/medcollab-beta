@@ -136,6 +136,7 @@ const SOCKET_EVENTS = {
   // Room management
   JOIN_CHANNEL: 'join_channel',
   LEAVE_CHANNEL: 'leave_channel',
+  SYNC_SPACE_ROOMS: 'sync_space_rooms',
 
   // Messaging
   SEND_MESSAGE: 'send_message',
@@ -158,6 +159,7 @@ const SOCKET_EVENTS = {
 
   // Handoffs
   HANDOFF_SUBMITTED: 'handoff_submitted',
+  HANDOFF_ACKNOWLEDGED: 'handoff_acknowledged',
 
   // Errors
   ERROR: 'error',

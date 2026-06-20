@@ -62,8 +62,15 @@ class AppDependencies {
       authRepository: authRepository,
       userRepository: userRepository,
     );
-    apiClient.onAccessTokenRefreshed = (token) {
-      socketClient.reconnect(token);
+    apiClient.onAccessTokenRefreshed = (token) async {
+      await socketClient.updateAccessToken(token);
+    };
+    socketClient.onTokenRefreshNeeded = () async {
+      try {
+        return await authRepository.refreshAccessToken();
+      } catch (_) {
+        return authRepository.getAccessToken();
+      }
     };
     apiClient.onSessionExpired = () {
       authBloc.add(const AuthSessionExpired());

@@ -21,6 +21,11 @@ class ThreadCubit extends Cubit<ThreadState> {
         _socketClient = socketClient,
         super(ThreadState(rootMessage: initialRoot)) {
     _listenForSocketReplies();
+    _connectionSub = _socketClient.connectionStream.listen((connected) {
+      if (connected) {
+        loadThread(silent: true);
+      }
+    });
     loadThread();
   }
 
@@ -30,9 +35,12 @@ class ThreadCubit extends Cubit<ThreadState> {
   final String rootMessageId;
 
   StreamSubscription<Map<String, dynamic>>? _messageSub;
+  StreamSubscription<bool>? _connectionSub;
 
-  Future<void> loadThread() async {
-    emit(state.copyWith(isLoading: true, error: null));
+  Future<void> loadThread({bool silent = false}) async {
+    if (!silent) {
+      emit(state.copyWith(isLoading: true, error: null));
+    }
     try {
       final detail = await _threadRepository.getThread(
         channelId,
@@ -105,6 +113,7 @@ class ThreadCubit extends Cubit<ThreadState> {
 
   @override
   Future<void> close() {
+    _connectionSub?.cancel();
     _messageSub?.cancel();
     return super.close();
   }

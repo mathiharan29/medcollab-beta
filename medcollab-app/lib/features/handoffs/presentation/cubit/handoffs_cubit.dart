@@ -25,6 +25,12 @@ class HandoffsCubit extends Cubit<HandoffsState> {
         super(const HandoffsState()) {
     _listenForHandoffMessages();
     _listenForHandoffSubmitted();
+    _listenForHandoffAcknowledged();
+    _connectionSub = _socketClient.connectionStream.listen((connected) {
+      if (connected) {
+        _scheduleReload();
+      }
+    });
     if (initialHandoff != null) {
       _upsertHandoff(initialHandoff);
     }
@@ -38,6 +44,8 @@ class HandoffsCubit extends Cubit<HandoffsState> {
 
   StreamSubscription<Map<String, dynamic>>? _messageSub;
   StreamSubscription<Map<String, dynamic>>? _handoffSub;
+  StreamSubscription<Map<String, dynamic>>? _handoffAckSub;
+  StreamSubscription<bool>? _connectionSub;
   Timer? _reloadDebounce;
 
   Future<void> loadHandoffs() async {
@@ -107,6 +115,16 @@ class HandoffsCubit extends Cubit<HandoffsState> {
     _scheduleReload();
   }
 
+  void _listenForHandoffAcknowledged() {
+    _handoffAckSub = _socketClient
+        .onMapEvent(SocketEvents.handoffAcknowledged)
+        .listen((data) {
+      final eventSpaceId = data['spaceId']?.toString();
+      if (eventSpaceId != null && eventSpaceId != spaceId) return;
+      _scheduleReload();
+    });
+  }
+
   void _listenForHandoffSubmitted() {
     _handoffSub = _socketClient
         .onMapEvent(SocketEvents.handoffSubmitted)
@@ -142,6 +160,8 @@ class HandoffsCubit extends Cubit<HandoffsState> {
     _reloadDebounce?.cancel();
     _messageSub?.cancel();
     _handoffSub?.cancel();
+    _handoffAckSub?.cancel();
+    _connectionSub?.cancel();
     return super.close();
   }
 }

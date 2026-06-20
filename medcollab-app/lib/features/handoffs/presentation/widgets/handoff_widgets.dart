@@ -43,12 +43,16 @@ class HandoffListTile extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(width: 4, color: priorityColor),
-                Expanded(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border(
+                      left: BorderSide(color: priorityColor, width: 4),
+                    ),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(
                       AppSpacing.sm,
@@ -126,6 +130,7 @@ class HandoffListTile extends StatelessWidget {
                     ),
                   ),
                 ),
+              ),
                 if (onArchive != null)
                   IconButton(
                     tooltip:
@@ -139,8 +144,7 @@ class HandoffListTile extends StatelessWidget {
                       size: 20,
                     ),
                   ),
-              ],
-            ),
+            ],
           ),
         ),
       ),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
@@ -28,6 +30,11 @@ class MembersCubit extends Cubit<MembersState> {
         _socketClient = socketClient,
         _authBloc = authBloc,
         super(const MembersState()) {
+    _connectionSub = _socketClient.connectionStream.listen((connected) {
+      if (connected && _hasLoadedOnce) {
+        loadMembers(silent: true, refreshPresence: true);
+      }
+    });
     loadMembers();
   }
 
@@ -39,10 +46,24 @@ class MembersCubit extends Cubit<MembersState> {
   final String spaceId;
   final String currentUserId;
 
-  Future<void> loadMembers() async {
-    emit(state.copyWith(isLoading: true, error: null));
+  StreamSubscription<bool>? _connectionSub;
+  bool _hasLoadedOnce = false;
+
+  Future<void> loadMembers({
+    bool silent = false,
+    bool refreshPresence = false,
+  }) async {
+    if (!silent) {
+      emit(state.copyWith(isLoading: true, error: null));
+    }
     try {
       final members = await _memberRepository.getSpaceMembers(spaceId);
+      if (refreshPresence) {
+        _refreshPresenceFromApi(members);
+      } else {
+        _seedPresenceFromApi(members);
+      }
+      _hasLoadedOnce = true;
       emit(
         state.copyWith(
           members: _mergePresence(members),
@@ -74,14 +95,83 @@ class MembersCubit extends Cubit<MembersState> {
     }
   }
 
+  void _seedPresenceFromApi(List<SpaceMemberModel> members) {
+    final snapshot = <String, PresenceInfo>{};
+    for (final member in members) {
+      final userId = member.user.id;
+      if (userId.isEmpty) continue;
+      snapshot[userId] = PresenceInfo(
+        isOnline: member.isOnline,
+        status: member.user.availability.status,
+        updatedAt: member.user.availability.updatedAt,
+      );
+    }
+    _presenceCubit.mergeApiSnapshot(snapshot);
+  }
+
+  void _refreshPresenceFromApi(List<SpaceMemberModel> members) {
+    final snapshot = <String, PresenceInfo>{};
+    for (final member in members) {
+      final userId = member.user.id;
+      if (userId.isEmpty) continue;
+      snapshot[userId] = PresenceInfo(
+        isOnline: member.isOnline,
+        status: member.user.availability.status,
+        updatedAt: member.user.availability.updatedAt,
+      );
+    }
+    _presenceCubit.refreshFromApi(snapshot);
+    if (currentUserId.isNotEmpty && _socketClient.isConnected) {
+      final authUser = _authBloc.state.user;
+      if (authUser != null) {
+        _presenceCubit.applyLocal(
+          userId: currentUserId,
+          status: authUser.availability.status,
+          isOnline: true,
+        );
+      }
+    }
+  }
+
+  List<SpaceMemberModel> _mergePresence(List<SpaceMemberModel> members) {
+    final authUser = _authBloc.state.user;
+    final presenceMap = _presenceCubit.state;
+
+    return members.map((member) {
+      final userId = member.user.id;
+      final isSelf = userId == currentUserId;
+      final presence = presenceMap[userId];
+
+      final resolvedStatus = isSelf && authUser != null
+          ? authUser.availability.status
+          : (presence?.status ?? member.user.availability.status);
+
+      final resolvedOnline = isSelf && _socketClient.isConnected
+          ? true
+          : (presence != null ? presence.isOnline : member.isOnline);
+
+      return member.copyWith(
+        isOnline: resolvedOnline,
+        user: member.user.copyWith(
+          availability: member.user.availability.copyWith(
+            status: resolvedStatus,
+          ),
+        ),
+      );
+    }).toList();
+  }
+
   Future<void> updateMyAvailability(AvailabilityStatus status) async {
     emit(state.copyWith(isUpdatingAvailability: true, error: null));
     try {
       final availability = await _userRepository.updateAvailability(
         status: status,
       );
-      _socketClient.updateAvailability(status: status.value);
       _authBloc.add(AuthAvailabilityUpdated(availability));
+      _presenceCubit.applyLocal(
+        userId: currentUserId,
+        status: status,
+      );
       emit(state.copyWith(isUpdatingAvailability: false));
       applyPresenceUpdate();
     } on AppException catch (e) {
@@ -89,25 +179,14 @@ class MembersCubit extends Cubit<MembersState> {
     }
   }
 
-  List<SpaceMemberModel> _mergePresence(List<SpaceMemberModel> members) {
-    return members.map((m) {
-      final presence = _presenceCubit.state[m.user.id];
-      final isSelf = m.user.id == currentUserId;
-      final isOnline = presence?.isOnline ??
-          (isSelf && _socketClient.isConnected ? true : m.isOnline);
-      return m.copyWith(
-        isOnline: isOnline,
-        user: m.user.copyWith(
-          availability: m.user.availability.copyWith(
-            status: presence?.status ?? m.user.availability.status,
-          ),
-        ),
-      );
-    }).toList();
-  }
-
   void applyPresenceUpdate() {
     if (state.members.isEmpty) return;
     emit(state.copyWith(members: _mergePresence(state.members)));
+  }
+
+  @override
+  Future<void> close() {
+    _connectionSub?.cancel();
+    return super.close();
   }
 }

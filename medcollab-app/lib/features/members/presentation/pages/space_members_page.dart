@@ -4,6 +4,7 @@ import 'package:medcollab_app/core/constants/app_enums.dart';
 import 'package:medcollab_app/core/di/app_dependencies.dart';
 import 'package:medcollab_app/core/presence/presence_cubit.dart';
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:medcollab_app/features/auth/presentation/bloc/auth_state.dart';
 import 'package:medcollab_app/features/members/presentation/cubit/members_cubit.dart';
 import 'package:medcollab_app/features/members/presentation/widgets/member_widgets.dart';
 import 'package:medcollab_app/shared/presentation/widgets/app_empty_state.dart';
@@ -30,6 +31,12 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
   final _searchController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    AppDependencies.instance.socketClient.syncSpaceRooms();
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
@@ -54,7 +61,13 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
         listener: (context, _) {
           context.read<MembersCubit>().applyPresenceUpdate();
         },
-        child: Builder(
+        child: BlocListener<AuthBloc, AuthState>(
+          listenWhen: (prev, next) =>
+              prev.user?.availability != next.user?.availability,
+          listener: (context, _) {
+            context.read<MembersCubit>().applyPresenceUpdate();
+          },
+          child: Builder(
           builder: (context) {
             return Scaffold(
               appBar: AppBar(
@@ -67,18 +80,23 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
                     child: AppSearchBar(
                       controller: _searchController,
                       hintText: 'Search members…',
-                      onChanged: (q) {
-                        setState(() {});
-                        context.read<MembersCubit>().search(q);
-                      },
-                      onClear: () {
-                        _searchController.clear();
-                        setState(() {});
-                        context.read<MembersCubit>().search('');
-                      },
+                      onChanged: (q) =>
+                          context.read<MembersCubit>().search(q),
+                      onClear: () =>
+                          context.read<MembersCubit>().search(''),
                     ),
                   ),
                   _PresencePicker(),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Team members',
+                        style: Theme.of(context).textTheme.labelMedium,
+                      ),
+                    ),
+                  ),
                   Expanded(
                     child: BlocBuilder<MembersCubit, MembersState>(
                       builder: (context, state) {
@@ -131,6 +149,7 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
             );
           },
         ),
+        ),
       ),
     );
   }
@@ -141,24 +160,44 @@ class _PresencePicker extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = context.watch<AuthBloc>().state.user;
     final current = user?.availability.status ?? AvailabilityStatus.available;
+    final isUpdating = context.watch<MembersCubit>().state.isUpdatingAvailability;
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: Row(
-        children: AvailabilityStatusLabel.quickPresenceOptions.map((status) {
-          final selected = status == current;
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: FilterChip(
-              label: Text(status.presenceLabel),
-              selected: selected,
-              onSelected: (_) {
-                context.read<MembersCubit>().updateMyAvailability(status);
-              },
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Your status',
+            style: Theme.of(context).textTheme.labelMedium,
+          ),
+          const SizedBox(height: 8),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children:
+                  AvailabilityStatusLabel.quickPresenceOptions.map((status) {
+                final selected = status == current;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
+                    label: Text(status.presenceLabel),
+                    selected: selected,
+                    onSelected: isUpdating
+                        ? null
+                        : (_) {
+                            if (status != current) {
+                              context
+                                  .read<MembersCubit>()
+                                  .updateMyAvailability(status);
+                            }
+                          },
+                  ),
+                );
+              }).toList(),
             ),
-          );
-        }).toList(),
+          ),
+        ],
       ),
     );
   }

@@ -51,8 +51,8 @@ class _HandoffDetailPageState extends State<HandoffDetailPage> {
       _error = null;
     });
     try {
-      await _repository.acknowledgeHandoff(handoff.id);
-      _reload();
+      final updated = await _repository.acknowledgeHandoff(handoff.id);
+      if (mounted) context.pop(updated);
     } on AppException catch (e) {
       setState(() => _error = e.message);
     } finally {

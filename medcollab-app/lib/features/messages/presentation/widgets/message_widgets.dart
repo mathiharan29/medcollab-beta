@@ -366,7 +366,9 @@ class MessageBubbleContent extends StatelessWidget {
             onImageTap: onImageTap,
             onDocumentTap: onDocumentTap,
           ),
-          if (showTimestamp || (isMine && message.deliveryState != null))
+          if (showTimestamp ||
+              (isMine &&
+                  message.deliveryState == MessageDeliveryState.failed))
             Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Row(
@@ -379,9 +381,23 @@ class MessageBubbleContent extends StatelessWidget {
                             color: AppColors.textSecondary,
                           ),
                     ),
-                  if (isMine && message.deliveryState != null) ...[
-                    const SizedBox(width: 6),
-                    _DeliveryIndicator(state: message.deliveryState!),
+                  if (isMine &&
+                      message.deliveryState ==
+                          MessageDeliveryState.failed) ...[
+                    if (time.isNotEmpty) const SizedBox(width: 6),
+                    const Icon(
+                      Icons.error_outline,
+                      size: 14,
+                      color: AppColors.error,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Failed to send',
+                      style:
+                          Theme.of(context).textTheme.labelSmall?.copyWith(
+                                color: AppColors.error,
+                              ),
+                    ),
                   ],
                 ],
               ),
@@ -524,36 +540,6 @@ class _MessageBody extends StatelessWidget {
       message.displayText,
       style: Theme.of(context).textTheme.bodyMedium,
       softWrap: true,
-    );
-  }
-}
-
-class _DeliveryIndicator extends StatelessWidget {
-  const _DeliveryIndicator({required this.state});
-
-  final MessageDeliveryState state;
-
-  @override
-  Widget build(BuildContext context) {
-    final (icon, color) = switch (state) {
-      MessageDeliveryState.sending => (
-          Icons.schedule,
-          AppColors.textSecondary,
-        ),
-      MessageDeliveryState.sent => (Icons.check, AppColors.success),
-      MessageDeliveryState.failed => (Icons.error_outline, AppColors.error),
-    };
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 12, color: color),
-        const SizedBox(width: 2),
-        Text(
-          state.label,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(color: color),
-        ),
-      ],
     );
   }
 }

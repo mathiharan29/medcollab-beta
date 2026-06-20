@@ -4,6 +4,7 @@
 
 const Space = require('./space.model');
 const Channel = require('../channels/channel.model');
+const { joinUserToSpaceRoom } = require('../../socket');
 const { respond } = require('../../utils/apiResponse');
 const asyncHandler = require('../../utils/asyncHandler');
 const { SPACE_ROLES, CHANNEL_TYPES } = require('../../constants');
@@ -62,6 +63,9 @@ const createSpace = asyncHandler(async (req, res) => {
 
   // Seed default channels
   await seedDefaultChannels(space._id, req.user._id);
+
+  // Join creator's socket to the space room for presence broadcasts
+  joinUserToSpaceRoom(req.user._id, space._id);
 
   // Fetch channels to include in response
   const channels = await Channel.find({ spaceId: space._id }).sort({ position: 1 }).lean();
@@ -172,6 +176,9 @@ const joinSpace = asyncHandler(async (req, res) => {
   const channels = await Channel.find({ spaceId: space._id, isArchived: false })
     .sort({ position: 1 })
     .lean();
+
+  // Join member's socket to the space room for presence broadcasts
+  joinUserToSpaceRoom(req.user._id, space._id);
 
   return respond.ok(res, `Joined "${space.name}"`, { space, channels });
 });

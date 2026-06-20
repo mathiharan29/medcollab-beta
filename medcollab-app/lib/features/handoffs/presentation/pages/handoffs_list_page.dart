@@ -32,6 +32,12 @@ class _HandoffsListPageState extends State<HandoffsListPage> {
   final _searchController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    AppDependencies.instance.socketClient.syncSpaceRooms();
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
@@ -42,18 +48,18 @@ class _HandoffsListPageState extends State<HandoffsListPage> {
     final deps = AppDependencies.instance;
     final currentUserId =
         context.read<AuthBloc>().state.user?.id ?? '';
+    final routeExtra = GoRouterState.of(context).extra;
+    final initialHandoff =
+        routeExtra is HandoffModel ? routeExtra : null;
 
     return BlocProvider(
-      create: (context) {
-        final extra = GoRouterState.of(context).extra;
-        return HandoffsCubit(
-          handoffRepository: deps.handoffRepository,
-          socketClient: deps.socketClient,
-          spaceId: widget.spaceId,
-          currentUserId: currentUserId,
-          initialHandoff: extra is HandoffModel ? extra : null,
-        );
-      },
+      create: (_) => HandoffsCubit(
+        handoffRepository: deps.handoffRepository,
+        socketClient: deps.socketClient,
+        spaceId: widget.spaceId,
+        currentUserId: currentUserId,
+        initialHandoff: initialHandoff,
+      ),
       child: Builder(
         builder: (context) {
           return Scaffold(
@@ -64,11 +70,11 @@ class _HandoffsListPageState extends State<HandoffsListPage> {
               label: 'New handoff',
               icon: Icons.assignment_outlined,
               onPressed: () async {
-                await context.push(
+                final result = await context.push<HandoffModel>(
                   AppRoutes.spaceHandoffCreatePath(widget.spaceId),
                 );
-                if (context.mounted) {
-                  await context.read<HandoffsCubit>().loadHandoffs();
+                if (context.mounted && result != null) {
+                  context.read<HandoffsCubit>().applyHandoff(result);
                 }
               },
             ),
@@ -79,15 +85,10 @@ class _HandoffsListPageState extends State<HandoffsListPage> {
                   child: AppSearchBar(
                     controller: _searchController,
                     hintText: 'Search handoffs…',
-                    onChanged: (q) {
-                      setState(() {});
-                      context.read<HandoffsCubit>().search(q);
-                    },
-                    onClear: () {
-                      _searchController.clear();
-                      setState(() {});
-                      context.read<HandoffsCubit>().search('');
-                    },
+                    onChanged: (q) =>
+                        context.read<HandoffsCubit>().search(q),
+                    onClear: () =>
+                        context.read<HandoffsCubit>().search(''),
                   ),
                 ),
                 BlocBuilder<HandoffsCubit, HandoffsState>(
@@ -161,16 +162,18 @@ class _HandoffsListPageState extends State<HandoffsListPage> {
                                         return HandoffListTile(
                                           handoff: handoff,
                                           onTap: () async {
-                                            await context.push(
+                                            final result =
+                                                await context.push<HandoffModel>(
                                               AppRoutes.spaceHandoffDetailPath(
                                                 widget.spaceId,
                                                 handoff.id,
                                               ),
                                             );
-                                            if (context.mounted) {
-                                              await context
+                                            if (context.mounted &&
+                                                result != null) {
+                                              context
                                                   .read<HandoffsCubit>()
-                                                  .loadHandoffs();
+                                                  .applyHandoff(result);
                                             }
                                           },
                                           onArchive: canArchive

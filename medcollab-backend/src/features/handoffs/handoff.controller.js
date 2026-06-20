@@ -273,6 +273,19 @@ const acknowledgeHandoff = asyncHandler(async (req, res) => {
 
   respond.ok(res, 'Handoff acknowledged', { handoff });
 
+  try {
+    getIO().to(`space:${handoff.spaceId}`).emit(SOCKET_EVENTS.HANDOFF_ACKNOWLEDGED, {
+      handoffId: handoff._id.toString(),
+      spaceId: handoff.spaceId.toString(),
+      fromUserId: handoff.fromUserId.toString(),
+      toUserId: handoff.toUserId.toString(),
+      status: handoff.status,
+      acknowledgedAt: handoff.acknowledgedAt?.toISOString(),
+    });
+  } catch (err) {
+    logger.debug(`Handoff acknowledge socket broadcast skipped: ${err.message}`);
+  }
+
   setImmediate(async () => {
     try {
       const channel = await Channel.findById(handoff.channelId);

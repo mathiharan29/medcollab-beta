@@ -10,6 +10,7 @@ abstract final class SocketEvents {
   // Room management
   static const String joinChannel = 'join_channel';
   static const String leaveChannel = 'leave_channel';
+  static const String syncSpaceRooms = 'sync_space_rooms';
 
   // Messaging (client listens; server emits after REST persist)
   static const String sendMessage = 'send_message';
@@ -32,6 +33,7 @@ abstract final class SocketEvents {
 
   // Handoffs
   static const String handoffSubmitted = 'handoff_submitted';
+  static const String handoffAcknowledged = 'handoff_acknowledged';
 
   // Errors
   static const String error = 'error';

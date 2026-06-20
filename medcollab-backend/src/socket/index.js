@@ -39,6 +39,8 @@ const { Server } = require('socket.io');
 const { authenticateSocket } = require('../middleware/auth');
 const { registerMessageHandlers } = require('./handlers/message.handler');
 const { registerPresenceHandlers } = require('./handlers/presence.handler');
+const { registerSpaceHandlers } = require('./handlers/space.handler');
+const { initSpaceRooms } = require('./spaceRooms');
 const Space = require('../features/spaces/space.model');
 const { SOCKET_EVENTS } = require('../constants');
 const logger = require('../utils/logger');
@@ -120,7 +122,8 @@ const initSocket = (httpServer) => {
       ).lean();
 
       const spaceIds = spaces.map((s) => s._id.toString());
-      socket.spaceIds = spaceIds; // Attach for use in presence handler
+      socket.spaceIds = spaceIds;
+      socket.data.spaceIds = spaceIds; // Attach for use in presence handler
 
       // Join each space room
       spaceIds.forEach((spaceId) => {
@@ -132,6 +135,7 @@ const initSocket = (httpServer) => {
       // ── Register Event Handlers ────────────────────────────────────────────
       registerMessageHandlers(io, socket);
       registerPresenceHandlers(io, socket);
+      registerSpaceHandlers(io, socket);
       // Future: registerHandoffHandlers(io, socket);
 
       // ── Acknowledge Successful Connection ──────────────────────────────────
@@ -149,6 +153,7 @@ const initSocket = (httpServer) => {
   });
 
   logger.info('Socket.io initialised');
+  initSpaceRooms(io);
   return io;
 };
 
@@ -236,4 +241,5 @@ module.exports = {
   emitMessageUpdated,
   emitMessageDeleted,
   emitNotification,
+  joinUserToSpaceRoom: require('./spaceRooms').joinUserToSpaceRoom,
 };

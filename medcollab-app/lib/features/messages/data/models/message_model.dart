@@ -23,7 +23,7 @@ class MessageContent extends Equatable {
       mediaUrl: json['mediaUrl'] as String?,
       thumbnailUrl: json['thumbnailUrl'] as String?,
       fileName: json['fileName'] as String?,
-      fileSize: json['fileSize'] as int?,
+      fileSize: (json['fileSize'] as num?)?.toInt(),
       mimeType: json['mimeType'] as String?,
       width: json['width'] as int?,
       height: json['height'] as int?,
@@ -98,7 +98,7 @@ class MessageModel extends Equatable {
           : const MessageContent(),
       priority: MessagePriority.fromString(json['priority'] as String?),
       threadId: json['threadId']?.toString(),
-      replyCount: json['replyCount'] as int? ?? 0,
+      replyCount: (json['replyCount'] as num?)?.toInt() ?? 0,
       lastReply: lastReplyJson != null
           ? ThreadReplyPreview.fromJson(lastReplyJson)
           : null,
@@ -107,7 +107,6 @@ class MessageModel extends Equatable {
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'].toString())
           : null,
-      deliveryState: MessageDeliveryState.sent,
     );
   }
 

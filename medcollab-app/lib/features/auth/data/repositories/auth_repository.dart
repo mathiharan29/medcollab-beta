@@ -96,9 +96,31 @@ class AuthRepository extends BaseRepository {
 
   /// Reconnect socket using stored access token (app resume).
   Future<void> restoreSocketConnection() async {
-    final token = await _storage.getAccessToken();
-    if (token != null) {
-      await _socketClient.connect(token);
+    await ensureSocketConnected();
+  }
+
+  /// Connect socket, refreshing the JWT first if the stored token is stale.
+  Future<void> ensureSocketConnected() async {
+    var token = await getAccessToken();
+    if (token == null) return;
+
+    if (_socketClient.isConnected) {
+      _socketClient.syncSpaceRooms();
+      return;
+    }
+
+    await _socketClient.connect(token);
+    if (_socketClient.isConnected) {
+      _socketClient.syncSpaceRooms();
+      return;
+    }
+
+    try {
+      final refreshed = await refreshAccessToken();
+      await _socketClient.updateAccessToken(refreshed);
+      _socketClient.syncSpaceRooms();
+    } catch (_) {
+      // Session may have expired — AuthBloc handles via API interceptor.
     }
   }
 

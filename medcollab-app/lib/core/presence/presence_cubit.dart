@@ -10,12 +10,13 @@ import 'package:medcollab_app/core/utils/json_map_utils.dart';
 class PresenceInfo extends Equatable {
   const PresenceInfo({
     this.isOnline = false,
-    this.status = AvailabilityStatus.available,
+    this.status,
     this.updatedAt,
   });
 
   final bool isOnline;
-  final AvailabilityStatus status;
+  /// Set only when an explicit availability payload is received.
+  final AvailabilityStatus? status;
   final DateTime? updatedAt;
 
   PresenceInfo copyWith({
@@ -47,27 +48,81 @@ class PresenceCubit extends Cubit<Map<String, PresenceInfo>> {
   final SocketClient _socketClient;
   StreamSubscription<Map<String, dynamic>>? _sub;
 
-  void _onPresenceUpdate(Map<String, dynamic> data) {
-    final userId = data['userId']?.toString();
-    if (userId == null) return;
-
-    final availabilityRaw = asJsonMap(data['availability']);
-    AvailabilityStatus status = AvailabilityStatus.available;
-    if (availabilityRaw != null) {
-      status = AvailabilityStatus.fromString(
-        availabilityRaw['status']?.toString(),
+  /// Seed presence from API on first load — never overwrites live online state.
+  void mergeApiSnapshot(Map<String, PresenceInfo> snapshot) {
+    if (snapshot.isEmpty) return;
+    final updated = Map<String, PresenceInfo>.from(state);
+    for (final entry in snapshot.entries) {
+      final existing = updated[entry.key];
+      updated[entry.key] = PresenceInfo(
+        isOnline: existing?.isOnline ?? entry.value.isOnline,
+        status: entry.value.status ?? existing?.status,
+        updatedAt: _latest(
+          entry.value.updatedAt,
+          existing?.updatedAt,
+        ),
       );
     }
+    emit(updated);
+  }
+
+  /// Full resync from API after reconnect — refreshes online flags from server.
+  void refreshFromApi(Map<String, PresenceInfo> snapshot) {
+    if (snapshot.isEmpty) return;
+    final updated = Map<String, PresenceInfo>.from(state);
+    final now = DateTime.now();
+    for (final entry in snapshot.entries) {
+      final existing = updated[entry.key];
+      updated[entry.key] = PresenceInfo(
+        isOnline: entry.value.isOnline,
+        status: entry.value.status ?? existing?.status,
+        updatedAt: now,
+      );
+    }
+    emit(updated);
+  }
+
+  void applyLocal({
+    required String userId,
+    required AvailabilityStatus status,
+    bool isOnline = true,
+  }) {
+    final updated = Map<String, PresenceInfo>.from(state);
+    final existing = updated[userId];
+    updated[userId] = (existing ?? const PresenceInfo()).copyWith(
+      isOnline: isOnline,
+      status: status,
+      updatedAt: DateTime.now(),
+    );
+    emit(updated);
+  }
+
+  void _onPresenceUpdate(Map<String, dynamic> data) {
+    final userId = data['userId']?.toString();
+    if (userId == null || userId.isEmpty) return;
+
+    final status = _parseAvailabilityStatus(data);
 
     final updated = Map<String, PresenceInfo>.from(state);
     final existing = updated[userId];
+
+    final incomingAt =
+        DateTime.tryParse(data['updatedAt']?.toString() ?? '') ??
+            DateTime.now();
+    if (existing != null &&
+        existing.updatedAt != null &&
+        incomingAt.isBefore(existing.updatedAt!)) {
+      return;
+    }
+
+    final isOnline = data.containsKey('isOnline')
+        ? data['isOnline'] as bool? ?? false
+        : (existing?.isOnline ?? false);
+
     updated[userId] = PresenceInfo(
-      isOnline: data['isOnline'] as bool? ?? existing?.isOnline ?? false,
-      status: availabilityRaw != null
-          ? status
-          : (existing?.status ?? status),
-      updatedAt: DateTime.tryParse(data['updatedAt']?.toString() ?? '') ??
-          DateTime.now(),
+      isOnline: isOnline,
+      status: status ?? existing?.status,
+      updatedAt: incomingAt,
     );
 
     if (updated.length > 300) {
@@ -77,6 +132,25 @@ class PresenceCubit extends Cubit<Map<String, PresenceInfo>> {
       }
     }
     emit(updated);
+  }
+
+  static DateTime? _latest(DateTime? a, DateTime? b) {
+    if (a == null) return b;
+    if (b == null) return a;
+    return a.isAfter(b) ? a : b;
+  }
+
+  AvailabilityStatus? _parseAvailabilityStatus(Map<String, dynamic> data) {
+    final availabilityRaw = asJsonMap(data['availability']);
+    if (availabilityRaw != null) {
+      return AvailabilityStatus.fromString(
+        availabilityRaw['status']?.toString(),
+      );
+    }
+    if (data['status'] != null) {
+      return AvailabilityStatus.fromString(data['status']?.toString());
+    }
+    return null;
   }
 
   bool isUserOnline(String userId) => state[userId]?.isOnline ?? false;

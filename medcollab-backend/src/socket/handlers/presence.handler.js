@@ -54,7 +54,18 @@ const registerPresenceHandlers = (io, socket) => {
 
   // Broadcast this user's online status to all their spaces
   // (We broadcast to space rooms — not globally — to avoid unnecessary traffic)
-  broadcastPresenceUpdate(io, socket, { isOnline: true });
+  User.findById(userId)
+    .select('availability')
+    .lean()
+    .then((user) => {
+      broadcastPresenceUpdate(io, socket, {
+        isOnline: true,
+        status: user?.availability?.status,
+      });
+    })
+    .catch(() => {
+      broadcastPresenceUpdate(io, socket, { isOnline: true });
+    });
 
   // ── Availability Status Update ──────────────────────────────────────────────
   /**
@@ -127,8 +138,7 @@ const registerPresenceHandlers = (io, socket) => {
  */
 const broadcastPresenceUpdate = (io, socket, update) => {
   const userId = socket.userId.toString();
-  // The socket already has spaceIds attached (set during auth in socket/index.js)
-  const spaceIds = socket.spaceIds || [];
+  const spaceIds = socket.spaceIds || socket.data?.spaceIds || [];
 
   spaceIds.forEach((spaceId) => {
     const room = `space:${spaceId}`;
@@ -163,8 +173,45 @@ const getOnlineUsers = () => {
   return Array.from(onlineUsers.keys());
 };
 
+/**
+ * Push current online + availability state for all members in the user's spaces.
+ * Called after sync_space_rooms so reconnecting clients catch up.
+ */
+const emitPresenceSnapshotForSocket = async (socket) => {
+  const Space = require('../../features/spaces/space.model');
+  const spaceIds = socket.spaceIds || socket.data?.spaceIds || [];
+  if (spaceIds.length === 0) return;
+
+  const seenUserIds = new Set();
+
+  for (const spaceId of spaceIds) {
+    const space = await Space.findById(spaceId).select('members.userId').lean();
+    if (!space) continue;
+
+    const memberIds = space.members.map((m) => m.userId);
+    const users = await User.find({ _id: { $in: memberIds } })
+      .select('availability')
+      .lean();
+
+    for (const user of users) {
+      const uid = user._id.toString();
+      if (seenUserIds.has(uid)) continue;
+      seenUserIds.add(uid);
+
+      socket.emit(SOCKET_EVENTS.PRESENCE_UPDATE, {
+        userId: uid,
+        isOnline: isUserOnline(uid),
+        availability: user.availability,
+        updatedAt: new Date().toISOString(),
+      });
+    }
+  }
+};
+
 module.exports = {
   registerPresenceHandlers,
+  broadcastPresenceUpdate,
+  emitPresenceSnapshotForSocket,
   isUserOnline,
   getOnlineUsers,
 };

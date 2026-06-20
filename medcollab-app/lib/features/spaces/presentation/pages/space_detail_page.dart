@@ -36,6 +36,7 @@ class _SpaceDetailPageState extends State<SpaceDetailPage> {
     super.initState();
     _spaceFuture = _spaceRepository.getSpaceById(widget.spaceId);
     _loadMemberCount();
+    AppDependencies.instance.socketClient.syncSpaceRooms();
   }
 
   Future<void> _loadMemberCount() async {
@@ -82,6 +83,7 @@ class _SpaceDetailPageState extends State<SpaceDetailPage> {
             final space = snapshot.data;
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(space?.name ?? 'Space'),
                 if (_memberCount != null)

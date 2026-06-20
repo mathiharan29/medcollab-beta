@@ -86,7 +86,11 @@ const updateAvailability = asyncHandler(async (req, res) => {
       io.to(`space:${_id}`).emit(SOCKET_EVENTS.PRESENCE_UPDATE, {
         userId: req.user._id.toString(),
         isOnline: isUserOnline(req.user._id),
-        availability: updated.availability,
+        availability: {
+          status: updated.availability.status,
+          until: updated.availability.until || null,
+          note: updated.availability.note || '',
+        },
         updatedAt: new Date().toISOString(),
       });
     });

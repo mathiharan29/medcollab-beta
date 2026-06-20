@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'package:medcollab_app/core/config/env_config.dart';
 import 'package:medcollab_app/core/constants/app_constants.dart';
 import 'package:medcollab_app/core/constants/socket_events.dart';
+import 'package:medcollab_app/core/network/auth_interceptor.dart';
 import 'package:medcollab_app/core/utils/json_map_utils.dart';
 
 /// Real-time client for MedCollab Socket.io server.
@@ -18,6 +20,13 @@ class SocketClient {
   final _connectionController = StreamController<bool>.broadcast();
   final _joinedChannels = <String>{};
   final _eventControllers = <String, StreamController<Map<String, dynamic>>>{};
+
+  /// Called when the socket drops — refresh JWT and reconnect.
+  TokenRefreshCallback? onTokenRefreshNeeded;
+
+  bool _isReplacingSocket = false;
+  bool _recoverInFlight = false;
+  Timer? _recoverDebounce;
 
   bool get isConnected => _socket?.connected ?? false;
 
@@ -34,27 +43,52 @@ class SocketClient {
     await disconnect();
     _accessToken = accessToken;
 
-    _socket = io.io(
+    _socket = _createSocket(accessToken);
+    _registerLifecycleHandlers();
+    _bindTrackedEvents();
+    await _connectAndWait();
+  }
+
+  io.Socket _createSocket(String accessToken) {
+    return io.io(
       EnvConfig.socketUrl,
       io.OptionBuilder()
           // Polling first helps Flutter web when websocket handshake is flaky.
           .setTransports(['polling', 'websocket'])
           .disableAutoConnect()
-          .enableReconnection()
-          .setReconnectionDelay(
-            AppConstants.socketReconnectDelay.inMilliseconds,
-          )
-          .setReconnectionAttempts(AppConstants.socketMaxReconnectAttempts)
+          // Reconnect is managed manually so we always handshake with a fresh JWT.
           .setAuth({'token': accessToken})
           .build(),
     );
+  }
 
-    _registerLifecycleHandlers();
-    _bindTrackedEvents();
-    _socket!.connect();
+  Future<void> _connectAndWait() async {
+    final socket = _socket;
+    if (socket == null) return;
+
+    if (socket.connected) {
+      _onSocketReady();
+      return;
+    }
+
+    final completer = Completer<void>();
+    void onConnect(dynamic _) {
+      socket.off('connect', onConnect);
+      if (!completer.isCompleted) completer.complete();
+    }
+
+    socket.on('connect', onConnect);
+    socket.connect();
+
+    try {
+      await completer.future.timeout(AppConstants.connectTimeout);
+    } on TimeoutException {
+      // Connection may still complete in the background.
+    }
   }
 
   Future<void> disconnect() async {
+    _recoverDebounce?.cancel();
     _joinedChannels.clear();
     _socket?.dispose();
     _socket = null;
@@ -63,17 +97,50 @@ class SocketClient {
   }
 
   Future<void> reconnect(String newAccessToken) async {
-    await connect(newAccessToken);
+    await updateAccessToken(newAccessToken);
+  }
+
+  /// Refresh JWT by recreating the socket so handshake auth uses the new token.
+  Future<void> updateAccessToken(String accessToken) async {
+    if (_accessToken == accessToken && isConnected) return;
+
+    _accessToken = accessToken;
+    final socket = _socket;
+    if (socket == null) {
+      await connect(accessToken);
+      return;
+    }
+
+    _isReplacingSocket = true;
+    try {
+      socket.dispose();
+      _socket = null;
+      _connectionController.add(false);
+
+      _socket = _createSocket(accessToken);
+      _registerLifecycleHandlers();
+      _bindTrackedEvents();
+      await _connectAndWait();
+    } finally {
+      _isReplacingSocket = false;
+    }
   }
 
   void joinChannel(String channelId) {
+    if (channelId.isEmpty) return;
     _joinedChannels.add(channelId);
     _emit(SocketEvents.joinChannel, {'channelId': channelId});
   }
 
   void leaveChannel(String channelId) {
+    if (channelId.isEmpty) return;
     _joinedChannels.remove(channelId);
     _emit(SocketEvents.leaveChannel, {'channelId': channelId});
+  }
+
+  /// Re-join all space rooms from server membership (after create/join space).
+  void syncSpaceRooms() {
+    _emit(SocketEvents.syncSpaceRooms, {});
   }
 
   void emitTypingStart(String channelId) {
@@ -120,6 +187,7 @@ class SocketClient {
   }
 
   void dispose() {
+    _recoverDebounce?.cancel();
     disconnect();
     for (final controller in _eventControllers.values) {
       controller.close();
@@ -140,8 +208,33 @@ class SocketClient {
   }
 
   void _onSocketReady() {
+    _bindTrackedEvents();
     _connectionController.add(true);
     _rejoinChannels();
+    syncSpaceRooms();
+  }
+
+  void _scheduleRecover() {
+    _recoverDebounce?.cancel();
+    _recoverDebounce = Timer(const Duration(milliseconds: 500), () {
+      unawaited(_recoverConnection());
+    });
+  }
+
+  Future<void> _recoverConnection() async {
+    if (_recoverInFlight || _isReplacingSocket) return;
+    _recoverInFlight = true;
+    try {
+      var token = _accessToken;
+      final refresh = onTokenRefreshNeeded;
+      if (refresh != null) {
+        token = await refresh() ?? token;
+      }
+      if (token == null || token.isEmpty) return;
+      await updateAccessToken(token);
+    } finally {
+      _recoverInFlight = false;
+    }
   }
 
   void _bindTrackedEvents() {
@@ -158,9 +251,28 @@ class SocketClient {
     final controller = _eventControllers[event];
     if (controller == null || controller.isClosed) return;
 
-    if (data is Map) {
-      controller.add(deepJsonMap(data));
+    final map = _normalizePayload(data);
+    if (map != null) {
+      controller.add(map);
     }
+  }
+
+  Map<String, dynamic>? _normalizePayload(dynamic data) {
+    var value = data;
+    if (value is List && value.isNotEmpty) {
+      value = value.first;
+    }
+    if (value is String) {
+      try {
+        value = jsonDecode(value);
+      } catch (_) {
+        return null;
+      }
+    }
+    if (value is Map) {
+      return deepJsonMap(value);
+    }
+    return null;
   }
 
   void _registerLifecycleHandlers() {
@@ -168,16 +280,28 @@ class SocketClient {
 
     socket.onConnect((_) => _onSocketReady());
 
-    socket.onReconnect((_) => _onSocketReady());
+    socket.onDisconnect((reason) {
+      _connectionController.add(false);
+      if (_isReplacingSocket) return;
+      if (reason == 'io client disconnect') return;
+      _scheduleRecover();
+    });
 
-    socket.onDisconnect((_) => _connectionController.add(false));
+    socket.onConnectError((_) {
+      _connectionController.add(false);
+      _scheduleRecover();
+    });
 
-    socket.onConnectError((_) => _connectionController.add(false));
-
-    socket.onError((_) => _connectionController.add(false));
+    socket.onError((_) {
+      _connectionController.add(false);
+      _scheduleRecover();
+    });
 
     socket.on(SocketEvents.authenticated, (_) => _onSocketReady());
 
-    socket.on(SocketEvents.authError, (_) => _connectionController.add(false));
+    socket.on(SocketEvents.authError, (_) {
+      _connectionController.add(false);
+      _scheduleRecover();
+    });
   }
 }

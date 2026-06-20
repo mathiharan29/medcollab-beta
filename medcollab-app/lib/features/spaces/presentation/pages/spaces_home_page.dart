@@ -39,6 +39,7 @@ class _SpacesHomePageState extends State<SpacesHomePage> {
     setState(() {
       _spacesFuture = _spaceRepository.getMySpaces();
     });
+    AppDependencies.instance.socketClient.syncSpaceRooms();
   }
 
   @override

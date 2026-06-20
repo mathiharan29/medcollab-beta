@@ -259,7 +259,7 @@ class ApiClient {
       final newToken = data?['accessToken'] as String?;
       if (newToken != null) {
         await _storage.saveAccessToken(newToken);
-        onAccessTokenRefreshed?.call(newToken);
+        await onAccessTokenRefreshed?.call(newToken);
       }
       return newToken;
     } on DioException {

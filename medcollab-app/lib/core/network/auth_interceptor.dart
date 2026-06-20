@@ -2,7 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:medcollab_app/core/storage/secure_storage_service.dart';
 
 typedef SessionExpiredCallback = void Function();
-typedef AccessTokenRefreshedCallback = void Function(String accessToken);
+typedef AccessTokenRefreshedCallback = Future<void> Function(String accessToken);
+typedef TokenRefreshCallback = Future<String?> Function();
 
 /// Attaches JWT to requests and silently refreshes on 401.
 class AuthInterceptor extends Interceptor {

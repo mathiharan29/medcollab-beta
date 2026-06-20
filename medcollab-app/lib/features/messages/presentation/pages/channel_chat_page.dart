@@ -123,6 +123,7 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
             appBar: AppBar(
               title: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(title),
                   if (subtitle != null && subtitle.isNotEmpty)
