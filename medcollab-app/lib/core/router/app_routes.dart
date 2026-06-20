@@ -11,8 +11,12 @@ abstract final class AppRoutes {
   static const String thread =
       '/spaces/:spaceId/channels/:channelId/threads/:messageId';
   static const String spaceMembers = '/spaces/:spaceId/members';
-  static const String handoffCreate = '/handoffs/create';
-  static const String handoffDetail = '/handoffs/:handoffId';
+  static const String spaceHandoffs = '/spaces/:spaceId/handoffs';
+  static const String spaceHandoffCreate = '/spaces/:spaceId/handoffs/create';
+  static const String spaceHandoffDetail =
+      '/spaces/:spaceId/handoffs/:handoffId';
+  static const String spaceHandoffEdit =
+      '/spaces/:spaceId/handoffs/:handoffId/edit';
 
   static String spaceDetailPath(String spaceId) => '/spaces/$spaceId';
 
@@ -27,4 +31,16 @@ abstract final class AppRoutes {
       '/spaces/$spaceId/channels/$channelId/threads/$messageId';
 
   static String spaceMembersPath(String spaceId) => '/spaces/$spaceId/members';
+
+  static String spaceHandoffsPath(String spaceId) =>
+      '/spaces/$spaceId/handoffs';
+
+  static String spaceHandoffCreatePath(String spaceId) =>
+      '/spaces/$spaceId/handoffs/create';
+
+  static String spaceHandoffDetailPath(String spaceId, String handoffId) =>
+      '/spaces/$spaceId/handoffs/$handoffId';
+
+  static String spaceHandoffEditPath(String spaceId, String handoffId) =>
+      '/spaces/$spaceId/handoffs/$handoffId/edit';
 }

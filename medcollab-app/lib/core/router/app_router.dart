@@ -10,6 +10,9 @@ import 'package:medcollab_app/features/auth/presentation/pages/profile_setup_pag
 import 'package:medcollab_app/features/auth/presentation/pages/splash_page.dart';
 import 'package:medcollab_app/features/messages/presentation/pages/channel_chat_page.dart';
 import 'package:medcollab_app/features/messages/presentation/pages/thread_page.dart';
+import 'package:medcollab_app/features/handoffs/presentation/pages/handoff_detail_page.dart';
+import 'package:medcollab_app/features/handoffs/presentation/pages/handoff_form_page.dart';
+import 'package:medcollab_app/features/handoffs/presentation/pages/handoffs_list_page.dart';
 import 'package:medcollab_app/features/members/presentation/pages/space_members_page.dart';
 import 'package:medcollab_app/features/spaces/data/models/channel_model.dart';
 import 'package:medcollab_app/features/spaces/presentation/pages/space_detail_page.dart';
@@ -68,6 +71,46 @@ class AppRouter {
             channel: channel,
           );
         },
+      ),
+      GoRoute(
+        path: AppRoutes.spaceHandoffs,
+        builder: (context, state) {
+          final spaceId = state.pathParameters['spaceId']!;
+          return HandoffsListPage(spaceId: spaceId);
+        },
+        routes: [
+          GoRoute(
+            path: 'create',
+            builder: (context, state) {
+              final spaceId = state.pathParameters['spaceId']!;
+              return HandoffFormPage(spaceId: spaceId);
+            },
+          ),
+          GoRoute(
+            path: ':handoffId',
+            builder: (context, state) {
+              final spaceId = state.pathParameters['spaceId']!;
+              final handoffId = state.pathParameters['handoffId']!;
+              return HandoffDetailPage(
+                spaceId: spaceId,
+                handoffId: handoffId,
+              );
+            },
+            routes: [
+              GoRoute(
+                path: 'edit',
+                builder: (context, state) {
+                  final spaceId = state.pathParameters['spaceId']!;
+                  final handoffId = state.pathParameters['handoffId']!;
+                  return HandoffFormPage(
+                    spaceId: spaceId,
+                    handoffId: handoffId,
+                  );
+                },
+              ),
+            ],
+          ),
+        ],
       ),
       GoRoute(
         path: AppRoutes.spaceMembers,

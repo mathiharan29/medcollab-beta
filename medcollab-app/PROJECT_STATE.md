@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-06-20  
 **Analyzer:** `flutter analyze` — no issues  
-**Web build:** `flutter build web` — verified for Phase 5
+**Web build:** `flutter build web` — verified through Phase 5
 
 ---
 
@@ -15,7 +15,53 @@
 | **3 — Core nav** | ✅ MVP | Spaces, channels, real-time channel chat |
 | **4 — Threads** | ✅ MVP | Structured discussions per message |
 | **5 — Rich comms** | ✅ MVP | Media, documents, message UX, members, search |
-| **6 — Handoffs** | ⬜ Next | Killer feature + FCM |
+| **6 — Handoffs** | ✅ MVP | Clinical shift handover workflow |
+
+---
+
+## Phase 6 — Clinical shift handoffs (MVP)
+
+| Area | Component | Path |
+|------|-----------|------|
+| **Models** | `HandoffModel`, `HandoffPatientModel` | `features/handoffs/data/models/` |
+| **Repository** | CRUD + submit + acknowledge | `handoff_repository.dart` |
+| **State** | `HandoffsCubit`, `HandoffFormCubit` | `presentation/cubit/` |
+| **List** | Search, Active/Archived tabs, priority colours | `handoffs_list_page.dart` |
+| **Create/Edit** | Assigned doctor, patients, shift context | `handoff_form_page.dart` |
+| **Detail** | View, edit draft, acknowledge, delete draft | `handoff_detail_page.dart` |
+| **Realtime** | Socket `new_message` (type `handoff`) refreshes list | `handoffs_cubit.dart` |
+| **Navigation** | Space card + app bar → `/spaces/:id/handoffs` | `space_detail_page.dart` |
+
+### Handoff fields (patient-level)
+
+| Field | Source |
+|-------|--------|
+| Patient identifier | `bedNumber` + `ward` + `clinicalAlias` (no PHI) |
+| Diagnosis | `diagnosis` |
+| Current status | `PatientStatus` |
+| Pending tasks | `pendingTasks[]` |
+| Assigned doctor | `toUser` on handoff |
+| Priority | `isFlagged` + status → colour accent |
+| Last updated | `updatedAt` / `submittedAt` |
+
+### Flow
+
+1. **Space** → **Shift handoffs** card or app bar icon
+2. **List** — search by bed, diagnosis, doctor; filter Active vs Archived
+3. **Create** — pick assigned doctor, add patients, save draft or submit
+4. **Edit** — draft only (sender)
+5. **Archive** — delete draft, or receiver acknowledges submitted handoff
+6. **Realtime** — submit/ack posts `handoff` system message; list auto-refreshes
+
+### API (existing backend)
+
+- `POST /api/handoffs` — create draft
+- `PUT /api/handoffs/:id` — edit draft
+- `POST /api/handoffs/:id/submit` — send to assigned doctor
+- `POST /api/handoffs/:id/acknowledge` — receiver archives
+- `DELETE /api/handoffs/:id` — delete draft
+- `GET /api/spaces/:spaceId/handoffs` — space history
+- `GET /api/handoffs` — personal inbox + drafts
 
 ---
 
@@ -24,61 +70,9 @@
 | Area | Component | Path |
 |------|-----------|------|
 | **Media** | `MediaRepository`, `MediaPickerService` | `features/media/` |
-| | Image upload + bubbles + preview | `message_widgets.dart`, `image_preview_page.dart` |
-| **Documents** | PDF/file attach + open via `url_launcher` | `message_widgets.dart` |
-| **Message UX** | Timestamps, delivery state, sender grouping, date separators | `message_list_utils.dart`, `message_widgets.dart` |
-| | Empty state, smart auto-scroll | `channel_chat_page.dart` |
-| **Channels** | Create channel dialog (name, description, private) | `create_channel_dialog.dart` |
-| | Channel search + member count | `space_detail_page.dart` |
-| **Members** | Member list, profile sheet, presence | `space_members_page.dart`, `member_widgets.dart` |
-| | Presence states (Available, Busy, In OT, Off Duty) | `presence_cubit.dart` |
-| **Search** | Channel filter (client), member search (API) | `space_detail_page.dart`, `members_cubit.dart` |
-| **State** | `ChannelRepository`, `MemberRepository`, `PresenceCubit` | `app_dependencies.dart` |
-
-### Flow
-
-1. **Attach** — composer `+` menu → gallery / camera / PDF → Cloudinary upload → image or document message
-2. **Images** — thumbnail bubble → tap → full-screen pinch-zoom preview
-3. **Documents** — file card bubble → tap → opens in browser / external app
-4. **Messages** — grouped by sender, date chips, sending/sent/failed indicators
-5. **Channels** — FAB create, search bar, description in list + chat app bar
-6. **Members** — people icon on space → searchable list, profile sheet, presence chips
-
-### Cloudinary (dev)
-
-Set in `medcollab-backend/.env`:
-
-```
-CLOUDINARY_CLOUD_NAME=...
-CLOUDINARY_API_KEY=...
-CLOUDINARY_API_SECRET=...
-```
-
-Without credentials, media upload returns a server error; text chat still works.
-
----
-
-## Phase 4 — Threaded discussions (MVP)
-
-| Component | Path |
-|-----------|------|
-| `ThreadReplyPreview`, `ThreadDetail` | `features/messages/data/models/` |
-| `MessageModel` (+ `threadId`, `replyCount`, `lastReply`, media fields) | `message_model.dart` |
-| `ThreadRepository` | `features/messages/data/repositories/thread_repository.dart` |
-| `ThreadCubit` | `features/messages/presentation/cubit/thread_cubit.dart` |
-| `ThreadPage` | `thread_page.dart` |
-| `MessageBubble`, `ThreadCountBadge`, `ParentMessagePreview` | `message_widgets.dart` |
-| Channel thread badges + navigation | `channel_chat_page.dart` |
-
----
-
-## Phase 3 — Core navigation (MVP)
-
-| Component | Path |
-|-----------|------|
-| Spaces home / detail | `features/spaces/presentation/pages/` |
-| Channel chat | `channel_chat_page.dart` |
-| `SpaceRepository`, `MessageRepository` | `features/*/data/repositories/` |
+| **Documents** | PDF/file attach + open | `message_widgets.dart` |
+| **Message UX** | Grouping, dates, delivery state | `message_list_utils.dart` |
+| **Members** | List, profile, presence | `features/members/` |
 
 ---
 

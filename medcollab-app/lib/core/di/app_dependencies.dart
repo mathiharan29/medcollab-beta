@@ -7,6 +7,7 @@ import 'package:medcollab_app/features/auth/data/repositories/auth_repository.da
 import 'package:medcollab_app/features/auth/data/repositories/user_repository.dart';
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:medcollab_app/features/channels/data/repositories/channel_repository.dart';
+import 'package:medcollab_app/features/handoffs/data/repositories/handoff_repository.dart';
 import 'package:medcollab_app/features/media/data/repositories/media_repository.dart';
 import 'package:medcollab_app/features/members/data/repositories/member_repository.dart';
 import 'package:medcollab_app/features/messages/data/repositories/message_repository.dart';
@@ -29,6 +30,7 @@ class AppDependencies {
   late final MediaRepository mediaRepository;
   late final ChannelRepository channelRepository;
   late final MemberRepository memberRepository;
+  late final HandoffRepository handoffRepository;
   late final PresenceCubit presenceCubit;
   late final AuthBloc authBloc;
   late final AppRouter appRouter;
@@ -53,6 +55,7 @@ class AppDependencies {
     mediaRepository = MediaRepository(apiClient: apiClient);
     channelRepository = ChannelRepository(apiClient: apiClient);
     memberRepository = MemberRepository(apiClient: apiClient);
+    handoffRepository = HandoffRepository(apiClient: apiClient);
     presenceCubit = PresenceCubit(socketClient: socketClient);
     authBloc = AuthBloc(
       authRepository: authRepository,

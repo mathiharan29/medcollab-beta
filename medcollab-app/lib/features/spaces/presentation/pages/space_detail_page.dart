@@ -90,12 +90,18 @@ class _SpaceDetailPageState extends State<SpaceDetailPage> {
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.assignment_outlined),
+            tooltip: 'Handoffs',
+            onPressed: () => context.push(
+              AppRoutes.spaceHandoffsPath(widget.spaceId),
+            ),
+          ),
+          IconButton(
             icon: const Icon(Icons.people_outline),
             tooltip: 'Members',
             onPressed: () {
               context.push(
                 AppRoutes.spaceMembersPath(widget.spaceId),
-                extra: null,
               );
             },
           ),
@@ -169,6 +175,30 @@ class _SpaceDetailPageState extends State<SpaceDetailPage> {
                     ),
                   ),
                 ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                child: Card(
+                  clipBehavior: Clip.antiAlias,
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor:
+                          AppColors.primary.withValues(alpha: 0.12),
+                      child: const Icon(
+                        Icons.assignment_outlined,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    title: const Text('Shift handoffs'),
+                    subtitle: const Text(
+                      'Structured patient handover between shifts',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => context.push(
+                      AppRoutes.spaceHandoffsPath(widget.spaceId),
+                    ),
+                  ),
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
                 child: SearchBar(
