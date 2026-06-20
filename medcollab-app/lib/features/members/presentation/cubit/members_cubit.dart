@@ -6,6 +6,8 @@ import 'package:medcollab_app/core/presence/presence_cubit.dart';
 import 'package:medcollab_app/core/socket/socket_client.dart';
 import 'package:medcollab_app/features/auth/data/models/user_model.dart';
 import 'package:medcollab_app/features/auth/data/repositories/user_repository.dart';
+import 'package:medcollab_app/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:medcollab_app/features/auth/presentation/bloc/auth_event.dart';
 import 'package:medcollab_app/features/members/data/models/space_member_model.dart';
 import 'package:medcollab_app/features/members/data/repositories/member_repository.dart';
 
@@ -17,11 +19,14 @@ class MembersCubit extends Cubit<MembersState> {
     required UserRepository userRepository,
     required PresenceCubit presenceCubit,
     required SocketClient socketClient,
+    required AuthBloc authBloc,
     required this.spaceId,
+    required this.currentUserId,
   })  : _memberRepository = memberRepository,
         _userRepository = userRepository,
         _presenceCubit = presenceCubit,
         _socketClient = socketClient,
+        _authBloc = authBloc,
         super(const MembersState()) {
     loadMembers();
   }
@@ -30,7 +35,9 @@ class MembersCubit extends Cubit<MembersState> {
   final UserRepository _userRepository;
   final PresenceCubit _presenceCubit;
   final SocketClient _socketClient;
+  final AuthBloc _authBloc;
   final String spaceId;
+  final String currentUserId;
 
   Future<void> loadMembers() async {
     emit(state.copyWith(isLoading: true, error: null));
@@ -70,9 +77,13 @@ class MembersCubit extends Cubit<MembersState> {
   Future<void> updateMyAvailability(AvailabilityStatus status) async {
     emit(state.copyWith(isUpdatingAvailability: true, error: null));
     try {
-      await _userRepository.updateAvailability(status: status);
+      final availability = await _userRepository.updateAvailability(
+        status: status,
+      );
       _socketClient.updateAvailability(status: status.value);
+      _authBloc.add(AuthAvailabilityUpdated(availability));
       emit(state.copyWith(isUpdatingAvailability: false));
+      applyPresenceUpdate();
     } on AppException catch (e) {
       emit(state.copyWith(isUpdatingAvailability: false, error: e.message));
     }
@@ -81,13 +92,16 @@ class MembersCubit extends Cubit<MembersState> {
   List<SpaceMemberModel> _mergePresence(List<SpaceMemberModel> members) {
     return members.map((m) {
       final presence = _presenceCubit.state[m.user.id];
+      final isSelf = m.user.id == currentUserId;
+      final isOnline = presence?.isOnline ??
+          (isSelf && _socketClient.isConnected ? true : m.isOnline);
       return m.copyWith(
-        isOnline: presence?.isOnline ?? false,
-        user: presence != null
-            ? m.user.copyWith(
-                availability: m.user.availability.copyWith(status: presence.status),
-              )
-            : m.user,
+        isOnline: isOnline,
+        user: m.user.copyWith(
+          availability: m.user.availability.copyWith(
+            status: presence?.status ?? m.user.availability.status,
+          ),
+        ),
       );
     }).toList();
   }

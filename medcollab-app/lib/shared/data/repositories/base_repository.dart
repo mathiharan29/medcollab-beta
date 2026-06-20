@@ -1,6 +1,7 @@
 import 'package:medcollab_app/core/error/app_exception.dart';
 import 'package:medcollab_app/core/network/api_client.dart';
 import 'package:medcollab_app/core/network/api_response.dart';
+import 'package:medcollab_app/core/utils/json_map_utils.dart';
 
 /// Base class for data-layer repositories.
 ///
@@ -29,8 +30,8 @@ abstract class BaseRepository {
     String key,
     T Function(Map<String, dynamic> json) fromJson,
   ) {
-    final nested = data[key];
-    if (nested is! Map<String, dynamic>) {
+    final nested = asJsonMap(data[key]);
+    if (nested == null) {
       throw const UnknownException('Unexpected response format');
     }
     return fromJson(nested);
@@ -44,6 +45,10 @@ abstract class BaseRepository {
   ) {
     final nested = data[key];
     if (nested is! List) return [];
-    return nested.whereType<Map<String, dynamic>>().map(fromJson).toList();
+    return nested
+        .map(asJsonMap)
+        .whereType<Map<String, dynamic>>()
+        .map(fromJson)
+        .toList();
   }
 }

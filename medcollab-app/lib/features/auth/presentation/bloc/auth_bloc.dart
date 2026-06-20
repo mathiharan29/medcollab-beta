@@ -26,6 +26,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthOtpResendRequested>(_onOtpResendRequested);
     on<AuthChangePhoneRequested>(_onChangePhoneRequested);
     on<AuthSessionExpired>(_onSessionExpired);
+    on<AuthAvailabilityUpdated>(_onAvailabilityUpdated);
   }
 
   final AuthRepository _authRepository;
@@ -285,5 +286,18 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       // Ensure local session is cleared even if API fails.
     }
     emit(const AuthState(status: AuthStatus.unauthenticated));
+  }
+
+  void _onAvailabilityUpdated(
+    AuthAvailabilityUpdated event,
+    Emitter<AuthState> emit,
+  ) {
+    final user = state.user;
+    if (user == null) return;
+    emit(
+      state.copyWith(
+        user: user.copyWith(availability: event.availability),
+      ),
+    );
   }
 }

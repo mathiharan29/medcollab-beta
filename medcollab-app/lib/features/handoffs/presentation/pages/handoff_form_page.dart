@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
 import 'package:medcollab_app/core/di/app_dependencies.dart';
 import 'package:medcollab_app/core/error/app_exception.dart';
+import 'package:medcollab_app/core/router/app_routes.dart';
 import 'package:medcollab_app/core/theme/app_colors.dart';
 import 'package:medcollab_app/features/auth/data/models/user_model.dart';
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_bloc.dart';
@@ -14,6 +15,7 @@ import 'package:medcollab_app/features/handoffs/presentation/widgets/handoff_wid
 import 'package:medcollab_app/features/handoffs/presentation/widgets/patient_editor_sheet.dart';
 import 'package:medcollab_app/features/members/data/models/space_member_model.dart';
 import 'package:medcollab_app/features/spaces/data/models/space_model.dart';
+import 'package:medcollab_app/shared/presentation/widgets/app_bottom_bar.dart';
 import 'package:medcollab_app/shared/presentation/widgets/error_banner.dart';
 
 class HandoffFormPage extends StatefulWidget {
@@ -289,10 +291,8 @@ class _HandoffFormPageState extends State<HandoffFormPage> {
                     );
                   },
                 ),
-                bottomNavigationBar: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: BlocBuilder<HandoffFormCubit, HandoffFormState>(
+                bottomNavigationBar: AppBottomBar(
+                  child: BlocBuilder<HandoffFormCubit, HandoffFormState>(
                       builder: (context, state) {
                         return Row(
                           children: [
@@ -311,7 +311,12 @@ class _HandoffFormPageState extends State<HandoffFormPage> {
                                               content: Text('Draft saved'),
                                             ),
                                           );
-                                          context.pop(result);
+                                          context.go(
+                                            AppRoutes.spaceHandoffsPath(
+                                              widget.spaceId,
+                                            ),
+                                            extra: result,
+                                          );
                                         }
                                       },
                                 child: state.isSaving
@@ -335,7 +340,12 @@ class _HandoffFormPageState extends State<HandoffFormPage> {
                                             .read<HandoffFormCubit>()
                                             .submit();
                                         if (result != null && context.mounted) {
-                                          context.pop(result);
+                                          context.go(
+                                            AppRoutes.spaceHandoffsPath(
+                                              widget.spaceId,
+                                            ),
+                                            extra: result,
+                                          );
                                         }
                                       },
                                 child: const Text('Submit'),
@@ -345,7 +355,6 @@ class _HandoffFormPageState extends State<HandoffFormPage> {
                         );
                       },
                     ),
-                  ),
                 ),
               );
             },

@@ -25,6 +25,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const path = require('path');
 
 const { globalLimiter } = require('./middleware/rateLimiter');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
@@ -127,6 +128,14 @@ app.get('/health', (req, res) => {
     uptime: Math.floor(process.uptime()) + 's',
   });
 });
+
+// ── Local media (dev fallback when Cloudinary is not configured) ───────────────
+app.use(
+  '/uploads',
+  express.static(path.join(process.cwd(), 'uploads'), {
+    maxAge: process.env.NODE_ENV === 'production' ? '7d' : 0,
+  }),
+);
 
 // ── API Routes ────────────────────────────────────────────────────────────────
 /**

@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
 import 'package:medcollab_app/core/presence/presence_cubit.dart';
 import 'package:medcollab_app/core/theme/app_colors.dart';
+import 'package:medcollab_app/core/theme/app_decorations.dart';
+import 'package:medcollab_app/core/theme/app_spacing.dart';
 import 'package:medcollab_app/features/members/data/models/space_member_model.dart';
+import 'package:medcollab_app/shared/presentation/widgets/app_avatar.dart';
 
-/// Presence dot + availability label for a member.
+/// Presence indicator — compact dot or labeled pill chip.
 class PresenceIndicator extends StatelessWidget {
   const PresenceIndicator({
     required this.isOnline,
@@ -18,19 +21,19 @@ class PresenceIndicator extends StatelessWidget {
   final bool compact;
 
   Color get _dotColor {
-    if (!isOnline) return AppColors.textSecondary;
+    if (!isOnline) return AppColors.offDuty;
     return switch (status) {
-      AvailabilityStatus.available => AppColors.success,
-      AvailabilityStatus.doNotDisturb => AppColors.warning,
-      AvailabilityStatus.inOt => AppColors.emergency,
-      AvailabilityStatus.offDuty => AppColors.textSecondary,
+      AvailabilityStatus.available => AppColors.available,
+      AvailabilityStatus.doNotDisturb => AppColors.busy,
+      AvailabilityStatus.inOt => AppColors.inOt,
+      AvailabilityStatus.offDuty => AppColors.offDuty,
+      AvailabilityStatus.onCall => AppColors.onCall,
       _ => AppColors.primary,
     };
   }
 
   @override
   Widget build(BuildContext context) {
-    final label = isOnline ? status.presenceLabel : 'Offline';
     if (compact) {
       return Container(
         width: 10,
@@ -38,26 +41,39 @@ class PresenceIndicator extends StatelessWidget {
         decoration: BoxDecoration(
           color: _dotColor,
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: 1.5),
+          border: Border.all(color: AppColors.surface, width: 1.5),
         ),
       );
     }
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(color: _dotColor, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: AppColors.textSecondary,
-              ),
-        ),
-      ],
+
+    final label = isOnline ? status.presenceLabel : 'Offline';
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xxs,
+      ),
+      decoration: AppDecorations.presenceChip(dotColor: _dotColor),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(
+              color: _dotColor,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -85,28 +101,26 @@ class UserProfileSheet extends StatelessWidget {
     final user = member.user;
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.xl,
+          0,
+          AppSpacing.xl,
+          AppSpacing.xl,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                CircleAvatar(
-                  radius: 32,
-                  backgroundColor: AppColors.primary.withValues(alpha: 0.12),
-                  backgroundImage:
-                      user.avatarUrl != null ? NetworkImage(user.avatarUrl!) : null,
-                  child: user.avatarUrl == null
-                      ? Text(
-                          user.displayName.isNotEmpty
-                              ? user.displayName[0].toUpperCase()
-                              : '?',
-                          style: Theme.of(context).textTheme.headlineSmall,
-                        )
-                      : null,
+                AppAvatar(
+                  name: user.displayName,
+                  imageUrl: user.avatarUrl,
+                  size: 56,
+                  showPresence: true,
+                  isOnline: member.isOnline,
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -117,11 +131,9 @@ class UserProfileSheet extends StatelessWidget {
                       ),
                       Text(
                         user.role.label,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
+                        style: Theme.of(context).textTheme.bodySmall,
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: AppSpacing.xs),
                       PresenceIndicator(
                         isOnline: member.isOnline,
                         status: user.availability.status,
@@ -132,14 +144,14 @@ class UserProfileSheet extends StatelessWidget {
               ],
             ),
             if (user.speciality != null) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               _InfoRow(label: 'Speciality', value: user.speciality!),
             ],
             if (user.institution != null)
               _InfoRow(label: 'Institution', value: user.institution!),
             if (user.city != null) _InfoRow(label: 'City', value: user.city!),
             if (user.bio.isNotEmpty) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.sm),
               Text(
                 user.bio,
                 style: Theme.of(context).textTheme.bodyMedium,
@@ -161,7 +173,7 @@ class _InfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.only(top: AppSpacing.xs),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -169,12 +181,15 @@ class _InfoRow extends StatelessWidget {
             width: 100,
             child: Text(
               label,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
+              style: Theme.of(context).textTheme.labelMedium,
             ),
           ),
-          Expanded(child: Text(value)),
+          Expanded(
+            child: Text(
+              value,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ),
         ],
       ),
     );
@@ -196,28 +211,15 @@ class MemberListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = member.user;
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      leading: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          CircleAvatar(
-            backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-            backgroundImage:
-                user.avatarUrl != null ? NetworkImage(user.avatarUrl!) : null,
-            child: user.avatarUrl == null
-                ? Text(user.displayName.isNotEmpty ? user.displayName[0] : '?')
-                : null,
-          ),
-          Positioned(
-            right: -2,
-            bottom: -2,
-            child: PresenceIndicator(
-              isOnline: member.isOnline,
-              status: user.availability.status,
-              compact: true,
-            ),
-          ),
-        ],
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.xxs,
+      ),
+      leading: AppAvatar(
+        name: user.displayName,
+        imageUrl: user.avatarUrl,
+        showPresence: true,
+        isOnline: member.isOnline,
       ),
       title: Text(user.displayName),
       subtitle: Text(

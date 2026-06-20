@@ -57,20 +57,16 @@ class HandoffRepository extends BaseRepository {
     );
   }
 
-  /// Merges space history with the current user's drafts in that space.
+  /// Merges space history with the current user's sent handoffs (drafts + submitted).
   Future<List<HandoffModel>> getHandoffsForSpace(String spaceId) async {
     final spacePage = await getSpaceHandoffs(spaceId, limit: 50);
-    final drafts = await getMyHandoffs(
-      spaceId: spaceId,
-      type: 'sent',
-      status: HandoffStatus.draft,
-    );
+    final mySent = await getMyHandoffs(spaceId: spaceId, type: 'sent');
 
     final merged = <String, HandoffModel>{};
     for (final h in spacePage.handoffs) {
       merged[h.id] = h;
     }
-    for (final h in drafts) {
+    for (final h in mySent) {
       merged[h.id] = h;
     }
 

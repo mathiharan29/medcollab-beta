@@ -34,6 +34,9 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
         _socketClient.joinChannel(channelId);
       }
     });
+    if (_socketClient.isConnected) {
+      _socketClient.joinChannel(channelId);
+    }
     loadMessages();
   }
 

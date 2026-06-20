@@ -13,12 +13,12 @@ const Message = require('../messages/message.model');
 const User = require('../users/user.model');
 const { respond } = require('../../utils/apiResponse');
 const asyncHandler = require('../../utils/asyncHandler');
-const { emitNewMessage } = require('../../socket');
+const { emitNewMessage, getIO } = require('../../socket');
 const {
   notifyHandoffReceived,
   notifyHandoffAcknowledged,
 } = require('../../services/notification.service');
-const { HANDOFF_STATUS, MESSAGE_TYPES } = require('../../constants');
+const { HANDOFF_STATUS, MESSAGE_TYPES, SOCKET_EVENTS } = require('../../constants');
 const logger = require('../../utils/logger');
 
 /**
@@ -206,6 +206,20 @@ const submitHandoff = asyncHandler(async (req, res) => {
 
   if (!handoff) {
     return respond.badRequest(res, 'Handoff is already submitted');
+  }
+
+  // Real-time list refresh for anyone viewing handoffs in this space
+  try {
+    getIO().to(`space:${handoff.spaceId}`).emit(SOCKET_EVENTS.HANDOFF_SUBMITTED, {
+      handoffId: handoff._id.toString(),
+      spaceId: handoff.spaceId.toString(),
+      fromUserId: handoff.fromUserId.toString(),
+      toUserId: handoff.toUserId.toString(),
+      status: handoff.status,
+      submittedAt: handoff.submittedAt?.toISOString(),
+    });
+  } catch (err) {
+    logger.debug(`Handoff socket broadcast skipped: ${err.message}`);
   }
 
   const [fromUser, toUser] = await Promise.all([

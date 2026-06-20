@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:medcollab_app/features/auth/data/models/availability_model.dart';
 
 enum AuthStatus {
   unknown,
@@ -75,4 +76,14 @@ final class AuthOtpResendRequested extends AuthEvent {
 
 final class AuthChangePhoneRequested extends AuthEvent {
   const AuthChangePhoneRequested();
+}
+
+/// Local availability chip changed on the members screen.
+final class AuthAvailabilityUpdated extends AuthEvent {
+  const AuthAvailabilityUpdated(this.availability);
+
+  final AvailabilityModel availability;
+
+  @override
+  List<Object?> get props => [availability];
 }

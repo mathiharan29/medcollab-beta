@@ -126,15 +126,16 @@ const registerPresenceHandlers = (io, socket) => {
  * The event payload tells clients to update the member's status in their UI.
  */
 const broadcastPresenceUpdate = (io, socket, update) => {
+  const userId = socket.userId.toString();
   // The socket already has spaceIds attached (set during auth in socket/index.js)
   const spaceIds = socket.spaceIds || [];
 
   spaceIds.forEach((spaceId) => {
     const room = `space:${spaceId}`;
     io.to(room).emit(SOCKET_EVENTS.PRESENCE_UPDATE, {
-      userId: socket.userId,
+      userId,
       userName: socket.userName,
-      isOnline: update.isOnline,
+      isOnline: update.isOnline ?? isUserOnline(userId),
       availability: update.status
         ? {
             status: update.status,

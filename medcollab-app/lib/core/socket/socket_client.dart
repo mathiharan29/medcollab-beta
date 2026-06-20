@@ -4,6 +4,7 @@ import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'package:medcollab_app/core/config/env_config.dart';
 import 'package:medcollab_app/core/constants/app_constants.dart';
 import 'package:medcollab_app/core/constants/socket_events.dart';
+import 'package:medcollab_app/core/utils/json_map_utils.dart';
 
 /// Real-time client for MedCollab Socket.io server.
 ///
@@ -157,10 +158,8 @@ class SocketClient {
     final controller = _eventControllers[event];
     if (controller == null || controller.isClosed) return;
 
-    if (data is Map<String, dynamic>) {
-      controller.add(data);
-    } else if (data is Map) {
-      controller.add(Map<String, dynamic>.from(data));
+    if (data is Map) {
+      controller.add(deepJsonMap(data));
     }
   }
 

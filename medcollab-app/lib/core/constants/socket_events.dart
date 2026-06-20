@@ -30,6 +30,9 @@ abstract final class SocketEvents {
   // Notifications
   static const String newNotification = 'new_notification';
 
+  // Handoffs
+  static const String handoffSubmitted = 'handoff_submitted';
+
   // Errors
   static const String error = 'error';
 }

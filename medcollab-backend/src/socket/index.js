@@ -173,15 +173,32 @@ const getIO = () => {
  * Called by the message controller after saving a message to MongoDB
  */
 const emitNewMessage = (channelId, message) => {
-  const payload =
+  const doc =
     typeof message.toObject === 'function' ? message.toObject() : message;
+
+  const sender = doc.senderId;
+  const payload = {
+    ...doc,
+    _id: doc._id?.toString(),
+    channelId: channelId.toString(),
+    spaceId: doc.spaceId?.toString(),
+    threadId: doc.threadId?.toString() || null,
+    senderId: sender?._id
+      ? {
+          _id: sender._id.toString(),
+          name: sender.name,
+          displayTitle: sender.displayTitle,
+          role: sender.role,
+          avatarUrl: sender.avatarUrl,
+        }
+      : sender?.toString(),
+    createdAt: doc.createdAt?.toISOString?.() ?? doc.createdAt,
+    updatedAt: doc.updatedAt?.toISOString?.() ?? doc.updatedAt,
+  };
 
   getIO()
     .to(`channel:${channelId}`)
-    .emit(SOCKET_EVENTS.NEW_MESSAGE, {
-      ...payload,
-      channelId: channelId.toString(),
-    });
+    .emit(SOCKET_EVENTS.NEW_MESSAGE, payload);
 };
 
 /**

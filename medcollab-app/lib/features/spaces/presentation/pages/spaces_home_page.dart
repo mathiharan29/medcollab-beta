@@ -6,10 +6,15 @@ import 'package:medcollab_app/core/di/app_dependencies.dart';
 import 'package:medcollab_app/core/error/app_exception.dart';
 import 'package:medcollab_app/core/router/app_routes.dart';
 import 'package:medcollab_app/core/theme/app_colors.dart';
+import 'package:medcollab_app/core/theme/app_spacing.dart';
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_event.dart';
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_state.dart';
 import 'package:medcollab_app/features/spaces/data/models/space_model.dart';
+import 'package:medcollab_app/shared/presentation/widgets/app_avatar.dart';
+import 'package:medcollab_app/shared/presentation/widgets/app_empty_state.dart';
+import 'package:medcollab_app/shared/presentation/widgets/app_skeleton.dart';
+import 'package:medcollab_app/shared/presentation/widgets/app_fab.dart';
 import 'package:medcollab_app/shared/presentation/widgets/error_banner.dart';
 
 /// Post-auth home — lists spaces the user belongs to.
@@ -59,16 +64,15 @@ class _SpacesHomePageState extends State<SpacesHomePage> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: AppFab(
+        label: 'New space',
         onPressed: () => _showCreateDialog(context),
-        icon: const Icon(Icons.add),
-        label: const Text('New space'),
       ),
       body: FutureBuilder<List<SpaceModel>>(
         future: _spacesFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const AppListSkeleton();
           }
 
           if (snapshot.hasError) {
@@ -95,60 +99,57 @@ class _SpacesHomePageState extends State<SpacesHomePage> {
 
           final spaces = snapshot.data ?? [];
           if (spaces.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.domain_outlined,
-                      size: 56,
-                      color: AppColors.textSecondary.withValues(alpha: 0.6),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'No spaces yet',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Create a department space or join with an invite code.',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
+            return const AppEmptyState(
+              icon: Icons.domain_outlined,
+              title: 'No spaces yet',
+              subtitle:
+                  'Create a department space or join with an invite code.',
             );
           }
 
           return RefreshIndicator(
             onRefresh: () async => _reload(),
             child: ListView.separated(
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              padding: const EdgeInsets.symmetric(
+                vertical: AppSpacing.sm,
+                horizontal: AppSpacing.md,
+              ),
               itemCount: spaces.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
+              separatorBuilder: (_, __) =>
+                  const SizedBox(height: AppSpacing.xs),
               itemBuilder: (context, index) {
                 final space = spaces[index];
-                return ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: AppColors.primary.withValues(alpha: 0.12),
-                    child: Text(
-                      space.name.isNotEmpty
-                          ? space.name[0].toUpperCase()
-                          : '?',
-                      style: const TextStyle(color: AppColors.primary),
+                return Material(
+                  color: AppColors.surface,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                    side: const BorderSide(color: AppColors.border),
+                  ),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.xxs,
                     ),
+                    leading: AppAvatar(
+                      name: space.name,
+                      size: 40,
+                    ),
+                    title: Text(
+                      space.name,
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    subtitle: Text(
+                      '${space.channels.length} channels · ${space.type.value}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    trailing: const Icon(
+                      Icons.chevron_right,
+                      color: AppColors.textTertiary,
+                      size: 20,
+                    ),
+                    onTap: () =>
+                        context.push(AppRoutes.spaceDetailPath(space.id)),
                   ),
-                  title: Text(space.name),
-                  subtitle: Text(
-                    '${space.channels.length} channels · ${space.type.value}',
-                  ),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push(AppRoutes.spaceDetailPath(space.id)),
                 );
               },
             ),

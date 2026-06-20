@@ -14,15 +14,29 @@
 const cloudinary = require('cloudinary').v2;
 const logger = require('../utils/logger');
 
+const isCloudinaryConfigured = () => Boolean(
+  process.env.CLOUDINARY_CLOUD_NAME &&
+  process.env.CLOUDINARY_API_KEY &&
+  process.env.CLOUDINARY_API_SECRET &&
+  process.env.CLOUDINARY_CLOUD_NAME !== 'your_cloud_name'
+);
+
 const connectCloudinary = () => {
+  if (!isCloudinaryConfigured()) {
+    logger.warn(
+      'Cloudinary not configured — media uploads will use local disk storage (uploads/)'
+    );
+    return;
+  }
+
   cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET,
-    secure: true, // Always use HTTPS
+    secure: true,
   });
 
   logger.info('Cloudinary configured');
 };
 
-module.exports = { connectCloudinary, cloudinary };
+module.exports = { connectCloudinary, cloudinary, isCloudinaryConfigured };

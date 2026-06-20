@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
 import 'package:medcollab_app/core/constants/socket_events.dart';
 import 'package:medcollab_app/core/socket/socket_client.dart';
+import 'package:medcollab_app/core/utils/json_map_utils.dart';
 
 class PresenceInfo extends Equatable {
   const PresenceInfo({
@@ -50,9 +51,9 @@ class PresenceCubit extends Cubit<Map<String, PresenceInfo>> {
     final userId = data['userId']?.toString();
     if (userId == null) return;
 
-    final availabilityRaw = data['availability'];
+    final availabilityRaw = asJsonMap(data['availability']);
     AvailabilityStatus status = AvailabilityStatus.available;
-    if (availabilityRaw is Map) {
+    if (availabilityRaw != null) {
       status = AvailabilityStatus.fromString(
         availabilityRaw['status']?.toString(),
       );
@@ -62,7 +63,9 @@ class PresenceCubit extends Cubit<Map<String, PresenceInfo>> {
     final existing = updated[userId];
     updated[userId] = PresenceInfo(
       isOnline: data['isOnline'] as bool? ?? existing?.isOnline ?? false,
-      status: availabilityRaw is Map ? status : (existing?.status ?? status),
+      status: availabilityRaw != null
+          ? status
+          : (existing?.status ?? status),
       updatedAt: DateTime.tryParse(data['updatedAt']?.toString() ?? '') ??
           DateTime.now(),
     );

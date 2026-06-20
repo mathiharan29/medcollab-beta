@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
+import 'package:medcollab_app/core/utils/json_map_utils.dart';
 import 'package:medcollab_app/features/auth/data/models/availability_model.dart';
 import 'package:medcollab_app/features/auth/data/models/notification_preferences_model.dart';
 
@@ -42,14 +43,12 @@ class UserModel extends Equatable {
       city: json['city'] as String?,
       avatarUrl: json['avatarUrl'] as String?,
       bio: json['bio'] as String? ?? '',
-      availability: json['availability'] is Map<String, dynamic>
-          ? AvailabilityModel.fromJson(
-              json['availability'] as Map<String, dynamic>,
-            )
+      availability: asJsonMap(json['availability']) != null
+          ? AvailabilityModel.fromJson(asJsonMap(json['availability'])!)
           : const AvailabilityModel(),
-      notifications: json['notifications'] is Map<String, dynamic>
+      notifications: asJsonMap(json['notifications']) != null
           ? NotificationPreferencesModel.fromJson(
-              json['notifications'] as Map<String, dynamic>,
+              asJsonMap(json['notifications'])!,
             )
           : const NotificationPreferencesModel(),
       lastSeenAt: json['lastSeenAt'] != null

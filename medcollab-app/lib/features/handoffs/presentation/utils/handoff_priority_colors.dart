@@ -37,7 +37,7 @@ abstract final class HandoffPriorityColors {
         .where((p) => p.status == PatientStatus.monitoring)
         .isNotEmpty;
     if (monitoring) return AppColors.warning;
-    return AppColors.primary;
+    return AppColors.secondaryMuted;
   }
 
   static String statusLabel(PatientStatus status) => switch (status) {
@@ -55,8 +55,8 @@ abstract final class HandoffPriorityColors {
       };
 
   static Color handoffStatusColor(HandoffStatus status) => switch (status) {
-        HandoffStatus.draft => AppColors.textSecondary,
-        HandoffStatus.submitted => AppColors.warning,
+        HandoffStatus.draft => AppColors.textTertiary,
+        HandoffStatus.submitted => AppColors.accent,
         HandoffStatus.acknowledged => AppColors.success,
       };
 }

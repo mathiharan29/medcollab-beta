@@ -1,4 +1,5 @@
 import 'package:medcollab_app/core/error/app_exception.dart';
+import 'package:medcollab_app/core/utils/json_map_utils.dart';
 
 /// Standard API envelope from the MedCollab backend.
 ///
@@ -20,8 +21,9 @@ class ApiResponse<T> {
     T? parsedData;
 
     if (rawData != null && dataParser != null) {
-      if (rawData is Map<String, dynamic>) {
-        parsedData = dataParser(rawData);
+      final map = asJsonMap(rawData);
+      if (map != null) {
+        parsedData = dataParser(map);
       }
     } else if (rawData == null && dataParser == null) {
       parsedData = null;

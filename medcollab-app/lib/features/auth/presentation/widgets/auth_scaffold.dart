@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:medcollab_app/core/theme/app_colors.dart';
+import 'package:medcollab_app/core/theme/app_spacing.dart';
 
 /// Shared layout for auth screens.
 class AuthScaffold extends StatelessWidget {
@@ -24,7 +25,10 @@ class AuthScaffold extends StatelessWidget {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.xl,
+              vertical: AppSpacing.md,
+            ),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 420),
               child: Column(
@@ -36,21 +40,34 @@ class AuthScaffold extends StatelessWidget {
                       child: IconButton(
                         onPressed: onBack,
                         icon: const Icon(Icons.arrow_back),
+                        color: AppColors.textSecondary,
                       ),
                     ),
-                  const SizedBox(height: 8),
-                  Icon(
-                    Icons.medical_services_outlined,
-                    size: 48,
-                    color: Theme.of(context).colorScheme.primary,
+                  const SizedBox(height: AppSpacing.xs),
+                  Center(
+                    child: Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryMuted,
+                        borderRadius:
+                            BorderRadius.circular(AppSpacing.radiusMd),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: const Icon(
+                        Icons.medical_services_outlined,
+                        size: 28,
+                        color: AppColors.primary,
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: AppSpacing.lg),
                   Text(
                     title,
-                    style: Theme.of(context).textTheme.headlineSmall,
+                    style: Theme.of(context).textTheme.headlineMedium,
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.xs),
                   Text(
                     subtitle,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -58,7 +75,7 @@ class AuthScaffold extends StatelessWidget {
                         ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: AppSpacing.xxl),
                   child,
                 ],
               ),

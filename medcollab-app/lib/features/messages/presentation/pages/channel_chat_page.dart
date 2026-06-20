@@ -11,6 +11,8 @@ import 'package:medcollab_app/features/messages/presentation/pages/thread_page.d
 import 'package:medcollab_app/features/messages/presentation/utils/message_list_utils.dart';
 import 'package:medcollab_app/features/messages/presentation/widgets/message_widgets.dart';
 import 'package:medcollab_app/features/spaces/data/models/channel_model.dart';
+import 'package:medcollab_app/shared/presentation/widgets/app_empty_state.dart';
+import 'package:medcollab_app/shared/presentation/widgets/app_skeleton.dart';
 import 'package:medcollab_app/shared/presentation/widgets/error_banner.dart';
 
 class ChannelChatPage extends StatefulWidget {
@@ -146,9 +148,7 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
                     },
                     builder: (context, state) {
                       if (state.isLoading && state.messages.isEmpty) {
-                        return const Center(
-                          child: CircularProgressIndicator(),
-                        );
+                        return const AppMessageSkeleton();
                       }
 
                       final listItems = buildMessageListItems(
@@ -238,34 +238,11 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
 class _EmptyChatState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.chat_bubble_outline,
-              size: 48,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No messages yet',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Start a topic — share images, PDFs, or text.\n'
-              'Use threads to discuss each patient.',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-            ),
-          ],
-        ),
-      ),
+    return const AppEmptyState(
+      icon: Icons.chat_bubble_outline,
+      title: 'No messages yet',
+      subtitle:
+          'Start a topic — share images, PDFs, or text.\nUse threads to discuss each patient.',
     );
   }
 }

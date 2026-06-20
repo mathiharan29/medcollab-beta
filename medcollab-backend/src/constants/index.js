@@ -156,6 +156,9 @@ const SOCKET_EVENTS = {
   // Notifications
   NEW_NOTIFICATION: 'new_notification',
 
+  // Handoffs
+  HANDOFF_SUBMITTED: 'handoff_submitted',
+
   // Errors
   ERROR: 'error',
 };

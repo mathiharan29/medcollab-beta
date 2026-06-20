@@ -8,6 +8,7 @@ const escapeRegex = require('../../utils/escapeRegex');
 const asyncHandler = require('../../utils/asyncHandler');
 const { emitNotification } = require('../../socket');
 const { getIO } = require('../../socket');
+const { isUserOnline } = require('../../socket/handlers/presence.handler');
 const { SOCKET_EVENTS } = require('../../constants');
 const logger = require('../../utils/logger');
 
@@ -83,7 +84,8 @@ const updateAvailability = asyncHandler(async (req, res) => {
     const io = getIO();
     spaces.forEach(({ _id }) => {
       io.to(`space:${_id}`).emit(SOCKET_EVENTS.PRESENCE_UPDATE, {
-        userId: req.user._id,
+        userId: req.user._id.toString(),
+        isOnline: isUserOnline(req.user._id),
         availability: updated.availability,
         updatedAt: new Date().toISOString(),
       });

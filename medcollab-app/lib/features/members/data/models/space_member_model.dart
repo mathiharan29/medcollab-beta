@@ -14,6 +14,7 @@ class SpaceMemberModel extends Equatable {
     return SpaceMemberModel(
       user: UserModel.fromJson(json),
       spaceRole: SpaceRole.fromString(json['spaceRole'] as String?),
+      isOnline: json['isOnline'] as bool? ?? false,
     );
   }
 

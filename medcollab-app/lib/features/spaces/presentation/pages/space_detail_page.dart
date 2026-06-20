@@ -5,9 +5,14 @@ import 'package:medcollab_app/core/di/app_dependencies.dart';
 import 'package:medcollab_app/core/error/app_exception.dart';
 import 'package:medcollab_app/core/router/app_routes.dart';
 import 'package:medcollab_app/core/theme/app_colors.dart';
+import 'package:medcollab_app/core/theme/app_spacing.dart';
+import 'package:medcollab_app/shared/presentation/widgets/app_fab.dart';
+import 'package:medcollab_app/shared/presentation/widgets/app_search_bar.dart';
 import 'package:medcollab_app/features/channels/presentation/widgets/create_channel_dialog.dart';
 import 'package:medcollab_app/features/spaces/data/models/channel_model.dart';
 import 'package:medcollab_app/features/spaces/data/models/space_model.dart';
+import 'package:medcollab_app/shared/presentation/widgets/app_empty_state.dart';
+import 'package:medcollab_app/shared/presentation/widgets/app_skeleton.dart';
 import 'package:medcollab_app/shared/presentation/widgets/error_banner.dart';
 
 class SpaceDetailPage extends StatefulWidget {
@@ -107,20 +112,20 @@ class _SpaceDetailPageState extends State<SpaceDetailPage> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: AppFab(
+        label: 'Channel',
+        icon: Icons.add,
         onPressed: () => CreateChannelDialog.show(
           context,
           spaceId: widget.spaceId,
           onCreated: (_) => _reload(),
         ),
-        icon: const Icon(Icons.add),
-        label: const Text('Channel'),
       ),
       body: FutureBuilder<SpaceModel>(
         future: _spaceFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const AppListSkeleton();
           }
 
           if (snapshot.hasError || !snapshot.hasData) {
@@ -154,12 +159,17 @@ class _SpaceDetailPageState extends State<SpaceDetailPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (space.inviteCode != null)
-                Material(
-                  color: AppColors.primary.withValues(alpha: 0.06),
+                Container(
+                  decoration: const BoxDecoration(
+                    color: AppColors.primaryMuted,
+                    border: Border(
+                      bottom: BorderSide(color: AppColors.border),
+                    ),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.sm,
                     ),
                     child: Row(
                       children: [
@@ -176,23 +186,50 @@ class _SpaceDetailPageState extends State<SpaceDetailPage> {
                   ),
                 ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                child: Card(
-                  clipBehavior: Clip.antiAlias,
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                  AppSpacing.md,
+                  AppSpacing.xs,
+                ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                    border: Border.all(color: AppColors.border),
+                  ),
                   child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor:
-                          AppColors.primary.withValues(alpha: 0.12),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.xxs,
+                    ),
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryMuted,
+                        borderRadius:
+                            BorderRadius.circular(AppSpacing.radiusSm),
+                        border: Border.all(color: AppColors.border),
+                      ),
                       child: const Icon(
                         Icons.assignment_outlined,
                         color: AppColors.primary,
+                        size: 20,
                       ),
                     ),
-                    title: const Text('Shift handoffs'),
-                    subtitle: const Text(
-                      'Structured patient handover between shifts',
+                    title: Text(
+                      'Shift handoffs',
+                      style: Theme.of(context).textTheme.titleSmall,
                     ),
-                    trailing: const Icon(Icons.chevron_right),
+                    subtitle: Text(
+                      'Structured patient handover between shifts',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    trailing: const Icon(
+                      Icons.chevron_right,
+                      color: AppColors.textTertiary,
+                    ),
                     onTap: () => context.push(
                       AppRoutes.spaceHandoffsPath(widget.spaceId),
                     ),
@@ -200,54 +237,57 @@ class _SpaceDetailPageState extends State<SpaceDetailPage> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                child: SearchBar(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.xs,
+                  AppSpacing.md,
+                  AppSpacing.xs,
+                ),
+                child: AppSearchBar(
                   controller: _searchController,
                   hintText: 'Search channels…',
-                  leading: const Icon(Icons.search),
                   onChanged: (_) => setState(() {}),
-                  trailing: [
-                    if (_searchController.text.isNotEmpty)
-                      IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() {});
-                        },
-                      ),
-                  ],
+                  onClear: () {
+                    _searchController.clear();
+                    setState(() {});
+                  },
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.xs,
+                  AppSpacing.md,
+                  AppSpacing.xs,
+                ),
                 child: Text(
                   '${filtered.length} channel${filtered.length == 1 ? '' : 's'}',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
+                  style: Theme.of(context).textTheme.labelMedium,
                 ),
               ),
               Expanded(
                 child: filtered.isEmpty
-                    ? Center(
-                        child: Text(
-                          _searchController.text.isEmpty
-                              ? 'No channels yet'
-                              : 'No channels match "${_searchController.text}"',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppColors.textSecondary,
-                              ),
-                        ),
+                    ? AppEmptyState(
+                        icon: Icons.tag_outlined,
+                        title: _searchController.text.isEmpty
+                            ? 'No channels yet'
+                            : 'No matches found',
+                        subtitle: _searchController.text.isEmpty
+                            ? 'Create a channel to start collaborating.'
+                            : 'Try a different search term.',
                       )
-                    : ListView.separated(
+                    : ListView.builder(
+                        padding: const EdgeInsets.only(bottom: 88),
                         itemCount: filtered.length,
-                        separatorBuilder: (_, __) => const Divider(height: 1),
                         itemBuilder: (context, index) {
                           final channel = filtered[index];
                           return _ChannelTile(
                             channel: channel,
                             onTap: () => context.push(
-                              AppRoutes.channelPath(widget.spaceId, channel.id),
+                              AppRoutes.channelPath(
+                                widget.spaceId,
+                                channel.id,
+                              ),
                               extra: channel,
                             ),
                           );
@@ -273,40 +313,91 @@ class _ChannelTile extends StatelessWidget {
     final preview = channel.lastMessage?.text;
     final isEmergency = channel.type == ChannelType.emergency;
 
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      leading: Icon(
-        channel.isPrivate ? Icons.lock_outline : Icons.tag,
-        color: isEmergency ? AppColors.emergency : AppColors.textSecondary,
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.xxs,
       ),
-      title: Text(
-        channel.displayName,
-        style: TextStyle(
-          fontWeight: isEmergency ? FontWeight.w600 : FontWeight.w500,
-          color: isEmergency ? AppColors.emergency : null,
+      child: Material(
+        color: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          side: const BorderSide(color: AppColors.border),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: isEmergency
+                        ? AppColors.emergency.withValues(alpha: 0.08)
+                        : AppColors.surfaceMuted,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                    border: Border.all(
+                      color: isEmergency
+                          ? AppColors.emergency.withValues(alpha: 0.2)
+                          : AppColors.border,
+                    ),
+                  ),
+                  child: Icon(
+                    channel.isPrivate ? Icons.lock_outline : Icons.tag,
+                    size: 18,
+                    color: isEmergency
+                        ? AppColors.emergency
+                        : AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        channel.displayName,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              color: isEmergency ? AppColors.emergency : null,
+                            ),
+                      ),
+                      if (channel.description.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          channel.description,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                      if (preview != null && preview.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.xxs),
+                        Text(
+                          preview,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: AppColors.textTertiary,
+                              ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const Icon(
+                  Icons.chevron_right,
+                  size: 18,
+                  color: AppColors.textTertiary,
+                ),
+              ],
+            ),
+          ),
         ),
       ),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (channel.description.isNotEmpty)
-            Text(
-              channel.description,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-            ),
-          if (preview != null && preview.isNotEmpty)
-            Text(
-              preview,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-        ],
-      ),
-      onTap: onTap,
     );
   }
 }

@@ -3,10 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
 import 'package:medcollab_app/core/di/app_dependencies.dart';
 import 'package:medcollab_app/core/presence/presence_cubit.dart';
-import 'package:medcollab_app/core/theme/app_colors.dart';
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:medcollab_app/features/members/presentation/cubit/members_cubit.dart';
 import 'package:medcollab_app/features/members/presentation/widgets/member_widgets.dart';
+import 'package:medcollab_app/shared/presentation/widgets/app_empty_state.dart';
+import 'package:medcollab_app/shared/presentation/widgets/app_search_bar.dart';
+import 'package:medcollab_app/shared/presentation/widgets/app_skeleton.dart';
 import 'package:medcollab_app/shared/presentation/widgets/error_banner.dart';
 
 /// Space member list with search and presence indicators.
@@ -43,7 +45,9 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
         userRepository: deps.userRepository,
         presenceCubit: deps.presenceCubit,
         socketClient: deps.socketClient,
+        authBloc: deps.authBloc,
         spaceId: widget.spaceId,
+        currentUserId: context.read<AuthBloc>().state.user?.id ?? '',
       ),
       child: BlocListener<PresenceCubit, Map<String, PresenceInfo>>(
         bloc: deps.presenceCubit,
@@ -60,22 +64,18 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
                 children: [
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                    child: SearchBar(
+                    child: AppSearchBar(
                       controller: _searchController,
                       hintText: 'Search members…',
-                      leading: const Icon(Icons.search),
-                      onChanged: (q) =>
-                          context.read<MembersCubit>().search(q),
-                      trailing: [
-                        if (_searchController.text.isNotEmpty)
-                          IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () {
-                              _searchController.clear();
-                              context.read<MembersCubit>().search('');
-                            },
-                          ),
-                      ],
+                      onChanged: (q) {
+                        setState(() {});
+                        context.read<MembersCubit>().search(q);
+                      },
+                      onClear: () {
+                        _searchController.clear();
+                        setState(() {});
+                        context.read<MembersCubit>().search('');
+                      },
                     ),
                   ),
                   _PresencePicker(),
@@ -83,9 +83,7 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
                     child: BlocBuilder<MembersCubit, MembersState>(
                       builder: (context, state) {
                         if (state.isLoading && state.members.isEmpty) {
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
+                          return const AppListSkeleton();
                         }
 
                         final members = state.filteredMembers;
@@ -98,18 +96,14 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
                               ),
                             Expanded(
                               child: members.isEmpty
-                                  ? Center(
-                                      child: Text(
-                                        state.searchQuery.isEmpty
-                                            ? 'No members found'
-                                            : 'No members match "${state.searchQuery}"',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyMedium
-                                            ?.copyWith(
-                                              color: AppColors.textSecondary,
-                                            ),
-                                      ),
+                                  ? AppEmptyState(
+                                      icon: Icons.people_outline,
+                                      title: state.searchQuery.isEmpty
+                                          ? 'No members found'
+                                          : 'No matches found',
+                                      subtitle: state.searchQuery.isEmpty
+                                          ? null
+                                          : 'Try a different search term.',
                                     )
                                   : ListView.separated(
                                       itemCount: members.length,

@@ -15,14 +15,14 @@ class MediaUploadResult extends Equatable {
 
   factory MediaUploadResult.fromJson(Map<String, dynamic> json) {
     return MediaUploadResult(
-      url: json['url'] as String,
+      url: json['url'] as String? ?? '',
       thumbnailUrl: json['thumbnailUrl'] as String?,
-      publicId: json['publicId'] as String,
+      publicId: json['publicId'] as String? ?? '',
       fileName: json['fileName'] as String? ?? 'file',
-      fileSize: json['fileSize'] as int? ?? 0,
+      fileSize: (json['fileSize'] as num?)?.toInt() ?? 0,
       mimeType: json['mimeType'] as String? ?? 'application/octet-stream',
-      width: json['width'] as int?,
-      height: json['height'] as int?,
+      width: (json['width'] as num?)?.toInt(),
+      height: (json['height'] as num?)?.toInt(),
     );
   }
 

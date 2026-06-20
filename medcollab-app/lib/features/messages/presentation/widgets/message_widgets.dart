@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
 import 'package:medcollab_app/core/theme/app_colors.dart';
+import 'package:medcollab_app/core/theme/app_decorations.dart';
+import 'package:medcollab_app/core/theme/app_spacing.dart';
 import 'package:medcollab_app/features/messages/data/models/message_delivery_state.dart';
 import 'package:medcollab_app/features/messages/data/models/message_model.dart';
 import 'package:medcollab_app/features/messages/data/models/thread_reply_preview.dart';
@@ -72,12 +74,20 @@ class MessageComposer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      elevation: 4,
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(top: BorderSide(color: AppColors.border)),
+      ),
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.sm,
+            AppSpacing.sm,
+            AppSpacing.sm,
+            AppSpacing.sm,
+          ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -85,6 +95,7 @@ class MessageComposer extends StatelessWidget {
                 IconButton(
                   onPressed: isBusy ? null : () => _showAttachMenu(context),
                   icon: const Icon(Icons.add_circle_outline),
+                  color: AppColors.textSecondary,
                   tooltip: 'Attach',
                 ),
               Expanded(
@@ -96,26 +107,53 @@ class MessageComposer extends StatelessWidget {
                   enabled: !isBusy,
                   decoration: InputDecoration(
                     hintText: hintText,
-                    border: const OutlineInputBorder(),
+                    filled: true,
+                    fillColor: AppColors.background,
+                    border: OutlineInputBorder(
+                      borderRadius:
+                          BorderRadius.circular(AppSpacing.radiusMd),
+                      borderSide: const BorderSide(color: AppColors.border),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius:
+                          BorderRadius.circular(AppSpacing.radiusMd),
+                      borderSide: const BorderSide(color: AppColors.border),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius:
+                          BorderRadius.circular(AppSpacing.radiusMd),
+                      borderSide: const BorderSide(
+                        color: AppColors.primary,
+                        width: 1.5,
+                      ),
+                    ),
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
+                      horizontal: AppSpacing.sm,
+                      vertical: AppSpacing.sm,
                     ),
                   ),
                   onSubmitted: isBusy ? null : onSend,
                 ),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: AppSpacing.xs),
               IconButton.filled(
+                style: IconButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: AppColors.surfaceVariant,
+                ),
                 onPressed: isBusy ? null : () => onSend(controller.text),
                 icon: isBusy
                     ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
                       )
-                    : const Icon(Icons.send),
+                    : const Icon(Icons.arrow_upward_rounded, size: 20),
               ),
             ],
           ),
@@ -134,19 +172,23 @@ class DateSeparatorChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
       child: Center(
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.xxs,
+          ),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(12),
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+            border: Border.all(color: AppColors.border),
           ),
           child: Text(
             label,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   color: AppColors.textSecondary,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w500,
                 ),
           ),
         ),
@@ -163,10 +205,18 @@ class ParentMessagePreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.primary.withValues(alpha: 0.06),
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.primaryMuted,
+        border: Border(bottom: BorderSide(color: AppColors.border)),
+      ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.sm,
+          AppSpacing.md,
+          AppSpacing.sm,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -291,18 +341,11 @@ class MessageBubbleContent extends StatelessWidget {
         : '';
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: isMine
-            ? AppColors.primary.withValues(alpha: 0.12)
-            : Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.only(
-          topLeft: const Radius.circular(12),
-          topRight: const Radius.circular(12),
-          bottomLeft: Radius.circular(isMine ? 12 : 4),
-          bottomRight: Radius.circular(isMine ? 4 : 12),
-        ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs + 2,
       ),
+      decoration: AppDecorations.bubble(isMine: isMine),
       child: Column(
         crossAxisAlignment:
             isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
@@ -313,7 +356,7 @@ class MessageBubbleContent extends StatelessWidget {
               child: Text(
                 message.sender.displayName,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: AppColors.primary,
+                      color: AppColors.secondary,
                       fontWeight: FontWeight.w600,
                     ),
               ),
@@ -426,10 +469,10 @@ class _MessageBody extends StatelessWidget {
         onTap: url != null && !message.localOnly ? () => onDocumentTap(url) : null,
         borderRadius: BorderRadius.circular(8),
         child: Container(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(AppSpacing.sm),
           decoration: BoxDecoration(
             color: AppColors.surface,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
             border: Border.all(color: AppColors.border),
           ),
           child: Row(
@@ -537,10 +580,13 @@ class ThreadCountBadge extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
+        ),
         decoration: BoxDecoration(
           border: Border.all(color: AppColors.border),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
           color: AppColors.surface,
         ),
         child: Row(

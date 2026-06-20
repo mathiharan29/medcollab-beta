@@ -4,10 +4,14 @@ import 'package:go_router/go_router.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
 import 'package:medcollab_app/core/di/app_dependencies.dart';
 import 'package:medcollab_app/core/router/app_routes.dart';
-import 'package:medcollab_app/core/theme/app_colors.dart';
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:medcollab_app/features/handoffs/data/models/handoff_model.dart';
 import 'package:medcollab_app/features/handoffs/presentation/cubit/handoffs_cubit.dart';
 import 'package:medcollab_app/features/handoffs/presentation/widgets/handoff_widgets.dart';
+import 'package:medcollab_app/shared/presentation/widgets/app_fab.dart';
+import 'package:medcollab_app/shared/presentation/widgets/app_search_bar.dart';
+import 'package:medcollab_app/shared/presentation/widgets/app_empty_state.dart';
+import 'package:medcollab_app/shared/presentation/widgets/app_skeleton.dart';
 import 'package:medcollab_app/shared/presentation/widgets/error_banner.dart';
 
 class HandoffsListPage extends StatefulWidget {
@@ -40,45 +44,50 @@ class _HandoffsListPageState extends State<HandoffsListPage> {
         context.read<AuthBloc>().state.user?.id ?? '';
 
     return BlocProvider(
-      create: (_) => HandoffsCubit(
-        handoffRepository: deps.handoffRepository,
-        socketClient: deps.socketClient,
-        spaceId: widget.spaceId,
-        currentUserId: currentUserId,
-      ),
+      create: (context) {
+        final extra = GoRouterState.of(context).extra;
+        return HandoffsCubit(
+          handoffRepository: deps.handoffRepository,
+          socketClient: deps.socketClient,
+          spaceId: widget.spaceId,
+          currentUserId: currentUserId,
+          initialHandoff: extra is HandoffModel ? extra : null,
+        );
+      },
       child: Builder(
         builder: (context) {
           return Scaffold(
             appBar: AppBar(
               title: Text(widget.spaceName ?? 'Handoffs'),
             ),
-            floatingActionButton: FloatingActionButton.extended(
-              onPressed: () => context.push(
-                AppRoutes.spaceHandoffCreatePath(widget.spaceId),
-              ),
-              icon: const Icon(Icons.assignment_outlined),
-              label: const Text('New handoff'),
+            floatingActionButton: AppFab(
+              label: 'New handoff',
+              icon: Icons.assignment_outlined,
+              onPressed: () async {
+                await context.push(
+                  AppRoutes.spaceHandoffCreatePath(widget.spaceId),
+                );
+                if (context.mounted) {
+                  await context.read<HandoffsCubit>().loadHandoffs();
+                }
+              },
             ),
             body: Column(
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                  child: SearchBar(
+                  child: AppSearchBar(
                     controller: _searchController,
                     hintText: 'Search handoffs…',
-                    leading: const Icon(Icons.search),
-                    onChanged: (q) =>
-                        context.read<HandoffsCubit>().search(q),
-                    trailing: [
-                      if (_searchController.text.isNotEmpty)
-                        IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            _searchController.clear();
-                            context.read<HandoffsCubit>().search('');
-                          },
-                        ),
-                    ],
+                    onChanged: (q) {
+                      setState(() {});
+                      context.read<HandoffsCubit>().search(q);
+                    },
+                    onClear: () {
+                      _searchController.clear();
+                      setState(() {});
+                      context.read<HandoffsCubit>().search('');
+                    },
                   ),
                 ),
                 BlocBuilder<HandoffsCubit, HandoffsState>(
@@ -111,9 +120,7 @@ class _HandoffsListPageState extends State<HandoffsListPage> {
                   child: BlocBuilder<HandoffsCubit, HandoffsState>(
                     builder: (context, state) {
                       if (state.isLoading && state.handoffs.isEmpty) {
-                        return const Center(
-                          child: CircularProgressIndicator(),
-                        );
+                        return const AppCardSkeleton();
                       }
 
                       final items = state.visibleHandoffs;
@@ -129,31 +136,14 @@ class _HandoffsListPageState extends State<HandoffsListPage> {
                               ),
                             Expanded(
                               child: items.isEmpty
-                                  ? ListView(
-                                      children: [
-                                        const SizedBox(height: 80),
-                                        Icon(
-                                          Icons.assignment_outlined,
-                                          size: 48,
-                                          color: AppColors.textSecondary
-                                              .withValues(alpha: 0.5),
-                                        ),
-                                        const SizedBox(height: 12),
-                                        Center(
-                                          child: Text(
-                                            state.searchQuery.isEmpty
-                                                ? 'No ${state.filter == HandoffListFilter.active ? 'active' : 'archived'} handoffs'
-                                                : 'No matches for "${state.searchQuery}"',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyMedium
-                                                ?.copyWith(
-                                                  color:
-                                                      AppColors.textSecondary,
-                                                ),
-                                          ),
-                                        ),
-                                      ],
+                                  ? AppEmptyState(
+                                      icon: Icons.assignment_outlined,
+                                      title: state.searchQuery.isEmpty
+                                          ? 'No ${state.filter == HandoffListFilter.active ? 'active' : 'archived'} handoffs'
+                                          : 'No matches found',
+                                      subtitle: state.searchQuery.isEmpty
+                                          ? 'Create a handoff to transfer patient responsibility.'
+                                          : 'Try a different search term.',
                                     )
                                   : ListView.builder(
                                       padding:
@@ -170,12 +160,19 @@ class _HandoffsListPageState extends State<HandoffsListPage> {
                                                     currentUserId;
                                         return HandoffListTile(
                                           handoff: handoff,
-                                          onTap: () => context.push(
-                                            AppRoutes.spaceHandoffDetailPath(
-                                              widget.spaceId,
-                                              handoff.id,
-                                            ),
-                                          ),
+                                          onTap: () async {
+                                            await context.push(
+                                              AppRoutes.spaceHandoffDetailPath(
+                                                widget.spaceId,
+                                                handoff.id,
+                                              ),
+                                            );
+                                            if (context.mounted) {
+                                              await context
+                                                  .read<HandoffsCubit>()
+                                                  .loadHandoffs();
+                                            }
+                                          },
                                           onArchive: canArchive
                                               ? () => context
                                                   .read<HandoffsCubit>()

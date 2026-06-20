@@ -219,6 +219,7 @@ const getMembers = asyncHandler(async (req, res) => {
   if (!space.isMember(req.user._id)) return respond.forbidden(res, 'Not a member');
 
   const User = require('../users/user.model');
+  const { isUserOnline } = require('../../socket/handlers/presence.handler');
   const memberIds = space.members.map((m) => m.userId);
 
   const users = await User.find({ _id: { $in: memberIds } })
@@ -234,6 +235,7 @@ const getMembers = asyncHandler(async (req, res) => {
   const members = users.map((u) => ({
     ...u,
     spaceRole: roleMap[u._id.toString()],
+    isOnline: isUserOnline(u._id),
   }));
 
   // Sort: on_call → in_ot → available → others → off_duty

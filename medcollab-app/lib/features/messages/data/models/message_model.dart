@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:medcollab_app/core/utils/json_map_utils.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
 import 'package:medcollab_app/features/auth/data/models/user_model.dart';
 import 'package:medcollab_app/features/messages/data/models/message_delivery_state.dart';
@@ -76,29 +77,30 @@ class MessageModel extends Equatable {
 
   factory MessageModel.fromJson(Map<String, dynamic> json) {
     final id = json['_id'] ?? json['id'];
-    final senderRaw = json['senderId'];
+    final senderJson = asJsonMap(json['senderId']) ?? asJsonMap(json['sender']);
     final UserModel sender;
-    if (senderRaw is Map<String, dynamic>) {
-      sender = UserModel.fromJson(senderRaw);
+    if (senderJson != null) {
+      sender = UserModel.fromJson(senderJson);
     } else {
-      sender = UserModel(id: senderRaw?.toString() ?? '');
+      sender = UserModel(id: json['senderId']?.toString() ?? '');
     }
+
+    final contentJson = asJsonMap(json['content']);
+    final lastReplyJson = asJsonMap(json['lastReply']);
 
     return MessageModel(
       id: id.toString(),
       channelId: json['channelId']?.toString() ?? '',
       sender: sender,
       type: MessageType.fromString(json['type'] as String?),
-      content: json['content'] is Map<String, dynamic>
-          ? MessageContent.fromJson(json['content'] as Map<String, dynamic>)
+      content: contentJson != null
+          ? MessageContent.fromJson(contentJson)
           : const MessageContent(),
       priority: MessagePriority.fromString(json['priority'] as String?),
       threadId: json['threadId']?.toString(),
       replyCount: json['replyCount'] as int? ?? 0,
-      lastReply: json['lastReply'] is Map<String, dynamic>
-          ? ThreadReplyPreview.fromJson(
-              json['lastReply'] as Map<String, dynamic>,
-            )
+      lastReply: lastReplyJson != null
+          ? ThreadReplyPreview.fromJson(lastReplyJson)
           : null,
       isEdited: json['isEdited'] as bool? ?? false,
       isDeleted: json['isDeleted'] as bool? ?? false,

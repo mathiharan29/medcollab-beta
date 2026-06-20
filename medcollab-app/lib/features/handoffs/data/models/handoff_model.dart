@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:medcollab_app/core/utils/json_map_utils.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
 import 'package:medcollab_app/features/auth/data/models/user_model.dart';
 import 'package:medcollab_app/features/handoffs/data/models/handoff_patient_model.dart';
@@ -43,6 +44,7 @@ class HandoffModel extends Equatable {
       shiftType: ShiftType.fromString(json['shiftType'] as String?),
       patients: json['patients'] is List
           ? (json['patients'] as List)
+              .map(asJsonMap)
               .whereType<Map<String, dynamic>>()
               .map(HandoffPatientModel.fromJson)
               .toList()
