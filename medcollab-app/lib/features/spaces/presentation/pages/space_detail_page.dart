@@ -5,6 +5,7 @@ import 'package:medcollab_app/core/di/app_dependencies.dart';
 import 'package:medcollab_app/core/error/app_exception.dart';
 import 'package:medcollab_app/core/router/app_routes.dart';
 import 'package:medcollab_app/core/theme/app_colors.dart';
+import 'package:medcollab_app/features/channels/presentation/widgets/create_channel_dialog.dart';
 import 'package:medcollab_app/features/spaces/data/models/channel_model.dart';
 import 'package:medcollab_app/features/spaces/data/models/space_model.dart';
 import 'package:medcollab_app/shared/presentation/widgets/error_banner.dart';
@@ -20,18 +21,50 @@ class SpaceDetailPage extends StatefulWidget {
 
 class _SpaceDetailPageState extends State<SpaceDetailPage> {
   final _spaceRepository = AppDependencies.instance.spaceRepository;
+  final _memberRepository = AppDependencies.instance.memberRepository;
+  final _searchController = TextEditingController();
   late Future<SpaceModel> _spaceFuture;
+  int? _memberCount;
 
   @override
   void initState() {
     super.initState();
     _spaceFuture = _spaceRepository.getSpaceById(widget.spaceId);
+    _loadMemberCount();
+  }
+
+  Future<void> _loadMemberCount() async {
+    try {
+      final members = await _memberRepository.getSpaceMembers(widget.spaceId);
+      if (mounted) setState(() => _memberCount = members.length);
+    } catch (_) {
+      // Non-blocking — member count is supplementary.
+    }
   }
 
   void _reload() {
     setState(() {
       _spaceFuture = _spaceRepository.getSpaceById(widget.spaceId);
     });
+    _loadMemberCount();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<ChannelModel> _filterChannels(List<ChannelModel> channels, String query) {
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty) return channels;
+    return channels
+        .where(
+          (c) =>
+              c.name.toLowerCase().contains(q) ||
+              c.description.toLowerCase().contains(q),
+        )
+        .toList();
   }
 
   @override
@@ -40,9 +73,42 @@ class _SpaceDetailPageState extends State<SpaceDetailPage> {
       appBar: AppBar(
         title: FutureBuilder<SpaceModel>(
           future: _spaceFuture,
-          builder: (context, snapshot) =>
-              Text(snapshot.data?.name ?? 'Space'),
+          builder: (context, snapshot) {
+            final space = snapshot.data;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(space?.name ?? 'Space'),
+                if (_memberCount != null)
+                  Text(
+                    '$_memberCount members',
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
+              ],
+            );
+          },
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.people_outline),
+            tooltip: 'Members',
+            onPressed: () {
+              context.push(
+                AppRoutes.spaceMembersPath(widget.spaceId),
+                extra: null,
+              );
+            },
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => CreateChannelDialog.show(
+          context,
+          spaceId: widget.spaceId,
+          onCreated: (_) => _reload(),
+        ),
+        icon: const Icon(Icons.add),
+        label: const Text('Channel'),
       ),
       body: FutureBuilder<SpaceModel>(
         future: _spaceFuture,
@@ -76,6 +142,7 @@ class _SpaceDetailPageState extends State<SpaceDetailPage> {
           final space = snapshot.data!;
           final channels = List<ChannelModel>.from(space.channels)
             ..sort((a, b) => a.position.compareTo(b.position));
+          final filtered = _filterChannels(channels, _searchController.text);
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -103,29 +170,59 @@ class _SpaceDetailPageState extends State<SpaceDetailPage> {
                   ),
                 ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                child: SearchBar(
+                  controller: _searchController,
+                  hintText: 'Search channels…',
+                  leading: const Icon(Icons.search),
+                  onChanged: (_) => setState(() {}),
+                  trailing: [
+                    if (_searchController.text.isNotEmpty)
+                      IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {});
+                        },
+                      ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                 child: Text(
-                  'Channels',
+                  '${filtered.length} channel${filtered.length == 1 ? '' : 's'}',
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         color: AppColors.textSecondary,
                       ),
                 ),
               ),
               Expanded(
-                child: ListView.separated(
-                  itemCount: channels.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
-                  itemBuilder: (context, index) {
-                    final channel = channels[index];
-                    return _ChannelTile(
-                      channel: channel,
-                      onTap: () => context.push(
-                        AppRoutes.channelPath(widget.spaceId, channel.id),
-                        extra: channel,
+                child: filtered.isEmpty
+                    ? Center(
+                        child: Text(
+                          _searchController.text.isEmpty
+                              ? 'No channels yet'
+                              : 'No channels match "${_searchController.text}"',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                        ),
+                      )
+                    : ListView.separated(
+                        itemCount: filtered.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final channel = filtered[index];
+                          return _ChannelTile(
+                            channel: channel,
+                            onTap: () => context.push(
+                              AppRoutes.channelPath(widget.spaceId, channel.id),
+                              extra: channel,
+                            ),
+                          );
+                        },
                       ),
-                    );
-                  },
-                ),
               ),
             ],
           );
@@ -147,8 +244,9 @@ class _ChannelTile extends StatelessWidget {
     final isEmergency = channel.type == ChannelType.emergency;
 
     return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       leading: Icon(
-        isEmergency ? Icons.emergency_outlined : Icons.tag,
+        channel.isPrivate ? Icons.lock_outline : Icons.tag,
         color: isEmergency ? AppColors.emergency : AppColors.textSecondary,
       ),
       title: Text(
@@ -158,17 +256,26 @@ class _ChannelTile extends StatelessWidget {
           color: isEmergency ? AppColors.emergency : null,
         ),
       ),
-      subtitle: preview != null && preview.isNotEmpty
-          ? Text(
-              preview,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            )
-          : Text(
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (channel.description.isNotEmpty)
+            Text(
               channel.description,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
             ),
+          if (preview != null && preview.isNotEmpty)
+            Text(
+              preview,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+        ],
+      ),
       onTap: onTap,
     );
   }

@@ -1,8 +1,8 @@
 # MedCollab — Project State
 
-**Last updated:** 2026-06-19  
-**Analyzer:** `flutter analyze` — **No issues found**  
-**Backend:** In-memory MongoDB in dev (no Atlas required)
+**Last updated:** 2026-06-20  
+**Analyzer:** `flutter analyze` — no issues  
+**Web build:** `flutter build web` — verified for Phase 5
 
 ---
 
@@ -12,8 +12,63 @@
 |-------|--------|-------------|
 | **1 — Foundation** | ✅ Complete | API client, socket, storage, theme, router |
 | **2 — Auth UI** | ✅ Complete | Phone → OTP → profile → home |
-| **3 — Core nav** | ✅ MVP | Spaces list, channels, real-time chat |
-| **4 — Handoffs** | ⬜ Next | Killer feature + FCM |
+| **3 — Core nav** | ✅ MVP | Spaces, channels, real-time channel chat |
+| **4 — Threads** | ✅ MVP | Structured discussions per message |
+| **5 — Rich comms** | ✅ MVP | Media, documents, message UX, members, search |
+| **6 — Handoffs** | ⬜ Next | Killer feature + FCM |
+
+---
+
+## Phase 5 — Rich communication and media (MVP)
+
+| Area | Component | Path |
+|------|-----------|------|
+| **Media** | `MediaRepository`, `MediaPickerService` | `features/media/` |
+| | Image upload + bubbles + preview | `message_widgets.dart`, `image_preview_page.dart` |
+| **Documents** | PDF/file attach + open via `url_launcher` | `message_widgets.dart` |
+| **Message UX** | Timestamps, delivery state, sender grouping, date separators | `message_list_utils.dart`, `message_widgets.dart` |
+| | Empty state, smart auto-scroll | `channel_chat_page.dart` |
+| **Channels** | Create channel dialog (name, description, private) | `create_channel_dialog.dart` |
+| | Channel search + member count | `space_detail_page.dart` |
+| **Members** | Member list, profile sheet, presence | `space_members_page.dart`, `member_widgets.dart` |
+| | Presence states (Available, Busy, In OT, Off Duty) | `presence_cubit.dart` |
+| **Search** | Channel filter (client), member search (API) | `space_detail_page.dart`, `members_cubit.dart` |
+| **State** | `ChannelRepository`, `MemberRepository`, `PresenceCubit` | `app_dependencies.dart` |
+
+### Flow
+
+1. **Attach** — composer `+` menu → gallery / camera / PDF → Cloudinary upload → image or document message
+2. **Images** — thumbnail bubble → tap → full-screen pinch-zoom preview
+3. **Documents** — file card bubble → tap → opens in browser / external app
+4. **Messages** — grouped by sender, date chips, sending/sent/failed indicators
+5. **Channels** — FAB create, search bar, description in list + chat app bar
+6. **Members** — people icon on space → searchable list, profile sheet, presence chips
+
+### Cloudinary (dev)
+
+Set in `medcollab-backend/.env`:
+
+```
+CLOUDINARY_CLOUD_NAME=...
+CLOUDINARY_API_KEY=...
+CLOUDINARY_API_SECRET=...
+```
+
+Without credentials, media upload returns a server error; text chat still works.
+
+---
+
+## Phase 4 — Threaded discussions (MVP)
+
+| Component | Path |
+|-----------|------|
+| `ThreadReplyPreview`, `ThreadDetail` | `features/messages/data/models/` |
+| `MessageModel` (+ `threadId`, `replyCount`, `lastReply`, media fields) | `message_model.dart` |
+| `ThreadRepository` | `features/messages/data/repositories/thread_repository.dart` |
+| `ThreadCubit` | `features/messages/presentation/cubit/thread_cubit.dart` |
+| `ThreadPage` | `thread_page.dart` |
+| `MessageBubble`, `ThreadCountBadge`, `ParentMessagePreview` | `message_widgets.dart` |
+| Channel thread badges + navigation | `channel_chat_page.dart` |
 
 ---
 
@@ -21,43 +76,24 @@
 
 | Component | Path |
 |-----------|------|
-| `SpaceModel`, `ChannelModel` | `features/spaces/data/models/` |
-| `MessageModel` | `features/messages/data/models/` |
-| `SpaceRepository` | `features/spaces/data/repositories/` |
-| `MessageRepository` | `features/messages/data/repositories/` |
-| `ChannelChatCubit` | `features/messages/presentation/cubit/` |
-| Spaces home (create/join) | `spaces_home_page.dart` |
-| Space detail (channels) | `space_detail_page.dart` |
-| Channel chat thread | `channel_chat_page.dart` |
-
-### Flow
-
-1. **Spaces home** — `GET /api/spaces`, create space, join via invite code  
-2. **Space detail** — channel list with `#general`, `#emergency`, `#academics`  
-3. **Channel chat** — load/send messages via REST, real-time via socket `new_message`
+| Spaces home / detail | `features/spaces/presentation/pages/` |
+| Channel chat | `channel_chat_page.dart` |
+| `SpaceRepository`, `MessageRepository` | `features/*/data/repositories/` |
 
 ---
 
 ## Run commands
 
-**Backend** (Terminal 1):
+**Backend:**
 ```powershell
 cd D:\MedCollab\medcollab-backend
 npm run dev
 ```
 
-**Flutter Chrome** (Terminal 2):
+**Flutter Chrome:**
 ```powershell
 cd D:\MedCollab\medcollab-app
 flutter run -d chrome
 ```
 
-Dev OTP: `123456` (with `OTP_BYPASS=true`)
-
----
-
-## Backend dev notes
-
-- **No `MONGODB_URI` needed** — in-memory MongoDB starts automatically  
-- Data resets when the server restarts  
-- Avast users: `medcollab-backend/.npmrc` has `strict-ssl=false` for npm
+Dev OTP: `123456`

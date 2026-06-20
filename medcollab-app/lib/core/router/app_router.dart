@@ -9,6 +9,8 @@ import 'package:medcollab_app/features/auth/presentation/pages/phone_entry_page.
 import 'package:medcollab_app/features/auth/presentation/pages/profile_setup_page.dart';
 import 'package:medcollab_app/features/auth/presentation/pages/splash_page.dart';
 import 'package:medcollab_app/features/messages/presentation/pages/channel_chat_page.dart';
+import 'package:medcollab_app/features/messages/presentation/pages/thread_page.dart';
+import 'package:medcollab_app/features/members/presentation/pages/space_members_page.dart';
 import 'package:medcollab_app/features/spaces/data/models/channel_model.dart';
 import 'package:medcollab_app/features/spaces/presentation/pages/space_detail_page.dart';
 import 'package:medcollab_app/features/spaces/presentation/pages/spaces_home_page.dart';
@@ -64,6 +66,30 @@ class AppRouter {
             spaceId: spaceId,
             channelId: channelId,
             channel: channel,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.spaceMembers,
+        builder: (context, state) {
+          final spaceId = state.pathParameters['spaceId']!;
+          return SpaceMembersPage(spaceId: spaceId);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.thread,
+        builder: (context, state) {
+          final spaceId = state.pathParameters['spaceId']!;
+          final channelId = state.pathParameters['channelId']!;
+          final messageId = state.pathParameters['messageId']!;
+          final args = state.extra;
+          final routeArgs = args is ThreadRouteArgs ? args : null;
+          return ThreadPage(
+            spaceId: spaceId,
+            channelId: channelId,
+            rootMessageId: messageId,
+            channel: routeArgs?.channel,
+            initialRoot: routeArgs?.rootMessage,
           );
         },
       ),

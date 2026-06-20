@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import 'package:medcollab_app/core/di/app_dependencies.dart';
-import 'package:medcollab_app/core/theme/app_colors.dart';
+import 'package:medcollab_app/core/router/app_routes.dart';
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:medcollab_app/features/media/data/services/media_picker_service.dart';
 import 'package:medcollab_app/features/messages/data/models/message_model.dart';
 import 'package:medcollab_app/features/messages/presentation/cubit/channel_chat_cubit.dart';
+import 'package:medcollab_app/features/messages/presentation/pages/thread_page.dart';
+import 'package:medcollab_app/features/messages/presentation/utils/message_list_utils.dart';
+import 'package:medcollab_app/features/messages/presentation/widgets/message_widgets.dart';
 import 'package:medcollab_app/features/spaces/data/models/channel_model.dart';
 import 'package:medcollab_app/shared/presentation/widgets/error_banner.dart';
 
@@ -28,15 +32,33 @@ class ChannelChatPage extends StatefulWidget {
 class _ChannelChatPageState extends State<ChannelChatPage> {
   final _textController = TextEditingController();
   final _scrollController = ScrollController();
+  final _mediaPicker = MediaPickerService();
+  int _lastMessageCount = 0;
+  bool _userNearBottom = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
-  void _scrollToBottom() {
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final max = _scrollController.position.maxScrollExtent;
+    final offset = _scrollController.offset;
+    _userNearBottom = max - offset < 120;
+  }
+
+  void _scrollToBottom({bool force = false}) {
+    if (!force && !_userNearBottom) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_scrollController.hasClients) return;
       _scrollController.animateTo(
@@ -45,6 +67,34 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
         curve: Curves.easeOut,
       );
     });
+  }
+
+  void _openThread(BuildContext context, MessageModel message) {
+    context.push(
+      AppRoutes.threadPath(
+        widget.spaceId,
+        widget.channelId,
+        message.id,
+      ),
+      extra: ThreadRouteArgs(
+        rootMessage: message,
+        channel: widget.channel,
+      ),
+    );
+  }
+
+  Future<void> _sendAttachment(
+    BuildContext context,
+    Future<PickedAttachment?> Function() pick,
+  ) async {
+    final picked = await pick();
+    if (picked == null || !context.mounted) return;
+    await context.read<ChannelChatCubit>().sendAttachment(
+          bytes: picked.bytes,
+          fileName: picked.fileName,
+          mimeType: picked.mimeType,
+        );
+    _scrollToBottom(force: true);
   }
 
   @override
@@ -56,28 +106,55 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
     return BlocProvider(
       create: (_) => ChannelChatCubit(
         messageRepository: deps.messageRepository,
+        mediaRepository: deps.mediaRepository,
         socketClient: deps.socketClient,
         channelId: widget.channelId,
         currentUserId: currentUserId,
       ),
       child: Builder(
         builder: (context) {
-          final title = widget.channel?.displayName ?? 'Channel';
+          final channel = widget.channel;
+          final title = channel?.displayName ?? 'Channel';
+          final subtitle = channel?.description;
+
           return Scaffold(
-            appBar: AppBar(title: Text(title)),
+            appBar: AppBar(
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title),
+                  if (subtitle != null && subtitle.isNotEmpty)
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelSmall,
+                    ),
+                ],
+              ),
+            ),
             body: Column(
               children: [
                 Expanded(
                   child: BlocConsumer<ChannelChatCubit, ChannelChatState>(
                     listenWhen: (prev, next) =>
                         prev.messages.length != next.messages.length,
-                    listener: (_, __) => _scrollToBottom(),
+                    listener: (_, state) {
+                      final grew = state.messages.length > _lastMessageCount;
+                      _lastMessageCount = state.messages.length;
+                      if (grew) _scrollToBottom();
+                    },
                     builder: (context, state) {
                       if (state.isLoading && state.messages.isEmpty) {
                         return const Center(
                           child: CircularProgressIndicator(),
                         );
                       }
+
+                      final listItems = buildMessageListItems(
+                        messages: state.messages,
+                        currentUserId: currentUserId,
+                      );
 
                       return Column(
                         children: [
@@ -88,33 +165,32 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
                             ),
                           Expanded(
                             child: state.messages.isEmpty
-                                ? Center(
-                                    child: Text(
-                                      'No messages yet.\nSay hello to the team.',
-                                      textAlign: TextAlign.center,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium
-                                          ?.copyWith(
-                                            color: AppColors.textSecondary,
-                                          ),
-                                    ),
-                                  )
+                                ? _EmptyChatState()
                                 : ListView.builder(
                                     controller: _scrollController,
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 12,
                                       vertical: 8,
                                     ),
-                                    itemCount: state.messages.length,
+                                    itemCount: listItems.length,
                                     itemBuilder: (context, index) {
-                                      final message = state.messages[index];
-                                      final isMine =
-                                          message.sender.id == currentUserId;
-                                      return _MessageBubble(
-                                        message: message,
-                                        isMine: isMine,
-                                      );
+                                      final item = listItems[index];
+                                      return switch (item) {
+                                        DateSeparatorItem(:final label) =>
+                                          DateSeparatorChip(label: label),
+                                        ChatMessageItem(
+                                          :final message,
+                                          :final showSender,
+                                          :final isMine,
+                                        ) =>
+                                          MessageBubble(
+                                            message: message,
+                                            isMine: isMine,
+                                            showSender: showSender,
+                                            onOpenThread: () =>
+                                                _openThread(context, message),
+                                          ),
+                                      };
                                     },
                                   ),
                           ),
@@ -123,11 +199,31 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
                     },
                   ),
                 ),
-                _MessageComposer(
-                  controller: _textController,
-                  onSend: (text) {
-                    context.read<ChannelChatCubit>().sendMessage(text);
-                    _textController.clear();
+                BlocBuilder<ChannelChatCubit, ChannelChatState>(
+                  buildWhen: (p, n) =>
+                      p.isSending != n.isSending || p.isUploading != n.isUploading,
+                  builder: (context, state) {
+                    return MessageComposer(
+                      controller: _textController,
+                      isBusy: state.isSending || state.isUploading,
+                      onSend: (text) {
+                        context.read<ChannelChatCubit>().sendMessage(text);
+                        _textController.clear();
+                        _scrollToBottom(force: true);
+                      },
+                      onPickGallery: () => _sendAttachment(
+                        context,
+                        _mediaPicker.pickFromGallery,
+                      ),
+                      onPickCamera: () => _sendAttachment(
+                        context,
+                        _mediaPicker.captureFromCamera,
+                      ),
+                      onPickDocument: () => _sendAttachment(
+                        context,
+                        _mediaPicker.pickDocument,
+                      ),
+                    );
                   },
                 ),
               ],
@@ -139,113 +235,35 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
   }
 }
 
-class _MessageBubble extends StatelessWidget {
-  const _MessageBubble({required this.message, required this.isMine});
-
-  final MessageModel message;
-  final bool isMine;
-
+class _EmptyChatState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final time = message.createdAt != null
-        ? DateFormat.jm().format(message.createdAt!.toLocal())
-        : '';
-
-    return Align(
-      alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.sizeOf(context).width * 0.78,
-        ),
-        decoration: BoxDecoration(
-          color: isMine
-              ? AppColors.primary.withValues(alpha: 0.12)
-              : Theme.of(context).colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(12),
-        ),
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
         child: Column(
-          crossAxisAlignment:
-              isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            if (!isMine)
-              Text(
-                message.sender.displayName,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
+            Icon(
+              Icons.chat_bubble_outline,
+              size: 48,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(height: 16),
             Text(
-              message.displayText,
+              'No messages yet',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Start a topic — share images, PDFs, or text.\n'
+              'Use threads to discuss each patient.',
+              textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontStyle: message.isDeleted
-                        ? FontStyle.italic
-                        : FontStyle.normal,
-                    color: message.isDeleted
-                        ? AppColors.textSecondary
-                        : null,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
             ),
-            if (time.isNotEmpty)
-              Text(
-                time,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-              ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MessageComposer extends StatelessWidget {
-  const _MessageComposer({
-    required this.controller,
-    required this.onSend,
-  });
-
-  final TextEditingController controller;
-  final ValueChanged<String> onSend;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      elevation: 4,
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: controller,
-                  minLines: 1,
-                  maxLines: 4,
-                  textCapitalization: TextCapitalization.sentences,
-                  decoration: const InputDecoration(
-                    hintText: 'Message…',
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                  ),
-                  onSubmitted: onSend,
-                ),
-              ),
-              const SizedBox(width: 4),
-              IconButton.filled(
-                onPressed: () => onSend(controller.text),
-                icon: const Icon(Icons.send),
-              ),
-            ],
-          ),
         ),
       ),
     );

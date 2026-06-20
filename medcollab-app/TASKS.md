@@ -4,15 +4,15 @@
 
 | Task | Status | Notes |
 |------|--------|-------|
-| Study backend API contracts | ✅ Done | Routes, models, socket events inferred from `medcollab-backend-day2` |
-| `pubspec.yaml` + dependencies | ✅ Done | flutter_bloc, dio, socket_io_client, flutter_secure_storage, go_router |
-| Feature-first folder structure | ✅ Done | `lib/core`, `lib/features/auth`, `lib/shared` |
+| Study backend API contracts | ✅ Done | Routes, models, socket events inferred from backend |
+| `pubspec.yaml` + dependencies | ✅ Done | flutter_bloc, dio, socket_io_client, go_router |
+| Feature-first folder structure | ✅ Done | `lib/core`, `lib/features/*`, `lib/shared` |
 | `main.dart` + `app.dart` | ✅ Done | DI bootstrap, `MaterialApp.router` |
 | Theme (clinical / trustworthy) | ✅ Done | Material 3, emergency accent colors |
-| Router (`go_router`) | ✅ Done | Route constants + auth redirect stub (no feature screens) |
+| Router (`go_router`) | ✅ Done | Route constants + auth redirect |
 | Constants (API, socket, enums) | ✅ Done | Mirrors backend `src/constants/index.js` |
-| API client (`dio`) | ✅ Done | Typed responses, auth interceptor, token refresh |
-| Socket client | ✅ Done | JWT handshake, channel rooms, event streams |
+| API client (`dio`) | ✅ Done | Typed responses, auth interceptor, multipart upload |
+| Socket client | ✅ Done | JWT handshake, channel rooms, presence events |
 | Secure storage service | ✅ Done | Access/refresh tokens, session persistence |
 | Base repository | ✅ Done | `ApiResponse` parsing, error mapping |
 | Auth models | ✅ Done | User, session, OTP request/response DTOs |
@@ -40,7 +40,39 @@
 | Message thread + send | ✅ Done | `ChannelChatPage` + `ChannelChatCubit` |
 | Socket real-time messages | ✅ Done | `new_message` listener |
 
-## Phase 4 — Killer feature (next)
+## Phase 4 — Threaded discussions ✅ MVP
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Thread models + repository | ✅ Done | `ThreadDetail`, `ThreadRepository` |
+| Thread screen + reply UI | ✅ Done | `ThreadPage`, `ThreadCubit` |
+| Parent preview + reply badge | ✅ Done | `message_widgets.dart` |
+| Channel integration | ✅ Done | `MessageBubble`, thread route |
+| Realtime thread updates | ✅ Done | Socket `new_message` + `threadId` |
+
+## Phase 5 — Rich communication and media ✅ MVP
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Image upload (Cloudinary) | ✅ Done | `MediaRepository` + backend `POST /api/media/upload` |
+| Gallery picker + camera capture | ✅ Done | `image_picker`, `MediaPickerService` |
+| Image message bubbles + preview | ✅ Done | `cached_network_image`, pinch-zoom |
+| PDF / file attachments | ✅ Done | `file_picker`, document bubbles |
+| Download / open attachments | ✅ Done | `url_launcher` |
+| Timestamps + delivery state | ✅ Done | Sending / sent / failed indicators |
+| Sender grouping + date separators | ✅ Done | `message_list_utils.dart` |
+| Empty state + auto-scroll | ✅ Done | Smart scroll when near bottom |
+| Long message wrapping | ✅ Done | `softWrap` on text bubbles |
+| Custom channel creation UI | ✅ Done | `CreateChannelDialog` |
+| Channel description + member count | ✅ Done | `SpaceDetailPage` |
+| Channel search | ✅ Done | Client-side filter |
+| Space member list | ✅ Done | `SpaceMembersPage` |
+| User profile card | ✅ Done | `UserProfileSheet` |
+| Online/offline + presence states | ✅ Done | `PresenceCubit`, socket `presence_update` |
+| Search members | ✅ Done | API `GET /api/users/search` + local filter |
+| `ChannelRepository`, `MemberRepository` | ✅ Done | Wired in `AppDependencies` |
+
+## Phase 6 — Killer feature (next)
 
 | Task | Status |
 |------|--------|
@@ -60,6 +92,9 @@
 - `POST /api/auth/verify-otp` → `{ phone, otp }` → `{ accessToken, refreshToken, isNewUser, user }`
 - `POST /api/auth/refresh` → `{ refreshToken }` → `{ accessToken }`
 - `POST /api/auth/logout` → `{ fcmToken? }` (protected)
+
+### Media
+- `POST /api/media/upload` (multipart `file`) → `{ url, thumbnailUrl, publicId, fileName, mimeType, ... }`
 
 ### Socket handshake
 - URL: same host as API (no `/api` prefix)

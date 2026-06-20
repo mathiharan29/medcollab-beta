@@ -35,6 +35,20 @@ class AvailabilityModel extends Equatable {
         if (updatedAt != null) 'updatedAt': updatedAt!.toIso8601String(),
       };
 
+  AvailabilityModel copyWith({
+    AvailabilityStatus? status,
+    DateTime? until,
+    String? note,
+    DateTime? updatedAt,
+  }) {
+    return AvailabilityModel(
+      status: status ?? this.status,
+      until: until ?? this.until,
+      note: note ?? this.note,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
   @override
   List<Object?> get props => [status, until, note, updatedAt];
 }

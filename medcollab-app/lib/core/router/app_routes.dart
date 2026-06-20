@@ -8,6 +8,9 @@ abstract final class AppRoutes {
   static const String spaces = '/spaces';
   static const String spaceDetail = '/spaces/:spaceId';
   static const String channel = '/spaces/:spaceId/channels/:channelId';
+  static const String thread =
+      '/spaces/:spaceId/channels/:channelId/threads/:messageId';
+  static const String spaceMembers = '/spaces/:spaceId/members';
   static const String handoffCreate = '/handoffs/create';
   static const String handoffDetail = '/handoffs/:handoffId';
 
@@ -15,4 +18,13 @@ abstract final class AppRoutes {
 
   static String channelPath(String spaceId, String channelId) =>
       '/spaces/$spaceId/channels/$channelId';
+
+  static String threadPath(
+    String spaceId,
+    String channelId,
+    String messageId,
+  ) =>
+      '/spaces/$spaceId/channels/$channelId/threads/$messageId';
+
+  static String spaceMembersPath(String spaceId) => '/spaces/$spaceId/members';
 }

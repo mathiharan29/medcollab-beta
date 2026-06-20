@@ -5,6 +5,7 @@ class ChannelChatState extends Equatable {
     this.messages = const [],
     this.isLoading = false,
     this.isSending = false,
+    this.isUploading = false,
     this.hasMore = false,
     this.error,
   });
@@ -12,6 +13,7 @@ class ChannelChatState extends Equatable {
   final List<MessageModel> messages;
   final bool isLoading;
   final bool isSending;
+  final bool isUploading;
   final bool hasMore;
   final String? error;
 
@@ -19,6 +21,7 @@ class ChannelChatState extends Equatable {
     List<MessageModel>? messages,
     bool? isLoading,
     bool? isSending,
+    bool? isUploading,
     bool? hasMore,
     String? error,
   }) {
@@ -26,6 +29,7 @@ class ChannelChatState extends Equatable {
       messages: messages ?? this.messages,
       isLoading: isLoading ?? this.isLoading,
       isSending: isSending ?? this.isSending,
+      isUploading: isUploading ?? this.isUploading,
       hasMore: hasMore ?? this.hasMore,
       error: error,
     );
@@ -33,5 +37,5 @@ class ChannelChatState extends Equatable {
 
   @override
   List<Object?> get props =>
-      [messages, isLoading, isSending, hasMore, error];
+      [messages, isLoading, isSending, isUploading, hasMore, error];
 }
