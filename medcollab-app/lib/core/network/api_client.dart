@@ -36,6 +36,8 @@ class ApiClient {
         storage: _storage,
         dio: _dio,
         refreshToken: _refreshAccessToken,
+        onSessionExpired: onSessionExpired,
+        onAccessTokenRefreshed: onAccessTokenRefreshed,
       ),
     );
 
@@ -52,6 +54,11 @@ class ApiClient {
 
   final SecureStorageService _storage;
   late final Dio _dio;
+
+  AccessTokenRefreshedCallback? onAccessTokenRefreshed;
+  SessionExpiredCallback? onSessionExpired;
+
+  Future<String?>? _refreshInFlight;
 
   Dio get dio => _dio;
 
@@ -225,7 +232,13 @@ class ApiClient {
   }
 
   /// Called by [AuthInterceptor] on 401 — exchanges refresh token for new access token.
-  Future<String?> _refreshAccessToken() async {
+  Future<String?> _refreshAccessToken() {
+    return _refreshInFlight ??= _performTokenRefresh().whenComplete(() {
+      _refreshInFlight = null;
+    });
+  }
+
+  Future<String?> _performTokenRefresh() async {
     final refreshToken = await _storage.getRefreshToken();
     if (refreshToken == null) return null;
 
@@ -246,6 +259,7 @@ class ApiClient {
       final newToken = data?['accessToken'] as String?;
       if (newToken != null) {
         await _storage.saveAccessToken(newToken);
+        onAccessTokenRefreshed?.call(newToken);
       }
       return newToken;
     } on DioException {

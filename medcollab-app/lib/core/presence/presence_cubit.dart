@@ -66,6 +66,13 @@ class PresenceCubit extends Cubit<Map<String, PresenceInfo>> {
       updatedAt: DateTime.tryParse(data['updatedAt']?.toString() ?? '') ??
           DateTime.now(),
     );
+
+    if (updated.length > 300) {
+      final keys = updated.keys.toList();
+      for (var i = 0; i < keys.length - 300; i++) {
+        updated.remove(keys[i]);
+      }
+    }
     emit(updated);
   }
 

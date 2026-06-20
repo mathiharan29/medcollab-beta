@@ -6,6 +6,7 @@ import 'package:medcollab_app/core/storage/secure_storage_service.dart';
 import 'package:medcollab_app/features/auth/data/repositories/auth_repository.dart';
 import 'package:medcollab_app/features/auth/data/repositories/user_repository.dart';
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:medcollab_app/features/auth/presentation/bloc/auth_event.dart';
 import 'package:medcollab_app/features/channels/data/repositories/channel_repository.dart';
 import 'package:medcollab_app/features/handoffs/data/repositories/handoff_repository.dart';
 import 'package:medcollab_app/features/media/data/repositories/media_repository.dart';
@@ -61,6 +62,12 @@ class AppDependencies {
       authRepository: authRepository,
       userRepository: userRepository,
     );
+    apiClient.onAccessTokenRefreshed = (token) {
+      socketClient.reconnect(token);
+    };
+    apiClient.onSessionExpired = () {
+      authBloc.add(const AuthSessionExpired());
+    };
     appRouter = AppRouter(authBloc: authBloc);
 
     _initialized = true;

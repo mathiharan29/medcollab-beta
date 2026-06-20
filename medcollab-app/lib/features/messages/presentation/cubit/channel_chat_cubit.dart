@@ -90,6 +90,9 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
     } on AppException catch (e) {
       _markFailed(tempId);
       emit(state.copyWith(isSending: false, error: e.message));
+    } catch (_) {
+      _markFailed(tempId);
+      emit(state.copyWith(isSending: false, error: 'Failed to send message'));
     }
   }
 
@@ -140,6 +143,15 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
     } on AppException catch (e) {
       _markFailed(tempId);
       emit(state.copyWith(isSending: false, isUploading: false, error: e.message));
+    } catch (_) {
+      _markFailed(tempId);
+      emit(
+        state.copyWith(
+          isSending: false,
+          isUploading: false,
+          error: 'Failed to send attachment',
+        ),
+      );
     }
   }
 
@@ -154,13 +166,10 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
   }
 
   void _replaceLocalMessage(String tempId, MessageModel message) {
-    final index = state.messages.indexWhere((m) => m.id == tempId);
-    final updated = List<MessageModel>.from(state.messages);
-    if (index >= 0) {
-      updated[index] = message;
-    } else {
-      updated.add(message);
-    }
+    final updated = state.messages
+        .where((m) => m.id != tempId && m.id != message.id)
+        .toList();
+    updated.add(message);
     updated.sort((a, b) {
       final at = a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
       final bt = b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);

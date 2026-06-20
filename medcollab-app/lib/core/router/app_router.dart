@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:medcollab_app/core/router/app_routes.dart';
@@ -28,7 +29,7 @@ class AppRouter {
 
   late final GoRouter router = GoRouter(
     initialLocation: AppRoutes.splash,
-    debugLogDiagnostics: true,
+    debugLogDiagnostics: kDebugMode,
     refreshListenable: _refreshListenable,
     redirect: _redirect,
     routes: [

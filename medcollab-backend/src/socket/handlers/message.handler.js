@@ -22,6 +22,7 @@
  */
 
 const { SOCKET_EVENTS } = require('../../constants');
+const { canAccessChannel } = require('../../utils/channelAccess');
 const logger = require('../../utils/logger');
 
 /**
@@ -43,19 +44,29 @@ const registerMessageHandlers = (io, socket) => {
    *   channel:<channelId>
    *   e.g. channel:64a1b2c3d4e5f6789012345
    */
-  socket.on(SOCKET_EVENTS.JOIN_CHANNEL, ({ channelId }) => {
+  socket.on(SOCKET_EVENTS.JOIN_CHANNEL, async ({ channelId }) => {
     if (!channelId) return;
 
-    const room = `channel:${channelId}`;
-    socket.join(room);
+    try {
+      const allowed = await canAccessChannel(userId, channelId);
+      if (!allowed) {
+        socket.emit(SOCKET_EVENTS.ERROR, { message: 'Access denied to channel' });
+        return;
+      }
 
-    logger.socket(`${userName} joined room ${room}`);
+      const room = `channel:${channelId}`;
+      socket.join(room);
 
-    // Acknowledge to the joining client only
-    socket.emit(SOCKET_EVENTS.JOIN_CHANNEL, {
-      success: true,
-      channelId,
-    });
+      logger.socket(`${userName} joined room ${room}`);
+
+      socket.emit(SOCKET_EVENTS.JOIN_CHANNEL, {
+        success: true,
+        channelId,
+      });
+    } catch (err) {
+      logger.error(`join_channel failed: ${err.message}`);
+      socket.emit(SOCKET_EVENTS.ERROR, { message: 'Could not join channel' });
+    }
   });
 
   /**

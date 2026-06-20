@@ -66,6 +66,8 @@ class ThreadCubit extends Cubit<ThreadState> {
       emit(state.copyWith(isSending: false));
     } on AppException catch (e) {
       emit(state.copyWith(isSending: false, error: e.message));
+    } catch (_) {
+      emit(state.copyWith(isSending: false, error: 'Failed to send reply'));
     }
   }
 

@@ -25,6 +25,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthErrorDismissed>(_onErrorDismissed);
     on<AuthOtpResendRequested>(_onOtpResendRequested);
     on<AuthChangePhoneRequested>(_onChangePhoneRequested);
+    on<AuthSessionExpired>(_onSessionExpired);
   }
 
   final AuthRepository _authRepository;
@@ -47,8 +48,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         return;
       }
 
-      await _authRepository.restoreSocketConnection();
       final user = await _userRepository.getMe();
+      await _authRepository.restoreSocketConnection();
 
       if (user.hasMinimumProfile) {
         emit(AuthState(status: AuthStatus.authenticated, user: user));
@@ -58,16 +59,30 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     } on UnauthorizedException {
       await _authRepository.logout();
       emit(const AuthState(status: AuthStatus.unauthenticated));
+    } on NetworkException catch (e) {
+      _sessionCheckStarted = false;
+      emit(
+        AuthState(
+          status: AuthStatus.unauthenticated,
+          errorMessage: e.message,
+        ),
+      );
     } on AppException catch (e) {
-      emit(AuthState(
-        status: AuthStatus.unauthenticated,
-        errorMessage: e.message,
-      ),);
+      _sessionCheckStarted = false;
+      emit(
+        AuthState(
+          status: AuthStatus.unauthenticated,
+          errorMessage: e.message,
+        ),
+      );
     } catch (_) {
-      emit(const AuthState(
-        status: AuthStatus.unauthenticated,
-        errorMessage: 'Could not restore session. Please log in again.',
-      ),);
+      _sessionCheckStarted = false;
+      emit(
+        const AuthState(
+          status: AuthStatus.unauthenticated,
+          errorMessage: 'Could not restore session. Please log in again.',
+        ),
+      );
     }
   }
 
@@ -235,11 +250,21 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       await _authRepository.requestOtp(RequestOtpRequest(phone: phone));
       emit(AuthState(status: AuthStatus.otpSent, phoneE164: phone));
     } on AppException catch (e) {
-      emit(AuthState(
-        status: AuthStatus.otpSent,
-        phoneE164: phone,
-        errorMessage: e.message,
-      ),);
+      emit(
+        AuthState(
+          status: AuthStatus.otpSent,
+          phoneE164: phone,
+          errorMessage: e.message,
+        ),
+      );
+    } catch (_) {
+      emit(
+        AuthState(
+          status: AuthStatus.otpSent,
+          phoneE164: phone,
+          errorMessage: 'Failed to resend OTP. Please try again.',
+        ),
+      );
     }
   }
 
@@ -247,6 +272,18 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthChangePhoneRequested event,
     Emitter<AuthState> emit,
   ) {
+    emit(const AuthState(status: AuthStatus.unauthenticated));
+  }
+
+  Future<void> _onSessionExpired(
+    AuthSessionExpired event,
+    Emitter<AuthState> emit,
+  ) async {
+    try {
+      await _authRepository.logout();
+    } catch (_) {
+      // Ensure local session is cleared even if API fails.
+    }
     emit(const AuthState(status: AuthStatus.unauthenticated));
   }
 }

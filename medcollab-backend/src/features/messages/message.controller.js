@@ -19,33 +19,14 @@ const Space = require('../spaces/space.model');
 const User = require('../users/user.model');
 const { respond } = require('../../utils/apiResponse');
 const asyncHandler = require('../../utils/asyncHandler');
+const {
+  resolveChannelAccess,
+  assertMessageInChannel,
+} = require('../../utils/channelAccess');
 const { emitNewMessage, emitMessageUpdated, emitMessageDeleted } = require('../../socket');
 const { notifyNewMessage, notifyMention } = require('../../services/notification.service');
 const { MESSAGE_TYPES, MESSAGE_PRIORITY, PAGINATION, CHANNEL_TYPES } = require('../../constants');
 const logger = require('../../utils/logger');
-
-/**
- * Verify the requesting user can access a channel.
- * Returns { channel, space } or sends an error response and returns null.
- */
-const resolveChannelAccess = async (req, res) => {
-  const channel = await Channel.findById(req.params.channelId);
-  if (!channel) { respond.notFound(res, 'Channel not found'); return null; }
-
-  if (channel.type === CHANNEL_TYPES.DIRECT) {
-    const isMember = channel.members.some(
-      (id) => id.toString() === req.user._id.toString()
-    );
-    if (!isMember) { respond.forbidden(res, 'Not a channel member'); return null; }
-    return { channel, space: null };
-  }
-
-  const space = await Space.findById(channel.spaceId);
-  if (!space?.isMember(req.user._id)) {
-    respond.forbidden(res, 'Not a space member'); return null;
-  }
-  return { channel, space };
-};
 
 /**
  * GET /api/channels/:channelId/messages
@@ -193,6 +174,7 @@ const getThread = asyncHandler(async (req, res) => {
     .lean();
 
   if (!rootMessage) return respond.notFound(res, 'Message not found');
+  if (!assertMessageInChannel(rootMessage, req.params.channelId, res)) return;
 
   const limit = Math.min(parseInt(req.query.limit) || 50, 100);
   const before = req.query.before;
@@ -235,6 +217,7 @@ const editMessage = asyncHandler(async (req, res) => {
 
   const message = await Message.findById(req.params.id);
   if (!message) return respond.notFound(res, 'Message not found');
+  if (!assertMessageInChannel(message, req.params.channelId, res)) return;
   if (message.senderId.toString() !== req.user._id.toString()) {
     return respond.forbidden(res, 'You can only edit your own messages');
   }
@@ -266,6 +249,7 @@ const deleteMessage = asyncHandler(async (req, res) => {
 
   const message = await Message.findById(req.params.id);
   if (!message) return respond.notFound(res, 'Message not found');
+  if (!assertMessageInChannel(message, req.params.channelId, res)) return;
 
   const isSender = message.senderId.toString() === req.user._id.toString();
   const isAdmin  = access.space?.isAdmin(req.user._id);
@@ -292,6 +276,7 @@ const toggleReaction = asyncHandler(async (req, res) => {
 
   const message = await Message.findById(req.params.id);
   if (!message) return respond.notFound(res, 'Message not found');
+  if (!assertMessageInChannel(message, req.params.channelId, res)) return;
   if (message.isDeleted) return respond.badRequest(res, 'Cannot react to a deleted message');
 
   await message.toggleReaction(req.body.emoji, req.user._id);

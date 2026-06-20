@@ -4,6 +4,7 @@
 
 const User = require('./user.model');
 const { respond } = require('../../utils/apiResponse');
+const escapeRegex = require('../../utils/escapeRegex');
 const asyncHandler = require('../../utils/asyncHandler');
 const { emitNotification } = require('../../socket');
 const { getIO } = require('../../socket');
@@ -129,7 +130,7 @@ const searchUsers = asyncHandler(async (req, res) => {
     return respond.badRequest(res, 'Search query must be at least 2 characters');
   }
 
-  const searchRegex = new RegExp(q.trim(), 'i');
+  const searchRegex = new RegExp(escapeRegex(q.trim()), 'i');
   let query = {
     _id: { $ne: req.user._id },   // Exclude self
     isActive: true,

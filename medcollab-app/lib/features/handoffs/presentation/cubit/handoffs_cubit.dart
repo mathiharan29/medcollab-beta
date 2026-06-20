@@ -32,6 +32,7 @@ class HandoffsCubit extends Cubit<HandoffsState> {
   final String currentUserId;
 
   StreamSubscription<Map<String, dynamic>>? _messageSub;
+  Timer? _reloadDebounce;
 
   Future<void> loadHandoffs() async {
     emit(state.copyWith(isLoading: true, error: null));
@@ -103,15 +104,21 @@ class HandoffsCubit extends Cubit<HandoffsState> {
         if (type != MessageType.handoff.value) return;
         final msgSpaceId = data['spaceId']?.toString();
         if (msgSpaceId != null && msgSpaceId != spaceId) return;
-        loadHandoffs();
+        _scheduleReload();
       } catch (_) {
         // Ignore malformed payloads.
       }
     });
   }
 
+  void _scheduleReload() {
+    _reloadDebounce?.cancel();
+    _reloadDebounce = Timer(const Duration(milliseconds: 400), loadHandoffs);
+  }
+
   @override
   Future<void> close() {
+    _reloadDebounce?.cancel();
     _messageSub?.cancel();
     return super.close();
   }

@@ -98,8 +98,17 @@ const getMyHandoffs = asyncHandler(async (req, res) => {
     query.fromUserId = req.user._id;
   } else if (type === 'received') {
     query.toUserId = req.user._id;
-    // Only show submitted/acknowledged to receiver (not drafts)
-    query.status = { $in: [HANDOFF_STATUS.SUBMITTED, HANDOFF_STATUS.ACKNOWLEDGED] };
+    const visibleToReceiver = [
+      HANDOFF_STATUS.SUBMITTED,
+      HANDOFF_STATUS.ACKNOWLEDGED,
+    ];
+    if (status && visibleToReceiver.includes(status)) {
+      query.status = status;
+    } else if (!status) {
+      query.status = { $in: visibleToReceiver };
+    } else {
+      query.status = status;
+    }
   } else {
     // 'all' — both sent (any status) and received (non-draft)
     query.$or = [
@@ -173,21 +182,32 @@ const updateHandoff = asyncHandler(async (req, res) => {
  * Submit a draft — makes it visible to the receiver and triggers notification
  */
 const submitHandoff = asyncHandler(async (req, res) => {
-  const handoff = await Handoff.findById(req.params.id);
-  if (!handoff) return respond.notFound(res, 'Handoff not found');
-  if (handoff.fromUserId.toString() !== req.user._id.toString()) {
+  const existing = await Handoff.findById(req.params.id);
+  if (!existing) return respond.notFound(res, 'Handoff not found');
+  if (existing.fromUserId.toString() !== req.user._id.toString()) {
     return respond.forbidden(res, 'Only the sender can submit');
   }
-  if (handoff.status !== HANDOFF_STATUS.DRAFT) {
-    return respond.badRequest(res, 'Handoff is already submitted');
-  }
-  if (handoff.patients.length === 0) {
+  if (existing.patients.length === 0) {
     return respond.badRequest(res, 'Add at least one patient before submitting');
   }
 
-  await handoff.submit();
+  const handoff = await Handoff.findOneAndUpdate(
+    {
+      _id: req.params.id,
+      fromUserId: req.user._id,
+      status: HANDOFF_STATUS.DRAFT,
+    },
+    {
+      status: HANDOFF_STATUS.SUBMITTED,
+      submittedAt: new Date(),
+    },
+    { new: true },
+  );
 
-  // Load users for notifications
+  if (!handoff) {
+    return respond.badRequest(res, 'Handoff is already submitted');
+  }
+
   const [fromUser, toUser] = await Promise.all([
     User.findById(handoff.fromUserId).select('name avatarUrl'),
     User.findById(handoff.toUserId).select('name avatarUrl fcmTokens'),
@@ -214,16 +234,23 @@ const submitHandoff = asyncHandler(async (req, res) => {
  * Receiver confirms they have read and accepted the handoff
  */
 const acknowledgeHandoff = asyncHandler(async (req, res) => {
-  const handoff = await Handoff.findById(req.params.id);
-  if (!handoff) return respond.notFound(res, 'Handoff not found');
-  if (handoff.toUserId.toString() !== req.user._id.toString()) {
-    return respond.forbidden(res, 'Only the receiver can acknowledge');
-  }
-  if (handoff.status !== HANDOFF_STATUS.SUBMITTED) {
+  const handoff = await Handoff.findOneAndUpdate(
+    {
+      _id: req.params.id,
+      toUserId: req.user._id,
+      status: HANDOFF_STATUS.SUBMITTED,
+    },
+    {
+      status: HANDOFF_STATUS.ACKNOWLEDGED,
+      acknowledgedAt: new Date(),
+      acknowledgementNote: req.body.note || '',
+    },
+    { new: true },
+  );
+
+  if (!handoff) {
     return respond.badRequest(res, 'Handoff must be submitted before acknowledging');
   }
-
-  await handoff.acknowledge(req.body.note || '');
 
   const [fromUser, toUser] = await Promise.all([
     User.findById(handoff.fromUserId).select('name avatarUrl fcmTokens'),

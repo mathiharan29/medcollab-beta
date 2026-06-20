@@ -1,12 +1,17 @@
 import 'package:dio/dio.dart';
 import 'package:medcollab_app/core/storage/secure_storage_service.dart';
 
+typedef SessionExpiredCallback = void Function();
+typedef AccessTokenRefreshedCallback = void Function(String accessToken);
+
 /// Attaches JWT to requests and silently refreshes on 401.
 class AuthInterceptor extends Interceptor {
   AuthInterceptor({
     required SecureStorageService storage,
     required Dio dio,
     required Future<String?> Function() refreshToken,
+    this.onSessionExpired,
+    this.onAccessTokenRefreshed,
   })  : _storage = storage,
         _dio = dio,
         _refreshToken = refreshToken;
@@ -14,6 +19,8 @@ class AuthInterceptor extends Interceptor {
   final SecureStorageService _storage;
   final Dio _dio;
   final Future<String?> Function() _refreshToken;
+  final SessionExpiredCallback? onSessionExpired;
+  final AccessTokenRefreshedCallback? onAccessTokenRefreshed;
 
   static const _skipAuthKey = 'skipAuth';
   static const _skipRefreshKey = 'skipRefresh';
@@ -52,6 +59,7 @@ class AuthInterceptor extends Interceptor {
     final newToken = await _refreshToken();
     if (newToken == null) {
       await _storage.clearSession();
+      onSessionExpired?.call();
       return handler.next(err);
     }
 

@@ -16,6 +16,10 @@ sealed class AuthEvent extends Equatable {
   List<Object?> get props => [];
 }
 
+final class AuthSessionExpired extends AuthEvent {
+  const AuthSessionExpired();
+}
+
 /// App launch — restore session or show login.
 final class AuthStarted extends AuthEvent {
   const AuthStarted();
