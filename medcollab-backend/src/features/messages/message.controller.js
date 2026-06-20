@@ -220,10 +220,9 @@ const getThread = asyncHandler(async (req, res) => {
  * POST /api/channels/:channelId/messages/:id/reply
  * Reply to a thread (sets threadId automatically)
  */
-const replyToThread = asyncHandler(async (req, res) => {
-  // Inject threadId from the URL param, then re-use sendMessage logic
+const replyToThread = asyncHandler(async (req, res, next) => {
   req.body.threadId = req.params.id;
-  return sendMessage(req, res);
+  return sendMessage(req, res, next);
 });
 
 /**

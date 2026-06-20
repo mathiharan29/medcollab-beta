@@ -16,7 +16,10 @@ class _SplashPageState extends State<SplashPage> {
   @override
   void initState() {
     super.initState();
-    context.read<AuthBloc>().add(const AuthStarted());
+    final status = context.read<AuthBloc>().state.status;
+    if (status == AuthStatus.unknown) {
+      context.read<AuthBloc>().add(const AuthStarted());
+    }
   }
 
   @override

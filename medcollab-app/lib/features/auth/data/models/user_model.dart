@@ -87,9 +87,9 @@ class UserModel extends Equatable {
     return phone ?? 'Doctor';
   }
 
-  /// Heuristic when backend omits `isOnboarded` from public profile.
+  /// True when the user has completed onboarding on the server.
   bool get hasMinimumProfile =>
-      isOnboarded || (name != null && name!.isNotEmpty && name!.length >= 2);
+      isOnboarded || (name != null && name!.trim().length >= 2);
 
   Map<String, dynamic> toJson() => {
         '_id': id,

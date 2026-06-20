@@ -25,9 +25,13 @@ class AuthInterceptor extends Interceptor {
   ) async {
     final skipAuth = options.extra[_skipAuthKey] == true;
     if (!skipAuth) {
-      final token = await _storage.getAccessToken();
-      if (token != null && token.isNotEmpty) {
-        options.headers['Authorization'] = 'Bearer $token';
+      try {
+        final token = await _storage.getAccessToken();
+        if (token != null && token.isNotEmpty) {
+          options.headers['Authorization'] = 'Bearer $token';
+        }
+      } catch (_) {
+        // Corrupt/missing storage — proceed without token; API returns 401.
       }
     }
     handler.next(options);

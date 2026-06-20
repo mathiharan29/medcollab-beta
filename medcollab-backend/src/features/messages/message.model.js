@@ -216,8 +216,9 @@ messageSchema.index({ spaceId: 1, createdAt: -1 });
 messageSchema.index({ mentions: 1 });
 
 // ── Pre-save Hook ─────────────────────────────────────────────────────────────
-// When a message is soft-deleted, blank out its content
-messageSchema.pre('save', function (next) {
+// When a message is soft-deleted, blank out its content.
+// Mongoose 9+: use async middleware (no `next` callback).
+messageSchema.pre('save', async function () {
   if (this.isModified('isDeleted') && this.isDeleted) {
     this.deletedAt = new Date();
     this.content = {
@@ -230,7 +231,6 @@ messageSchema.pre('save', function (next) {
     };
     this.reactions = [];
   }
-  next();
 });
 
 // ── Instance Methods ──────────────────────────────────────────────────────────

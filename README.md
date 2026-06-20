@@ -24,10 +24,12 @@ MedCollab/
 
 ```bash
 cd medcollab-backend
-cp .env.example .env   # fill MongoDB URI, JWT secrets
+cp .env.example .env   # JWT secrets only — MongoDB auto-starts in dev
 npm install
 npm run dev            # http://localhost:5000
 ```
+
+No MongoDB Atlas needed for local dev — an in-memory database starts automatically.
 
 Dev OTP: set `OTP_BYPASS=true` in `.env`, use **`123456`**.
 
@@ -47,7 +49,7 @@ flutter run -d chrome --dart-define=API_BASE_URL=http://localhost:5000
 |-----------|--------|
 | Backend API | ✅ Complete (all controllers, socket, auth) |
 | Flutter auth flow | ✅ Phone → OTP → profile → home + logout |
-| Spaces / chat | ⬜ Phase 3 |
+| Spaces / chat | ✅ MVP — spaces, channels, messages |
 | Shift handoffs | ⬜ Phase 4 |
 
 See [medcollab-app/PROJECT_STATE.md](medcollab-app/PROJECT_STATE.md) for detailed progress.

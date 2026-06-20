@@ -224,6 +224,8 @@ userSchema.methods.toPublicProfile = function () {
     bio: this.bio,
     availability: this.availability,
     lastSeenAt: this.lastSeenAt,
+    isOnboarded: this.isOnboarded,
+    isVerified: this.isVerified,
   };
 };
 

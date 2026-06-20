@@ -15,6 +15,8 @@ class SocketClient {
   io.Socket? _socket;
   String? _accessToken;
   final _connectionController = StreamController<bool>.broadcast();
+  final _joinedChannels = <String>{};
+  final _eventControllers = <String, StreamController<Map<String, dynamic>>>{};
 
   bool get isConnected => _socket?.connected ?? false;
 
@@ -34,43 +36,44 @@ class SocketClient {
     _socket = io.io(
       EnvConfig.socketUrl,
       io.OptionBuilder()
-          .setTransports(['websocket'])
+          // Polling first helps Flutter web when websocket handshake is flaky.
+          .setTransports(['polling', 'websocket'])
           .disableAutoConnect()
           .enableReconnection()
           .setReconnectionDelay(
-              AppConstants.socketReconnectDelay.inMilliseconds,)
+            AppConstants.socketReconnectDelay.inMilliseconds,
+          )
           .setReconnectionAttempts(AppConstants.socketMaxReconnectAttempts)
           .setAuth({'token': accessToken})
           .build(),
     );
 
     _registerLifecycleHandlers();
+    _bindTrackedEvents();
     _socket!.connect();
   }
 
   Future<void> disconnect() async {
+    _joinedChannels.clear();
     _socket?.dispose();
     _socket = null;
     _accessToken = null;
     _connectionController.add(false);
   }
 
-  /// Reconnect after silent token refresh.
   Future<void> reconnect(String newAccessToken) async {
     await connect(newAccessToken);
   }
 
-  // ── Channel rooms ───────────────────────────────────────────────────────────
-
   void joinChannel(String channelId) {
+    _joinedChannels.add(channelId);
     _emit(SocketEvents.joinChannel, {'channelId': channelId});
   }
 
   void leaveChannel(String channelId) {
+    _joinedChannels.remove(channelId);
     _emit(SocketEvents.leaveChannel, {'channelId': channelId});
   }
-
-  // ── Typing indicators ─────────────────────────────────────────────────────
 
   void emitTypingStart(String channelId) {
     _emit(SocketEvents.typingStart, {'channelId': channelId});
@@ -79,8 +82,6 @@ class SocketClient {
   void emitTypingStop(String channelId) {
     _emit(SocketEvents.typingStop, {'channelId': channelId});
   }
-
-  // ── Presence ──────────────────────────────────────────────────────────────
 
   void updateAvailability({
     required String status,
@@ -94,8 +95,6 @@ class SocketClient {
     });
   }
 
-  // ── Event subscriptions ─────────────────────────────────────────────────────
-
   void on(String event, void Function(dynamic data) handler) {
     _socket?.on(event, handler);
   }
@@ -108,24 +107,23 @@ class SocketClient {
     }
   }
 
+  /// Subscribe to a socket event as a typed map stream.
+  /// Survives reconnects — listeners stay on this client, not the raw socket.
   Stream<Map<String, dynamic>> onMapEvent(String event) {
-    final controller = StreamController<Map<String, dynamic>>.broadcast();
-
-    void listener(dynamic data) {
-      if (data is Map<String, dynamic>) {
-        controller.add(data);
-      } else if (data is Map) {
-        controller.add(Map<String, dynamic>.from(data));
-      }
-    }
-
-    _socket?.on(event, listener);
-    controller.onCancel = () => _socket?.off(event, listener);
+    final controller = _eventControllers.putIfAbsent(
+      event,
+      () => StreamController<Map<String, dynamic>>.broadcast(),
+    );
+    _bindTrackedEvents();
     return controller.stream;
   }
 
   void dispose() {
     disconnect();
+    for (final controller in _eventControllers.values) {
+      controller.close();
+    }
+    _eventControllers.clear();
     _connectionController.close();
   }
 
@@ -134,20 +132,53 @@ class SocketClient {
     _socket!.emit(event, payload);
   }
 
+  void _rejoinChannels() {
+    for (final channelId in _joinedChannels) {
+      _emit(SocketEvents.joinChannel, {'channelId': channelId});
+    }
+  }
+
+  void _onSocketReady() {
+    _connectionController.add(true);
+    _rejoinChannels();
+  }
+
+  void _bindTrackedEvents() {
+    final socket = _socket;
+    if (socket == null) return;
+
+    for (final event in _eventControllers.keys) {
+      socket.off(event);
+      socket.on(event, (data) => _dispatchEvent(event, data));
+    }
+  }
+
+  void _dispatchEvent(String event, dynamic data) {
+    final controller = _eventControllers[event];
+    if (controller == null || controller.isClosed) return;
+
+    if (data is Map<String, dynamic>) {
+      controller.add(data);
+    } else if (data is Map) {
+      controller.add(Map<String, dynamic>.from(data));
+    }
+  }
+
   void _registerLifecycleHandlers() {
     final socket = _socket!;
 
-    socket.onConnect((_) => _connectionController.add(true));
+    socket.onConnect((_) => _onSocketReady());
+
+    socket.onReconnect((_) => _onSocketReady());
+
     socket.onDisconnect((_) => _connectionController.add(false));
+
     socket.onConnectError((_) => _connectionController.add(false));
+
     socket.onError((_) => _connectionController.add(false));
 
-    socket.on(SocketEvents.authenticated, (_) {
-      _connectionController.add(true);
-    });
+    socket.on(SocketEvents.authenticated, (_) => _onSocketReady());
 
-    socket.on(SocketEvents.authError, (_) {
-      _connectionController.add(false);
-    });
+    socket.on(SocketEvents.authError, (_) => _connectionController.add(false));
   }
 }

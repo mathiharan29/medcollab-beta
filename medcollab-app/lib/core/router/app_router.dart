@@ -4,11 +4,14 @@ import 'package:medcollab_app/core/router/app_routes.dart';
 import 'package:medcollab_app/core/router/go_router_refresh_stream.dart';
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_event.dart';
-import 'package:medcollab_app/features/auth/presentation/pages/home_page.dart';
 import 'package:medcollab_app/features/auth/presentation/pages/otp_verification_page.dart';
 import 'package:medcollab_app/features/auth/presentation/pages/phone_entry_page.dart';
 import 'package:medcollab_app/features/auth/presentation/pages/profile_setup_page.dart';
 import 'package:medcollab_app/features/auth/presentation/pages/splash_page.dart';
+import 'package:medcollab_app/features/messages/presentation/pages/channel_chat_page.dart';
+import 'package:medcollab_app/features/spaces/data/models/channel_model.dart';
+import 'package:medcollab_app/features/spaces/presentation/pages/space_detail_page.dart';
+import 'package:medcollab_app/features/spaces/presentation/pages/spaces_home_page.dart';
 
 class AppRouter {
   AppRouter({required AuthBloc authBloc}) : _authBloc = authBloc {
@@ -42,7 +45,27 @@ class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.home,
-        builder: (context, state) => const HomePage(),
+        builder: (context, state) => const SpacesHomePage(),
+      ),
+      GoRoute(
+        path: AppRoutes.spaceDetail,
+        builder: (context, state) {
+          final spaceId = state.pathParameters['spaceId']!;
+          return SpaceDetailPage(spaceId: spaceId);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.channel,
+        builder: (context, state) {
+          final spaceId = state.pathParameters['spaceId']!;
+          final channelId = state.pathParameters['channelId']!;
+          final channel = state.extra as ChannelModel?;
+          return ChannelChatPage(
+            spaceId: spaceId,
+            channelId: channelId,
+            channel: channel,
+          );
+        },
       ),
     ],
   );
@@ -53,8 +76,19 @@ class AppRouter {
 
     switch (auth.status) {
       case AuthStatus.unknown:
-      case AuthStatus.loading:
         return location == AppRoutes.splash ? null : AppRoutes.splash;
+
+      case AuthStatus.loading:
+        // Stay on the current auth screen while saving OTP / profile, etc.
+        if (location == AppRoutes.splash ||
+            location == AppRoutes.phoneEntry ||
+            location == AppRoutes.otpVerification ||
+            location == AppRoutes.profileSetup ||
+            location == AppRoutes.home ||
+            location.startsWith('/spaces')) {
+          return null;
+        }
+        return AppRoutes.splash;
 
       case AuthStatus.unauthenticated:
         if (location == AppRoutes.phoneEntry) return null;
@@ -69,7 +103,9 @@ class AppRouter {
         return AppRoutes.profileSetup;
 
       case AuthStatus.authenticated:
-        if (location == AppRoutes.home) return null;
+        if (location == AppRoutes.home || location.startsWith('/spaces')) {
+          return null;
+        }
         return AppRoutes.home;
     }
   }

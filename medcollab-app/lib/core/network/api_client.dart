@@ -209,7 +209,12 @@ class ApiClient {
       case DioExceptionType.receiveTimeout:
         return const NetworkException('Connection timed out');
       case DioExceptionType.connectionError:
-        return const NetworkException('No internet connection');
+        return NetworkException(
+          'Cannot reach the API at ${EnvConfig.apiBaseUrl}. '
+          'Start the backend (npm run dev in medcollab-backend). '
+          'On a physical phone, use your PC IP: '
+          '--dart-define=API_BASE_URL=http://192.168.x.x:5000',
+        );
       case DioExceptionType.cancel:
         return const NetworkException('Request cancelled');
       default:

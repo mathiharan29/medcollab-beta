@@ -31,15 +31,16 @@
 | Persistent login | ✅ Done | Secure storage + `getMe` on launch |
 | Logout | ✅ Done | API + local session clear |
 
-## Phase 3 — Core navigation (next)
+## Phase 3 — Core navigation ✅ MVP
 
-| Task | Status |
-|------|--------|
-| Spaces list + detail | ⬜ Pending |
-| Channel list + message thread | ⬜ Pending |
-| Socket real-time messages | ⬜ Pending |
+| Task | Status | Notes |
+|------|--------|-------|
+| Spaces list + create/join | ✅ Done | `SpacesHomePage` |
+| Channel list per space | ✅ Done | `SpaceDetailPage` |
+| Message thread + send | ✅ Done | `ChannelChatPage` + `ChannelChatCubit` |
+| Socket real-time messages | ✅ Done | `new_message` listener |
 
-## Phase 4 — Killer feature
+## Phase 4 — Killer feature (next)
 
 | Task | Status |
 |------|--------|

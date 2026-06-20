@@ -50,9 +50,28 @@ let io; // Singleton — exported for use in controllers to emit events
  * Called once from server.js, passed the HTTP server instance
  */
 const initSocket = (httpServer) => {
+  const isDev = process.env.NODE_ENV !== 'production';
+  const allowedOrigins =
+    process.env.ALLOWED_ORIGINS?.split(',').map((o) => o.trim()) || [];
+
   io = new Server(httpServer, {
     cors: {
-      origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+
+        if (isDev) {
+          const isLocalDev = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(
+            origin
+          );
+          if (isLocalDev) return callback(null, true);
+        }
+
+        if (allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        }
+
+        callback(new Error(`Socket CORS: origin ${origin} not allowed`));
+      },
       methods: ['GET', 'POST'],
       credentials: true,
     },
@@ -154,9 +173,15 @@ const getIO = () => {
  * Called by the message controller after saving a message to MongoDB
  */
 const emitNewMessage = (channelId, message) => {
+  const payload =
+    typeof message.toObject === 'function' ? message.toObject() : message;
+
   getIO()
     .to(`channel:${channelId}`)
-    .emit(SOCKET_EVENTS.NEW_MESSAGE, message);
+    .emit(SOCKET_EVENTS.NEW_MESSAGE, {
+      ...payload,
+      channelId: channelId.toString(),
+    });
 };
 
 /**

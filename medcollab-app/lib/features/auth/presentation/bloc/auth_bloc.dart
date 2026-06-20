@@ -30,7 +30,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthRepository _authRepository;
   final UserRepository _userRepository;
 
+  bool _sessionCheckStarted = false;
+
   Future<void> _onStarted(AuthStarted event, Emitter<AuthState> emit) async {
+    if (_sessionCheckStarted && state.status != AuthStatus.unknown) {
+      return;
+    }
+    _sessionCheckStarted = true;
+
     emit(AuthState.loading(user: state.user, phoneE164: state.phoneE164));
 
     try {
@@ -181,7 +188,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         phoneE164: state.phoneE164,
         errorMessage: e.message,
       ),);
-    } catch (_) {
+    } catch (e, stackTrace) {
+      assert(() {
+        // ignore: avoid_print
+        print('AuthBloc._onProfileSubmitted error: $e\n$stackTrace');
+        return true;
+      }());
       emit(AuthState(
         status: AuthStatus.needsProfile,
         user: state.user,

@@ -32,8 +32,15 @@ const { connectFirebase } = require('./config/firebase');
 const { initSocket } = require('./socket');
 const logger = require('./utils/logger');
 
+// ── Server Configuration ──────────────────────────────────────────────────────
+const PORT = parseInt(process.env.PORT) || 5000;
+const NODE_ENV = process.env.NODE_ENV || 'development';
+
 // ── Validate Required Environment Variables ───────────────────────────────────
-const REQUIRED_ENV = ['MONGODB_URI', 'JWT_SECRET', 'JWT_REFRESH_SECRET'];
+const REQUIRED_ENV = ['JWT_SECRET', 'JWT_REFRESH_SECRET'];
+if (NODE_ENV === 'production') {
+  REQUIRED_ENV.push('MONGODB_URI');
+}
 
 const missingEnv = REQUIRED_ENV.filter((key) => !process.env[key]);
 if (missingEnv.length > 0) {
@@ -41,10 +48,6 @@ if (missingEnv.length > 0) {
   logger.error('Copy .env.example to .env and fill in the values');
   process.exit(1);
 }
-
-// ── Server Configuration ──────────────────────────────────────────────────────
-const PORT = parseInt(process.env.PORT) || 5000;
-const NODE_ENV = process.env.NODE_ENV || 'development';
 
 // ── Bootstrap Function ────────────────────────────────────────────────────────
 const startServer = async () => {
@@ -64,11 +67,12 @@ const startServer = async () => {
     // 5. Attach Socket.io to the HTTP server
     initSocket(httpServer);
 
-    // 6. Start listening
-    httpServer.listen(PORT, () => {
+    // 6. Start listening (0.0.0.0 in dev so physical phones on same Wi‑Fi can connect)
+    const host = NODE_ENV === 'production' ? undefined : '0.0.0.0';
+    httpServer.listen(PORT, host, () => {
       logger.info(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
       logger.info(`  MedCollab API — ${NODE_ENV.toUpperCase()}`);
-      logger.info(`  Listening on port ${PORT}`);
+      logger.info(`  Listening on port ${PORT}${host ? ` (${host})` : ''}`);
       logger.info(`  Health: http://localhost:${PORT}/health`);
       logger.info(`  API:    http://localhost:${PORT}/api`);
       logger.info(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
@@ -97,6 +101,7 @@ const startServer = async () => {
         try {
           const mongoose = require('mongoose');
           await mongoose.connection.close();
+          await connectDB.stopMemoryServer?.();
           logger.info('MongoDB connection closed');
           process.exit(0);
         } catch (err) {

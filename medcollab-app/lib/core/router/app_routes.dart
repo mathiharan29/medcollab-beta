@@ -7,7 +7,12 @@ abstract final class AppRoutes {
   static const String home = '/home';
   static const String spaces = '/spaces';
   static const String spaceDetail = '/spaces/:spaceId';
-  static const String channel = '/channels/:channelId';
+  static const String channel = '/spaces/:spaceId/channels/:channelId';
   static const String handoffCreate = '/handoffs/create';
   static const String handoffDetail = '/handoffs/:handoffId';
+
+  static String spaceDetailPath(String spaceId) => '/spaces/$spaceId';
+
+  static String channelPath(String spaceId, String channelId) =>
+      '/spaces/$spaceId/channels/$channelId';
 }

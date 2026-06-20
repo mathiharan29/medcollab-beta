@@ -2,9 +2,8 @@
 abstract final class AppConstants {
   static const String appName = 'MedCollab';
 
-  /// Default API base URL for local development.
-  /// Override with `--dart-define=API_BASE_URL=https://your-api.railway.app`
-  static const String defaultApiBaseUrl = 'http://10.0.2.2:5000';
+  /// Default when no `--dart-define=API_BASE_URL` is set (see [EnvConfig]).
+  static const String defaultApiBaseUrl = 'http://localhost:5000';
 
   /// Pagination limits — mirrors backend `PAGINATION`.
   static const int messagesPageSize = 30;

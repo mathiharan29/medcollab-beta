@@ -5,6 +5,8 @@ import 'package:medcollab_app/core/storage/secure_storage_service.dart';
 import 'package:medcollab_app/features/auth/data/repositories/auth_repository.dart';
 import 'package:medcollab_app/features/auth/data/repositories/user_repository.dart';
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:medcollab_app/features/messages/data/repositories/message_repository.dart';
+import 'package:medcollab_app/features/spaces/data/repositories/space_repository.dart';
 
 class AppDependencies {
   AppDependencies._();
@@ -16,6 +18,8 @@ class AppDependencies {
   late final SocketClient socketClient;
   late final AuthRepository authRepository;
   late final UserRepository userRepository;
+  late final SpaceRepository spaceRepository;
+  late final MessageRepository messageRepository;
   late final AuthBloc authBloc;
   late final AppRouter appRouter;
 
@@ -33,6 +37,8 @@ class AppDependencies {
       socketClient: socketClient,
     );
     userRepository = UserRepository(apiClient: apiClient);
+    spaceRepository = SpaceRepository(apiClient: apiClient);
+    messageRepository = MessageRepository(apiClient: apiClient);
     authBloc = AuthBloc(
       authRepository: authRepository,
       userRepository: userRepository,
