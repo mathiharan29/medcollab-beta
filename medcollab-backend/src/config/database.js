@@ -21,21 +21,35 @@ const connectDB = async () => {
   let uri = process.env.MONGODB_URI;
   const isProd = process.env.NODE_ENV === 'production';
 
+  // Production must use MongoDB Atlas — never in-memory.
+  if (isProd && !uri) {
+    logger.error('MONGODB_URI is required when NODE_ENV=production');
+    logger.error('Create a MongoDB Atlas cluster and set the connection string in Railway env vars');
+    process.exit(1);
+  }
+
+  // Dev-only fallback: mongodb-memory-server (devDependency — not installed in prod).
   if (!uri && !isProd) {
     try {
+      require.resolve('mongodb-memory-server');
       const { MongoMemoryServer } = require('mongodb-memory-server');
       memoryServer = await MongoMemoryServer.create();
       uri = memoryServer.getUri('medcollab');
       logger.warn('DEV: In-memory MongoDB — no Atlas needed (data resets on restart)');
     } catch (err) {
-      logger.error(`In-memory MongoDB failed: ${err.message}`);
-      logger.error('Run: cd medcollab-backend && npm install');
+      if (err.code === 'MODULE_NOT_FOUND') {
+        logger.error('mongodb-memory-server is not installed (dev dependency only)');
+        logger.error('Run: cd medcollab-backend && npm install');
+        logger.error('Or set MONGODB_URI to a MongoDB Atlas connection string');
+      } else {
+        logger.error(`In-memory MongoDB failed: ${err.message}`);
+      }
       process.exit(1);
     }
   }
 
   if (!uri) {
-    logger.error('MONGODB_URI is required in production');
+    logger.error('MONGODB_URI is required');
     process.exit(1);
   }
 

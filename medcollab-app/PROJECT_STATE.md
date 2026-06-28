@@ -1,8 +1,8 @@
 # MedCollab — Project State
 
-**Last updated:** 2026-06-18  
-**Analyzer:** `flutter analyze` — no issues  
-**QA audit:** Staff Engineer / QA pass completed (reliability fixes applied)
+**Last updated:** 2026-06-20  
+**Branch:** `design/clinical-design-system`  
+**Phase:** Beta deployment preparation complete (not yet deployed)
 
 ---
 
@@ -17,147 +17,122 @@
 | **5 — Rich comms** | ✅ MVP | Media, documents, message UX, members, search |
 | **6 — Handoffs** | ✅ MVP | Clinical shift handover workflow |
 | **Design system** | ✅ Complete | MedCollab tokens + shared components (clinical aesthetic) |
+| **Beta deployment prep** | ✅ Ready | Checklist + scripts — see `DEPLOYMENT.md` |
 
 ---
 
-## MedCollab design system (2026-06-18)
+## Beta deployment readiness (2026-06-20)
+
+**Guide:** [`DEPLOYMENT.md`](../DEPLOYMENT.md) at repo root — full checklist with exact commands.
+
+### Backend — production ready
+
+| Area | Status | Notes |
+|------|--------|-------|
+| MongoDB Atlas | ✅ Ready | `MONGODB_URI` required when `NODE_ENV=production` |
+| In-memory MongoDB | ✅ Dev only | `mongodb-memory-server` in devDependencies; blocked in prod |
+| Cloudinary | ✅ Ready | Required for beta media; local disk fallback dev-only |
+| Socket.io | ✅ Ready | Same port as HTTP; JWT auth; space room sync |
+| CORS | ✅ Ready | Mobile unaffected; web needs `ALLOWED_ORIGINS` |
+| Env validation | ✅ Ready | `scripts/validate-env.js`; OTP_BYPASS blocked in prod |
+| Trust proxy | ✅ Ready | Enabled for Railway rate limiting |
+| Health check | ✅ Ready | `GET /health` |
+| Startup scripts | ✅ Ready | `scripts/start-production.ps1` / `.sh`, `Procfile`, `railway.json` |
+
+### Flutter — production ready
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Env config | ✅ Ready | `--dart-define=API_BASE_URL` (required for release APK) |
+| Socket URL | ✅ Ready | Optional `--dart-define=SOCKET_URL`; defaults to API host |
+| Android INTERNET | ✅ Ready | Permission in main manifest |
+| Release build script | ✅ Ready | `scripts/build-release-apk.ps1` |
+| Release signing | ⚠️ Beta only | Still uses debug keystore — OK for internal beta |
+| App ID | ⚠️ Placeholder | `com.example.medcollab_app` — change before Play Store |
+| FCM client | ❌ Pending | Backend ready; Flutter not integrated |
+
+### External services required for beta
+
+1. **MongoDB Atlas** — persistent database
+2. **Railway** — API hosting
+3. **Cloudinary** — media storage (do not rely on Railway disk)
+4. **MSG91** — OTP SMS (disable `OTP_BYPASS`)
+5. **Firebase** — optional (push notifications)
+
+---
+
+## Design system (2026-06-18)
 
 **Personality:** Calm · Professional · Premium · Trustworthy · Clinical  
-**Inspiration:** Linear (precision), Notion (calm surfaces), Slack (clinical chat)  
-**Constraints:** No gradients · No flashy animations · Border-first surfaces · 48px touch targets
+**Constraints:** No gradients · Border-first surfaces · 48px touch targets
 
-### Color tokens
+| Token | Hex |
+|-------|-----|
+| Primary Teal | `#0F766E` |
+| Primary Container | `#CCFBF1` |
+| Secondary Slate | `#1E293B` |
+| Accent Amber | `#F59E0B` |
+| Background | `#F8FAFC` |
 
-| Token | Hex | Usage |
-|-------|-----|-------|
-| Primary Teal | `#0F766E` | CTAs, FAB, app bar actions |
-| Primary Container | `#CCFBF1` | Own message bubbles, icon wells |
-| Secondary Slate | `#1E293B` | Headings, secondary emphasis |
-| Accent Amber | `#F59E0B` | Submitted handoffs, attention (non-error) |
-| Background | `#F8FAFC` | Scaffold, composer fill |
-| Success | `#22C55E` | Available presence, confirmations |
-| Error | `#DC2626` | Errors, flagged patients, emergency |
-
-### Typography
-
-Modern, readable hierarchy — 15px body, generous line height, `titleSmall` for card headings. Large touch targets for gloved/clinical use.
-
-### Core theme files
-
-| File | Purpose |
-|------|---------|
-| `lib/core/theme/app_colors.dart` | Brand + semantic palette |
-| `lib/core/theme/app_design_system.dart` | Personality, touch targets, component specs |
-| `lib/core/theme/app_spacing.dart` | 4–40px spacing scale + `minTouchTarget` |
-| `lib/core/theme/app_text_styles.dart` | Typography hierarchy |
-| `lib/core/theme/app_decorations.dart` | Cards, bubbles, search, presence, skeletons |
-| `lib/core/theme/app_theme.dart` | Material 3 `ThemeData` (app bar, nav bar, FAB, search, chips) |
-
-### Shared UI components
-
-| Widget | Path | Role |
-|--------|------|------|
-| `AppSearchBar` | `shared/presentation/widgets/app_search_bar.dart` | 48px bordered search |
-| `AppFab` | `shared/presentation/widgets/app_fab.dart` | Extended primary FAB |
-| `AppBottomBar` | `shared/presentation/widgets/app_bottom_bar.dart` | Sticky form/action bar |
-| `AppEmptyState` | `shared/presentation/widgets/app_empty_state.dart` | Calm empty states |
-| `AppSkeleton` / `AppListSkeleton` | `shared/presentation/widgets/app_skeleton.dart` | Static loaders (no shimmer) |
-| `AppAvatar` | `shared/presentation/widgets/app_avatar.dart` | Initials + presence ring |
-| `ErrorBanner` | `shared/presentation/widgets/error_banner.dart` | Inline error surface |
-
-### Component treatments
-
-| Surface | Treatment |
-|---------|-----------|
-| **Message bubbles** | Container teal (`#CCFBF1`) mine / slate-muted other; bordered, no shadow |
-| **Handoff cards** | Bordered card + 4px priority stripe; amber chip for submitted |
-| **Channel cards** | White surface, `border` outline, member count secondary text |
-| **Presence** | Compact dot on avatars; labeled pill chips on member list |
-| **Empty states** | Primary-container icon well, muted copy, optional CTA |
-| **Skeletons** | Flat `surfaceMuted` blocks — no shimmer |
-| **Avatars** | Initials on `primaryContainer`; optional presence dot |
-| **Search bars** | `AppSearchBar` on channels, handoffs, members |
-| **App bars** | White surface, slate title, teal actions — elevation 0 |
-| **FAB** | `AppFab` on spaces, channels, handoffs — teal, no elevation |
-| **Bottom bar** | `AppBottomBar` on handoff form; `navigationBarTheme` ready for tabs |
-
-### Polished screens
-
-- Spaces home, space detail (channels)
-- Channel chat (bubbles + composer)
-- Handoffs list + form + detail
-- Members list + presence picker
-- Auth scaffold
+Theme files: `lib/core/theme/` · Shared widgets: `lib/shared/presentation/widgets/`
 
 ---
 
-## QA audit summary (2026-06-20)
-
-### Fixes applied (bugs / reliability only)
+## Reliability fixes (2026-06-20)
 
 | Area | Fix |
 |------|-----|
-| **Auth + socket** | JWT refresh now reconnects socket with new token; session expiry notifies `AuthBloc` |
-| **Auth restore** | `getMe()` before socket connect; network errors allow session retry |
-| **Message send** | Duplicate bubble race fixed (socket arrives before REST) |
-| **Send errors** | Chat/thread cubits reset `isSending` on unexpected failures |
-| **Token refresh** | Single-flight refresh prevents parallel 401 storms |
-| **Handoffs reload** | Debounced socket-triggered list refresh + immediate upsert on submit |
-| **Presence map** | Capped at 300 entries to limit memory growth |
-| **Media upload** | Local disk fallback when Cloudinary not configured |
-| **Router** | `debugLogDiagnostics` only in debug builds |
-| **Backend access** | Private/archived channel checks; socket `join_channel` membership guard |
-| **Backend messages** | Message-by-id ops verify `channelId` matches URL |
-| **Backend handoffs** | Atomic submit/acknowledge; `handoff_submitted` socket event |
-| **Backend search** | Regex input escaped (ReDoS mitigation) |
+| **Socket + JWT** | Token refresh recreates socket with new JWT; auto-recover on disconnect |
+| **Chat realtime** | Channel rejoin + silent message reload on reconnect |
+| **Presence** | Snapshot on `sync_space_rooms`; monotonic merge; self-online when connected |
+| **Handoffs** | `handoff_acknowledged` socket; navigation pop preserves back stack |
+| **App lifecycle** | Socket reconnect on app resume |
 
-### Open improvements (not implemented — no new features)
+---
+
+## Open items (post-beta)
 
 | Priority | Item |
 |----------|------|
-| High | MongoDB Atlas + Cloudinary + Railway deploy for beta |
+| High | Deploy to Railway + Atlas + Cloudinary (follow `DEPLOYMENT.md`) |
+| High | Release keystore + real application ID for Play Store |
 | High | Refresh token rotation / server-side revocation |
-| High | `connectionStateRecovery.skipMiddlewares` security review |
-| Medium | App lifecycle socket reconnect on resume |
-| Medium | Consume `message_updated` / `message_deleted` socket events in UI |
-| Medium | Web tokens in `SharedPreferences` — XSS risk on web builds |
-| Medium | Multi-instance: presence + rate limits need Redis before scale |
-| Low | Message pagination (`hasMore`) in channel/thread UI |
-| Low | App logo → launcher icon + splash (assets pending from designer) |
-| Low | `AppDependencies.dispose()` wiring on app exit |
-
----
-
-## Phase 6 — Clinical shift handoffs (MVP)
-
-| Component | Path |
-|-----------|------|
-| Models + repository | `features/handoffs/data/` |
-| List / create / edit / detail | `features/handoffs/presentation/pages/` |
-| Realtime list refresh | `handoffs_cubit.dart` |
-
-**Flow:** Space → Shift handoffs → create draft → submit → assigned doctor acknowledges → archived.
-
----
-
-## Phase 5 — Rich communication (MVP)
-
-Media upload, documents, message UX polish, members, presence, channel search.
+| Medium | FCM push integration in Flutter |
+| Medium | App logo → launcher icon + splash |
+| Medium | Redis for multi-instance presence/rate limits |
+| Low | Message pagination UI (`hasMore`) |
 
 ---
 
 ## Run commands
 
-**Backend:**
-```powershell
-cd D:\MedCollab\medcollab-backend
-npm run dev
-```
+### Local development
 
-**Flutter Chrome:**
 ```powershell
-cd D:\MedCollab\medcollab-app
+# Backend (in-memory MongoDB, OTP bypass)
+cd medcollab-backend
+copy .env.example .env   # set OTP_BYPASS=true, leave MONGODB_URI empty
+npm run dev
+
+# Flutter Chrome
+cd medcollab-app
 flutter run -d chrome
 ```
 
-Dev OTP: `123456`
+Dev OTP when `OTP_BYPASS=true`: **123456**
+
+### Production validation
+
+```powershell
+cd medcollab-backend
+node scripts/validate-env.js
+```
+
+### Beta APK build
+
+```powershell
+cd medcollab-app
+.\scripts\build-release-apk.ps1 -ApiBaseUrl "https://YOUR-API.up.railway.app"
+```
+
+See [`DEPLOYMENT.md`](../DEPLOYMENT.md) for the full deploy checklist.

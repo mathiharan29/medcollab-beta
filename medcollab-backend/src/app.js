@@ -43,6 +43,11 @@ const notificationRoutes = require('./features/notifications/notification.routes
 
 const app = express();
 
+// Railway / reverse-proxy: correct client IP for rate limiting and logs.
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
+
 // ── Security Middleware ───────────────────────────────────────────────────────
 /**
  * Helmet sets ~14 security-related HTTP headers automatically.

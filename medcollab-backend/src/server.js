@@ -27,7 +27,7 @@ require('dotenv').config();
 const http = require('http');
 const app = require('./app');
 const connectDB = require('./config/database');
-const { connectCloudinary } = require('./config/cloudinary');
+const { connectCloudinary, isCloudinaryConfigured } = require('./config/cloudinary');
 const { connectFirebase } = require('./config/firebase');
 const { initSocket } = require('./socket');
 const logger = require('./utils/logger');
@@ -47,6 +47,31 @@ if (missingEnv.length > 0) {
   logger.error(`Missing required environment variables: ${missingEnv.join(', ')}`);
   logger.error('Copy .env.example to .env and fill in the values');
   process.exit(1);
+}
+
+if (NODE_ENV === 'production') {
+  if (process.env.OTP_BYPASS === 'true') {
+    logger.error('OTP_BYPASS must not be enabled in production');
+    process.exit(1);
+  }
+
+  if (!isCloudinaryConfigured()) {
+    logger.warn(
+      'PRODUCTION WARNING: Cloudinary is not configured. ' +
+      'Local disk uploads/ are ephemeral on Railway and will be lost on redeploy.',
+    );
+  }
+
+  if (!process.env.API_BASE_URL && !isCloudinaryConfigured()) {
+    logger.warn(
+      'PRODUCTION WARNING: Set API_BASE_URL to your public HTTPS Railway URL ' +
+      'if using local media fallback.',
+    );
+  }
+
+  if (!process.env.MSG91_AUTH_KEY || !process.env.MSG91_TEMPLATE_ID) {
+    logger.warn('PRODUCTION WARNING: MSG91 credentials missing — OTP SMS will fail');
+  }
 }
 
 // ── Bootstrap Function ────────────────────────────────────────────────────────

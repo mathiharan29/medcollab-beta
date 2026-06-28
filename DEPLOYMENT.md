@@ -1,0 +1,338 @@
+# MedCollab — Beta Deployment Guide
+
+**Phase:** External beta (first production deploy)  
+**Target platform:** Railway (backend) + MongoDB Atlas + Cloudinary + Flutter APK  
+**Do not deploy until every checklist item is checked.**
+
+---
+
+## Architecture overview
+
+```
+┌─────────────────┐     HTTPS/WSS      ┌──────────────────────────────┐
+│  Flutter APK    │ ◄────────────────► │  Railway (Node.js API)       │
+│  (dart-define)  │                    │  Express + Socket.io         │
+└─────────────────┘                    └──────────┬───────────────────┘
+                                                  │
+                    ┌─────────────────────────────┼─────────────────────┐
+                    ▼                             ▼                     ▼
+            MongoDB Atlas                  Cloudinary              MSG91 (OTP)
+            (persistent DB)                (media CDN)             (SMS)
+```
+
+---
+
+## Pre-deploy checklist
+
+### Backend
+
+- [ ] `NODE_ENV=production` set on Railway
+- [ ] `MONGODB_URI` points to MongoDB Atlas (not empty)
+- [ ] `JWT_SECRET` and `JWT_REFRESH_SECRET` are unique 64+ char random strings
+- [ ] `OTP_BYPASS=false` (server refuses to start if true in production)
+- [ ] `MSG91_AUTH_KEY` and `MSG91_TEMPLATE_ID` configured (DLT-approved template)
+- [ ] Cloudinary credentials configured (`CLOUDINARY_*`)
+- [ ] `API_BASE_URL` set to public Railway HTTPS URL
+- [ ] `ALLOWED_ORIGINS` set if deploying Flutter web
+- [ ] Firebase credentials set (optional — push disabled without them)
+- [ ] Run `node scripts/validate-env.js` with production env — exit 0
+- [ ] Health check returns 200: `GET /health`
+
+### MongoDB Atlas
+
+- [ ] Cluster created (M0 free tier OK for beta)
+- [ ] Database user with read/write on `medcollab` database
+- [ ] Network access: allow Railway IPs or `0.0.0.0/0` for beta
+- [ ] Connection string tested locally with `MONGODB_URI=... npm start`
+
+### Flutter mobile
+
+- [ ] Production API URL known (Railway HTTPS, no trailing slash)
+- [ ] Release APK built with `--dart-define=API_BASE_URL=...`
+- [ ] `INTERNET` permission in Android manifest (included in repo)
+- [ ] APK tested on a **physical phone** (not emulator defaults)
+- [ ] OTP login works with real MSG91 SMS
+
+---
+
+## 1. MongoDB Atlas setup
+
+1. Create account at [mongodb.com/atlas](https://www.mongodb.com/atlas)
+2. Create a **free M0 cluster**
+3. **Database Access** → Add user (password auth)
+4. **Network Access** → Add IP `0.0.0.0/0` (beta) or Railway static IP
+5. **Connect** → Drivers → copy connection string:
+   ```
+   mongodb+srv://USER:PASSWORD@cluster0.xxxxx.mongodb.net/medcollab?retryWrites=true&w=majority
+   ```
+6. Set as `MONGODB_URI` on Railway
+
+**Local dev:** Leave `MONGODB_URI` empty → in-memory MongoDB starts automatically (dev only).
+
+**Production:** `mongodb-memory-server` is a **devDependency** — not installed with `npm ci --omit=dev`. Production **requires** Atlas.
+
+---
+
+## 2. Cloudinary setup
+
+1. Create account at [cloudinary.com](https://cloudinary.com)
+2. Dashboard → copy **Cloud name**, **API Key**, **API Secret**
+3. Set on Railway:
+   ```
+   CLOUDINARY_CLOUD_NAME=your_cloud
+   CLOUDINARY_API_KEY=your_key
+   CLOUDINARY_API_SECRET=your_secret
+   ```
+4. Verify: upload an image in chat — URL should be `res.cloudinary.com/...`
+
+**Without Cloudinary:** Backend falls back to local `uploads/` folder. **This breaks on Railway** — files are lost on every redeploy.
+
+---
+
+## 3. Railway backend deploy
+
+### Option A — GitLab → Railway (recommended)
+
+1. Create project at [railway.app](https://railway.app)
+2. **New Project** → **Deploy from GitLab repo**
+3. Set **Root directory** to `medcollab-backend`
+4. Railway auto-detects Node.js; uses `npm start` → `node src/server.js`
+5. Add all environment variables from `.env.example`
+6. Generate public domain: Settings → Networking → Generate Domain
+7. Copy domain → set `API_BASE_URL=https://YOUR-DOMAIN.up.railway.app`
+
+### Option B — Manual CLI
+
+```powershell
+cd D:\MedCollab\medcollab-backend
+npm ci --omit=dev
+$env:NODE_ENV="production"
+# Set all env vars first, then:
+node scripts/validate-env.js
+node src/server.js
+```
+
+### Production startup scripts
+
+| Script | Platform | Purpose |
+|--------|----------|---------|
+| `scripts/start-production.ps1` | Windows | Validate + `npm ci --omit=dev` + start |
+| `scripts/start-production.sh` | Linux/macOS | Same |
+| `scripts/validate-env.js` | All | Pre-flight env check |
+| `Procfile` | Heroku/Railway | `web: node src/server.js` |
+| `railway.json` | Railway | Health check on `/health` |
+
+### Verify deployment
+
+```powershell
+curl https://YOUR-DOMAIN.up.railway.app/health
+```
+
+Expected:
+```json
+{"status":"ok","database":"connected","environment":"production",...}
+```
+
+---
+
+## 4. Environment variables reference
+
+See complete list: `medcollab-backend/.env.example`
+
+| Variable | Required (prod) | Notes |
+|----------|-----------------|-------|
+| `NODE_ENV` | Yes | Must be `production` |
+| `PORT` | Auto | Railway sets this |
+| `MONGODB_URI` | Yes | Atlas connection string |
+| `JWT_SECRET` | Yes | 64+ char random |
+| `JWT_REFRESH_SECRET` | Yes | Different from JWT_SECRET |
+| `MSG91_AUTH_KEY` | Yes | OTP SMS |
+| `MSG91_TEMPLATE_ID` | Yes | DLT template |
+| `OTP_BYPASS` | Yes | Must be `false` |
+| `CLOUDINARY_*` | Strongly recommended | Media persistence |
+| `API_BASE_URL` | Yes if no Cloudinary | Public HTTPS URL |
+| `ALLOWED_ORIGINS` | Web only | Comma-separated |
+| `FIREBASE_*` | Optional | Push notifications |
+
+Generate JWT secrets:
+```powershell
+node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+```
+
+---
+
+## 5. Socket.io production notes
+
+- Socket.io attaches to the **same HTTP server** as Express (single Railway port)
+- Auth: JWT in `handshake.auth.token` (Flutter client handles this)
+- Mobile apps have **no Origin header** — CORS allows them automatically
+- Ping: every 25s, timeout 60s
+- Connection recovery: 2 minutes
+- Space rooms sync via `sync_space_rooms` event on connect/reconnect
+
+**Flutter client:** Socket URL = API URL (same host, no `/api` prefix).
+
+---
+
+## 6. CORS configuration
+
+| Client | CORS needed? | Config |
+|--------|--------------|--------|
+| Flutter APK (mobile) | No | No Origin header sent |
+| Flutter web | Yes | Add web URL to `ALLOWED_ORIGINS` |
+| Postman / curl | No | No Origin header |
+
+Production example:
+```
+ALLOWED_ORIGINS=https://medcollab-web.example.com,https://app.medcollab.com
+```
+
+Development: localhost origins auto-allowed when `NODE_ENV !== production`.
+
+---
+
+## 7. Flutter production build
+
+### Environment configuration
+
+The app reads the API URL at **compile time** via `--dart-define`:
+
+| Flag | Required | Default (if omitted) |
+|------|----------|----------------------|
+| `API_BASE_URL` | **Yes for release** | `10.0.2.2:5000` (Android emulator only) |
+| `SOCKET_URL` | No | Same as `API_BASE_URL` |
+| `ENABLE_API_LOGGING` | No | `true` (disabled in release builds anyway) |
+
+Config file: `medcollab-app/lib/core/config/env_config.dart`
+
+### Build release APK
+
+**PowerShell:**
+```powershell
+cd D:\MedCollab\medcollab-app
+.\scripts\build-release-apk.ps1 -ApiBaseUrl "https://YOUR-DOMAIN.up.railway.app"
+```
+
+**Manual:**
+```powershell
+flutter build apk --release `
+  --dart-define=API_BASE_URL=https://YOUR-DOMAIN.up.railway.app `
+  --dart-define=ENABLE_API_LOGGING=false
+```
+
+Output: `build/app/outputs/flutter-apk/app-release.apk`
+
+### Physical phone testing
+
+```powershell
+# Install on connected device
+flutter install --release `
+  --dart-define=API_BASE_URL=https://YOUR-DOMAIN.up.railway.app
+```
+
+Or sideload the APK from `build/app/outputs/flutter-apk/app-release.apk`.
+
+### Build Flutter web (optional)
+
+```powershell
+flutter build web `
+  --dart-define=API_BASE_URL=https://YOUR-DOMAIN.up.railway.app `
+  --dart-define=ENABLE_API_LOGGING=false
+```
+
+Add the web deploy URL to backend `ALLOWED_ORIGINS`.
+
+---
+
+## 8. Local development (unchanged)
+
+```powershell
+# Backend — in-memory MongoDB, OTP bypass, local media
+cd D:\MedCollab\medcollab-backend
+copy .env.example .env
+# Set OTP_BYPASS=true, leave MONGODB_URI empty
+npm run dev
+
+# Flutter — Chrome
+cd D:\MedCollab\medcollab-app
+flutter run -d chrome
+
+# Flutter — physical phone on same Wi-Fi
+flutter run --dart-define=API_BASE_URL=http://192.168.x.x:5000
+```
+
+Dev OTP when `OTP_BYPASS=true`: **123456**
+
+---
+
+## 9. Post-deploy smoke test
+
+Run with two physical devices or one phone + one browser:
+
+| # | Test | Pass criteria |
+|---|------|---------------|
+| 1 | Health check | `GET /health` → 200, database connected |
+| 2 | OTP login | Real SMS received, login succeeds |
+| 3 | Create space | Space appears in list |
+| 4 | Send text message | Other user sees it within 1s |
+| 5 | Send image | Upload succeeds, image loads from Cloudinary |
+| 6 | Send document | PDF/document opens |
+| 7 | Presence | Status changes reflect on other user |
+| 8 | Handoff | Submit → acknowledge → archived |
+| 9 | Idle 20 min | Messages still sync after JWT refresh |
+| 10 | App background | Realtime works after resume |
+
+---
+
+## 10. Known beta limitations
+
+| Item | Status | Impact |
+|------|--------|--------|
+| FCM push notifications | Backend ready, Flutter not integrated | No background push |
+| Release signing | Debug keystore | OK for internal beta, not Play Store |
+| App ID | `com.example.medcollab_app` | Change before store release |
+| Local media fallback | Dev only | Must use Cloudinary in production |
+| `.npmrc` strict-ssl=false | Local Windows only | Do not copy to Railway |
+| Multi-server scale | Single instance | Presence/rate limits in-memory |
+
+---
+
+## 11. Troubleshooting
+
+| Symptom | Likely cause | Fix |
+|---------|--------------|-----|
+| `MONGODB_URI is required` | Atlas not set | Set URI on Railway |
+| `Socket auth rejected` | Expired JWT | Hot restart app; check token refresh |
+| Media 404 after redeploy | Local disk fallback | Configure Cloudinary |
+| OTP never arrives | MSG91 not configured | Set MSG91 keys, DLT template |
+| APK can't connect | Wrong API URL | Rebuild with `--dart-define=API_BASE_URL=...` |
+| CORS error (web only) | Origin not allowed | Add URL to `ALLOWED_ORIGINS` |
+| `OTP_BYPASS must not be enabled` | Bypass left on | Set `OTP_BYPASS=false` |
+
+---
+
+## 12. Rollback
+
+Railway keeps deployment history. To rollback:
+1. Railway dashboard → Deployments
+2. Select previous successful deploy → Redeploy
+
+Database (Atlas) is independent — rollback does not affect data.
+
+---
+
+## Quick command reference
+
+```powershell
+# Validate backend env
+cd medcollab-backend && node scripts/validate-env.js
+
+# Production start (local smoke test)
+cd medcollab-backend && .\scripts\start-production.ps1
+
+# Build beta APK
+cd medcollab-app && .\scripts\build-release-apk.ps1 -ApiBaseUrl "https://YOUR-API.up.railway.app"
+
+# Health check
+curl https://YOUR-API.up.railway.app/health
+```

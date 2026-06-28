@@ -2,11 +2,13 @@
   "name": "medcollab-backend",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
+    "start:production": "node scripts/validate-env.js && node src/server.js",
     "dev": "node src/server.js",
     "dev:watch": "nodemon src/server.js",
+    "validate:env": "node scripts/validate-env.js",
     "test": "echo \"No tests yet\""
   },
   "keywords": [],
