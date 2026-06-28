@@ -1,12 +1,14 @@
-# MedCollab monorepo — Railway deploys the backend from repo root.
-# Use this if you cannot find "Root Directory" in the Railway UI.
+# MedCollab monorepo — works whether or not Root Directory is set in Railway UI.
+#
+# If Root Directory = medcollab-backend  → runs npm from current folder
+# If Root Directory = empty (repo root) → cd into medcollab-backend first
 
 [build]
 builder = "NIXPACKS"
-buildCommand = "cd medcollab-backend && npm ci --omit=dev"
+buildCommand = "if [ -d medcollab-backend ]; then cd medcollab-backend; fi && npm ci --omit=dev"
 
 [deploy]
-startCommand = "cd medcollab-backend && node src/server.js"
+startCommand = "if [ -d medcollab-backend ]; then cd medcollab-backend; fi && node src/server.js"
 healthcheckPath = "/health"
 healthcheckTimeout = 120
 restartPolicyType = "ON_FAILURE"
