@@ -1,0 +1,6 @@
+# Nixpacks/Railway build config — used when Root Directory = medcollab-backend
+[phases.install]
+cmds = ["npm ci --omit=dev"]
+
+[start]
+cmd = "node src/server.js"
