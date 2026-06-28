@@ -79,8 +79,19 @@ class Msg91OtpService {
     final map = _asMap(response);
     _ensureSuccess(map, 'Failed to send OTP');
 
+    // sendOTP can return access-token directly (invisible OTP path).
+    final directToken =
+        map['access-token'] ?? map['accessToken'] ?? map['token'];
+    if (directToken is String &&
+        directToken.isNotEmpty &&
+        _looksLikeAccessToken(directToken)) {
+      throw const UnknownException(
+        'Phone verified without OTP — restart login and contact support',
+      );
+    }
+
     final reqId = map['reqId'] ?? map['requestId'] ?? map['message'];
-    if (reqId is String && reqId.isNotEmpty) {
+    if (reqId is String && reqId.isNotEmpty && !_looksLikeAccessToken(reqId)) {
       return reqId;
     }
     throw const UnknownException('MSG91 did not return a request id');
@@ -90,10 +101,34 @@ class Msg91OtpService {
     final map = _asMap(response);
     _ensureSuccess(map, 'Invalid OTP');
 
-    final token = map['access-token'] ?? map['accessToken'] ?? map['token'];
-    if (token is String && token.isNotEmpty) {
-      return token;
+    final explicit = map['access-token'] ?? map['accessToken'] ?? map['token'];
+    if (explicit is String && explicit.isNotEmpty) {
+      return explicit;
     }
+
+    final data = map['data'];
+    if (data is Map) {
+      final nested =
+          data['access-token'] ?? data['accessToken'] ?? data['token'];
+      if (nested is String && nested.isNotEmpty) {
+        return nested;
+      }
+    }
+
+    // MSG91 widget SDK returns the JWT access token in `message` on verify success.
+    final message = map['message'];
+    if (message is String && message.isNotEmpty && _looksLikeAccessToken(message)) {
+      return message;
+    }
+
     throw const UnknownException('MSG91 did not return an access token');
+  }
+
+  /// Distinguish JWT access tokens from short status text or hex reqIds.
+  static bool _looksLikeAccessToken(String value) {
+    if (value.length < 20) return false;
+    if (value.contains(' ')) return false;
+    // JWT-style tokens use dot-separated segments; reqIds are usually hex only.
+    return value.contains('.') || value.length >= 32;
   }
 }
