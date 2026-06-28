@@ -92,14 +92,14 @@ const startServer = async () => {
     // 5. Attach Socket.io to the HTTP server
     initSocket(httpServer);
 
-    // 6. Start listening (0.0.0.0 in dev so physical phones on same Wi‑Fi can connect)
-    const host = NODE_ENV === 'production' ? undefined : '0.0.0.0';
+    // 6. Listen on all interfaces (required for Railway/Docker public routing)
+    const host = '0.0.0.0';
     httpServer.listen(PORT, host, () => {
       logger.info(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
       logger.info(`  MedCollab API — ${NODE_ENV.toUpperCase()}`);
-      logger.info(`  Listening on port ${PORT}${host ? ` (${host})` : ''}`);
-      logger.info(`  Health: http://localhost:${PORT}/health`);
-      logger.info(`  API:    http://localhost:${PORT}/api`);
+      logger.info(`  Listening on port ${PORT} (${host})`);
+      logger.info(`  Health: /health`);
+      logger.info(`  API:    /api`);
       logger.info(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
     });
 
