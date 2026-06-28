@@ -72,12 +72,23 @@
 | Search members | ✅ Done | API `GET /api/users/search` + local filter |
 | `ChannelRepository`, `MemberRepository` | ✅ Done | Wired in `AppDependencies` |
 
-## Phase 6 — Killer feature (next)
+## Phase 6 — Clinical handoffs ✅ MVP
 
-| Task | Status |
-|------|--------|
-| Handoff create / submit / acknowledge | ⬜ Pending |
-| Push notifications (FCM) | ⬜ Pending |
+| Task | Status | Notes |
+|------|--------|-------|
+| Handoff create / submit / acknowledge | ✅ Done | Realtime via socket |
+| Push notifications (FCM) | ⬜ Pending | Backend ready |
+
+## Phase 7 — Beta deployment (2026-06-28)
+
+| Task | Status | Notes |
+|------|--------|-------|
+| MongoDB Atlas | ✅ Live | `medcollab-beta` DB |
+| Railway API | ✅ Live | https://medcollab.up.railway.app |
+| Cloudinary | ✅ Live | Production media |
+| GitHub mirror for Railway | ✅ Done | mathiharan29/medcollab-beta |
+| MSG91 OTP | ⏳ Blocked | MSG91 website IP block at signup |
+| Production APK | ⬜ Pending | `scripts/build-release-apk.ps1` |
 
 ## API contract reference (inferred)
 

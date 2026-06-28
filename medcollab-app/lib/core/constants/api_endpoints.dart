@@ -12,6 +12,7 @@ abstract final class ApiEndpoints {
   // Auth
   static const String requestOtp = '$auth/request-otp';
   static const String verifyOtp = '$auth/verify-otp';
+  static const String verifyMsg91Token = '$auth/verify-msg91-token';
   static const String refreshToken = '$auth/refresh';
   static const String logout = '$auth/logout';
 

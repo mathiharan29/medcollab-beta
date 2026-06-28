@@ -2,41 +2,51 @@
 
 Medical collaboration platform for hospital teams.
 
-## Phase 1 — Foundation
+## Production API (beta)
 
-Core infrastructure is in place. Feature screens start in Phase 2.
+```text
+https://medcollab.up.railway.app
+```
+
+Build for production:
+
+```powershell
+.\scripts\build-release-apk.ps1 -ApiBaseUrl "https://medcollab.up.railway.app"
+```
+
+Login on production requires **MSG91 OTP** (not yet configured — MSG91 dashboard access blocked).
 
 ## Setup
 
-```bash
+```powershell
 cd medcollab-app
 flutter pub get
-flutter create . --project-name medcollab_app   # generates android/ios if missing
 ```
 
-## Run (local backend on emulator)
+## Run (local backend)
 
-```bash
+```powershell
+# Chrome
+flutter run -d chrome --dart-define=API_BASE_URL=http://localhost:5000
+
+# Android emulator
 flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5000
+
+# Physical phone (LAN IP)
+flutter run --dart-define=API_BASE_URL=http://192.168.x.x:5000
 ```
 
-Physical device (replace with your machine's LAN IP):
-
-```bash
-flutter run --dart-define=API_BASE_URL=http://192.168.1.x:5000
-```
+Dev backend OTP: **123456** when `OTP_BYPASS=true` in backend `.env`.
 
 ## Architecture
 
 ```
 lib/
-├── core/           # Shared infrastructure
-├── features/       # Feature-first modules
-│   └── auth/
-│       ├── data/
-│       ├── domain/       # Phase 2+
-│       └── presentation/ # Phase 2+
-└── shared/         # Cross-feature utilities
+├── core/           # API, socket, theme, router, env
+├── features/       # auth, spaces, messages, handoffs, members, media
+└── shared/         # widgets (AppFab, AppSearchBar, etc.)
 ```
 
-See [TASKS.md](TASKS.md) for progress tracker.
+## Status
+
+See [PROJECT_STATE.md](PROJECT_STATE.md) and [../DEPLOYMENT.md](../DEPLOYMENT.md).

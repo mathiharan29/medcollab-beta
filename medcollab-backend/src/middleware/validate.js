@@ -59,6 +59,17 @@ const validateVerifyOtp = [
   handleValidationErrors,
 ];
 
+const validateVerifyMsg91Token = [
+  body('phone')
+    .trim()
+    .notEmpty().withMessage('Phone number is required')
+    .matches(/^\+[1-9]\d{6,14}$/).withMessage('Invalid phone number format'),
+  body('accessToken')
+    .trim()
+    .notEmpty().withMessage('Access token is required'),
+  handleValidationErrors,
+];
+
 const validateUpdateProfile = [
   body('name')
     .optional()
@@ -203,6 +214,7 @@ module.exports = {
   handleValidationErrors,
   validateRequestOtp,
   validateVerifyOtp,
+  validateVerifyMsg91Token,
   validateUpdateProfile,
   validateCreateSpace,
   validateJoinSpace,

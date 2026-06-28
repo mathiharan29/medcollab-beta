@@ -1,3 +1,5 @@
+import 'package:medcollab_app/core/auth/msg91_otp_service.dart';
+import 'package:medcollab_app/core/config/env_config.dart';
 import 'package:medcollab_app/core/network/api_client.dart';
 import 'package:medcollab_app/core/presence/presence_cubit.dart';
 import 'package:medcollab_app/core/router/app_router.dart';
@@ -33,6 +35,7 @@ class AppDependencies {
   late final MemberRepository memberRepository;
   late final HandoffRepository handoffRepository;
   late final PresenceCubit presenceCubit;
+  late final Msg91OtpService? msg91OtpService;
   late final AuthBloc authBloc;
   late final AppRouter appRouter;
 
@@ -58,9 +61,22 @@ class AppDependencies {
     memberRepository = MemberRepository(apiClient: apiClient);
     handoffRepository = HandoffRepository(apiClient: apiClient);
     presenceCubit = PresenceCubit(socketClient: socketClient);
+
+    if (EnvConfig.useMsg91Widget) {
+      msg91OtpService = Msg91OtpService()
+        ..initialize(
+          widgetId: EnvConfig.msg91WidgetId,
+          tokenAuth: EnvConfig.msg91WidgetToken,
+        );
+    } else {
+      msg91OtpService = null;
+    }
+
     authBloc = AuthBloc(
       authRepository: authRepository,
       userRepository: userRepository,
+      msg91OtpService: msg91OtpService,
+      useMsg91Widget: EnvConfig.useMsg91Widget,
     );
     apiClient.onAccessTokenRefreshed = (token) async {
       await socketClient.updateAccessToken(token);

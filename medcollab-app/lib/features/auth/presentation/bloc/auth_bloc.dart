@@ -1,9 +1,12 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:medcollab_app/core/auth/msg91_otp_service.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
 import 'package:medcollab_app/core/error/app_exception.dart';
 import 'package:medcollab_app/core/utils/phone_utils.dart';
+import 'package:medcollab_app/features/auth/data/models/auth_login_result.dart';
 import 'package:medcollab_app/features/auth/data/models/request_otp_request.dart';
 import 'package:medcollab_app/features/auth/data/models/update_profile_request.dart';
+import 'package:medcollab_app/features/auth/data/models/verify_msg91_token_request.dart';
 import 'package:medcollab_app/features/auth/data/models/verify_otp_request.dart';
 import 'package:medcollab_app/features/auth/data/repositories/auth_repository.dart';
 import 'package:medcollab_app/features/auth/data/repositories/user_repository.dart';
@@ -14,8 +17,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   AuthBloc({
     required AuthRepository authRepository,
     required UserRepository userRepository,
+    Msg91OtpService? msg91OtpService,
+    bool useMsg91Widget = false,
   })  : _authRepository = authRepository,
         _userRepository = userRepository,
+        _msg91OtpService = msg91OtpService,
+        _useMsg91Widget = useMsg91Widget,
         super(const AuthState.unknown()) {
     on<AuthStarted>(_onStarted);
     on<AuthPhoneSubmitted>(_onPhoneSubmitted);
@@ -31,6 +38,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   final AuthRepository _authRepository;
   final UserRepository _userRepository;
+  final Msg91OtpService? _msg91OtpService;
+  final bool _useMsg91Widget;
 
   bool _sessionCheckStarted = false;
 
@@ -101,6 +110,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(AuthState.loading(phoneE164: phoneE164));
 
     try {
+      if (_useMsg91Widget) {
+        final reqId = await _msg91OtpService!.sendOtp(phoneE164);
+        emit(AuthState(
+          status: AuthStatus.otpSent,
+          phoneE164: phoneE164,
+          msg91ReqId: reqId,
+        ));
+        return;
+      }
+
       await _authRepository.requestOtp(RequestOtpRequest(phone: phoneE164));
       emit(AuthState(status: AuthStatus.otpSent, phoneE164: phoneE164));
     } on AppException catch (e) {
@@ -108,13 +127,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         status: AuthStatus.unauthenticated,
         phoneE164: phoneE164,
         errorMessage: e.message,
-      ),);
+      ));
     } catch (_) {
       emit(AuthState(
         status: AuthStatus.unauthenticated,
         phoneE164: phoneE164,
         errorMessage: 'Failed to send OTP. Please try again.',
-      ),);
+      ));
     }
   }
 
@@ -127,7 +146,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(const AuthState(
         status: AuthStatus.unauthenticated,
         errorMessage: 'Session expired. Enter your phone number again.',
-      ),);
+      ));
       return;
     }
 
@@ -137,12 +156,40 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       return;
     }
 
-    emit(AuthState.loading(phoneE164: phone, user: state.user));
+    emit(AuthState.loading(
+      phoneE164: phone,
+      user: state.user,
+      msg91ReqId: state.msg91ReqId,
+    ));
 
     try {
-      final result = await _authRepository.verifyOtp(
-        VerifyOtpRequest(phone: phone, otp: event.otp.trim()),
-      );
+      late final AuthLoginResult result;
+      if (_useMsg91Widget) {
+        final reqId = state.msg91ReqId;
+        if (reqId == null) {
+          emit(AuthState(
+            status: AuthStatus.unauthenticated,
+            phoneE164: phone,
+            errorMessage: 'OTP session expired. Request a new code.',
+          ));
+          return;
+        }
+
+        final widgetAccessToken = await _msg91OtpService!.verifyOtp(
+          reqId: reqId,
+          otp: event.otp.trim(),
+        );
+        result = await _authRepository.verifyMsg91Token(
+          VerifyMsg91TokenRequest(
+            phone: phone,
+            accessToken: widgetAccessToken,
+          ),
+        );
+      } else {
+        result = await _authRepository.verifyOtp(
+          VerifyOtpRequest(phone: phone, otp: event.otp.trim()),
+        );
+      }
 
       final user = result.session.user;
       final needsProfile = result.isNewUser || !user.hasMinimumProfile;
@@ -152,20 +199,22 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
             needsProfile ? AuthStatus.needsProfile : AuthStatus.authenticated,
         user: user,
         phoneE164: phone,
-      ),);
+      ));
     } on AppException catch (e) {
       emit(AuthState(
         status: AuthStatus.otpSent,
         phoneE164: phone,
+        msg91ReqId: state.msg91ReqId,
         user: state.user,
         errorMessage: e.message,
-      ),);
+      ));
     } catch (_) {
       emit(AuthState(
         status: AuthStatus.otpSent,
         phoneE164: phone,
+        msg91ReqId: state.msg91ReqId,
         errorMessage: 'Invalid OTP. Please try again.',
-      ),);
+      ));
     }
   }
 
@@ -196,14 +245,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         status: AuthStatus.authenticated,
         user: user,
         phoneE164: state.phoneE164,
-      ),);
+      ));
     } on AppException catch (e) {
       emit(AuthState(
         status: AuthStatus.needsProfile,
         user: state.user,
         phoneE164: state.phoneE164,
         errorMessage: e.message,
-      ),);
+      ));
     } catch (e, stackTrace) {
       assert(() {
         // ignore: avoid_print
@@ -215,7 +264,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         user: state.user,
         phoneE164: state.phoneE164,
         errorMessage: 'Could not save profile. Please try again.',
-      ),);
+      ));
     }
   }
 
@@ -245,9 +294,29 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     final phone = state.phoneE164;
     if (phone == null) return;
 
-    emit(AuthState.loading(phoneE164: phone));
+    emit(AuthState.loading(phoneE164: phone, msg91ReqId: state.msg91ReqId));
 
     try {
+      if (_useMsg91Widget) {
+        final reqId = state.msg91ReqId;
+        if (reqId == null) {
+          final newReqId = await _msg91OtpService!.sendOtp(phone);
+          emit(AuthState(
+            status: AuthStatus.otpSent,
+            phoneE164: phone,
+            msg91ReqId: newReqId,
+          ));
+          return;
+        }
+        await _msg91OtpService!.retryOtp(reqId);
+        emit(AuthState(
+          status: AuthStatus.otpSent,
+          phoneE164: phone,
+          msg91ReqId: reqId,
+        ));
+        return;
+      }
+
       await _authRepository.requestOtp(RequestOtpRequest(phone: phone));
       emit(AuthState(status: AuthStatus.otpSent, phoneE164: phone));
     } on AppException catch (e) {
@@ -255,6 +324,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         AuthState(
           status: AuthStatus.otpSent,
           phoneE164: phone,
+          msg91ReqId: state.msg91ReqId,
           errorMessage: e.message,
         ),
       );
@@ -263,6 +333,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         AuthState(
           status: AuthStatus.otpSent,
           phoneE164: phone,
+          msg91ReqId: state.msg91ReqId,
           errorMessage: 'Failed to resend OTP. Please try again.',
         ),
       );

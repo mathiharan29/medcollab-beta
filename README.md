@@ -2,7 +2,12 @@
 
 Medical collaboration platform for hospital teams — Slack-like messaging built for Indian clinical workflows.
 
-**GitLab:** https://gitlab.com/mathiharan-project/MedCollab
+| Resource | URL |
+|----------|-----|
+| **GitLab (primary)** | https://gitlab.com/mathiharan-project/MedCollab |
+| **GitHub (Railway deploy)** | https://github.com/mathiharan29/medcollab-beta |
+| **Production API** | https://medcollab.up.railway.app |
+| **Health check** | https://medcollab.up.railway.app/health |
 
 ---
 
@@ -12,47 +17,55 @@ Medical collaboration platform for hospital teams — Slack-like messaging built
 MedCollab/
 ├── medcollab-app/       # Flutter client (iOS, Android, Web)
 ├── medcollab-backend/   # Node.js REST + Socket.io API
-├── CLAUDE.md            # AI agent context (single source of truth)
+├── DEPLOYMENT.md        # Beta deploy guide (start here for production)
+├── CLAUDE.md            # AI agent context
 └── .gitlab-ci.yml       # CI: analyze, test, web build
 ```
 
 ---
 
-## Quick start
+## Quick start (local)
 
 ### Backend
 
-```bash
+```powershell
 cd medcollab-backend
-cp .env.example .env   # JWT secrets only — MongoDB auto-starts in dev
+copy .env.example .env   # OTP_BYPASS=true, leave MONGODB_URI empty
 npm install
-npm run dev            # http://localhost:5000
+npm run dev              # http://localhost:5000
 ```
 
-No MongoDB Atlas needed for local dev — an in-memory database starts automatically.
-
-Dev OTP: set `OTP_BYPASS=true` in `.env`, use **`123456`**.
+In-memory MongoDB starts automatically in dev. OTP: **`123456`** when `OTP_BYPASS=true`.
 
 ### Flutter (Chrome)
 
-```bash
+```powershell
 cd medcollab-app
 flutter pub get
 flutter run -d chrome --dart-define=API_BASE_URL=http://localhost:5000
 ```
 
+### Flutter (production API)
+
+```powershell
+flutter run --dart-define=API_BASE_URL=https://medcollab.up.railway.app
+```
+
+*Login requires MSG91 OTP on production (`OTP_BYPASS=false`).*
+
 ---
 
-## Current status
+## Current status (2026-06-28)
 
 | Component | Status |
 |-----------|--------|
-| Backend API | ✅ Complete (all controllers, socket, auth) |
-| Flutter auth flow | ✅ Phone → OTP → profile → home + logout |
-| Spaces / chat | ✅ MVP — spaces, channels, messages |
-| Shift handoffs | ⬜ Phase 4 |
+| Backend API (local) | ✅ Complete |
+| **Backend API (Railway)** | ✅ **Live** — Atlas + Cloudinary |
+| Flutter app (features) | ✅ MVP — auth, chat, media, handoffs, presence |
+| **MSG91 OTP (production)** | ⏳ MSG91 dashboard IP blocked at signup |
+| **Flutter production APK** | ⬜ Pending MSG91 |
 
-See [medcollab-app/PROJECT_STATE.md](medcollab-app/PROJECT_STATE.md) for detailed progress.
+See [medcollab-app/PROJECT_STATE.md](medcollab-app/PROJECT_STATE.md) and [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ---
 
@@ -62,29 +75,26 @@ See [medcollab-app/PROJECT_STATE.md](medcollab-app/PROJECT_STATE.md) for detaile
 |-------|--------|
 | Mobile | Flutter, flutter_bloc, go_router, dio, socket_io_client |
 | API | Node.js, Express, MongoDB Atlas, Socket.io |
+| Hosting | Railway (production), local dev |
 | Auth | Phone OTP (MSG91) + JWT |
 | Media | Cloudinary |
-| Push | Firebase Cloud Messaging |
+| Push | Firebase (optional, not configured) |
 
 ---
 
 ## CI/CD
 
-GitLab CI runs on every push to `master`:
+GitLab CI on push to `master`: `flutter analyze`, `flutter test`, `flutter build web`, backend syntax check.
 
-- `flutter analyze` + `flutter test`
-- `flutter build web` (artifact)
-- Backend syntax check
+GitHub `medcollab-beta` is mirrored for Railway auto-deploy.
 
 ---
 
 ## Secrets (never commit)
 
 - `medcollab-backend/.env`
+- Railway / Atlas / Cloudinary / MSG91 credentials
 - Firebase service account keys
-- Cloudinary / MSG91 API keys
-
-Configure in GitLab → **Settings → CI/CD → Variables** for deployment pipelines.
 
 ---
 

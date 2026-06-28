@@ -9,6 +9,10 @@
 const User = require('../users/user.model');
 const otpService = require('../../services/otp.service');
 const {
+  verifyWidgetAccessToken,
+  normalizePhoneToE164,
+} = require('../../services/msg91Widget.service');
+const {
   generateAccessToken,
   generateRefreshToken,
 } = require('../../middleware/auth');
@@ -16,6 +20,30 @@ const { respond } = require('../../utils/apiResponse');
 const asyncHandler = require('../../utils/asyncHandler');
 const jwt = require('jsonwebtoken');
 const logger = require('../../utils/logger');
+
+const issueAuthTokensForPhone = async (phone) => {
+  let user = await User.findOne({ phone });
+  const isNewUser = !user;
+
+  if (!user) {
+    user = await User.create({
+      phone,
+      isVerified: true,
+    });
+    logger.info(`New user registered: ${phone}`);
+  } else {
+    user.isVerified = true;
+    await user.save();
+    logger.info(`User logged in: ${phone} (${user.name || 'no name yet'})`);
+  }
+
+  return {
+    accessToken: generateAccessToken(user._id),
+    refreshToken: generateRefreshToken(user._id),
+    isNewUser,
+    user: user.toPublicProfile(),
+  };
+};
 
 /**
  * POST /api/auth/request-otp
@@ -52,33 +80,44 @@ const verifyOtp = asyncHandler(async (req, res) => {
     return respond.badRequest(res, result.reason || 'Invalid or expired OTP');
   }
 
-  // Find or create the user
-  let user = await User.findOne({ phone });
-  const isNewUser = !user;
+  const auth = await issueAuthTokensForPhone(phone);
 
-  if (!user) {
-    user = await User.create({
-      phone,
-      isVerified: true,
-      // Name, role, speciality etc. filled in during onboarding
-    });
-    logger.info(`New user registered: ${phone}`);
-  } else {
-    user.isVerified = true;
-    await user.save();
-    logger.info(`User logged in: ${phone} (${user.name || 'no name yet'})`);
+  return respond.ok(
+    res,
+    auth.isNewUser ? 'Account created' : 'Login successful',
+    auth,
+  );
+});
+
+/**
+ * POST /api/auth/verify-msg91-token
+ * Verify MSG91 OTP Widget access token, return MedCollab JWT pair.
+ *
+ * Used when the Flutter app sends OTP via MSG91 widget SDK (no DLT template).
+ */
+const verifyMsg91Token = asyncHandler(async (req, res) => {
+  const { phone, accessToken } = req.body;
+
+  let verified;
+  try {
+    verified = await verifyWidgetAccessToken(accessToken);
+  } catch (err) {
+    logger.warn(`MSG91 widget token verification failed: ${err.message}`);
+    return respond.badRequest(res, 'Invalid or expired OTP session');
   }
 
-  // Generate token pair
-  const accessToken = generateAccessToken(user._id);
-  const refreshToken = generateRefreshToken(user._id);
+  const clientPhone = normalizePhoneToE164(phone);
+  if (clientPhone && clientPhone !== verified.phone) {
+    return respond.badRequest(res, 'Phone number does not match verified identity');
+  }
 
-  return respond.ok(res, isNewUser ? 'Account created' : 'Login successful', {
-    accessToken,
-    refreshToken,
-    isNewUser,
-    user: user.toPublicProfile(),
-  });
+  const auth = await issueAuthTokensForPhone(verified.phone);
+
+  return respond.ok(
+    res,
+    auth.isNewUser ? 'Account created' : 'Login successful',
+    auth,
+  );
 });
 
 /**
@@ -135,4 +174,4 @@ const logout = asyncHandler(async (req, res) => {
   return respond.ok(res, 'Logged out successfully');
 });
 
-module.exports = { requestOtp, verifyOtp, refreshToken, logout };
+module.exports = { requestOtp, verifyOtp, verifyMsg91Token, refreshToken, logout };

@@ -4,8 +4,10 @@ import 'package:medcollab_app/core/constants/app_constants.dart';
 
 /// Runtime configuration via `--dart-define` flags and platform defaults.
 ///
-/// **Production builds must pass:**
+/// **Production APK must pass:**
 /// `--dart-define=API_BASE_URL=https://your-api.up.railway.app`
+/// `--dart-define=MSG91_WIDGET_ID=...`
+/// `--dart-define=MSG91_WIDGET_TOKEN=...` (OTP widget token from MSG91 dashboard)
 ///
 /// Optional: `--dart-define=SOCKET_URL=...` if socket host differs from REST.
 ///
@@ -20,6 +22,14 @@ abstract final class EnvConfig {
 
   static const String _socketUrlFromDefine = String.fromEnvironment(
     'SOCKET_URL',
+  );
+
+  static const String _msg91WidgetId = String.fromEnvironment(
+    'MSG91_WIDGET_ID',
+  );
+
+  static const String _msg91WidgetToken = String.fromEnvironment(
+    'MSG91_WIDGET_TOKEN',
   );
 
   static const bool _enableApiLogging = bool.fromEnvironment(
@@ -64,4 +74,15 @@ abstract final class EnvConfig {
 
   /// True when a production API URL was injected at build time.
   static bool get hasProductionApiUrl => _apiBaseUrlFromDefine.isNotEmpty;
+
+  /// MSG91 OTP widget — used on mobile production builds (no DLT template).
+  static String get msg91WidgetId => _msg91WidgetId;
+
+  static String get msg91WidgetToken => _msg91WidgetToken;
+
+  /// Widget OTP on Android/iOS when widget id + token are provided at build time.
+  static bool get useMsg91Widget =>
+      !kIsWeb &&
+      _msg91WidgetId.isNotEmpty &&
+      _msg91WidgetToken.isNotEmpty;
 }

@@ -7,6 +7,7 @@ import 'package:medcollab_app/features/auth/data/models/auth_session_model.dart'
 import 'package:medcollab_app/features/auth/data/models/refresh_token_response.dart';
 import 'package:medcollab_app/features/auth/data/models/request_otp_request.dart';
 import 'package:medcollab_app/features/auth/data/models/request_otp_response.dart';
+import 'package:medcollab_app/features/auth/data/models/verify_msg91_token_request.dart';
 import 'package:medcollab_app/features/auth/data/models/verify_otp_request.dart';
 import 'package:medcollab_app/features/auth/data/models/verify_otp_response.dart';
 import 'package:medcollab_app/shared/data/repositories/base_repository.dart';
@@ -41,6 +42,30 @@ class AuthRepository extends BaseRepository {
     final result = await execute(
       () => apiClient.post(
         ApiEndpoints.verifyOtp,
+        data: request.toJson(),
+        parser: VerifyOtpResponse.fromJson,
+      ),
+    );
+
+    final session = AuthSessionModel(
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+      user: result.user,
+    );
+
+    await _persistSession(session);
+    await _socketClient.connect(session.accessToken);
+
+    return AuthLoginResult(session: session, isNewUser: result.isNewUser);
+  }
+
+  /// `POST /api/auth/verify-msg91-token`
+  ///
+  /// Exchanges MSG91 widget access token for MedCollab JWT pair.
+  Future<AuthLoginResult> verifyMsg91Token(VerifyMsg91TokenRequest request) async {
+    final result = await execute(
+      () => apiClient.post(
+        ApiEndpoints.verifyMsg91Token,
         data: request.toJson(),
         parser: VerifyOtpResponse.fromJson,
       ),

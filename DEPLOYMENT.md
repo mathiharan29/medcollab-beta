@@ -1,8 +1,29 @@
 # MedCollab — Beta Deployment Guide
 
-**Phase:** External beta (first production deploy)  
-**Target platform:** Railway (backend) + MongoDB Atlas + Cloudinary + Flutter APK  
-**Do not deploy until every checklist item is checked.**
+**Phase:** External beta — **backend LIVE**  
+**Production API:** https://medcollab.up.railway.app  
+**Last updated:** 2026-06-28
+
+---
+
+## Beta progress (what’s done)
+
+| Step | Status |
+|------|--------|
+| MongoDB Atlas cluster `medcollab-beta` | ✅ |
+| Railway deploy from GitHub `mathiharan29/medcollab-beta` | ✅ |
+| `/health` → `"database": "connected"` | ✅ |
+| Cloudinary (`denbnijqe`) | ✅ |
+| `API_BASE_URL` on Railway | ✅ Set to production URL |
+| MSG91 OTP SMS | ⏳ **In progress** — dashboard OK (use mobile data on home Wi‑Fi if blocked); add keys to Railway |
+| Flutter production APK | ⬜ Pending MSG91 |
+
+**Repos:**
+
+- **GitHub (Railway):** https://github.com/mathiharan29/medcollab-beta  
+- **GitLab (primary dev):** https://gitlab.com/mathiharan-project/MedCollab  
+
+Push to both after changes: `git push origin branch` and `git push github branch`
 
 ---
 
@@ -26,24 +47,23 @@
 
 ### Backend
 
-- [ ] `NODE_ENV=production` set on Railway
-- [ ] `MONGODB_URI` points to MongoDB Atlas (not empty)
-- [ ] `JWT_SECRET` and `JWT_REFRESH_SECRET` are unique 64+ char random strings
-- [ ] `OTP_BYPASS=false` (server refuses to start if true in production)
-- [ ] `MSG91_AUTH_KEY` and `MSG91_TEMPLATE_ID` configured (DLT-approved template)
-- [ ] Cloudinary credentials configured (`CLOUDINARY_*`)
-- [ ] `API_BASE_URL` set to public Railway HTTPS URL
-- [ ] `ALLOWED_ORIGINS` set if deploying Flutter web
-- [ ] Firebase credentials set (optional — push disabled without them)
-- [ ] Run `node scripts/validate-env.js` with production env — exit 0
-- [ ] Health check returns 200: `GET /health`
+- [x] `NODE_ENV=production` set on Railway
+- [x] `MONGODB_URI` points to MongoDB Atlas
+- [x] `JWT_SECRET` and `JWT_REFRESH_SECRET` set
+- [x] `OTP_BYPASS=false`
+- [ ] `MSG91_AUTH_KEY` and `MSG91_TEMPLATE_ID` configured — **blocked: MSG91 dashboard IP**
+- [x] Cloudinary credentials configured
+- [x] `API_BASE_URL=https://medcollab.up.railway.app`
+- [ ] `ALLOWED_ORIGINS` — only needed for Flutter web
+- [ ] Firebase credentials (optional)
+- [x] Health check returns 200: `GET /health`
 
 ### MongoDB Atlas
 
-- [ ] Cluster created (M0 free tier OK for beta)
-- [ ] Database user with read/write on `medcollab` database
-- [ ] Network access: allow Railway IPs or `0.0.0.0/0` for beta
-- [ ] Connection string tested locally with `MONGODB_URI=... npm start`
+- [x] Cluster created (M0 free tier)
+- [x] Database user configured
+- [x] Network access: `0.0.0.0/0` (beta)
+- [x] Connection string uses `/medcollab-beta` database name
 
 ### Flutter mobile
 
@@ -91,17 +111,20 @@
 
 ## 3. Railway backend deploy
 
-### Option A — GitLab → Railway (recommended)
+### Option A — GitLab → Railway
 
-1. Create project at [railway.app](https://railway.app)
-2. **New Project** → **Deploy from GitLab repo**
-3. Set **Root directory** to `medcollab-backend`
-4. Railway auto-detects Node.js; uses `npm start` → `node src/server.js`
-5. Add all environment variables from `.env.example`
-6. Generate public domain: Settings → Networking → Generate Domain
-7. Copy domain → set `API_BASE_URL=https://YOUR-DOMAIN.up.railway.app`
+GitLab is **not** directly supported on Railway. Use **GitHub mirror** (below).
 
-### Option B — Manual CLI
+### Option A — GitHub → Railway (current setup)
+
+1. Repo: https://github.com/mathiharan29/medcollab-beta  
+2. **New Project** → **Deploy from GitHub repo**  
+3. **Root Directory:** `medcollab-backend`  
+4. **Branch:** `master`  
+5. Build uses `medcollab-backend/nixpacks.toml`  
+6. Add env vars → **Generate Domain** → set `API_BASE_URL`
+
+### Option B — GitLab only (manual)
 
 ```powershell
 cd D:\MedCollab\medcollab-backend
@@ -308,6 +331,51 @@ Run with two physical devices or one phone + one browser:
 | APK can't connect | Wrong API URL | Rebuild with `--dart-define=API_BASE_URL=...` |
 | CORS error (web only) | Origin not allowed | Add URL to `ALLOWED_ORIGINS` |
 | `OTP_BYPASS must not be enabled` | Bypass left on | Set `OTP_BYPASS=false` |
+| `cd medcollab-backend: No such file` | Root Directory + old railway.toml | Root=`medcollab-backend`; use `nixpacks.toml` in backend folder |
+| MSG91 **website** says IP blocked | Too many signup/login attempts | See §13 below |
+
+---
+
+## 13. MSG91 dashboard “IP blocked” (signup / login)
+
+This is **MSG91’s website** blocking you — not MedCollab. Common when creating an account or retrying login many times.
+
+### Fixes (try in order)
+
+1. **Wait 20 hours** — MSG91 auto-unblocks throttled IPs ([MSG91 help](https://msg91.com/help/common-signup-problems-solutions))
+2. **Different network** — mobile hotspot worked for us; use on home Wi‑Fi if blocked
+3. **Use existing account** — you used MSG91 last year; try **Forgot password** instead of new signup
+4. **Email support:** support@msg91.com — “IP blocked during signup, please unblock”
+5. **If you can log in elsewhere:** Settings → User Profile → **Blocked IP List** → remove your IP
+6. **Do not** mark your own login as “Suspicious” in Login History
+
+### After MSG91 dashboard works
+
+1. Create **OTP Widget** with **MSG91 default SMS template** (no DLT)
+2. Enable **Mobile Integration**, disable **Captcha** for native app
+3. Copy **Widget ID** + **Auth Token** (Token section — not the auth key name)
+4. Copy **Auth Key** → `MSG91_AUTH_KEY` on Railway (disable IP whitelist)
+5. Railway Variables:
+   ```env
+   MSG91_AUTH_KEY=...
+   OTP_BYPASS=false
+   ```
+   (`MSG91_TEMPLATE_ID` not needed for widget flow)
+6. Deploy backend → build APK:
+   ```powershell
+   cd medcollab-app
+   .\scripts\build-release-apk.ps1 `
+     -ApiBaseUrl "https://medcollab.up.railway.app" `
+     -Msg91WidgetToken "YOUR_WIDGET_TOKEN"
+   ```
+7. Login flow: app → MSG91 SDK sends SMS → verify → backend `POST /api/auth/verify-msg91-token`
+
+### Beta testing without MSG91 (temporary)
+
+Production **blocks** `OTP_BYPASS=true` in code. Options while MSG91 is blocked:
+
+- Test against **local backend** with `OTP_BYPASS=true` and OTP `123456`
+- Or temporarily change server to allow bypass in production (not recommended for real users)
 
 ---
 
@@ -331,8 +399,8 @@ cd medcollab-backend && node scripts/validate-env.js
 cd medcollab-backend && .\scripts\start-production.ps1
 
 # Build beta APK
-cd medcollab-app && .\scripts\build-release-apk.ps1 -ApiBaseUrl "https://YOUR-API.up.railway.app"
+cd medcollab-app && .\scripts\build-release-apk.ps1 -ApiBaseUrl "https://medcollab.up.railway.app"
 
 # Health check
-curl https://YOUR-API.up.railway.app/health
+curl https://medcollab.up.railway.app/health
 ```

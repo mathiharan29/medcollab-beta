@@ -44,7 +44,9 @@ if (isProd && !process.env.MSG91_AUTH_KEY) {
 }
 
 if (isProd && !process.env.MSG91_TEMPLATE_ID) {
-  warnings.push('MSG91_TEMPLATE_ID missing — OTP SMS will not work');
+  warnings.push(
+    'MSG91_TEMPLATE_ID missing — use MSG91 OTP widget on Flutter client instead',
+  );
 }
 
 if (isProd && !cloudinaryOk && !process.env.API_BASE_URL) {

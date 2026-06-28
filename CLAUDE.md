@@ -1,80 +1,72 @@
 # MedCollab — Claude Code Context
 
 ## What this project is
-A medical collaboration platform for doctors. Replacing WhatsApp for clinical
-communication. Think Slack, but built for Indian hospital workflows.
+Medical collaboration platform for doctors. Replacing WhatsApp for clinical communication. Slack-like, built for Indian hospital workflows.
 
-## GitLab
-https://gitlab.com/mathiharan-project/MedCollab
+## Repos & production (2026-06-28)
+
+| | URL |
+|---|-----|
+| GitLab (primary dev) | https://gitlab.com/mathiharan-project/MedCollab |
+| GitHub (Railway) | https://github.com/mathiharan29/medcollab-beta |
+| **Production API** | **https://medcollab.up.railway.app** |
+| Health | https://medcollab.up.railway.app/health |
+
+**Beta backend: LIVE** — MongoDB Atlas + Railway + Cloudinary configured.  
+**MSG91: BLOCKED** — user cannot access msg91.com dashboard (IP blocked at signup). Production login needs MSG91 vars on Railway.
 
 ## Target users (beta)
-- MBBS interns
-- PG residents  
-- Junior consultants
-Starting with 15 doctors. Then 50. Then 100.
-
-## Core philosophy
-Compete with WhatsApp by solving workflow problems, not just messaging.
-Killer feature: structured shift handoffs (no other tool has this).
+MBBS interns, PG residents, junior consultants. Starting with ~15 doctors.
 
 ## Tech stack
-- Backend: Node.js + Express + MongoDB Atlas + Socket.io
+- Backend: Node.js + Express + MongoDB Atlas + Socket.io on **Railway**
 - Mobile: Flutter (flutter_bloc, dio, go_router, socket_io_client)
-- Media: Cloudinary
-- Push notifications: Firebase Cloud Messaging
-- Auth: Phone OTP (MSG91) + JWT
-- Hosting: Railway (backend) + Firebase App Distribution (mobile beta)
-- CI: GitLab CI (.gitlab-ci.yml)
+- Media: **Cloudinary** (cloud `denbnijqe` in production)
+- Auth: Phone OTP (**MSG91**) + JWT — MSG91 pending
+- Push: Firebase (optional, not configured)
+- CI: GitLab CI; deploy via GitHub → Railway
 
 ## Project structure
 ```
-medcollab-backend/   ← Node.js API
+medcollab-backend/   ← Node.js API (Railway root: medcollab-backend/)
 medcollab-app/       ← Flutter client
+DEPLOYMENT.md        ← Beta deploy guide + troubleshooting
 ```
 
 ## What is DONE
 
-### Backend — complete
-- All models, middleware, controllers, routes, socket handlers
-- Auth, users, spaces, channels, messages, handoffs, media, notifications
+### Backend — complete + deployed
+- All controllers, socket, auth, handoffs, media
+- Production on Railway; `/health` OK
+- Realtime fixes: JWT socket refresh, space rooms, presence snapshot
 
-### Flutter — Phase 1 + 2 complete
-- Core: API client, socket, secure storage, theme, router
-- Auth: Splash → phone → OTP → profile setup → home
-- AuthBloc, persistent login, logout
+### Flutter — Phases 1–6 MVP + design system
+- Auth, spaces, channels, threads, media, members, presence, handoffs
+- Clinical design system (teal/slate, no gradients)
 
-### Next — Phase 3
-- Spaces list, channels, real-time chat UI
+### Beta deployment
+- ✅ MongoDB Atlas (`medcollab-beta` database)
+- ✅ Railway (`medcollab.up.railway.app`)
+- ✅ Cloudinary
+- ⏳ MSG91 (dashboard access blocked)
+- ⬜ Production APK
 
-## Architecture decisions — DO NOT change these
+## Architecture — DO NOT change
+- Feature-based backend folders
+- API envelope: `{ success, message, data }`
+- REST persists messages; socket broadcasts
+- OTP bypass: `OTP_BYPASS=true` dev only; **blocked in production**
 
-### Backend folder structure
-Feature-based, not type-based:
-  src/features/messages/ contains model + routes + controller + service
+## Key docs
+- `DEPLOYMENT.md` — deploy checklist, Railway, MSG91, APK
+- `medcollab-app/PROJECT_STATE.md` — detailed status
+- `medcollab-backend/.env.example` — all env vars
 
-### API response shape — always this format
-Success: { success: true, message: "...", data: { ... } }
-Error:   { success: false, message: "...", errors: [...] }
-
-### Flutter folder structure
-Feature-first clean architecture:
-  lib/features/<feature>/data|domain|presentation
-
-### Message pagination — cursor-based, not page-based
-### Soft deletes — never hard delete messages
-### Socket + REST separation — REST persists, socket broadcasts
-
-### OTP bypass for development
-  Set OTP_BYPASS=true in .env → OTP is always "123456"
-
-## Key constants
-Backend: src/constants/index.js
-Flutter: lib/core/constants/
-
-## Environment variables
-See medcollab-backend/.env.example
+## Local dev
+```powershell
+cd medcollab-backend && npm run dev   # OTP_BYPASS=true, OTP 123456
+cd medcollab-app && flutter run -d chrome
+```
 
 ## Design principles
-- Feel clinical and trustworthy, not consumer chat
-- Emergency messages visually distinct (red, different sound)
-- Handoffs are the #1 differentiator — give them premium UX
+Clinical, trustworthy; handoffs are the differentiator; no flashy animations.

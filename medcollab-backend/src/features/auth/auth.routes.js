@@ -22,6 +22,7 @@ const { otpLimiter, authLimiter } = require('../../middleware/rateLimiter');
 const {
   validateRequestOtp,
   validateVerifyOtp,
+  validateVerifyMsg91Token,
   validateUpdateProfile,
   validateAvailability,
 } = require('../../middleware/validate');
@@ -60,6 +61,19 @@ router.post('/request-otp', otpLimiter, validateRequestOtp, authController.reque
  *    - Flutter uses isNewUser to decide: go to Home or go to Profile Setup
  */
 router.post('/verify-otp', authLimiter, validateVerifyOtp, authController.verifyOtp);
+
+/**
+ * @route   POST /api/auth/verify-msg91-token
+ * @desc    Verify MSG91 OTP Widget access token, return MedCollab JWT pair
+ * @access  Public
+ * @body    { phone: "+919876543210", accessToken: "..." }
+ */
+router.post(
+  '/verify-msg91-token',
+  authLimiter,
+  validateVerifyMsg91Token,
+  authController.verifyMsg91Token,
+);
 
 /**
  * @route   POST /api/auth/refresh

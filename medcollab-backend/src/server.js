@@ -69,8 +69,12 @@ if (NODE_ENV === 'production') {
     );
   }
 
-  if (!process.env.MSG91_AUTH_KEY || !process.env.MSG91_TEMPLATE_ID) {
-    logger.warn('PRODUCTION WARNING: MSG91 credentials missing — OTP SMS will fail');
+  if (!process.env.MSG91_AUTH_KEY) {
+    logger.warn('PRODUCTION WARNING: MSG91_AUTH_KEY missing — OTP will fail');
+  } else if (!process.env.MSG91_TEMPLATE_ID) {
+    logger.warn(
+      'MSG91_TEMPLATE_ID not set — server OTP SMS disabled; use MSG91 widget on client',
+    );
   }
 }
 
