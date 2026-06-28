@@ -97,21 +97,29 @@ const verifyOtp = asyncHandler(async (req, res) => {
  */
 const verifyMsg91Token = asyncHandler(async (req, res) => {
   const { phone, accessToken } = req.body;
+  const clientPhone = normalizePhoneToE164(phone);
 
   let verified;
   try {
     verified = await verifyWidgetAccessToken(accessToken);
   } catch (err) {
     logger.warn(`MSG91 widget token verification failed: ${err.message}`);
-    return respond.badRequest(res, 'Invalid or expired OTP session');
+    return respond.badRequest(
+      res,
+      err.message || 'Invalid or expired OTP session',
+    );
   }
 
-  const clientPhone = normalizePhoneToE164(phone);
-  if (clientPhone && clientPhone !== verified.phone) {
+  const verifiedPhone = verified.phone || clientPhone;
+  if (!verifiedPhone) {
+    return respond.badRequest(res, 'Could not verify phone number');
+  }
+
+  if (verified.phone && clientPhone && clientPhone !== verified.phone) {
     return respond.badRequest(res, 'Phone number does not match verified identity');
   }
 
-  const auth = await issueAuthTokensForPhone(verified.phone);
+  const auth = await issueAuthTokensForPhone(verifiedPhone);
 
   return respond.ok(
     res,
