@@ -174,7 +174,7 @@ class _HandoffFormBodyState extends State<_HandoffFormBody> {
           builder: (context, state) {
             final doctors = _members
                 .map((m) => m.user)
-                .where((u) => u.id != currentUserId)
+                .where((u) => u.id.isNotEmpty)
                 .toList();
 
             return ListView(
@@ -194,7 +194,11 @@ class _HandoffFormBodyState extends State<_HandoffFormBody> {
                       .map(
                         (u) => DropdownMenuItem(
                           value: u,
-                          child: Text(u.displayName),
+                          child: Text(
+                            u.id == currentUserId
+                                ? '${u.displayName} (you)'
+                                : u.displayName,
+                          ),
                         ),
                       )
                       .toList(),

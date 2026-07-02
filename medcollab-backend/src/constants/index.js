@@ -119,7 +119,15 @@ const MEDIA = {
   MAX_FILE_SIZE_BYTES: 25 * 1024 * 1024,
   ALLOWED_IMAGE_TYPES: ['image/jpeg', 'image/png', 'image/webp'],
   ALLOWED_DOCUMENT_TYPES: ['application/pdf'],
-  ALLOWED_TYPES: ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'],
+  ALLOWED_TYPES: [
+    'image/jpeg',
+    'image/jpg',
+    'image/png',
+    'image/webp',
+    'image/heic',
+    'image/heif',
+    'application/pdf',
+  ],
 };
 
 // ─── Socket Events ─────────────────────────────────────────────────────────────

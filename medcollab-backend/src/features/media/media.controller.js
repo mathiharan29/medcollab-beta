@@ -10,6 +10,15 @@ const asyncHandler = require('../../utils/asyncHandler');
 const { saveLocalUpload, deleteLocalUpload } = require('../../utils/localMediaStorage');
 const logger = require('../../utils/logger');
 
+const uploadBufferToCloudinary = (buffer, options) =>
+  new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(options, (error, result) => {
+      if (error) reject(error);
+      else resolve(result);
+    });
+    stream.end(buffer);
+  });
+
 /**
  * POST /api/media/upload
  */
@@ -54,22 +63,14 @@ const uploadFile = asyncHandler(async (req, res) => {
     handoff: 'medcollab/handoffs',
   };
   const folder = folderMap[context] || folderMap.message;
-  const dataURI = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
 
   try {
     const uploadOptions = {
       folder,
       resource_type: isPDF ? 'raw' : 'image',
-      eager: isImage
-        ? [{ width: 400, height: 400, crop: 'limit', quality: 'auto' }]
-        : [],
-      eager_async: true,
-      tags: [`user_${userId}`, context],
-      format: isImage ? 'auto' : undefined,
-      quality: isImage ? 'auto' : undefined,
     };
 
-    const result = await cloudinary.uploader.upload(dataURI, uploadOptions);
+    const result = await uploadBufferToCloudinary(req.file.buffer, uploadOptions);
 
     let thumbnailUrl = null;
     if (isImage) {

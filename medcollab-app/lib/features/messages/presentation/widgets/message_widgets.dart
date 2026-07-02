@@ -234,7 +234,7 @@ class ParentMessagePreview extends StatelessWidget {
               showSender: true,
               showTimestamp: true,
               onImageTap: (url) => _openImage(context, url, message),
-              onDocumentTap: (url) => _openUrl(url),
+              onDocumentTap: (url) => _openUrl(context, url),
             ),
           ],
         ),
@@ -284,7 +284,7 @@ class MessageBubble extends StatelessWidget {
               showSender: showSender,
               showTimestamp: showTimestamp,
               onImageTap: onImageTap ?? (url) => _openImage(context, url, message),
-              onDocumentTap: (url) => _openUrl(url),
+              onDocumentTap: (url) => _openUrl(context, url),
             ),
             if (message.hasThread) ...[
               const SizedBox(height: 4),
@@ -640,7 +640,7 @@ class ThreadReplyBubble extends StatelessWidget {
           showSender: !isMine,
           showTimestamp: true,
           onImageTap: (url) => _openImage(context, url, message),
-          onDocumentTap: (url) => _openUrl(url),
+          onDocumentTap: (url) => _openUrl(context, url),
         ),
       ),
     );
@@ -687,11 +687,32 @@ class MessageListView extends StatelessWidget {
   }
 }
 
-Future<void> _openUrl(String url) async {
-  final uri = Uri.parse(url);
-  if (await canLaunchUrl(uri)) {
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
+Future<void> _openUrl(BuildContext context, String url) async {
+  final uri = Uri.tryParse(url);
+  if (uri == null) {
+    _showOpenError(context, 'Invalid document link');
+    return;
   }
+
+  try {
+    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!opened && context.mounted) {
+      final inApp = await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
+      if (!inApp && context.mounted) {
+        _showOpenError(context, 'No app found to open this file');
+      }
+    }
+  } catch (_) {
+    if (context.mounted) {
+      _showOpenError(context, 'Could not open document');
+    }
+  }
+}
+
+void _showOpenError(BuildContext context, String message) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(message)),
+  );
 }
 
 void _openImage(BuildContext context, String url, MessageModel message) {

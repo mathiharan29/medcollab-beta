@@ -107,6 +107,7 @@ class MembersCubit extends Cubit<MembersState> {
       );
     }
     _presenceCubit.mergeApiSnapshot(snapshot);
+    _markSelfOnlineIfConnected();
   }
 
   void _refreshPresenceFromApi(List<SpaceMemberModel> members) {
@@ -121,16 +122,18 @@ class MembersCubit extends Cubit<MembersState> {
       );
     }
     _presenceCubit.refreshFromApi(snapshot);
-    if (currentUserId.isNotEmpty && _socketClient.isConnected) {
-      final authUser = _authBloc.state.user;
-      if (authUser != null) {
-        _presenceCubit.applyLocal(
-          userId: currentUserId,
-          status: authUser.availability.status,
-          isOnline: true,
-        );
-      }
-    }
+    _markSelfOnlineIfConnected();
+  }
+
+  void _markSelfOnlineIfConnected() {
+    if (currentUserId.isEmpty || !_socketClient.isConnected) return;
+    final authUser = _authBloc.state.user;
+    if (authUser == null) return;
+    _presenceCubit.applyLocal(
+      userId: currentUserId,
+      status: authUser.availability.status,
+      isOnline: true,
+    );
   }
 
   List<SpaceMemberModel> _mergePresence(List<SpaceMemberModel> members) {

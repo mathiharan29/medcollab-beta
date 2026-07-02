@@ -1,11 +1,13 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:medcollab_app/core/auth/msg91_otp_service.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
+import 'package:medcollab_app/core/di/app_dependencies.dart';
 import 'package:medcollab_app/core/error/app_exception.dart';
 import 'package:medcollab_app/core/utils/phone_utils.dart';
 import 'package:medcollab_app/features/auth/data/models/auth_login_result.dart';
 import 'package:medcollab_app/features/auth/data/models/request_otp_request.dart';
 import 'package:medcollab_app/features/auth/data/models/update_profile_request.dart';
+import 'package:medcollab_app/features/auth/data/models/user_model.dart';
 import 'package:medcollab_app/features/auth/data/models/verify_msg91_token_request.dart';
 import 'package:medcollab_app/features/auth/data/models/verify_otp_request.dart';
 import 'package:medcollab_app/features/auth/data/repositories/auth_repository.dart';
@@ -62,7 +64,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       await _authRepository.restoreSocketConnection();
 
       if (user.hasMinimumProfile) {
-        emit(AuthState(status: AuthStatus.authenticated, user: user));
+        final activeUser = await _ensureAvailableOnSessionStart(user);
+        emit(AuthState(status: AuthStatus.authenticated, user: activeUser));
       } else {
         emit(AuthState(status: AuthStatus.needsProfile, user: user));
       }
@@ -193,11 +196,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
       final user = result.session.user;
       final needsProfile = result.isNewUser || !user.hasMinimumProfile;
+      final activeUser =
+          needsProfile ? user : await _ensureAvailableOnSessionStart(user);
 
       emit(AuthState(
         status:
             needsProfile ? AuthStatus.needsProfile : AuthStatus.authenticated,
-        user: user,
+        user: activeUser,
         phoneE164: phone,
       ));
     } on AppException catch (e) {
@@ -370,5 +375,32 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         user: user.copyWith(availability: event.availability),
       ),
     );
+  }
+
+  /// After login or cold start, return to Available if still marked Off Duty.
+  Future<UserModel> _ensureAvailableOnSessionStart(UserModel user) async {
+    if (user.availability.status != AvailabilityStatus.offDuty) {
+      return user;
+    }
+
+    try {
+      final availability = await _userRepository.updateAvailability(
+        status: AvailabilityStatus.available,
+      );
+      final deps = AppDependencies.instance;
+      if (deps.socketClient.isConnected) {
+        deps.socketClient.updateAvailability(
+          status: AvailabilityStatus.available.value,
+        );
+      }
+      deps.presenceCubit.applyLocal(
+        userId: user.id,
+        status: AvailabilityStatus.available,
+        isOnline: deps.socketClient.isConnected,
+      );
+      return user.copyWith(availability: availability);
+    } catch (_) {
+      return user;
+    }
   }
 }

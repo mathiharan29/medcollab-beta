@@ -43,15 +43,23 @@ const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
   if (MEDIA.ALLOWED_TYPES.includes(file.mimetype)) {
-    cb(null, true); // Accept file
-  } else {
-    cb(
-      new Error(
-        `File type not allowed. Accepted: JPEG, PNG, WebP, PDF`
-      ),
-      false
-    );
+    cb(null, true);
+    return;
   }
+
+  const name = (file.originalname || '').toLowerCase();
+  if (
+    file.mimetype === 'application/octet-stream' &&
+    /\.(jpe?g|png|webp|heic|heif|pdf)$/.test(name)
+  ) {
+    cb(null, true);
+    return;
+  }
+
+  cb(
+    new Error('File type not allowed. Accepted: JPEG, PNG, WebP, HEIC, PDF'),
+    false,
+  );
 };
 
 const upload = multer({

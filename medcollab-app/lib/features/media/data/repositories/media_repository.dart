@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:http_parser/http_parser.dart';
 import 'package:medcollab_app/core/constants/api_endpoints.dart';
 import 'package:medcollab_app/features/media/data/models/media_upload_result.dart';
 import 'package:medcollab_app/shared/data/repositories/base_repository.dart';
@@ -19,7 +20,11 @@ class MediaRepository extends BaseRepository {
       () => apiClient.upload(
         ApiEndpoints.uploadMedia,
         formData: FormData.fromMap({
-          'file': MultipartFile.fromBytes(bytes, filename: fileName),
+          'file': MultipartFile.fromBytes(
+            bytes,
+            filename: fileName,
+            contentType: MediaType.parse(mimeType),
+          ),
           'context': context,
         }),
         parser: MediaUploadResult.fromJson,
