@@ -142,7 +142,7 @@ const validateCreateChannel = [
 const validateSendMessage = [
   body('type')
     .optional()
-    .isIn(['text', 'image', 'document', 'ecg']).withMessage('Invalid message type'),
+    .isIn(['text', 'image', 'document', 'video', 'ecg']).withMessage('Invalid message type'),
   body('content.text').custom((value, { req }) => {
     const type = req.body?.type || 'text';
     if (type === 'text') {

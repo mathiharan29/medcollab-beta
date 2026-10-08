@@ -40,13 +40,39 @@ class _MentionAwareComposerState extends State<MentionAwareComposer> {
   List<UserModel> _suggestions = const [];
   /// IDs chosen from the autocomplete list — authoritative for send payload.
   final Set<String> _pickedMentionIds = {};
+  String _prevText = '';
+  bool _handlingAtomicDelete = false;
 
   void _onTextChanged() {
-    _prunePickedMentions();
+    if (_handlingAtomicDelete) return;
+    final text = widget.controller.text;
     final cursor = widget.controller.selection.baseOffset;
+
+    // Backspace inside `@Name` removes the whole mention token at once.
+    if (_prevText.length == text.length + 1 && cursor >= 0) {
+      final deletedAt = cursor;
+      final atomic = MentionUtils.deleteMentionTokenAt(_prevText, deletedAt);
+      if (atomic != null && atomic != text) {
+        _handlingAtomicDelete = true;
+        _prevText = atomic;
+        widget.controller.value = TextEditingValue(
+          text: atomic,
+          selection: TextSelection.collapsed(
+            offset: atomic.length < cursor ? atomic.length : cursor,
+          ),
+        );
+        _handlingAtomicDelete = false;
+        _prunePickedMentions();
+        setState(() => _suggestions = const []);
+        return;
+      }
+    }
+    _prevText = text;
+
+    _prunePickedMentions();
     final query = MentionUtils.activeMentionQuery(
-      widget.controller.text,
-      cursor < 0 ? widget.controller.text.length : cursor,
+      text,
+      cursor < 0 ? text.length : cursor,
     );
     if (query == null) {
       if (_suggestions.isNotEmpty) setState(() => _suggestions = const []);
@@ -140,6 +166,7 @@ class _MentionAwareComposerState extends State<MentionAwareComposer> {
   @override
   void initState() {
     super.initState();
+    _prevText = widget.controller.text;
     widget.controller.addListener(_onTextChanged);
   }
 

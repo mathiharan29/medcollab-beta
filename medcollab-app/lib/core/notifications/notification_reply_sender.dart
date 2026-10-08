@@ -5,6 +5,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:medcollab_app/core/config/env_config.dart';
 import 'package:medcollab_app/core/constants/api_endpoints.dart';
+import 'package:medcollab_app/core/notifications/grouped_message_notification.dart';
 import 'package:medcollab_app/core/storage/storage_keys.dart';
 
 /// Sends a chat reply from the notification shade without opening the app.
@@ -55,6 +56,34 @@ class NotificationReplySender {
           'content': {'text': text},
         },
       );
-    } catch (_) {}
+
+      // Android MessagingStyle reply spinner clears when we re-post the
+      // conversation notification including the outbound line.
+      final title = map['title']?.toString() ?? 'Vocle';
+      await GroupedMessageNotification.show(
+        title: title,
+        body: 'You: $text',
+        data: {
+          ...map,
+          'title': title,
+          'body': 'You: $text',
+          'channelId': channelId,
+        },
+      );
+    } catch (_) {
+      try {
+        final title = map['title']?.toString() ?? 'Vocle';
+        await GroupedMessageNotification.show(
+          title: title,
+          body: 'Reply failed — open chat to retry',
+          data: {
+            ...map,
+            'title': title,
+            'body': 'Reply failed — open chat to retry',
+            'channelId': channelId,
+          },
+        );
+      } catch (_) {}
+    }
   }
 }

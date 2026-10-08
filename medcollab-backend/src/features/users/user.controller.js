@@ -168,15 +168,23 @@ const searchUsers = asyncHandler(async (req, res) => {
     return respond.ok(res, 'Search results', { users: [] });
   }
 
+  const digitQuery = q.trim().replace(/\D/g, '');
+  const orClauses = [
+    { name: searchRegex },
+    { displayTitle: searchRegex },
+    { speciality: searchRegex },
+  ];
+  // Allow finding known colleagues by partial/full mobile digits too.
+  if (digitQuery.length >= 4) {
+    orClauses.push({ phone: new RegExp(escapeRegex(digitQuery) + '$') });
+    orClauses.push({ phone: new RegExp(escapeRegex(digitQuery)) });
+  }
+
   const users = await User.find({
     _id: { $in: filteredIds },
     isActive: true,
     isOnboarded: true,
-    $or: [
-      { name: searchRegex },
-      { displayTitle: searchRegex },
-      { speciality: searchRegex },
-    ],
+    $or: orClauses,
   })
     .select('name displayTitle role speciality institution avatarUrl availability')
     .limit(20)
@@ -197,8 +205,22 @@ const lookupByPhone = asyncHandler(async (req, res) => {
     return respond.badRequest(res, 'Enter a valid mobile number');
   }
 
+  const digits = normalized.replace(/\D/g, '');
+  const last10 = digits.length >= 10 ? digits.slice(-10) : digits;
+  const phoneVariants = [
+    ...new Set(
+      [
+        normalized,
+        digits,
+        last10,
+        last10.length === 10 ? `+91${last10}` : null,
+        last10.length === 10 ? `91${last10}` : null,
+      ].filter(Boolean)
+    ),
+  ];
+
   const user = await User.findOne({
-    phone: normalized,
+    phone: { $in: phoneVariants },
     isActive: true,
     isOnboarded: true,
   });

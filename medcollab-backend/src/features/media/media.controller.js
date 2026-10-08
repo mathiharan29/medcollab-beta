@@ -28,9 +28,25 @@ const uploadFile = asyncHandler(async (req, res) => {
   }
 
   const { context = 'message' } = req.body;
-  const isImage = req.file.mimetype.startsWith('image/');
-  const isVideo = req.file.mimetype.startsWith('video/');
-  const isPDF = req.file.mimetype === 'application/pdf';
+  const mime = (req.file.mimetype || '').toLowerCase();
+  const original = (req.file.originalname || '').toLowerCase();
+  const isOctet = mime === 'application/octet-stream' || mime === 'binary/octet-stream';
+  const isPDF =
+    mime === 'application/pdf' || (isOctet && original.endsWith('.pdf'));
+  const isVideo =
+    mime.startsWith('video/') ||
+    (isOctet &&
+      ['.mp4', '.mov', '.webm', '.mkv', '.m4v'].some((ext) =>
+        original.endsWith(ext)
+      ));
+  const isImage =
+    !isPDF &&
+    !isVideo &&
+    (mime.startsWith('image/') ||
+      (isOctet &&
+        ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.heic'].some((ext) =>
+          original.endsWith(ext)
+        )));
   const userId = req.user._id.toString();
 
   // ── Local fallback (no Cloudinary credentials) ─────────────────────────────
@@ -100,26 +116,10 @@ const uploadFile = asyncHandler(async (req, res) => {
         secure: true,
       });
     } else if (isPDF) {
-      // Attachment flag suggests the original filename to browsers / downloaders.
-      const attachName = (req.file.originalname || 'document.pdf')
-        .replace(/[^\w.\-]+/g, '_');
-      deliveryUrl = cloudinary.url(result.public_id, {
-        resource_type: 'raw',
-        flags: `attachment:${attachName}`,
-        secure: true,
-      });
-      try {
-        thumbnailUrl = cloudinary.url(result.public_id, {
-          resource_type: 'image',
-          format: 'webp',
-          width: 400,
-          height: 300,
-          crop: 'fill',
-          page: 1,
-        });
-      } catch (_) {
-        thumbnailUrl = null;
-      }
+      // Raw secure_url downloads reliably; fl_attachment:name often breaks clients
+      // into the Cloudinary error portal (VR-CLOUDINARY-PDF-ATTACHMENT).
+      deliveryUrl = result.secure_url;
+      thumbnailUrl = null;
     }
 
     return respond.ok(res, 'File uploaded', {

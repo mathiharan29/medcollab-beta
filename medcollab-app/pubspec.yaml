@@ -1,7 +1,7 @@
 name: medcollab_app
 description: Medical collaboration platform for hospital teams — MedCollab MVP.
 publish_to: 'none'
-version: 1.0.0+25
+version: 1.0.0+26
 
 environment:
   sdk: '>=3.5.0 <4.0.0'

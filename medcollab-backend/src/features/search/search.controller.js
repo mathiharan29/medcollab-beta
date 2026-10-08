@@ -143,24 +143,61 @@ const globalSearch = asyncHandler(async (req, res) => {
   if (wantDoctors) {
     const { resolveKnownUserIds } = require('../../utils/knownUsers');
     const knownIds = await resolveKnownUserIds(userId);
-    result.doctors =
+    const digitQuery = q.trim().replace(/\D/g, '');
+    const orClauses = [
+      { name: regex },
+      { speciality: regex },
+      { displayTitle: regex },
+    ];
+    if (digitQuery.length >= 4) {
+      const phoneRe = new RegExp(escapeRegex(digitQuery));
+      orClauses.push({ phone: phoneRe });
+    }
+
+    let doctors =
       knownIds.length === 0
         ? []
         : await User.find({
             _id: { $in: knownIds },
             isActive: true,
             isOnboarded: true,
-            $or: [
-              { name: regex },
-              { speciality: regex },
-              { displayTitle: regex },
-            ],
+            $or: orClauses,
           })
             .select(
               'name displayTitle role speciality institution avatarUrl availability'
             )
             .limit(limit)
             .lean();
+
+    // Full mobile: also surface onboarded strangers (message-request flow).
+    if (digitQuery.length >= 10) {
+      const last10 = digitQuery.slice(-10);
+      const phoneVariants = [
+        ...new Set([
+          `+91${last10}`,
+          `91${last10}`,
+          last10,
+          digitQuery.startsWith('+') ? digitQuery : `+${digitQuery}`,
+        ]),
+      ];
+      const byPhone = await User.findOne({
+        phone: { $in: phoneVariants },
+        isActive: true,
+        isOnboarded: true,
+      })
+        .select(
+          'name displayTitle role speciality institution avatarUrl availability'
+        )
+        .lean();
+      if (byPhone) {
+        const id = byPhone._id.toString();
+        if (!doctors.some((d) => d._id.toString() === id)) {
+          doctors = [byPhone, ...doctors].slice(0, limit);
+        }
+      }
+    }
+
+    result.doctors = doctors;
   }
 
   if (wantChannels) {

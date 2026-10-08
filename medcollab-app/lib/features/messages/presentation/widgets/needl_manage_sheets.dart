@@ -6,6 +6,7 @@ import 'package:medcollab_app/core/presence/presence_cubit.dart';
 import 'package:medcollab_app/core/router/dm_navigation.dart';
 import 'package:medcollab_app/core/theme/app_colors.dart';
 import 'package:medcollab_app/core/theme/app_text_styles.dart';
+import 'package:medcollab_app/core/utils/phone_utils.dart';
 import 'package:medcollab_app/features/auth/data/models/user_model.dart';
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:medcollab_app/features/messages/presentation/widgets/peer_profile_card.dart';
@@ -35,6 +36,21 @@ Future<void> showAddNeedlPeopleSheet(
     builder: (sheetContext) {
       return StatefulBuilder(
         builder: (context, setModal) {
+          bool isPhoneQuery(String raw) {
+            final digits = raw.replaceAll(RegExp(r'\D'), '');
+            if (digits.length < 10) return false;
+            final local =
+                digits.length > 10 ? digits.substring(digits.length - 10) : digits;
+            return PhoneUtils.validateLocalNumber(local) == null;
+          }
+
+          String phoneE164(String raw) {
+            final digits = raw.replaceAll(RegExp(r'\D'), '');
+            final local =
+                digits.length > 10 ? digits.substring(digits.length - 10) : digits;
+            return PhoneUtils.toE164(local);
+          }
+
           Future<void> search(String raw) async {
             query = raw.trim();
             if (query.length < 2) {
@@ -42,6 +58,18 @@ Future<void> showAddNeedlPeopleSheet(
               return;
             }
             try {
+              if (isPhoneQuery(query)) {
+                final lookup = await AppDependencies.instance.userRepository
+                    .lookupByPhone(phoneE164(query));
+                final user = lookup.user;
+                setModal(() {
+                  results = user.id.isNotEmpty &&
+                          !existingIds.contains(user.id)
+                      ? [user]
+                      : const [];
+                });
+                return;
+              }
               final users = await AppDependencies.instance.memberRepository
                   .searchMembers(query: query);
               setModal(() {
@@ -109,7 +137,7 @@ Future<void> showAddNeedlPeopleSheet(
                   const SizedBox(height: 8),
                   TextField(
                     decoration: const InputDecoration(
-                      hintText: 'Search colleagues',
+                      hintText: 'Name or mobile number',
                       prefixIcon: Icon(Icons.search),
                     ),
                     onChanged: (v) => search(v),
@@ -154,7 +182,18 @@ Future<void> showAddNeedlPeopleSheet(
                                 imageUrl: u.avatarUrl,
                                 size: 22,
                               ),
-                              label: Text(u.displayName),
+                              label: Text(
+                                u.displayName,
+                                style: AppTextStyles.caption.copyWith(
+                                  color: AppColors.textPrimary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              backgroundColor: AppColors.surfaceInput,
+                              deleteIconColor: AppColors.textSecondary,
+                              side: const BorderSide(
+                                color: AppColors.borderDefault,
+                              ),
                               onDeleted: () => setModal(() {
                                 selected.remove(u.id);
                               }),

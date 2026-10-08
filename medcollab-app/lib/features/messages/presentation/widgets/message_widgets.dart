@@ -609,7 +609,7 @@ class MessageBubble extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(left: 4, bottom: 4),
                 child: Text(
-                  message.sender.displayName,
+                  _senderLabel(message, nameByUserId),
                   style: AppTextStyles.caption.copyWith(
                     fontWeight: FontWeight.w600,
                     color: AppColors.tealDark,
@@ -647,9 +647,24 @@ class MessageBubble extends StatelessWidget {
                         final mine = currentUserId != null &&
                             r.reactedBy(currentUserId!);
                         return InkWell(
-                          onTap: onReact == null
-                              ? null
-                              : () => onReact!(r.emoji),
+                          onTap: () {
+                            if (mine && onReact != null) {
+                              onReact!(r.emoji);
+                              return;
+                            }
+                            _showReactionPeople(
+                              context,
+                              emoji: r.emoji,
+                              userIds: r.userIds,
+                              nameByUserId: nameByUserId,
+                            );
+                          },
+                          onLongPress: () => _showReactionPeople(
+                            context,
+                            emoji: r.emoji,
+                            userIds: r.userIds,
+                            nameByUserId: nameByUserId,
+                          ),
                           borderRadius: BorderRadius.circular(12),
                           child: Container(
                             padding: const EdgeInsets.symmetric(
@@ -714,6 +729,65 @@ class MessageBubble extends StatelessWidget {
             ),
     );
   }
+
+  static String _senderLabel(
+    MessageModel message,
+    Map<String, String> nameByUserId,
+  ) {
+    final fromSender = message.sender.displayName.trim();
+    if (fromSender.isNotEmpty) return fromSender;
+    final mapped = nameByUserId[message.sender.id]?.trim() ?? '';
+    return mapped.isNotEmpty ? mapped : 'Colleague';
+  }
+}
+
+void _showReactionPeople(
+  BuildContext context, {
+  required String emoji,
+  required List<String> userIds,
+  required Map<String, String> nameByUserId,
+}) {
+  showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    backgroundColor: AppColors.surfaceCard,
+    builder: (ctx) {
+      return SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+                child: Text(
+                  '$emoji reacted',
+                  style: AppTextStyles.cardTitle.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              for (final id in userIds)
+                ListTile(
+                  dense: true,
+                  title: Text(
+                    nameByUserId[id]?.trim().isNotEmpty == true
+                        ? nameByUserId[id]!.trim()
+                        : 'Colleague',
+                  ),
+                ),
+              if (userIds.isEmpty)
+                const ListTile(
+                  dense: true,
+                  title: Text('No one yet'),
+                ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
 }
 
 /// Horizontal drag stays 1:1 with the finger and never travels the screen width.

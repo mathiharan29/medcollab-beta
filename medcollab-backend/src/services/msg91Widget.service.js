@@ -156,12 +156,7 @@ const verifyWidgetAccessToken = async (accessToken) => {
     throw new Error('Access token is required');
   }
 
-  // Fast path: MSG91 widget JWT already verified on device — decode phone locally.
-  const jwtPhone = extractPhoneFromJwt(token);
-  if (jwtPhone) {
-    return { phone: jwtPhone, raw: { type: 'success', source: 'jwt' } };
-  }
-
+  // Always verify with MSG91 — never trust a client-decoded JWT alone (VR-AUTH-WIDGET).
   const response = await callVerifyAccessToken(authKey, token);
   const data = response.data;
 
@@ -174,6 +169,7 @@ const verifyWidgetAccessToken = async (accessToken) => {
     throw new Error(apiMessage);
   }
 
+  // Phone from provider payload first; JWT decode only as fallback after provider success.
   const phone = extractVerifiedPhone(data) || extractPhoneFromJwt(token);
   if (!phone) {
     logger.warn(

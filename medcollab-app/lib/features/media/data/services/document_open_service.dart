@@ -53,18 +53,34 @@ abstract final class DocumentOpenService {
       final path = '${dir.path}/vocle_$safeName';
       final file = File(path);
 
+      final downloadUrl = _preferDirectCloudinaryUrl(url);
       final dio = Dio(
         BaseOptions(
           connectTimeout: const Duration(seconds: 30),
           receiveTimeout: const Duration(seconds: 60),
           responseType: ResponseType.bytes,
           headers: const {'Accept': '*/*'},
+          followRedirects: true,
+          validateStatus: (s) => s != null && s < 500,
         ),
       );
-      final response = await dio.get<List<int>>(url);
+      final response = await dio.get<List<int>>(downloadUrl);
       final bytes = response.data;
-      if (bytes == null || bytes.isEmpty) {
-        throw StateError('Empty download');
+      final contentType =
+          response.headers.value('content-type')?.toLowerCase() ?? '';
+      if (bytes == null ||
+          bytes.isEmpty ||
+          contentType.contains('text/html') ||
+          (response.statusCode != null && response.statusCode! >= 400)) {
+        throw StateError('Bad download');
+      }
+      // PDF magic header when claiming PDF.
+      if ((mimeType ?? '').contains('pdf') ||
+          safeName.toLowerCase().endsWith('.pdf')) {
+        final head = String.fromCharCodes(bytes.take(5));
+        if (!head.startsWith('%PDF')) {
+          throw StateError('Not a PDF payload');
+        }
       }
       await file.writeAsBytes(bytes, flush: true);
 
@@ -75,14 +91,28 @@ abstract final class DocumentOpenService {
         type: mimeType ?? _guessMime(safeName),
       );
       if (result.type != ResultType.done && context.mounted) {
-        await _launchExternal(context, uri);
+        _toast(context, 'Downloaded, but no app can open this file');
       }
     } catch (_) {
       if (context.mounted) {
         Navigator.of(context, rootNavigator: true).pop();
-        await _launchExternal(context, uri);
+        _toast(context, 'Could not open document');
       }
     }
+  }
+
+  /// Prefer raw/upload delivery URLs over broken image transforms / portals.
+  static String _preferDirectCloudinaryUrl(String url) {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return url;
+    if (!uri.host.contains('cloudinary.com')) return url;
+    final path = uri.path;
+    // Rewrite .../image/upload/...pdf → .../raw/upload/...
+    if (path.contains('/image/upload/') &&
+        path.toLowerCase().endsWith('.pdf')) {
+      return url.replaceFirst('/image/upload/', '/raw/upload/');
+    }
+    return url;
   }
 
   static String _safeFileName(String? fileName, String url) {

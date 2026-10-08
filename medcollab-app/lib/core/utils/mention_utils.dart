@@ -101,4 +101,26 @@ class MentionUtils {
     }
     return user.displayName.trim();
   }
+
+  /// If [deletedAt] (index in [oldText] of removed char) sits inside/at end of
+  /// an `@Name` token, return text with that whole token removed.
+  static String? deleteMentionTokenAt(String oldText, int deletedAt) {
+    if (deletedAt < 0 || deletedAt > oldText.length) return null;
+    final at = oldText.lastIndexOf('@', deletedAt == 0 ? 0 : deletedAt - 1);
+    if (at < 0) return null;
+    if (at > 0) {
+      final prev = oldText[at - 1];
+      if (prev != ' ' && prev != '\n' && prev != '\t') return null;
+    }
+    var end = at + 1;
+    while (end < oldText.length) {
+      final ch = oldText[end];
+      if (ch == ' ' || ch == '\n' || ch == '\t' || '.!,?'.contains(ch)) break;
+      end++;
+    }
+    // Include a single trailing space after the mention when present.
+    if (end < oldText.length && oldText[end] == ' ') end++;
+    if (deletedAt < at || deletedAt > end) return null;
+    return oldText.substring(0, at) + oldText.substring(end);
+  }
 }

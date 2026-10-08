@@ -883,9 +883,10 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
                                             key: GlobalObjectKey(message.id),
                                             message: message,
                                             isMine: isMine,
-                                            // Sender name only in group chats.
-                                            showSender:
-                                                !_isDm && showSender,
+                                            // Sender names in space channels + Needls (group DMs).
+                                            showSender: (!_isDm ||
+                                                    isNeedlChat) &&
+                                                showSender,
                                             currentUserId: currentUserId,
                                             isDm: _isDm,
                                             showReadReceipts: showReadReceipts,

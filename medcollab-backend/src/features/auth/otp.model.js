@@ -90,8 +90,11 @@ otpSchema.statics.createOtp = async function (phone, otpCode) {
 };
 
 /**
- * Verify an OTP code for a phone number
+ * Verify an OTP code for a phone number.
  * Returns: { valid: boolean, reason?: string }
+ *
+ * Concurrent success races are closed by atomically deleting the OTP document
+ * only after a matching hash (VR-A1-OTP-CONSUMPTION).
  */
 otpSchema.statics.verifyOtp = async function (phone, otpCode) {
   const otp = await this.findOne({
@@ -105,21 +108,39 @@ otpSchema.statics.verifyOtp = async function (phone, otpCode) {
     return { valid: false, reason: 'OTP expired or not found' };
   }
 
-  // Increment attempt counter before checking
-  otp.attempts += 1;
-  await otp.save();
-
   const isMatch = await bcrypt.compare(otpCode, otp.otpHash);
 
   if (!isMatch) {
-    if (otp.attempts >= 3) {
+    const updated = await this.findOneAndUpdate(
+      {
+        _id: otp._id,
+        isUsed: false,
+        expiresAt: { $gt: new Date() },
+      },
+      { $inc: { attempts: 1 } },
+      { new: true }
+    );
+    if (!updated) {
+      return { valid: false, reason: 'OTP expired or not found' };
+    }
+    if (updated.attempts >= 3) {
       return { valid: false, reason: 'Too many incorrect attempts' };
     }
     return { valid: false, reason: 'Incorrect OTP' };
   }
 
-  // Valid — mark as used and delete it
-  await this.deleteOne({ _id: otp._id });
+  // Atomic consume — only one concurrent verify can delete this document.
+  const claimed = await this.findOneAndDelete({
+    _id: otp._id,
+    isUsed: false,
+    expiresAt: { $gt: new Date() },
+    attempts: { $lt: 3 },
+  });
+
+  if (!claimed) {
+    return { valid: false, reason: 'OTP already used or expired' };
+  }
+
   return { valid: true };
 };
 
