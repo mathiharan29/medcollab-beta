@@ -213,12 +213,9 @@ const sendMessage = asyncHandler(async (req, res) => {
   // ── Async side-effects (fire and forget after response) ────────────────────
   setImmediate(async () => {
     try {
-      let recipientIds = [];
-      if (channel.type === CHANNEL_TYPES.DIRECT) {
-        recipientIds = (channel.members || []).map((id) => id.toString());
-      } else if (space) {
-        recipientIds = space.members.map((m) => m.userId.toString());
-      }
+      const { resolveMessageAudienceIds } = require('../../utils/channelAccess');
+      // Private channels must not fan out to the whole space (VR-S8).
+      const recipientIds = resolveMessageAudienceIds(channel, space);
 
       // Socket first so open chats update immediately.
       emitNewMessage(

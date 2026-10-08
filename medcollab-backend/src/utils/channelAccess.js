@@ -113,10 +113,42 @@ const assertMessageInChannel = (message, channelId, res) => {
   return true;
 };
 
+/**
+ * Authorized personal-room / notification audience for a message (VR-S8).
+ * Private channels: channel members + space admins only (not entire space).
+ */
+const resolveMessageAudienceIds = (channel, space) => {
+  if (!channel) return [];
+
+  if (channel.type === CHANNEL_TYPES.DIRECT || !channel.spaceId) {
+    return (channel.members || [])
+      .map((m) => (m?._id || m)?.toString())
+      .filter(Boolean);
+  }
+
+  if (channel.isPrivate) {
+    const ids = new Set(
+      (channel.members || [])
+        .map((m) => (m?._id || m)?.toString())
+        .filter(Boolean)
+    );
+    for (const m of space?.members || []) {
+      const uid = m.userId?.toString?.() || m.userId?.toString();
+      if (uid && space.isAdmin(uid)) ids.add(uid);
+    }
+    return [...ids];
+  }
+
+  return (space?.members || [])
+    .map((m) => m.userId?.toString?.() || m.userId?.toString())
+    .filter(Boolean);
+};
+
 module.exports = {
   evaluateChannelAccess,
   resolveChannelAccess,
   resolveChannelAccessById,
   canAccessChannel,
   assertMessageInChannel,
+  resolveMessageAudienceIds,
 };

@@ -322,13 +322,35 @@ const notifyNewMessage = async ({ recipientIds, message, sender, channel }) => {
 const notifyMention = async ({ mentionedUserIds, message, sender, channel }) => {
   const senderId = sender?._id?.toString?.() || sender?._id || '';
   const { getUserIdsViewingChannel } = require('../socket/channelViewers');
+  const { canAccessChannel } = require('../utils/channelAccess');
+  const User = require('../features/users/user.model');
   const viewing = await getUserIdsViewingChannel(channel._id);
-  const recipients = (mentionedUserIds || []).filter((id) => {
-    if (!id || id.toString() === senderId.toString()) return false;
-    // Mentions still notify if away; skip only when already in the thread.
-    if (viewing.has(id.toString())) return false;
-    return true;
-  });
+
+  const unique = [
+    ...new Set(
+      (mentionedUserIds || [])
+        .map((id) => id?.toString?.() || String(id || ''))
+        .filter((id) => id && id !== senderId)
+    ),
+  ];
+  if (unique.length === 0) return;
+
+  // Active users only (VR-INACTIVE-MENTION default).
+  const activeUsers = await User.find({
+    _id: { $in: unique },
+    isActive: true,
+  })
+    .select('_id')
+    .lean();
+  const activeIds = activeUsers.map((u) => u._id.toString());
+
+  const recipients = [];
+  for (const id of activeIds) {
+    if (viewing.has(id)) continue;
+    // Must be able to read the channel — no preview leak (VR-N3).
+    if (!(await canAccessChannel(id, channel._id))) continue;
+    recipients.push(id);
+  }
   if (recipients.length === 0) return;
 
   await sendBulkNotification(recipients, {

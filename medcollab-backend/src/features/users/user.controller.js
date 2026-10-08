@@ -293,6 +293,7 @@ const getNeedl = asyncHandler(async (req, res) => {
   const Message = require('../messages/message.model');
   const Channel = require('../channels/channel.model');
   const Space = require('../spaces/space.model');
+  const { canAccessChannel } = require('../../utils/channelAccess');
 
   const spaces = await Space.find(
     { 'members.userId': req.user._id, isActive: true },
@@ -300,15 +301,24 @@ const getNeedl = asyncHandler(async (req, res) => {
   ).lean();
   const spaceIds = spaces.map((s) => s._id);
 
-  const channels = await Channel.find({
+  // Candidate set (may include private channels caller cannot read).
+  const candidates = await Channel.find({
     isArchived: false,
     $or: [
       { members: req.user._id },
       { spaceId: { $in: spaceIds } },
     ],
   })
-    .select('_id spaceId type name')
+    .select('_id spaceId type name isPrivate members')
     .lean();
+
+  // Live access policy — drop private/revoked channels (VR-N1).
+  const channels = [];
+  for (const ch of candidates) {
+    if (await canAccessChannel(req.user._id, ch._id)) {
+      channels.push(ch);
+    }
+  }
   const channelIds = channels.map((c) => c._id);
   const channelById = Object.fromEntries(
     channels.map((c) => [c._id.toString(), c])
