@@ -12,8 +12,8 @@ Medical collaboration platform for doctors (**product UI name: Vocle**). Replaci
 | **Production API** | **https://medcollab.up.railway.app** |
 | Health | https://medcollab.up.railway.app/health |
 
-**Beta: LIVE** — MongoDB Atlas + Railway Hobby + Cloudinary + MSG91 widget OTP + Firebase FCM + production APK.  
-**Current sprint:** **11 — Beta Polish ✅** (DM privacy, notify-while-reading, Offline, onboarding/help/dev mode). Deploy Sprint 11 backend to GitHub `master` for Railway.
+**Beta: LIVE** — MongoDB Atlas + Railway Hobby + Cloudinary + MSG91 widget OTP + Firebase FCM + production APK (`1.0.0+26`).  
+**Current focus:** Needl UX + Sriram security remediation (Waves 1–3 ✅ on `master`; Wave 4 realtime next). See `docs/ARCHITECT_STATUS_UPDATE_2026-10-08.md` and `docs/SRIRAM_REMEDIATION_STATUS_2026-10-08.md`.
 
 **Railway deploys from GitHub `master` only** (root `medcollab-backend`). Design branches do not auto-deploy.
 

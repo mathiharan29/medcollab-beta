@@ -1,15 +1,35 @@
 # MedCollab (Vocle) — Project Lead Summary
 
-**Date:** 2026-08-24  
+**Date:** 2026-10-08 (current) · Historical Sprint 14 section retained below  
 **Product name (app):** Vocle · **Repo / API name:** MedCollab  
 **Purpose:** Replace WhatsApp for department chat, DMs, threads, and clinical shift handoffs  
 **Beta target:** ~15 doctors (MBBS interns, PG residents, junior consultants)  
 **Production API:** https://medcollab.up.railway.app  
 **Health:** https://medcollab.up.railway.app/health  
-**Latest APK:** `D:\MedCollab\vocle-beta.apk` · **Version:** `1.0.0+14` (Sprint 14 closed beta)  
-**Release docs:** [`RELEASE_NOTES.md`](RELEASE_NOTES.md) · [`BETA_CHECKLIST.md`](BETA_CHECKLIST.md) · [`docs/PRIVACY_POLICY.md`](docs/PRIVACY_POLICY.md) · [`docs/TERMS.md`](docs/TERMS.md)  
-**Active branch:** `design/clinical-design-system`  
+**Latest APK:** `D:\MedCollab\Vocle-beta.apk` · **Version:** `1.0.0+26`  
+**Branch:** `master` (GitLab + GitHub → Railway)  
 **Official contact:** `vocle.official@gmail.com` · Instagram `@thevocle`
+
+### Current status (Oct 2026) — share with lead
+
+| Area | State |
+|------|--------|
+| Live beta | Auth, spaces, DMs, **Needl** (group DMs), handoffs, FCM, Cloudinary |
+| Latest polish | Needl hub/members/titles, video/PDF paths, phone search, reactions, notif reply |
+| Security | Sriram report Waves **1–3 done** (auth, access, audience); Waves 4–8 next |
+| Architect brief | [`docs/ARCHITECT_STATUS_UPDATE_2026-10-08.md`](docs/ARCHITECT_STATUS_UPDATE_2026-10-08.md) |
+| Security status | [`docs/SRIRAM_REMEDIATION_STATUS_2026-10-08.md`](docs/SRIRAM_REMEDIATION_STATUS_2026-10-08.md) |
+| Full findings | [`docs/VOCLE_DEVELOPER_REMEDIATION_REPORT.md`](docs/VOCLE_DEVELOPER_REMEDIATION_REPORT.md) |
+
+**One-liner:** Vocle closed beta is live at **1.0.0+26**; Needl UX + first three security remediation waves are on production API; continue Wave 4 (realtime) and Wave 5 (message-request accept).
+
+**Release docs:** [`RELEASE_NOTES.md`](RELEASE_NOTES.md) · [`BETA_CHECKLIST.md`](BETA_CHECKLIST.md) · [`docs/PRIVACY_POLICY.md`](docs/PRIVACY_POLICY.md) · [`docs/TERMS.md`](docs/TERMS.md)
+
+---
+
+## Historical — Sprint 14 snapshot (2026-08-24)
+
+*The sections below remain as the closed-beta packaging record. Prefer the Oct 2026 block above for current version and priorities.*
 ---
 
 ## 1. Product overview

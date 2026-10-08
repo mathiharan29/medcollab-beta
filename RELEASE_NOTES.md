@@ -1,5 +1,25 @@
 # Vocle Closed Beta — Release Notes
 
+## Current build — `1.0.0+26` (8 October 2026)
+
+**APK:** `Vocle-beta.apk` · **API:** https://medcollab.up.railway.app  
+
+### For testers
+- Needl (group chat): names on messages, people list, clearer hub cards  
+- Search colleagues by **mobile number** (including strangers for message request)  
+- Video send + PDF open hardened  
+- Reactions: multiple emojis; tap others’ emoji to see who reacted  
+- Notification Reply no longer stuck loading  
+- Security hardening rolled to API (login token verify, private chat privacy)
+
+### Team docs
+- Architect: `docs/ARCHITECT_STATUS_UPDATE_2026-10-08.md`  
+- Security (Sriram): `docs/SRIRAM_REMEDIATION_STATUS_2026-10-08.md`  
+
+---
+
+## Historical — Closed beta packaging `1.0.0` build `14` (24 August 2026)
+
 **Product:** Vocle  
 **Version:** `1.0.0` (build `14`)  
 **Date:** 24 August 2026  
