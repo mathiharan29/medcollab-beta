@@ -65,6 +65,15 @@ const getSpaceChannels = asyncHandler(async (req, res) => {
  * Get a single channel with its pinned messages
  */
 const getChannelById = asyncHandler(async (req, res) => {
+  const { resolveChannelAccessById } = require('../../utils/channelAccess');
+  const access = await resolveChannelAccessById(
+    req.params.id,
+    req.user._id,
+    res,
+    { allowArchived: true }
+  );
+  if (!access) return;
+
   let channel = await Channel.findById(req.params.id)
     .populate({
       path: 'pinnedMessages.messageId',
@@ -74,18 +83,6 @@ const getChannelById = asyncHandler(async (req, res) => {
     .lean();
 
   if (!channel) return respond.notFound(res, 'Channel not found');
-
-  // Access check
-  if (channel.spaceId) {
-    const space = await Space.findById(channel.spaceId);
-    if (!space?.isMember(req.user._id)) return respond.forbidden(res, 'Not a space member');
-  } else {
-    // DM channel — must be a member
-    const isMember = (channel.members || []).some(
-      (m) => (m._id || m).toString() === req.user._id.toString()
-    );
-    if (!isMember) return respond.forbidden(res, 'Not a channel member');
-  }
 
   if (channel.type === CHANNEL_TYPES.DIRECT) {
     channel = enrichDM(channel, req.user._id);
@@ -586,9 +583,11 @@ const expandDM = asyncHandler(async (req, res) => {
  * List members of a private channel or DM
  */
 const getChannelMembers = asyncHandler(async (req, res) => {
-  const channel = await Channel.findById(req.params.id).lean();
-  if (!channel) return respond.notFound(res, 'Channel not found');
+  const { resolveChannelAccessById } = require('../../utils/channelAccess');
+  const access = await resolveChannelAccessById(req.params.id, req.user._id, res);
+  if (!access) return;
 
+  const channel = access.channel;
   const User = require('../users/user.model');
   const users = await User.find({ _id: { $in: channel.members } })
     .select('name displayTitle role speciality avatarUrl availability')
@@ -617,25 +616,12 @@ const loadPinnedMessages = async (channelId) => {
  */
 const pinMessage = asyncHandler(async (req, res) => {
   const { id: channelId, messageId } = req.params;
+  const { resolveChannelAccessById } = require('../../utils/channelAccess');
+  const access = await resolveChannelAccessById(channelId, req.user._id, res);
+  if (!access) return;
 
-  const channel = await Channel.findById(channelId);
-  if (!channel) return respond.notFound(res, 'Channel not found');
-
+  const channel = access.channel;
   const Message = require('../messages/message.model');
-  const { CHANNEL_TYPES } = require('../../constants');
-
-  const isDm = channel.type === CHANNEL_TYPES.DIRECT || !channel.spaceId;
-  if (isDm) {
-    const isMember = (channel.members || []).some(
-      (m) => m.toString() === req.user._id.toString()
-    );
-    if (!isMember) return respond.forbidden(res, 'Not a conversation member');
-  } else {
-    const space = await Space.findById(channel.spaceId);
-    if (!space?.isMember(req.user._id)) {
-      return respond.forbidden(res, 'Not a group member');
-    }
-  }
 
   const msg = await Message.findOne({ _id: messageId, channelId: channel._id });
   if (!msg || msg.isDeleted) {
@@ -664,24 +650,11 @@ const pinMessage = asyncHandler(async (req, res) => {
  */
 const unpinMessage = asyncHandler(async (req, res) => {
   const { id: channelId, messageId } = req.params;
+  const { resolveChannelAccessById } = require('../../utils/channelAccess');
+  const access = await resolveChannelAccessById(channelId, req.user._id, res);
+  if (!access) return;
 
-  const channel = await Channel.findById(channelId);
-  if (!channel) return respond.notFound(res, 'Channel not found');
-
-  const { CHANNEL_TYPES } = require('../../constants');
-  const isDm = channel.type === CHANNEL_TYPES.DIRECT || !channel.spaceId;
-  if (isDm) {
-    const isMember = (channel.members || []).some(
-      (m) => m.toString() === req.user._id.toString()
-    );
-    if (!isMember) return respond.forbidden(res, 'Not a conversation member');
-  } else {
-    const space = await Space.findById(channel.spaceId);
-    if (!space?.isMember(req.user._id)) {
-      return respond.forbidden(res, 'Not a group member');
-    }
-  }
-
+  const channel = access.channel;
   channel.pinnedMessages = channel.pinnedMessages.filter(
     (p) => p.messageId.toString() !== messageId
   );

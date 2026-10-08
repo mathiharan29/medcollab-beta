@@ -56,7 +56,15 @@ const saveLocalUpload = ({ buffer, mimeType, originalName, userId, context = 'me
 };
 
 const deleteLocalUpload = (publicId) => {
-  const absolutePath = path.join(UPLOAD_ROOT, publicId);
+  const rootResolved = path.resolve(UPLOAD_ROOT);
+  const absolutePath = path.resolve(UPLOAD_ROOT, publicId);
+  // Containment: resolved path must stay under upload root (VR-S6).
+  if (
+    absolutePath !== rootResolved &&
+    !absolutePath.startsWith(rootResolved + path.sep)
+  ) {
+    return false;
+  }
   if (!fs.existsSync(absolutePath)) return false;
   fs.unlinkSync(absolutePath);
   return true;

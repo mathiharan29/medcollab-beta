@@ -141,16 +141,46 @@ const uploadFile = asyncHandler(async (req, res) => {
 });
 
 /**
+ * Normalize media public IDs and require an exact owner namespace prefix (VR-S6).
+ * Rejects traversal / substring spoofing like foreign/.../messages/<me>/...
+ */
+const normalizeOwnedMediaPublicId = (rawPublicId, userId) => {
+  let id = String(rawPublicId || '');
+  try {
+    id = decodeURIComponent(id);
+  } catch {
+    return null;
+  }
+  id = id.replace(/\\/g, '/').replace(/^\/+/, '');
+  // Collapse redundant segments without allowing escape.
+  const parts = [];
+  for (const part of id.split('/')) {
+    if (!part || part === '.') continue;
+    if (part === '..') return null;
+    parts.push(part);
+  }
+  const normalized = parts.join('/');
+  const allowed = [
+    `medcollab/messages/${userId}/`,
+    `medcollab/avatars/${userId}/`,
+  ];
+  const owns = allowed.some(
+    (prefix) =>
+      normalized.startsWith(prefix) &&
+      normalized.length > prefix.length &&
+      !normalized.slice(prefix.length).includes('..')
+  );
+  return owns ? normalized : null;
+};
+
+/**
  * DELETE /api/media/:publicId
  */
 const deleteFile = asyncHandler(async (req, res) => {
-  const publicId = decodeURIComponent(req.params.publicId);
   const userId = req.user._id.toString();
-  const ownsFile =
-    publicId.includes(`/messages/${userId}/`) ||
-    publicId.includes(`/avatars/${userId}/`);
+  const publicId = normalizeOwnedMediaPublicId(req.params.publicId, userId);
 
-  if (!ownsFile) {
+  if (!publicId) {
     return respond.forbidden(res, 'You can only delete your own files');
   }
 
@@ -162,9 +192,18 @@ const deleteFile = asyncHandler(async (req, res) => {
   }
 
   try {
-    let result = await cloudinary.uploader.destroy(publicId, { resource_type: 'image' });
+    let result = await cloudinary.uploader.destroy(publicId, {
+      resource_type: 'image',
+    });
     if (result.result === 'not found') {
-      result = await cloudinary.uploader.destroy(publicId, { resource_type: 'raw' });
+      result = await cloudinary.uploader.destroy(publicId, {
+        resource_type: 'raw',
+      });
+    }
+    if (result.result === 'not found') {
+      result = await cloudinary.uploader.destroy(publicId, {
+        resource_type: 'video',
+      });
     }
 
     if (result.result === 'ok') {

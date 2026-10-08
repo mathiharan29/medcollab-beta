@@ -240,15 +240,27 @@ const globalSearch = asyncHandler(async (req, res) => {
     );
 
     if (handoffSpaceIds.length > 0) {
+      const { HANDOFF_STATUS } = require('../../constants');
+      // Drafts only visible to their sender (VR-S4).
       const handoffs = await Handoff.find({
         spaceId: { $in: handoffSpaceIds },
-        $or: [
-          { shiftSummary: regex },
-          { 'patients.clinicalAlias': regex },
-          { 'patients.diagnosis': regex },
-          { 'patients.notes': regex },
-          { 'patients.bedNumber': regex },
-          { 'patients.ward': regex },
+        $and: [
+          {
+            $or: [
+              { status: { $ne: HANDOFF_STATUS.DRAFT } },
+              { fromUserId: userId },
+            ],
+          },
+          {
+            $or: [
+              { shiftSummary: regex },
+              { 'patients.clinicalAlias': regex },
+              { 'patients.diagnosis': regex },
+              { 'patients.notes': regex },
+              { 'patients.bedNumber': regex },
+              { 'patients.ward': regex },
+            ],
+          },
         ],
       })
         .populate('fromUserId', 'name displayTitle role avatarUrl')

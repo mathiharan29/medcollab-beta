@@ -111,6 +111,18 @@ const sendMessage = asyncHandler(async (req, res) => {
     }
   }
 
+  // Thread parent must live in this same channel (VR-S1).
+  if (threadId) {
+    const threadParent = await Message.findOne({
+      _id: threadId,
+      channelId: channel._id,
+      isDeleted: { $ne: true },
+    }).select('_id');
+    if (!threadParent) {
+      return respond.badRequest(res, 'Thread parent not found in this chat');
+    }
+  }
+
   // WhatsApp-style quote: parent must be in this channel (root or any).
   let replyTo = undefined;
   if (replyToId) {
@@ -215,17 +227,20 @@ const sendMessage = asyncHandler(async (req, res) => {
         recipientIds
       );
 
-      // Thread reply bookkeeping
+      // Thread reply bookkeeping — never update a foreign-channel parent (VR-S1).
       if (threadId) {
-        await Message.findByIdAndUpdate(threadId, {
-          $inc: { replyCount: 1 },
-          lastReply: {
-            senderId: req.user._id,
-            senderName: req.user.name,
-            text: content?.text?.slice(0, 100) || null,
-            sentAt: message.createdAt,
-          },
-        });
+        await Message.updateOne(
+          { _id: threadId, channelId: channel._id },
+          {
+            $inc: { replyCount: 1 },
+            lastReply: {
+              senderId: req.user._id,
+              senderName: req.user.name,
+              text: content?.text?.slice(0, 100) || null,
+              sentAt: message.createdAt,
+            },
+          }
+        );
       }
 
       await notifyNewMessage({
@@ -268,6 +283,7 @@ const getThread = asyncHandler(async (req, res) => {
   const before = req.query.before;
 
   const threadQuery = {
+    channelId: access.channel._id,
     $or: [
       { threadId: rootMessage._id },
       { threadId: rootMessage._id.toString() },

@@ -62,6 +62,16 @@ const createHandoff = asyncHandler(async (req, res) => {
   if (!space.isMember(req.user._id)) return respond.forbidden(res, 'Not a space member');
   if (!space.isMember(toUserId)) return respond.badRequest(res, 'Recipient is not a member of this space');
 
+  // Channel must belong to this space (VR-S2).
+  const channel = await Channel.findById(channelId).select('spaceId isArchived');
+  if (!channel) return respond.notFound(res, 'Channel not found');
+  if (!channel.spaceId || channel.spaceId.toString() !== spaceId.toString()) {
+    return respond.badRequest(res, 'Channel does not belong to this space');
+  }
+  if (channel.isArchived) {
+    return respond.badRequest(res, 'Cannot create a handoff in an archived channel');
+  }
+
   const handoff = await Handoff.create({
     spaceId,
     channelId,
@@ -98,16 +108,15 @@ const getMyHandoffs = asyncHandler(async (req, res) => {
     query.fromUserId = req.user._id;
   } else if (type === 'received') {
     query.toUserId = req.user._id;
+    // Receivers never see drafts — even with explicit status=draft (VR-S4).
     const visibleToReceiver = [
       HANDOFF_STATUS.SUBMITTED,
       HANDOFF_STATUS.ACKNOWLEDGED,
     ];
     if (status && visibleToReceiver.includes(status)) {
       query.status = status;
-    } else if (!status) {
-      query.status = { $in: visibleToReceiver };
     } else {
-      query.status = status;
+      query.status = { $in: visibleToReceiver };
     }
   } else {
     // 'all' — both sent (any status) and received (non-draft)
@@ -140,16 +149,24 @@ const getHandoffById = asyncHandler(async (req, res) => {
   if (!handoff) return respond.notFound(res, 'Handoff not found');
 
   const userId = req.user._id.toString();
-  const isParticipant =
-    handoff.fromUserId._id.toString() === userId ||
-    handoff.toUserId._id.toString() === userId;
+  const isSender = handoff.fromUserId._id.toString() === userId;
+  const isReceiver = handoff.toUserId._id.toString() === userId;
 
   // Space admins can also view for audit purposes
   const space = await Space.findById(handoff.spaceId);
   const isAdmin = space?.isAdmin(req.user._id);
 
-  if (!isParticipant && !isAdmin) {
+  if (!isSender && !isReceiver && !isAdmin) {
     return respond.forbidden(res, 'Access denied');
+  }
+
+  // Drafts are sender (or admin) only until submitted (VR-S4).
+  if (
+    handoff.status === HANDOFF_STATUS.DRAFT &&
+    !isSender &&
+    !isAdmin
+  ) {
+    return respond.forbidden(res, 'Draft handoff is not visible yet');
   }
 
   return respond.ok(res, 'Handoff fetched', { handoff });
