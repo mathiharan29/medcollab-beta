@@ -37,6 +37,12 @@ Medical collaboration API — Node.js + Express + MongoDB + Socket.io. Product U
 - REST persists; socket broadcasts after save
 - `OTP_BYPASS=true` dev only — **server exits if true in production**
 
+## Platform admin (`/api/admin`)
+- Separate from space owner/admin roles
+- Allowlist: `ADMIN_USER_IDS` (comma-separated Mongo user ids)
+- Portal: repo `vocle-admin/` (static, not public website)
+- Doctor trust field: `isVerifiedDoctor` (distinct from phone OTP `isVerified`)
+
 ## Environment variables
 See `.env.example`. Production requires:
 - `MONGODB_URI`, `JWT_SECRET`, `JWT_REFRESH_SECRET`

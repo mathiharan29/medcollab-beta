@@ -4,6 +4,7 @@
 
 const Space = require('./space.model');
 const Channel = require('../channels/channel.model');
+const User = require('../users/user.model');
 const { accessibleChannelFilter } = require('../../utils/accessibleChannels');
 const { joinUserToSpaceRoom } = require('../../socket');
 const { respond } = require('../../utils/apiResponse');
@@ -175,6 +176,11 @@ const joinSpace = asyncHandler(async (req, res) => {
   // Direct join
   space.members.push({ userId: req.user._id, role: SPACE_ROLES.MEMBER });
   await space.save();
+
+  // First invite join — attribute acquisition channel for ops analytics
+  if (!req.user.joinedVia || req.user.joinedVia === 'direct') {
+    User.findByIdAndUpdate(req.user._id, { joinedVia: 'invite_code' }).exec();
+  }
 
   const channels = await Channel.find(
     accessibleChannelFilter(req.user._id, { spaceId: space._id }),

@@ -5,10 +5,18 @@
  */
 
 const { cloudinary, isCloudinaryConfigured } = require('../../config/cloudinary');
+const User = require('../users/user.model');
 const { respond } = require('../../utils/apiResponse');
 const asyncHandler = require('../../utils/asyncHandler');
 const { saveLocalUpload, deleteLocalUpload } = require('../../utils/localMediaStorage');
 const logger = require('../../utils/logger');
+
+const bumpUserStorage = (userId, deltaBytes) => {
+  if (!userId || !deltaBytes) return;
+  User.findByIdAndUpdate(userId, {
+    $inc: { storageUsedBytes: deltaBytes },
+  }).exec();
+};
 
 const uploadBufferToCloudinary = (buffer, options) =>
   new Promise((resolve, reject) => {
@@ -58,6 +66,8 @@ const uploadFile = asyncHandler(async (req, res) => {
       userId,
       context,
     });
+
+    bumpUserStorage(userId, req.file.size);
 
     return respond.ok(res, 'File uploaded', {
       url: local.url,
@@ -121,6 +131,8 @@ const uploadFile = asyncHandler(async (req, res) => {
       deliveryUrl = result.secure_url;
       thumbnailUrl = null;
     }
+
+    bumpUserStorage(userId, req.file.size);
 
     return respond.ok(res, 'File uploaded', {
       url: deliveryUrl,

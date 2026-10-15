@@ -23,6 +23,9 @@ medcollab-backend/node_modules/
 medcollab-backend/npm-debug.log*
 medcollab-backend/logs/
 
+# ─── Admin portal ───────────────────────────────────────────
+vocle-admin/config.local.js
+
 # ─── Flutter (app) ──────────────────────────────────────────
 medcollab-app/.dart_tool/
 medcollab-app/.flutter-plugins

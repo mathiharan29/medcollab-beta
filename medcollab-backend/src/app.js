@@ -26,6 +26,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const path = require('path');
+const fs = require('fs');
 
 const { globalLimiter } = require('./middleware/rateLimiter');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
@@ -44,6 +45,7 @@ const searchRoutes = require('./features/search/search.routes');
 const devRoutes = require('./features/dev/dev.routes');
 const supportRoutes = require('./features/support/support.routes');
 const messageRequestRoutes = require('./features/message-requests/messageRequest.routes');
+const adminRoutes = require('./features/admin/admin.routes');
 
 const app = express();
 
@@ -210,6 +212,30 @@ app.use(
   }),
 );
 
+// ── Platform admin portal (same Railway service as API) ────────────────────────
+// Prefer monorepo ../vocle-admin locally; production uses public/admin (copied in).
+const adminDirCandidates = [
+  path.join(__dirname, '../../vocle-admin'),
+  path.join(__dirname, '../public/admin'),
+];
+const adminDir = adminDirCandidates.find((dir) =>
+  fs.existsSync(path.join(dir, 'index.html'))
+);
+if (adminDir) {
+  const adminIndex = path.join(adminDir, 'index.html');
+  const sendAdminIndex = (_req, res) => res.sendFile(adminIndex);
+  app.get('/admin', sendAdminIndex);
+  app.get('/admin/', sendAdminIndex);
+  app.use(
+    '/admin',
+    express.static(adminDir, {
+      index: false,
+      redirect: false,
+      maxAge: process.env.NODE_ENV === 'production' ? '1h' : 0,
+    })
+  );
+}
+
 // ── API Routes ────────────────────────────────────────────────────────────────
 /**
  * Route mounting — URL prefix maps to feature router.
@@ -241,6 +267,7 @@ app.use('/api/search', searchRoutes);
 app.use('/api/dev', devRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/message-requests', messageRequestRoutes);
+app.use('/api/admin', adminRoutes);
 
 // ── API Info Route ────────────────────────────────────────────────────────────
 app.get('/api', (req, res) => {
@@ -256,6 +283,7 @@ app.get('/api', (req, res) => {
       media: '/api/media',
       notifications: '/api/notifications',
       support: '/api/support',
+      admin: '/api/admin',
     },
   });
 });

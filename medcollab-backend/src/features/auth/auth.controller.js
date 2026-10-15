@@ -29,6 +29,7 @@ const issueAuthTokensForPhone = async (phone) => {
     user = await User.create({
       phone,
       isVerified: true,
+      joinedVia: 'direct',
     });
     logger.info(`New user registered: ${phone}`);
   } else {

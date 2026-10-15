@@ -17,6 +17,7 @@ Medical collaboration platform for hospital teams — Slack-like messaging built
 MedCollab/
 ├── medcollab-app/              # Flutter client (iOS, Android, Web)
 ├── medcollab-backend/          # Node.js REST + Socket.io API
+├── vocle-admin/                # Internal ops admin portal (separate from public site)
 ├── PROJECT_LEAD_SUMMARY.md     # Shareable project-lead status
 ├── AI_HANDOFF.md               # Tech handoff
 ├── PUSH_NOTIFICATIONS.md       # FCM setup
@@ -55,6 +56,17 @@ flutter run --dart-define=API_BASE_URL=https://medcollab.up.railway.app
 ```
 
 *Login uses MSG91 OTP widget on production (`OTP_BYPASS=false`).*
+
+### Admin portal (internal)
+
+Separate from any public website. See [`vocle-admin/README.md`](vocle-admin/README.md).
+
+```powershell
+cd medcollab-backend   # set ADMIN_USER_IDS + ALLOWED_ORIGINS=...,http://localhost:5173
+npm run dev
+cd ..\vocle-admin
+python -m http.server 5173   # http://localhost:5173
+```
 
 ---
 

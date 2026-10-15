@@ -136,9 +136,51 @@ const generateRefreshToken = (userId) => {
   });
 };
 
+/**
+ * Platform ops admin — allowlisted by Mongo userId in ADMIN_USER_IDS.
+ * Space owner/admin roles are NOT enough. Used only by /api/admin/*.
+ *
+ * Example: ADMIN_USER_IDS=664a...,664b...
+ */
+const requirePlatformAdmin = (req, res, next) => {
+  const raw = process.env.ADMIN_USER_IDS || '';
+  const allowlist = raw
+    .split(',')
+    .map((id) => id.trim())
+    .filter(Boolean);
+
+  const userId = req.user?._id?.toString();
+  if (!userId) {
+    return respond.forbidden(res, 'Platform admin access required');
+  }
+
+  // Local dogfood: any authenticated user may use /api/admin when allowlist
+  // is empty and ADMIN_ALLOW_ANY_IN_DEV=true. Never enabled in production.
+  if (allowlist.length === 0) {
+    const allowAnyInDev =
+      process.env.NODE_ENV !== 'production' &&
+      process.env.ADMIN_ALLOW_ANY_IN_DEV === 'true';
+    if (allowAnyInDev) {
+      logger.warn(
+        `ADMIN_USER_IDS empty — allowing ${userId} as platform admin (dev only)`
+      );
+      return next();
+    }
+    logger.warn('ADMIN_USER_IDS is empty — platform admin routes denied');
+    return respond.forbidden(res, 'Platform admin is not configured');
+  }
+
+  if (!allowlist.includes(userId)) {
+    return respond.forbidden(res, 'Platform admin access required');
+  }
+
+  return next();
+};
+
 module.exports = {
   protect,
   requireOnboarding,
+  requirePlatformAdmin,
   authenticateSocket,
   generateAccessToken,
   generateRefreshToken,

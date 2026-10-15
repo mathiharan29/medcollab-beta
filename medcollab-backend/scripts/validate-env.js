@@ -57,6 +57,12 @@ if (process.env.JWT_SECRET && process.env.JWT_SECRET.length < 32) {
   warnings.push('JWT_SECRET should be at least 32 characters (64+ recommended)');
 }
 
+if (!process.env.ADMIN_USER_IDS) {
+  warnings.push(
+    'ADMIN_USER_IDS empty — /api/admin/* platform admin routes will deny all callers'
+  );
+}
+
 console.log(`\nMedCollab env validation (${NODE_ENV})\n${'─'.repeat(40)}`);
 
 if (errors.length === 0 && warnings.length === 0) {

@@ -150,6 +150,34 @@ const userSchema = new mongoose.Schema(
       default: true,
     },
 
+    // ── Platform trust (ops admin — separate from phone OTP isVerified) ────
+    // Manual doctor verification queue for closed beta / growth.
+    isVerifiedDoctor: {
+      type: Boolean,
+      default: false,
+    },
+    verifiedAt: {
+      type: Date,
+      default: null,
+    },
+    verifiedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    // How they entered the product: direct | invite_code | qr
+    joinedVia: {
+      type: String,
+      enum: ['direct', 'invite_code', 'qr'],
+      default: 'direct',
+    },
+    // Cumulative media upload bytes (Cloudinary / local) for cost analysis
+    storageUsedBytes: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
     // ── Push Notifications ────────────────────────────────────────────────
     // Array because doctors use multiple devices
     fcmTokens: {
@@ -207,6 +235,9 @@ const userSchema = new mongoose.Schema(
 // Index for searching members by institution (future: "find doctors at AIIMS")
 userSchema.index({ institution: 1 });
 userSchema.index({ role: 1, speciality: 1 });
+userSchema.index({ isVerifiedDoctor: 1, createdAt: -1 });
+userSchema.index({ lastSeenAt: -1 });
+userSchema.index({ isActive: 1 });
 
 // ── Instance Methods ─────────────────────────────────────────────────────────
 // Methods available on a single user document

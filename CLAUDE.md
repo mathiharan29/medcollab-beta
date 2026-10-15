@@ -32,6 +32,7 @@ MBBS interns, PG residents, junior consultants. Starting with ~15 doctors.
 ```
 medcollab-backend/   ← Node.js API (Railway root: medcollab-backend/)
 medcollab-app/       ← Flutter client
+vocle-admin/         ← Internal ops admin portal (not public website)
 DEPLOYMENT.md        ← Beta deploy guide + troubleshooting
 PUSH_NOTIFICATIONS.md ← FCM Firebase + Railway setup
 PROJECT_LEAD_SUMMARY.md ← Shareable project-lead status
