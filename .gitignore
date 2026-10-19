@@ -40,3 +40,10 @@ medcollab-app/android/local.properties
 # ─── Misc ───────────────────────────────────────────────────
 *.log
 coverage/
+
+# Python local test tooling
+__pycache__/
+*.pyc
+
+# Local regression runs: one complete result folder per invocation
+/test-results/

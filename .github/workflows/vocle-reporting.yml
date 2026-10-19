@@ -1,0 +1,76 @@
+name: Vocle Shared Visual Reporting
+on:
+  workflow_call:
+    inputs:
+      workflow_file:
+        required: true
+        type: string
+      original_jobs:
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: ${{ github.workflow }}-vocle-reporting-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+jobs:
+  dashboard:
+    name: Visual QA report
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Validate supported PR context
+        working-directory: ${{ github.workspace }}
+        shell: bash
+        env:
+          QA_REPOSITORY: ${{ github.repository }}
+          QA_REF: ${{ github.ref }}
+          QA_WORKFLOW: ${{ github.workflow }}
+          QA_EVENT: ${{ github.event_name }}
+          QA_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          QA_BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          test "$QA_REPOSITORY" = mathiharan29/medcollab-beta
+          if [ "$QA_EVENT" = pull_request ]; then
+            test "$QA_HEAD_REPOSITORY" = mathiharan29/medcollab-beta
+            test "$QA_BASE_REF" = master
+          else
+            test "$QA_EVENT" = workflow_dispatch
+            test "$QA_REF" = refs/heads/master
+            test "$QA_WORKFLOW" = 'Vocle Real Cloudinary Security'
+          fi
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Generate visual evidence including failed prerequisites
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          VOCLE_REPORT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          VOCLE_REPORT_FILE: ${{ inputs.workflow_file }}
+          VOCLE_REPORT_NEEDS: ${{ inputs.original_jobs }}
+        run: node tests/reporting/all-workflows.mjs vocle-visual-report
+      - name: Upload offline dashboard and detailed reports
+        id: dashboard_upload
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: vocle-qa-dashboard-${{ inputs.workflow_file }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: vocle-visual-report/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Publish clickable report download
+        if: always()
+        env:
+          REPORT_DOWNLOAD_URL: ${{ steps.dashboard_upload.outputs.artifact-url }}
+        run: |
+          if [ -n "$REPORT_DOWNLOAD_URL" ]; then
+            printf '\n## Download the visual QA report\n\n[Download report ZIP](%s)\n\nSign into GitHub, extract the ZIP, and open `vocle-regression-dashboard.html` in Chrome or Edge.\n' "$REPORT_DOWNLOAD_URL" >> "$GITHUB_STEP_SUMMARY"
+          else
+            printf '\nReport upload unavailable; inspect the reporting job errors.\n' >> "$GITHUB_STEP_SUMMARY"
+          fi

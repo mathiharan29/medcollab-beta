@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "gradle": {"version": "8.10.2", "url": "https://downloads.gradle.org/distributions/gradle-8.10.2-all.zip", "wrapperUrl": "https://services.gradle.org/distributions/gradle-8.10.2-all.zip", "sha256": "2ab88d6de2c23e6adae7363ae6e29cbdd2a709e992929b48b6530fd0c7133bd6"},
+  "gitleaks": {
+    "windows-x64": {"url": "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_windows_x64.zip", "sha256": "d29144deff3a68aa93ced33dddf84b7fdc26070add4aa0f4513094c8332afc4e"},
+    "linux-x64": {"url": "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz", "sha256": "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb"},
+    "darwin-x64": {"url": "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_darwin_x64.tar.gz", "sha256": "dfe101a4db2255fc85120ac7f3d25e4342c3c20cf749f2c20a18081af1952709"},
+    "darwin-arm64": {"url": "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_darwin_arm64.tar.gz", "sha256": "b40ab0ae55c505963e365f271a8d3846efbc170aa17f2607f13df610a9aeb6a5"}
+  },
+  "flutter": {"version": "3.29.3", "repository": "https://github.com/flutter/flutter.git", "commit": "ea121f8859e4b13e47a8f845e4586164519588bc"},
+  "node": {
+    "windows-x64": {"url": "https://nodejs.org/dist/v22.20.0/node-v22.20.0-win-x64.zip", "sha256": "bb819d6eb8f5bfda294bbc83a7e4ec6539da67c4233d54b0d655b9248b15e29d"},
+    "linux-x64": {"url": "https://nodejs.org/dist/v22.20.0/node-v22.20.0-linux-x64.tar.xz", "sha256": "00bbd05e306ea68b6e13e17360d0e2f680b493ef95f2fea1c4296ff7437530bc"},
+    "darwin-x64": {"url": "https://nodejs.org/dist/v22.20.0/node-v22.20.0-darwin-x64.tar.gz", "sha256": "00df9c5df3e4ec6848c26b70fb47bf96492f342f4bed6b17f12d99b3a45eeecc"},
+    "darwin-arm64": {"url": "https://nodejs.org/dist/v22.20.0/node-v22.20.0-darwin-arm64.tar.gz", "sha256": "cc04a76a09f79290194c0646f48fec40354d88969bec467789a5d55dd097f949"}
+  },
+  "docker": {"version": "29.9.1", "url": "https://download.docker.com/linux/static/stable/x86_64/docker-29.9.1.tgz", "sha256": "c158ecc55adb3afb01bbd3539ed3b997d20c26dbdc418080506cc1bf5243ff57"},
+  "wslRootfs": {"url": "https://cdimage.ubuntu.com/ubuntu-base/releases/22.04/release/ubuntu-base-22.04.5-base-amd64.tar.gz", "sha256": "242cd8898b33ea806ef5f13b1076ed7c76f9f989d18384452f7166692438ff1a"}
+}
