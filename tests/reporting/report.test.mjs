@@ -5,14 +5,79 @@ import { test } from 'node:test';
 import { readFile, mkdtemp, writeFile, mkdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { normalize, sanitize, compare, generate, writeReports, root, safePath, junit } from './report.mjs';
+import { normalize, sanitize, compare, generate, writeReports, root, safePath, junit, summary, detailed } from './report.mjs';
 import { scenarioMetadata } from './scenarios.mjs';
 import { stage } from './stage.mjs';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 
 const metadata = await scenarioMetadata(root);
 const ids = metadata.filter(c=>c.tier==='B').slice(0,6).map(c=>c.id);
 const statuses = ['PASS','FAIL','ERROR','BLOCKED','NEEDS_DECISION','SKIP'];
+
+test('local-only presentation preserves unexecuted ERROR, BLOCKED and SKIP outcomes',()=>{
+ for(const status of ['ERROR','BLOCKED','SKIP']){
+  const r=normalize({tier:'D',selected:['FR-MED-08'],cases:[{id:'FR-MED-08',status,executed:false,errorCategory:'DEVICE_PREREQUISITE'}]},metadata,{suite:'device'});
+  assert.equal(r.results[0].status,status);assert.equal(r.attempted,0);
+  assert(summary(r).includes(`FR-MED-08 — LOCAL_ONLY; executed false; ${status}`));
+  assert(detailed(r).includes(`**${status}** (LOCAL_ONLY)`));
+  assert.equal(r.counts[status],1);
+ }
+});
+
+test('Flutter aggregation leaves unknown application source unverified and preserves failures',async()=>{
+ await flutterAggregationFixture(async({run})=>{
+  const {report}=await run();assert.deepEqual(report.source,{sha:null,kind:'unverified',verified:false});
+  assert.equal(report.sourceKind,'unverified');assert.equal(report.counts.FAIL,1);assert.equal(report.complete,true);assert.equal(report.fullSuccess,false);
+ });
+});
+
+test('Flutter aggregation binds a different application commit without relabeling it as harness HEAD',async()=>{
+ await flutterAggregationFixture(async({run,provenance,harnessSha})=>{
+  const {report}=await run(provenance);assert.equal(report.source.sha,provenance.source.sha);
+  assert.equal(report.source.verified,true);assert.equal(report.harnessSha,harnessSha);assert.notEqual(report.source.sha,report.harnessSha);
+  assert.equal(report.inputSha256,provenance.inputSha256);assert.equal(report.counts.FAIL,1);
+ });
+});
+
+test('Flutter aggregation preserves working-tree identity and its source fingerprint',async()=>{
+ await flutterAggregationFixture(async({run,provenance})=>{
+  provenance.source={...provenance.source,kind:'working-tree',fingerprint:'d'.repeat(64)};
+  const {report}=await run(provenance);assert.equal(report.sourceKind,'working-tree');assert.equal(report.source.kind,'working-tree');assert.equal(report.source.fingerprint,'d'.repeat(64));
+ });
+});
+
+test('Flutter aggregation rejects mismatched events, harness, missing fingerprint and unverified source',async()=>{
+ await flutterAggregationFixture(async({run,provenance})=>{
+  for(const change of [{inputSha256:'0'.repeat(64)},{harnessSha:'0'.repeat(40)},{source:{...provenance.source,verified:false}},{source:{...provenance.source,kind:'working-tree'}}]){
+   const {result}=await run({...provenance,...change},false);assert.notEqual(result.status,0);assert.match(result.stderr,/Invalid runner provenance/);
+  }
+ });
+});
+
+async function flutterAggregationFixture(action){
+ const directory=await mkdtemp(join(tmpdir(),'vocle-flutter-provenance-'));
+ try{
+  const harnessSha=execFileSync('git',['-C',root,'rev-parse','HEAD'],{encoding:'utf8',windowsHide:true}).trim();
+  const events=metadata.filter(c=>c.tier==='F').flatMap((c,i)=>[
+   {type:'testStart',test:{id:i,name:`${c.id}: synthetic provenance contract`},time:i*10},
+   ...(c.id==='FR-NAV-02'?[{type:'error',testID:i,error:'Synthetic assertion failure preserved',isFailure:true}]:[]),
+   {type:'testDone',testID:i,result:c.id==='FR-NAV-02'?'failure':'success',time:i*10+1}
+  ]);
+  events.push({type:'done',success:false});
+  const input=join(directory,'catalog.ndjson'),bytes=events.map(e=>JSON.stringify(e)).join('\n')+'\n';await writeFile(input,bytes);
+  const provenance={source:{sha:harnessSha==='a'.repeat(40)?'b'.repeat(40):'a'.repeat(40),kind:'commit',verified:true},harnessSha,inputSha256:createHash('sha256').update(bytes).digest('hex')};
+  let attempt=0;
+  const run=async(record,expectReport=true)=>{
+   const output=join(directory,'report-'+attempt++),args=[join(root,'tests/functional-regression/scripts/aggregate-flutter.mjs'),input,output];
+   if(record){const file=output+'-provenance.json';await writeFile(file,JSON.stringify(record));args.push(file);}
+   const result=spawnSync(process.execPath,args,{encoding:'utf8',windowsHide:true,timeout:10000});
+   if(!expectReport){await assert.rejects(readFile(output+'.json'),{code:'ENOENT'});return {result};}
+   assert.equal(result.status,0,result.stderr);return {result,report:JSON.parse(await readFile(output+'.json','utf8'))};
+  };
+  await action({run,provenance,harnessSha});
+ }finally{await rm(directory,{recursive:true,force:true});}
+}
 const fixture = () => ({ context: syntheticContext, execution: syntheticExecution(), sourceKind:'pr-head',scope:'backend-all',environmentContractVersion:1,targetSha:'a'.repeat(40),harnessSha:'b'.repeat(40),fingerprint:'c'.repeat(64),selectedIds:ids,results:ids.map((id,i)=>({id,status:statuses[i],durationMs:10+i,error:i?'Synthetic diagnostic\nnext line':'',verifiedSubassertions:i===4?['Safe subassertion recorded']:undefined})),tally:Object.fromEntries(statuses.map(s=>[s,1])) });
 
 test('all 187 scenarios have unique metadata, prerequisites and executable definitions',()=>{

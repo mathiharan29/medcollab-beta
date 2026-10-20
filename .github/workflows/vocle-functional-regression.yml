@@ -263,10 +263,22 @@ jobs:
         env:
           CATALOG_EXIT: ${{ steps.tests.outputs.catalog_exit }}
           RETAINED_EXIT: ${{ steps.tests.outputs.retained_exit }}
+          TARGET_SHA: ${{ needs.detect.outputs.targetSha }}
+          HARNESS_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
           if [[ -s "$VOCLE_FLUTTER_OUTPUT/catalog.ndjson" ]]; then
-            if ! node tests/functional-regression/scripts/aggregate-flutter.mjs "$VOCLE_FLUTTER_OUTPUT/catalog.ndjson" "$VOCLE_FLUTTER_OUTPUT/report" > "$VOCLE_FLUTTER_OUTPUT/aggregation.log" 2>&1; then
+            node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          import { createHash } from 'node:crypto';
+          import { execFileSync } from 'node:child_process';
+          const sha = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+          if (sha !== process.env.TARGET_SHA || sha !== process.env.HARNESS_SHA) throw new Error('Flutter application/harness checkout mismatch');
+          const output = process.env.VOCLE_FLUTTER_OUTPUT;
+          writeFileSync(output + '/catalog-provenance.json', JSON.stringify({ source: { sha, kind: 'commit', verified: true },
+            harnessSha: sha, sourceKind: 'pr-head', inputSha256: createHash('sha256').update(readFileSync(output + '/catalog.ndjson')).digest('hex') }));
+          NODE
+            if ! node tests/functional-regression/scripts/aggregate-flutter.mjs "$VOCLE_FLUTTER_OUTPUT/catalog.ndjson" "$VOCLE_FLUTTER_OUTPUT/report" "$VOCLE_FLUTTER_OUTPUT/catalog-provenance.json" > "$VOCLE_FLUTTER_OUTPUT/aggregation.log" 2>&1; then
               cat "$VOCLE_FLUTTER_OUTPUT/aggregation.log" >> "$GITHUB_STEP_SUMMARY"
             fi
           fi

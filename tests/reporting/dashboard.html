@@ -37,7 +37,7 @@ $('artifact-help').textContent='GitHub artifact downloads require sign-in. Local
 $('scope').textContent='Functional catalog: 187 total / 179 hosted / 8 LOCAL_ONLY. Selected '+report.selected+'; recorded '+report.recorded+'; attempted '+report.attempted+'. A failed case can leave later steps unreached. Missing evidence never means PASS.';
 $('note').textContent=report.note;
 const localOnly=report.catalogCoverage?.cases||report.results.filter(r=>r.executionMode==='LOCAL_ONLY');
-if(localOnly.length){const panel=node('section',undefined,'panel');panel.style.marginTop='18px';panel.append(node('h2','Android local availability'));for(const r of localOnly)panel.append(node('p',r.id+' • '+(r.executed?r.status+' (verified local execution)':'LOCAL_ONLY • executed false • SKIP')));$('scope').after(panel);}
+if(localOnly.length){const panel=node('section',undefined,'panel');panel.style.marginTop='18px';panel.append(node('h2','Android local availability'));for(const r of localOnly)panel.append(node('p',r.id+' • LOCAL_ONLY • executed '+Boolean(r.executed)+' • '+r.status));$('scope').after(panel);}
 
 const jobs=report.workflowJobs||[];for(const j of jobs){const d=node('details',undefined,'job'),s=node('summary');s.append(node('span',j.conclusion||'unknown','tag'),node('span',j.name));d.append(s);const list=node('ul');for(const step of j.steps||[])list.append(node('li',step.name+' • '+(step.conclusion||step.status)));d.append(list);$('workflow-jobs').append(d);}if(!jobs.length)$('workflow-panel').hidden=true;
 for(const s of statuses){const c=node('button',undefined,'card '+s);c.type='button';c.append(node('span',s.replaceAll('_',' ')),node('strong',report.counts[s]||0),node('span','Filter results ↗','card-hint'));c.addEventListener('click',()=>{$('status').value=$('status').value===s?'':s;filter();});$('cards').append(c);}
@@ -50,7 +50,7 @@ function options(id,values){$(id).append(new Option('All',''));for(const v of va
 options('status',statuses);options('module',modules);options('priority',[...new Set(report.results.map(r=>r.priority))].sort());options('change',['FIXED','NEW_REGRESSION','STILL_FAILING','STILL_PASSING','UNCHANGED_NONPASS','STATUS_CHANGED','NOT_COMPARABLE']);
 const rendered=[];
 for(const r of report.results){
- const d=node('details'),s=node('summary');s.append(node('span',r.executionMode==='LOCAL_ONLY'&&!r.executed?'LOCAL_ONLY':r.status,'tag '+r.status),node('span',r.id),node('span',r.title,'title'),node('span',r.module+' / '+r.priority,'muted'));if(r.change)s.append(node('span',r.change,'tag '+r.change));d.append(s);
+ const d=node('details'),s=node('summary');s.append(node('span',r.status+(r.executionMode==='LOCAL_ONLY'?' (LOCAL_ONLY)':''),'tag '+r.status),node('span',r.id),node('span',r.title,'title'),node('span',r.module+' / '+r.priority,'muted'));if(r.change)s.append(node('span',r.change,'tag '+r.change));d.append(s);
  let built=false;d.addEventListener('toggle',()=>{if(!d.open||built)return;built=true;const b=node('div',undefined,'body');d.append(b);
  paragraph(b,'Real-life scenario',r.scenario);paragraph(b,'Prerequisites and synthetic roles/data',r.prerequisites);paragraph(b,'Reproduction scope',r.reproduction);if(r.prerequisiteSeed)paragraph(b,'Component prerequisite (not credited as behavior)',r.prerequisiteSeed);
  const change=report.comparison.available?report.comparison.rows.find(x=>x.id===r.id):null;if(change)paragraph(b,'Previous versus current evidence',(change.oldStatus||'not recorded')+' → '+(change.newStatus||'not recorded')+'; '+change.classification+'. '+(change.reason||''));

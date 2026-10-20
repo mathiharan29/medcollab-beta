@@ -183,7 +183,10 @@ try {
         await command('flutter-analysis', dart, ['analyze', '--format', 'machine'], app, true, { failureCodes: [1, 2, 3] });
         const tests = await execute(flutter, ['test', '--no-pub', '--reporter', 'json', 'test/functional_regression'], { cwd: app, env, timeout: 12 * 60 * 1000, log: join(output, 'diagnostics/flutter-catalog.log') });
         await writeFile(join(output, 'flutter.ndjson'), tests.stdout);
-        const aggregate = await command('flutter-aggregation', process.execPath, [join(harness, 'tests/functional-regression/scripts/aggregate-flutter.mjs'), join(output, 'flutter.ndjson'), join(output, 'flutter')], harness);
+        const flutterProvenance = join(output, 'flutter-provenance.json');
+        await writeFile(flutterProvenance, JSON.stringify({ source: sourceInfo, harnessSha: harnessInfo.sha,
+          sourceKind: sourceInfo.kind, inputSha256: hash(tests.stdout) }));
+        const aggregate = await command('flutter-aggregation', process.execPath, [join(harness, 'tests/functional-regression/scripts/aggregate-flutter.mjs'), join(output, 'flutter.ndjson'), join(output, 'flutter'), flutterProvenance], harness);
         if (aggregate.code !== 0) unavailable(catalog.filter(c => c.tier === 'F'), 'Flutter report aggregation failed', true);
         else {
           const report = JSON.parse(await readFile(join(output, 'flutter.json')));

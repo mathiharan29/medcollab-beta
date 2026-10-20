@@ -1,17 +1,20 @@
 import { captureContext, executionIdentity } from '../../developer-workflow/context.mjs';
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const [input, outputBase] = process.argv.slice(2);
+const [input, outputBase, provenanceFile] = process.argv.slice(2);
 if (!input || !outputBase) {
-  console.error('Usage: node aggregate-flutter.mjs <flutter-json-ndjson> <output-base>');
+  console.error('Usage: node aggregate-flutter.mjs <flutter-json-ndjson> <output-base> [runner-provenance.json]');
   process.exit(2);
 }
 
 const catalog = JSON.parse(fs.readFileSync(new URL('../catalog.json', import.meta.url), 'utf8'));
 const flutterCatalog = new Map(catalog.cases.filter((item) => item.tier === 'F').map((item) => [item.id, item]));
-const events = fs.readFileSync(input, 'utf8').split(/\r?\n/).filter(Boolean).map((line) => JSON.parse(line));
+const inputBytes = fs.readFileSync(input);
+const inputSha256 = createHash('sha256').update(inputBytes).digest('hex');
+const events = inputBytes.toString('utf8').split(/\r?\n/).filter(Boolean).map((line) => JSON.parse(line));
 const starts = new Map();
 const startedAt = new Map();
 const prints = new Map();
@@ -64,8 +67,19 @@ const counts = Object.fromEntries(['PASS', 'FAIL', 'ERROR', 'BLOCKED', 'NEEDS_DE
 const complete = results.length === flutterCatalog.size;
 const fullSuccess = complete && counts.PASS === flutterCatalog.size && done.success === true;
 const repositoryRoot = path.resolve(import.meta.dirname, '../../..');
-const sourceSha = execFileSync('git', ['-C', repositoryRoot, 'rev-parse', 'HEAD'], { encoding: 'utf8', windowsHide: true }).trim();
-const report = { context: captureContext(repositoryRoot), execution: executionIdentity(), sourceKind: process.env.GITHUB_RUN_ID ? 'pr-head' : 'commit', source: { sha: sourceSha, kind: 'commit', verified: true }, harnessSha: sourceSha,
+const harnessSha = execFileSync('git', ['-C', repositoryRoot, 'rev-parse', 'HEAD'], { encoding: 'utf8', windowsHide: true }).trim();
+// The runner owns the application snapshot. The aggregator's HEAD identifies
+// only its harness, and cannot establish the source of an arbitrary event log.
+const provenance = provenanceFile ? JSON.parse(fs.readFileSync(provenanceFile, 'utf8')) : null;
+if (provenance && (provenance.inputSha256 !== inputSha256 || provenance.harnessSha !== harnessSha ||
+    provenance.source?.verified !== true || !/^[a-f0-9]{40}$/.test(provenance.source.sha || '') ||
+    !['commit', 'working-tree'].includes(provenance.source.kind) ||
+    (provenance.source.kind === 'working-tree' && !/^[a-f0-9]{64}$/.test(provenance.source.fingerprint || '')))) {
+  throw new Error('Invalid runner provenance: event checksum, harness or application snapshot does not match');
+}
+const source = provenance?.source || { sha: null, kind: 'unverified', verified: false };
+const sourceKind = source.kind === 'working-tree' ? 'working-tree' : provenance ? provenance.sourceKind === 'pr-head' ? 'pr-head' : 'commit' : 'unverified';
+const report = { context: captureContext(repositoryRoot), execution: executionIdentity(), sourceKind, source, harnessSha, inputSha256,
   schemaVersion: 1,
   tier: 'F',
   input: path.basename(input),
