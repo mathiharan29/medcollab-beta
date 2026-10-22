@@ -5,8 +5,8 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 
-export async function settledWorkflowJobs(read, { attempts = 61, wait = ms => new Promise(resolve => setTimeout(resolve, ms)) } = {}) {
-  const deadline = Date.now() + 300000;
+export async function settledWorkflowJobs(read, { attempts = 3, wait = ms => new Promise(resolve => setTimeout(resolve, ms)) } = {}) {
+  const deadline = Date.now() + 30000;
   for (let attempt = 0; attempt < attempts; attempt++) {
     if (Date.now() >= deadline) break;
     const jobs = (await read(attempt)).jobs.filter(j => j.name !== 'Visual QA report' && !j.name.startsWith('Visual QA report /'));
@@ -14,7 +14,22 @@ export async function settledWorkflowJobs(read, { attempts = 61, wait = ms => ne
       (j.conclusion === 'skipped' || j.steps?.length > 0))) return jobs;
     if (attempt + 1 < attempts) await wait(5000);
   }
-  throw new Error('Completed source job metadata did not become available within five minutes; no workflow execution evidence inferred');
+  throw new Error('Completed source job metadata did not become available within the retry budget; no step execution evidence inferred');
+}
+
+export function jobOutcomeEvidence(needs, options = {}) {
+  const outcomes = { success: 'PASS', failure: 'FAIL', cancelled: 'BLOCKED', skipped: 'SKIP' };
+  const entries = Object.entries(needs || {});
+  if (!entries.length || entries.some(([,value]) => !Object.hasOwn(outcomes,value?.result))) throw new Error('Missing or invalid authoritative workflow needs results');
+  const rows = entries.map(([id,value]) => ({ id: `workflow-job-${id}`, title: id, module: options.title || 'Workflow',
+    status: outcomes[value.result], executed: ['success','failure'].includes(value.result), category: 'WORKFLOW_JOB',
+    expected: 'The original workflow job completes successfully.',
+    actual: `GitHub Actions needs context reports ${value.result}. Individual step details are unavailable; no application testcase execution is inferred.`,
+    evidence: { source: 'github.needs', jobId: id, result: value.result } }));
+  const report=normalize({source:{sha:options.sha,kind:'commit',verified:true},harness:{sha:options.sha},results:rows,gate:options.gate},[],{suite:'workflow-checks',context:options.context,execution:options.execution,runUrl:options.runUrl});
+  report.title=options.title;report.inventoryKind='workflow job results';
+  report.note='Job conclusions come from the GitHub Actions needs context supplied by the owning workflow. Step details were unavailable from the API. These are job-level records, not application testcase, scanner finding or secret-match coverage.';
+  return report;
 }
 
 export const profiles = {

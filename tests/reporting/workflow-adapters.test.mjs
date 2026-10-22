@@ -5,7 +5,7 @@ import { compare } from './report.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { profiles, catalogFor, adaptSecurity, recoverSecurity, jobEvidence, settledWorkflowJobs } from './workflow-adapters.mjs';
+import { profiles, catalogFor, adaptSecurity, recoverSecurity, jobEvidence, jobOutcomeEvidence, settledWorkflowJobs } from './workflow-adapters.mjs';
 import { summary, junit, sanitize } from './report.mjs';
 import { execFileSync } from 'node:child_process';
 
@@ -20,8 +20,18 @@ test('workflow collection waits for completed source steps and fails closed on m
  let reads=0, waits=0;
  const jobs=await settledWorkflowJobs(async()=>({jobs:[own,++reads===1?{...completed,status:'in_progress',conclusion:null,steps:[]}:completed]}),{attempts:2,wait:async()=>{waits++;}});
  assert.equal(reads,2);assert.equal(waits,1);assert.deepEqual(jobs,[completed]);
- await assert.rejects(settledWorkflowJobs(async()=>({jobs:[own]}),{attempts:2,wait:async()=>{}}),/no workflow execution evidence inferred/);
+ await assert.rejects(settledWorkflowJobs(async()=>({jobs:[own]}),{attempts:2,wait:async()=>{}}),/no step execution evidence inferred/);
  await assert.rejects(settledWorkflowJobs(async()=>({jobs:[{...completed,steps:[]}]}),{attempts:1}),/metadata/);
+});
+
+test('authoritative job results preserve failures and skips without claiming missing step or case execution',()=>{
+ const report=jobOutcomeEvidence({scan:{result:'success'},integration:{result:'failure'},skipped:{result:'skipped'},cancelled:{result:'cancelled'}},{sha:'a'.repeat(40),gate:'FAILURE',title:'Synthetic workflow'});
+ assert.equal(report.inventoryKind,'workflow job results');assert.equal(report.originalGate,'FAILURE');
+ assert.deepEqual(report.counts,{PASS:1,FAIL:1,ERROR:0,BLOCKED:1,NEEDS_DECISION:0,SKIP:1});
+ assert.equal(report.attempted,2);assert.equal(report.infrastructure.length,0);
+ assert.equal(report.results[0].category,'WORKFLOW_JOB');assert(report.results[0].actual.includes('no application testcase execution'));
+ assert.throws(()=>jobOutcomeEvidence({}),/authoritative/);
+ assert.throws(()=>jobOutcomeEvidence({scan:{result:'unknown'}}),/authoritative/);
 });
 for(const [file,fixture,count,pass,observations] of [
   ['vocle-backend-environment-test.yml','37361855710',691,611,80],
