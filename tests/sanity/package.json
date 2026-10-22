@@ -1,0 +1,17 @@
+{
+  "name": "vocle-functional-sanity",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Independent harness for the upstream Vocle functional sanity suite.",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "test": "node src/runner.js --self-check",
+    "self-check": "node src/runner.js --self-check"
+  },
+  "dependencies": {
+    "socket.io-client": "4.8.3"
+  }
+}

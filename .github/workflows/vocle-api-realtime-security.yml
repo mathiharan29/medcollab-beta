@@ -1,0 +1,144 @@
+name: Vocle API & Realtime Security
+
+on:
+  pull_request:
+    branches: [master]
+    types: [opened, reopened, ready_for_review, synchronize]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: ${{ github.workflow }}-vocle-api-realtime-security-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  boot-backend:
+    name: API and realtime security checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: medcollab-backend
+    env:
+      NODE_ENV: test
+      PORT: 5000
+      MONGODB_URI: mongodb://127.0.0.1:27017/vocle_ci
+      JWT_SECRET: ci-test-only-jwt-secret-not-for-production-0000000000000001
+      JWT_REFRESH_SECRET: ci-test-only-refresh-secret-not-for-production-000000000002
+      OTP_BYPASS: "true"
+      API_BASE_URL: http://127.0.0.1:5000
+      ALLOWED_ORIGINS: http://localhost:3000
+
+    steps:
+      - name: Validate supported PR context
+        working-directory: ${{ github.workspace }}
+        shell: bash
+        env:
+          QA_REPOSITORY: ${{ github.repository }}
+          QA_EVENT: ${{ github.event_name }}
+          QA_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          QA_BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          test "$QA_REPOSITORY" = mathiharan29/medcollab-beta
+          test "$QA_EVENT" = pull_request
+          test "$QA_HEAD_REPOSITORY" = mathiharan29/medcollab-beta
+          test "$QA_BASE_REF" = master
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: medcollab-backend/package-lock.json
+
+      - name: Start isolated MongoDB
+        run: |
+          docker run --detach --rm --name vocle-ci-mongodb --publish 127.0.0.1:27017:27017 \
+            --health-cmd "mongosh --quiet --eval 'db.runCommand({ ping: 1 })'" \
+            --health-interval 5s --health-timeout 3s --health-retries 20 mongo:7
+          for attempt in {1..30}; do
+            if [ "$(docker inspect --format='{{.State.Health.Status}}' vocle-ci-mongodb)" = "healthy" ]; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs vocle-ci-mongodb
+          exit 1
+
+      - name: Install backend dependencies
+        run: npm ci
+
+      - name: Validate security syntax and append-only manifest
+        run: |
+          for file in scripts/security-api-discovery.js scripts/security-api-coverage-report.js scripts/security-manifest-check.js scripts/security/*.js scripts/security/suites/*.js; do
+            node --check "$file"
+          done
+          node scripts/security-manifest-check.js
+
+      - name: Start backend
+        run: |
+          npm start > "$RUNNER_TEMP/vocle-backend.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/vocle-backend.pid"
+
+      - name: Wait for healthy backend
+        run: |
+          for attempt in {1..30}; do
+            if curl --fail --silent --output "$RUNNER_TEMP/vocle-health.json" http://127.0.0.1:5000/health \
+              && node -e "const fs = require('fs'); const health = JSON.parse(fs.readFileSync(process.argv[1], 'utf8')); process.exit(health.status === 'ok' && health.database === 'connected' ? 0 : 1)" "$RUNNER_TEMP/vocle-health.json" 2>/dev/null; then
+              cat "$RUNNER_TEMP/vocle-health.json"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Backend did not become healthy within 60 seconds."
+          exit 1
+
+      - name: Create deterministic security fixtures
+        run: node scripts/security-test-fixtures.js
+
+      - name: Verify deterministic security fixtures
+        run: node scripts/security-test-fixtures.js --verify
+
+      - name: Smoke-test test-only authentication identities
+        run: node scripts/security-test-auth-smoke.js
+
+      - name: Run API and realtime security checks
+        run: node scripts/security-api-discovery.js
+
+      - name: Generate API coverage report
+        if: always()
+        run: node scripts/security-api-coverage-report.js
+
+      - name: Preserve security discovery reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vocle-security-discovery-${{ github.run_id }}-${{ github.run_attempt }}
+          # Includes results.json, summary.md, security-test-report.md, and security-api-coverage-report.md.
+          path: ${{ runner.temp }}/vocle-security-results/
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Show diagnostics on failure
+        if: failure()
+        run: |
+          echo '=== Backend log ==='
+          cat "$RUNNER_TEMP/vocle-backend.log" 2>/dev/null || true
+          echo '=== MongoDB log ==='
+          docker logs vocle-ci-mongodb 2>/dev/null || true
+
+  visual-report:
+    name: Visual QA report
+    if: always()
+    needs: [boot-backend]
+    uses: ./.github/workflows/vocle-reporting.yml
+    with:
+      workflow_file: vocle-api-realtime-security.yml
+      original_jobs: ${{ toJSON(needs) }}

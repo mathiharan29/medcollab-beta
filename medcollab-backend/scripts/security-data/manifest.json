@@ -1,0 +1,314 @@
+{
+  "schemaVersion": 1,
+  "count": 31,
+  "baselineCount": 785,
+  "combinedCatalogCount": 816,
+  "cases": [
+    {
+      "caseId": "VOCLE-786",
+      "name": "Strict schemas discard unknown top-level and nested fields",
+      "expected": "Unknown fields cannot persist through normal model writes",
+      "scope": "model",
+      "sources": [
+        "src/features/users/user.model.js",
+        "src/features/auth/otp.model.js",
+        "src/features/messages/message.model.js",
+        "src/features/channels/channel.model.js",
+        "src/features/spaces/space.model.js",
+        "src/features/handoffs/handoff.model.js",
+        "src/features/notifications/notification.model.js",
+        "src/features/support/support.controller.js"
+      ]
+    },
+    {
+      "caseId": "VOCLE-787",
+      "name": "Profile allowlist preserves identity and security flags",
+      "expected": "Profile update cannot change phone, active/verified flags, device tokens or operator updates",
+      "scope": "HTTP",
+      "sources": [
+        "src/features/users/user.controller.js"
+      ]
+    },
+    {
+      "caseId": "VOCLE-788",
+      "name": "Nested preference updates merge siblings and strip unknown keys",
+      "expected": "Allowed toggle persists without unexpected keys or erasing sibling preferences",
+      "scope": "HTTP",
+      "sources": [
+        "src/features/users/user.model.js",
+        "src/features/users/user.controller.js"
+      ]
+    },
+    {
+      "caseId": "VOCLE-789",
+      "name": "Public profile and populated sender exclude phone/device credentials",
+      "expected": "Public responses omit phone and fcmTokens while retaining authorized profile data",
+      "scope": "HTTP",
+      "sources": [
+        "src/features/users/user.model.js",
+        "src/features/messages/message.controller.js"
+      ]
+    },
+    {
+      "caseId": "VOCLE-790",
+      "name": "Default model reads/serialization hide sensitive fields",
+      "expected": "Defense in depth: default model read and JSON omit device tokens and OTP hashes",
+      "scope": "model-hardening",
+      "sources": [
+        "src/features/users/user.model.js",
+        "src/features/auth/otp.model.js"
+      ]
+    },
+    {
+      "caseId": "VOCLE-791",
+      "name": "Operator-shaped body target cannot create a DM",
+      "expected": "Object-shaped identity input rejected without new channel or request",
+      "scope": "HTTP",
+      "sources": [
+        "src/features/channels/channel.routes.js",
+        "src/middleware/validate.js"
+      ]
+    },
+    {
+      "caseId": "VOCLE-792",
+      "name": "Bracket query input cannot broaden notification ownership",
+      "expected": "Real Express query parsing preserves fixed owner filter and does not execute bracket operators",
+      "scope": "HTTP",
+      "sources": [
+        "src/app.js",
+        "src/features/notifications/notification.controller.js"
+      ]
+    },
+    {
+      "caseId": "VOCLE-793",
+      "name": "Malformed ObjectId and cursor reject without writes",
+      "expected": "Invalid route ID/cursor returns controlled denial and leaves domain data unchanged",
+      "scope": "HTTP",
+      "sources": [
+        "src/middleware/validate.js",
+        "src/middleware/errorHandler.js"
+      ]
+    },
+    {
+      "caseId": "VOCLE-794",
+      "name": "Concurrent phone insertion is constrained by actual unique index",
+      "expected": "Exactly one insert succeeds and duplicate receives MongoDB 11000",
+      "scope": "database-index",
+      "sources": [
+        "src/features/users/user.model.js"
+      ]
+    },
+    {
+      "caseId": "VOCLE-795",
+      "name": "Concurrent invite insertion is constrained by actual unique index",
+      "expected": "Exactly one space can hold the same inviteCode",
+      "scope": "database-index",
+      "sources": [
+        "src/features/spaces/space.model.js"
+      ]
+    },
+    {
+      "caseId": "VOCLE-796",
+      "name": "Canonical DM key serializes concurrent atomic upserts",
+      "expected": "Canonical pair order and partial unique index produce one pair channel",
+      "scope": "database-index",
+      "sources": [
+        "src/features/channels/channel.model.js",
+        "src/features/channels/channel.controller.js"
+      ]
+    },
+    {
+      "caseId": "VOCLE-797",
+      "name": "Pending request pair duplicates are constrained at data layer",
+      "expected": "Defense in depth: duplicate active request pair cannot persist",
+      "scope": "model-hardening",
+      "sources": [
+        "src/features/message-requests/messageRequest.model.js",
+        "src/features/message-requests/messageRequest.controller.js"
+      ]
+    },
+    {
+      "caseId": "VOCLE-798",
+      "name": "OTP creator persists bcrypt only and removes raw input",
+      "expected": "Persisted hash matches synthetic code and raw OTP field is absent",
+      "scope": "model",
+      "sources": [
+        "src/features/auth/otp.model.js"
+      ]
+    },
+    {
+      "caseId": "VOCLE-799",
+      "name": "Expired OTP denied before physical TTL deletion",
+      "expected": "Verifier excludes an expired record still present in MongoDB",
+      "scope": "model",
+      "sources": [
+        "src/features/auth/otp.model.js"
+      ]
+    },
+    {
+      "caseId": "VOCLE-800",
+      "name": "OTP attempt cap and sequential consumption preserve single use",
+      "expected": "Third wrong attempt exhausts code; valid code deletes record and cannot replay",
+      "scope": "model",
+      "sources": [
+        "src/features/auth/otp.model.js"
+      ]
+    },
+    {
+      "caseId": "VOCLE-801",
+      "name": "OTP replacement invalidates previous unconsumed record",
+      "expected": "New OTP marks old record used and only newest code verifies",
+      "scope": "model",
+      "sources": [
+        "src/features/auth/otp.model.js"
+      ]
+    },
+    {
+      "caseId": "VOCLE-802",
+      "name": "Actual OTP and notification TTL indexes match expiry field",
+      "expected": "Both collections have expiresAt ascending TTL with expireAfterSeconds zero",
+      "scope": "database-index",
+      "sources": [
+        "src/features/auth/otp.model.js",
+        "src/features/notifications/notification.model.js"
+      ]
+    },
+    {
+      "caseId": "VOCLE-803",
+      "name": "Expired notification excluded before asynchronous TTL cleanup",
+      "expected": "Policy candidate: expired inbox item is not served or counted while awaiting TTL deletion",
+      "scope": "HTTP-policy",
+      "sources": [
+        "src/features/notifications/notification.model.js",
+        "src/features/notifications/notification.controller.js"
+      ]
+    },
+    {
+      "caseId": "VOCLE-804",
+      "name": "Soft deletion blanks content and reactions on persisted message",
+      "expected": "Save deletion hook blanks text/media and records deletion timestamp",
+      "scope": "model",
+      "sources": [
+        "src/features/messages/message.model.js"
+      ]
+    },
+    {
+      "caseId": "VOCLE-805",
+      "name": "Editing a deleted message cannot restore stored text",
+      "expected": "Deleted message update is denied and placeholder content remains unchanged",
+      "scope": "HTTP",
+      "sources": [
+        "src/features/messages/message.model.js",
+        "src/features/messages/message.controller.js"
+      ]
+    },
+    {
+      "caseId": "VOCLE-806",
+      "name": "Deletion removes denormalized quote and channel text copies",
+      "expected": "Policy candidate: delete scrubs copied previews as well as original content",
+      "scope": "model-policy",
+      "sources": [
+        "src/features/messages/message.model.js",
+        "src/features/channels/channel.model.js",
+        "src/features/messages/message.controller.js"
+      ]
+    },
+    {
+      "caseId": "VOCLE-807",
+      "name": "Stale private-channel membership cannot bypass removed space membership",
+      "expected": "After owner removes member, REST message read denies despite stale channel array",
+      "scope": "HTTP",
+      "sources": [
+        "src/features/spaces/space.controller.js",
+        "src/utils/channelAccess.js"
+      ]
+    },
+    {
+      "caseId": "VOCLE-808",
+      "name": "Inactive space blocks protected channel read",
+      "expected": "Policy candidate: inactive space membership cannot authorize channel data",
+      "scope": "HTTP-policy",
+      "sources": [
+        "src/utils/channelAccess.js",
+        "src/features/spaces/space.model.js"
+      ]
+    },
+    {
+      "caseId": "VOCLE-809",
+      "name": "Missing resource references are rejected at model boundary",
+      "expected": "Defense in depth: required ObjectId refs must point to existing related resources",
+      "scope": "model-hardening",
+      "sources": [
+        "src/features/messages/message.model.js",
+        "src/features/handoffs/handoff.model.js",
+        "src/features/notifications/notification.model.js"
+      ]
+    },
+    {
+      "caseId": "VOCLE-810",
+      "name": "Routed acknowledgement rejects oversized note and preserves state",
+      "expected": "Route-level validation compensates for update validators omitted in controller",
+      "scope": "HTTP",
+      "sources": [
+        "src/features/handoffs/handoff.routes.js",
+        "src/features/handoffs/handoff.controller.js"
+      ]
+    },
+    {
+      "caseId": "VOCLE-811",
+      "name": "Deactivated and deleted user records invalidate fresh HTTP credentials",
+      "expected": "HTTP authentication consults live user state rather than trusting JWT alone",
+      "scope": "HTTP",
+      "sources": [
+        "src/middleware/auth.js"
+      ]
+    },
+    {
+      "caseId": "VOCLE-812",
+      "name": "Notification writes bind ID and owner and preserve foreign record",
+      "expected": "Foreign notification read/delete denied; own update succeeds",
+      "scope": "HTTP",
+      "sources": [
+        "src/features/notifications/notification.controller.js"
+      ]
+    },
+    {
+      "caseId": "VOCLE-813",
+      "name": "Support write derives identity and status from authenticated user",
+      "expected": "Caller cannot mass assign support owner, phone or triage state",
+      "scope": "HTTP",
+      "sources": [
+        "src/features/support/support.controller.js"
+      ]
+    },
+    {
+      "caseId": "VOCLE-814",
+      "name": "FCM instance method deduplicates and caps device tokens",
+      "expected": "Seven sequential registrations persist latest five distinct tokens",
+      "scope": "model",
+      "sources": [
+        "src/features/users/user.model.js"
+      ]
+    },
+    {
+      "caseId": "VOCLE-815",
+      "name": "Device token cannot remain bound to two accounts",
+      "expected": "Policy candidate: device token registration has a defined account-transfer boundary",
+      "scope": "model-policy",
+      "sources": [
+        "src/features/users/user.model.js",
+        "src/features/users/user.controller.js"
+      ]
+    },
+    {
+      "caseId": "VOCLE-816",
+      "name": "Socket availability write enforces schema note limit",
+      "expected": "Socket update rejects oversized note without persisting invalid availability",
+      "scope": "handler",
+      "sources": [
+        "src/socket/handlers/presence.handler.js",
+        "src/features/users/user.model.js"
+      ]
+    }
+  ]
+}

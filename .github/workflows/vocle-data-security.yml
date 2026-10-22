@@ -1,0 +1,106 @@
+name: Vocle MongoDB Data Security
+
+on:
+  pull_request:
+    branches: [master]
+    types: [opened, reopened, ready_for_review, synchronize]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: ${{ github.workflow }}-vocle-data-security-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  disposable-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: medcollab-backend
+    steps:
+      - name: Validate supported PR context
+        working-directory: ${{ github.workspace }}
+        shell: bash
+        env:
+          QA_REPOSITORY: ${{ github.repository }}
+          QA_EVENT: ${{ github.event_name }}
+          QA_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          QA_BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          test "$QA_REPOSITORY" = mathiharan29/medcollab-beta
+          test "$QA_EVENT" = pull_request
+          test "$QA_HEAD_REPOSITORY" = mathiharan29/medcollab-beta
+          test "$QA_BASE_REF" = master
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: medcollab-backend/package-lock.json
+      - name: Install dependencies before isolated execution
+        run: npm ci
+      - name: Syntax manifests and safety guards
+        run: |
+          for file in scripts/security-data/*.js; do node --check "$file"; done
+          node scripts/security-manifest-check.js
+          node scripts/security-media/check.js
+          node scripts/security-cloudinary/check.js
+          node scripts/security-data/check.js
+          node scripts/security-data/self-test.js
+      - name: Prepare disposable network-none MongoDB
+        run: |
+          docker pull mongo:7
+          docker pull node:22
+          docker run --detach --rm --name vocle-data-mongo --network none \
+            --health-cmd "mongosh --quiet --eval 'db.runCommand({ ping: 1 })'" \
+            --health-interval 2s --health-timeout 3s --health-retries 20 \
+            mongo:7 --setParameter ttlMonitorEnabled=false
+          for attempt in {1..30}; do
+            if [ "$(docker inspect --format='{{.State.Health.Status}}' vocle-data-mongo)" = healthy ]; then exit 0; fi
+            sleep 2
+          done
+          exit 1
+      - name: Execute focused data security without external network
+        run: |
+          docker run --rm --name vocle-data-runner --network container:vocle-data-mongo \
+            --mount "type=bind,source=$GITHUB_WORKSPACE,target=/workspace,readonly" \
+            --mount "type=bind,source=$RUNNER_TEMP,target=/runner-temp" \
+            --workdir /workspace/medcollab-backend \
+            -e NODE_ENV=test -e API_BASE_URL=http://127.0.0.1:5000 \
+            -e MONGODB_URI=mongodb://127.0.0.1:27017/vocle_ci \
+            -e JWT_SECRET=ci-test-only-jwt-secret-not-for-production-0000000000000001 \
+            -e RUNNER_TEMP=/runner-temp -e VOCLE_MEDIA_NETWORK_NONE=true \
+            -e VOCLE_SOURCE_SHA="${{ github.event.pull_request.head.sha || github.sha }}" -e GITHUB_RUN_ID \
+            node:22 node scripts/security-data/run.js
+      - name: Verify sanitized data artifacts
+        id: hygiene
+        if: always()
+        env:
+          RUNNER_TEMP: ${{ runner.temp }}
+        run: node scripts/security-data/check.js --artifacts
+      - name: Preserve sanitized data evidence
+        if: always() && steps.hygiene.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: vocle-mongodb-data-security-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/vocle-data-results/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Stop disposable MongoDB
+        if: always()
+        run: docker stop vocle-data-mongo || true
+
+  visual-report:
+    name: Visual QA report
+    if: always()
+    needs: [disposable-data]
+    uses: ./.github/workflows/vocle-reporting.yml
+    with:
+      workflow_file: vocle-data-security.yml
+      original_jobs: ${{ toJSON(needs) }}

@@ -1,0 +1,11 @@
+# Runtime contracts retain identical bytes on every platform.
+tests/** text eol=lf
+scripts/*.py text eol=lf
+medcollab-app/test/functional_regression/** text eol=lf
+medcollab-app/integration_test/functional_regression/** text eol=lf
+medcollab-app/test_driver/functional_regression_driver.dart text eol=lf
+medcollab-backend/scripts/security*.js text eol=lf
+medcollab-backend/scripts/security*/** text eol=lf
+.github/workflows/*.yml text eol=lf
+medcollab-backend/scripts/security-*/manifest.json text eol=lf
+medcollab-backend/scripts/security-media/fixtures/canary.mp4 binary

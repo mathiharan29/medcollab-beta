@@ -1,0 +1,17 @@
+title = "Vocle Gitleaks configuration"
+
+[extend]
+useDefault = true
+
+# The prepared commit contains this base-36 alphabet in the Gradle cache-key
+# calculation. PR scans include historical commits, even after that literal
+# is replaced. Restrict the exception to this exact non-secret and path;
+# generic-api-key detection remains enabled for every other value.
+[[rules]]
+id = "generic-api-key"
+[[rules.allowlists]]
+description = "Historical Gradle base-36 digit alphabet"
+condition = "AND"
+regexTarget = "secret"
+regexes = ['''^0123456789abcdefghijklmnopqrstuvwxyz$''']
+paths = ['''^scripts/vocle_android\.py$''']

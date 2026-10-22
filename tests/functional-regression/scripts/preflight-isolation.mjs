@@ -1,0 +1,28 @@
+import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
+import { networkInterfaces } from 'node:os';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
+
+const target = resolve(process.env.VOCLE_TARGET_DIR || '');
+const output = resolve(process.env.VOCLE_OUTPUT_DIR || '');
+const inbox = join(output, 'preflight-provider-inbox');
+await mkdir(inbox, { recursive: true });
+process.env.VOCLE_BACKEND_DIR = join(target, 'medcollab-backend');
+process.env.VOCLE_PROVIDER_INBOX = inbox;
+const require = createRequire(join(target, 'medcollab-backend', 'package.json'));
+createRequire(import.meta.url)('../providers/preload.cjs');
+const axios = require('axios');
+const fake = await axios.post('https://control.msg91.com/api/v5/otp', { mobile: '12025550105', otp: '123456' });
+assert.equal(fake.status, 200);
+const captured = (await readFile(join(inbox, 'msg91-inbox.ndjson'), 'utf8')).trim().split(/\r?\n/).map(JSON.parse);
+assert.equal(captured.length, 1);
+assert.equal(captured[0].mobile, '12025550105');
+await assert.rejects(axios.post('https://example.com/unexpected', {}), /blocked unexpected axios POST/);
+const interfaces = networkInterfaces();
+assert(Object.keys(interfaces).length > 0 && Object.values(interfaces).every((addresses) => addresses?.every((address) => address.internal === true)));
+await assert.rejects(fetch('http://192.0.2.1:9/', { signal: AbortSignal.timeout(1500) }));
+await rm(inbox, { recursive: true, force: true });
+const report = { status: 'PASS', fakeProviderIntercepted: true, unexpectedProviderRequestBlocked: true, loopbackOnlyInterfaces: true, outboundNetworkDenied: true };
+await writeFile(join(output, 'preflight.json'), `${JSON.stringify(report, null, 2)}\n`);
+console.log(JSON.stringify(report));

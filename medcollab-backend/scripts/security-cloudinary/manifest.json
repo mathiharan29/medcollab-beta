@@ -1,0 +1,211 @@
+{
+  "baselineCatalogCount": 751,
+  "count": 34,
+  "combinedCatalogCount": 785,
+  "cases": [
+    {
+      "caseId": "VOCLE-752",
+      "name": "Positive test-cloud binding and signed synthetic smoke",
+      "category": "configuration",
+      "expected": "Exact positive allowlist match and signed PNG accepted only within this run"
+    },
+    {
+      "caseId": "VOCLE-753",
+      "name": "Application PNG upload resource identity",
+      "category": "image",
+      "expected": "Real controller PNG stored as image/upload under broker run namespace"
+    },
+    {
+      "caseId": "VOCLE-754",
+      "name": "Image exact authenticated resource read",
+      "category": "image",
+      "expected": "Exact provider metadata matches recorded public ID, asset ID and resource type"
+    },
+    {
+      "caseId": "VOCLE-755",
+      "name": "Image HTTPS original retrieval",
+      "category": "image",
+      "expected": "Approved-cloud HTTPS original returns image bytes"
+    },
+    {
+      "caseId": "VOCLE-756",
+      "name": "Application safe image thumbnail transformation",
+      "category": "image",
+      "expected": "Controller 400x400 limit WebP thumbnail retrieves successfully"
+    },
+    {
+      "caseId": "VOCLE-757",
+      "name": "Image anonymous delivery characterization",
+      "category": "image",
+      "expected": "Measure unsigned synthetic delivery; public access does not establish clinical policy"
+    },
+    {
+      "caseId": "VOCLE-758",
+      "name": "Application MP4 upload resource identity",
+      "category": "video",
+      "expected": "Real controller synthetic MP4 stored as video/upload"
+    },
+    {
+      "caseId": "VOCLE-759",
+      "name": "Video exact authenticated resource read",
+      "category": "video",
+      "expected": "Exact video metadata exists and matches this run"
+    },
+    {
+      "caseId": "VOCLE-760",
+      "name": "Video HTTPS original retrieval",
+      "category": "video",
+      "expected": "Synthetic video delivery returns video bytes"
+    },
+    {
+      "caseId": "VOCLE-761",
+      "name": "Application video JPG thumbnail transformation",
+      "category": "video",
+      "expected": "Controller video frame transformation retrieves image bytes"
+    },
+    {
+      "caseId": "VOCLE-762",
+      "name": "Application owner video deletion limitation",
+      "category": "video",
+      "expected": "Owner deletion should remove video; preserve existing VOCLE-736 finding if retained"
+    },
+    {
+      "caseId": "VOCLE-763",
+      "name": "Independent explicit video deletion",
+      "category": "video",
+      "expected": "Correct video resource type destroy returns ok"
+    },
+    {
+      "caseId": "VOCLE-764",
+      "name": "Video origin disappearance",
+      "category": "video",
+      "expected": "Exact authenticated video lookup returns 404 after deletion"
+    },
+    {
+      "caseId": "VOCLE-765",
+      "name": "Video post-delete delivery behavior",
+      "category": "video",
+      "expected": "Fresh original delivery should stop; report CDN persistence separately from origin absence"
+    },
+    {
+      "caseId": "VOCLE-766",
+      "name": "Repeated video deletion semantics",
+      "category": "video",
+      "expected": "Repeated exact video destroy returns not found"
+    },
+    {
+      "caseId": "VOCLE-767",
+      "name": "Application PDF raw upload resource identity",
+      "category": "raw",
+      "expected": "Real controller synthetic PDF stored as raw/upload"
+    },
+    {
+      "caseId": "VOCLE-768",
+      "name": "Raw PDF exact authenticated resource read",
+      "category": "raw",
+      "expected": "Exact raw PDF metadata exists and matches this run"
+    },
+    {
+      "caseId": "VOCLE-769",
+      "name": "Raw PDF HTTPS original delivery",
+      "category": "raw",
+      "expected": "Original synthetic PDF delivery returns exact fixture bytes"
+    },
+    {
+      "caseId": "VOCLE-770",
+      "name": "Application raw PDF attachment delivery",
+      "category": "raw",
+      "expected": "Controller attachment URL returns exact PDF bytes where account allows delivery"
+    },
+    {
+      "caseId": "VOCLE-771",
+      "name": "Application raw PDF image preview compatibility",
+      "category": "raw",
+      "expected": "Measure actual image preview; URL construction alone cannot establish support"
+    },
+    {
+      "caseId": "VOCLE-772",
+      "name": "Application owner raw deletion",
+      "category": "raw",
+      "expected": "Unchanged controller image-then-raw deletion removes owned PDF"
+    },
+    {
+      "caseId": "VOCLE-773",
+      "name": "Raw origin disappearance and post-delete retrieval",
+      "category": "raw",
+      "expected": "Exact authenticated raw lookup returns 404; measure original delivery separately for cache persistence"
+    },
+    {
+      "caseId": "VOCLE-774",
+      "name": "Repeated raw deletion semantics",
+      "category": "raw",
+      "expected": "Repeated exact raw destroy returns not found"
+    },
+    {
+      "caseId": "VOCLE-775",
+      "name": "Application owner image deletion",
+      "category": "image",
+      "expected": "Unchanged controller removes owned image"
+    },
+    {
+      "caseId": "VOCLE-776",
+      "name": "Image origin disappearance, retrieval and repeated deletion",
+      "category": "image",
+      "expected": "Image exact lookup absent, repeated destroy not found; measure original delivery separately"
+    },
+    {
+      "caseId": "VOCLE-777",
+      "name": "Same-folder duplicate filenames and generated IDs",
+      "category": "naming",
+      "expected": "Provider generates distinct IDs for duplicate synthetic filenames without overwriting"
+    },
+    {
+      "caseId": "VOCLE-778",
+      "name": "Explicit overwrite false preserves original",
+      "category": "naming",
+      "expected": "Second same-ID upload with overwrite false preserves original exact resource"
+    },
+    {
+      "caseId": "VOCLE-779",
+      "name": "Explicit overwrite true characterization",
+      "category": "naming",
+      "expected": "Bounded owned same-ID overwrite is accepted; record actual version and bytes"
+    },
+    {
+      "caseId": "VOCLE-780",
+      "name": "Same public ID resource-type separation",
+      "category": "naming",
+      "expected": "Image/raw same public ID remain independently typed resources"
+    },
+    {
+      "caseId": "VOCLE-781",
+      "name": "Namespace and forged filename isolation",
+      "category": "naming",
+      "expected": "Controller unsafe original filename cannot escape the broker run namespace"
+    },
+    {
+      "caseId": "VOCLE-782",
+      "name": "Application octet-PDF provider dispatch",
+      "category": "raw",
+      "expected": "Octet-PDF should select raw; actual image intent remains VOCLE-724 observation"
+    },
+    {
+      "caseId": "VOCLE-783",
+      "name": "Application octet-MP4 provider dispatch",
+      "category": "video",
+      "expected": "Octet-MP4 should select video; actual image intent remains VOCLE-725 observation"
+    },
+    {
+      "caseId": "VOCLE-784",
+      "name": "Application shared handoff deletion limitation",
+      "category": "image",
+      "expected": "Uploader should remove handoff asset; existing VOCLE-740 observation if forbidden"
+    },
+    {
+      "caseId": "VOCLE-785",
+      "name": "Independent manifest cleanup and exact absence verification",
+      "category": "cleanup",
+      "expected": "All recorded image/video/raw resources removed; no unresolved upload intents"
+    }
+  ]
+}

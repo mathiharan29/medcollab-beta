@@ -1,0 +1,53 @@
+name: Vocle Security Environment Test
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-vocle-security-environment-test-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  security-environment-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate supported PR context
+        working-directory: ${{ github.workspace }}
+        shell: bash
+        env:
+          QA_REPOSITORY: ${{ github.repository }}
+          QA_EVENT: ${{ github.event_name }}
+          QA_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          QA_BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          test "$QA_REPOSITORY" = mathiharan29/medcollab-beta
+          test "$QA_EVENT" = pull_request
+          test "$QA_HEAD_REPOSITORY" = mathiharan29/medcollab-beta
+          test "$QA_BASE_REF" = master
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Display installed versions
+        run: |
+          python --version
+          node --version
+          git --version
+          docker --version
+
+      - name: Install Python packages
+        run: python -m pip install pytest requests httpx
+
+      - name: Verify Python packages
+        run: python -c "import pytest, requests, httpx; print('pytest, requests, and httpx imported successfully')"
+
+      - name: Verify Docker execution
+        run: docker run --rm hello-world
+
+      - name: Mark environment ready
+        run: echo "Vocle security test environment ready"

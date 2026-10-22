@@ -1,0 +1,1470 @@
+{
+  "baselineCount": 691,
+  "combinedCatalogCount": 751,
+  "selectedCount": 97,
+  "cases": [
+    {
+      "caseId": "VOCLE-295",
+      "name": "local upload context message",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        200
+      ],
+      "mode": "local",
+      "module": "Media",
+      "legacy": true,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-296",
+      "name": "local upload context avatar",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        200
+      ],
+      "mode": "local",
+      "module": "Media",
+      "legacy": true,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-297",
+      "name": "local upload context handoff",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        200
+      ],
+      "mode": "local",
+      "module": "Media",
+      "legacy": true,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-298",
+      "name": "local upload context unknown",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        200
+      ],
+      "mode": "local",
+      "module": "Media",
+      "legacy": true,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-299",
+      "name": "upload rejects anonymous",
+      "actor": "anonymous",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        401
+      ],
+      "mode": "local",
+      "module": "Media",
+      "legacy": true,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-300",
+      "name": "upload rejects missing file",
+      "actor": "B",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        400
+      ],
+      "mode": "local",
+      "module": "Media",
+      "legacy": true,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-301",
+      "name": "upload rejects wrong field",
+      "actor": "B",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        400
+      ],
+      "mode": "local",
+      "module": "Media",
+      "legacy": true,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-302",
+      "name": "upload rejects multiple files",
+      "actor": "B",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        400
+      ],
+      "mode": "local",
+      "module": "Media",
+      "legacy": true,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-303",
+      "name": "upload rejects forbidden MIME",
+      "actor": "B",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        400
+      ],
+      "mode": "local",
+      "module": "Media",
+      "legacy": true,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-304",
+      "name": "upload rejects octet forbidden suffix",
+      "actor": "B",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        400
+      ],
+      "mode": "local",
+      "module": "Media",
+      "legacy": true,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-305",
+      "name": "upload rejects oversized",
+      "actor": "B",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        400
+      ],
+      "mode": "local",
+      "module": "Media",
+      "legacy": true,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-306",
+      "name": "upload rejects empty bytes",
+      "actor": "B",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        400
+      ],
+      "mode": "local",
+      "module": "Media",
+      "legacy": true,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-307",
+      "name": "upload rejects inert MIME extension mismatch",
+      "actor": "B",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        400
+      ],
+      "mode": "local",
+      "module": "Media",
+      "legacy": true,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-308",
+      "name": "media deletion ownership A",
+      "actor": "A",
+      "method": "DELETE",
+      "endpoint": "[dynamic endpoint]",
+      "statuses": [
+        200
+      ],
+      "mode": "local",
+      "module": "Media",
+      "legacy": true,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-309",
+      "name": "media deletion ownership B",
+      "actor": "B",
+      "method": "DELETE",
+      "endpoint": "[dynamic endpoint]",
+      "statuses": [
+        403
+      ],
+      "mode": "local",
+      "module": "Media",
+      "legacy": true,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-310",
+      "name": "media deletion ownership C",
+      "actor": "C",
+      "method": "DELETE",
+      "endpoint": "[dynamic endpoint]",
+      "statuses": [
+        403
+      ],
+      "mode": "local",
+      "module": "Media",
+      "legacy": true,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-311",
+      "name": "media deletion ownership anonymous",
+      "actor": "anonymous",
+      "method": "DELETE",
+      "endpoint": "[dynamic endpoint]",
+      "statuses": [
+        401
+      ],
+      "mode": "local",
+      "module": "Media",
+      "legacy": true,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-312",
+      "name": "media deletion replay",
+      "actor": "A",
+      "method": "DELETE",
+      "endpoint": "[dynamic endpoint]",
+      "statuses": [
+        404
+      ],
+      "mode": "local",
+      "module": "Media",
+      "legacy": true,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-313",
+      "name": "media canonical owner containment single",
+      "actor": "A",
+      "method": "DELETE",
+      "endpoint": "[dynamic endpoint]",
+      "statuses": [
+        400,
+        403,
+        404
+      ],
+      "mode": "local",
+      "module": "Media",
+      "legacy": true,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-314",
+      "name": "media canonical owner containment double",
+      "actor": "A",
+      "method": "DELETE",
+      "endpoint": "[dynamic endpoint]",
+      "statuses": [
+        400,
+        403,
+        404
+      ],
+      "mode": "local",
+      "module": "Media",
+      "legacy": true,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-315",
+      "name": "anonymous static media and owner revocation",
+      "actor": "A",
+      "method": "DELETE",
+      "endpoint": "[dynamic endpoint]",
+      "statuses": [
+        200
+      ],
+      "mode": "local",
+      "module": "Media",
+      "legacy": true,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-316",
+      "name": "message media URL trusted HTTPS",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/channels/7ec000000000000000000003/messages",
+      "statuses": [
+        201
+      ],
+      "mode": "local",
+      "module": "Media",
+      "legacy": true,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-317",
+      "name": "message media URL foreign host",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/channels/7ec000000000000000000003/messages",
+      "statuses": [
+        400
+      ],
+      "mode": "local",
+      "module": "Media",
+      "legacy": true,
+      "hasSemanticCheck": false,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-318",
+      "name": "message media URL host suffix lookalike",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/channels/7ec000000000000000000003/messages",
+      "statuses": [
+        400
+      ],
+      "mode": "local",
+      "module": "Media",
+      "legacy": true,
+      "hasSemanticCheck": false,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-319",
+      "name": "message media URL invalid URL",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/channels/7ec000000000000000000003/messages",
+      "statuses": [
+        400
+      ],
+      "mode": "local",
+      "module": "Media",
+      "legacy": true,
+      "hasSemanticCheck": false,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-320",
+      "name": "message media URL protocol relative",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/channels/7ec000000000000000000003/messages",
+      "statuses": [
+        400
+      ],
+      "mode": "local",
+      "module": "Media",
+      "legacy": true,
+      "hasSemanticCheck": false,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-321",
+      "name": "message media URL FTP trusted host",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/channels/7ec000000000000000000003/messages",
+      "statuses": [
+        400
+      ],
+      "mode": "local",
+      "module": "Media",
+      "legacy": true,
+      "hasSemanticCheck": false,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-322",
+      "name": "message media URL HTTP trusted host",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/channels/7ec000000000000000000003/messages",
+      "statuses": [
+        400
+      ],
+      "mode": "local",
+      "module": "Media",
+      "legacy": true,
+      "hasSemanticCheck": false,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-323",
+      "name": "local upload to authorized message integration",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/channels/7ec000000000000000000003/messages",
+      "statuses": [
+        201
+      ],
+      "mode": "local",
+      "module": "Media",
+      "legacy": true,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-324",
+      "name": "uploaded media does not grant foreign channel access 7ec000000000000000000004",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/channels/7ec000000000000000000004/messages",
+      "statuses": [
+        403
+      ],
+      "mode": "local",
+      "module": "Cross-module",
+      "legacy": true,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-325",
+      "name": "uploaded media does not grant foreign channel access 7ec00000000000000000000a",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/channels/7ec00000000000000000000a/messages",
+      "statuses": [
+        403
+      ],
+      "mode": "local",
+      "module": "Cross-module",
+      "legacy": true,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-326",
+      "name": "handoff attachment sender ownership A",
+      "actor": "A",
+      "method": "PUT",
+      "endpoint": "/api/handoffs/7ec000000000000000000008",
+      "statuses": [
+        200
+      ],
+      "mode": "local",
+      "module": "Cross-module",
+      "legacy": true,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-327",
+      "name": "handoff attachment sender ownership B",
+      "actor": "B",
+      "method": "PUT",
+      "endpoint": "/api/handoffs/7ec000000000000000000008",
+      "statuses": [
+        403
+      ],
+      "mode": "local",
+      "module": "Cross-module",
+      "legacy": true,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-328",
+      "name": "handoff attachment sender ownership C",
+      "actor": "C",
+      "method": "PUT",
+      "endpoint": "/api/handoffs/7ec000000000000000000008",
+      "statuses": [
+        403
+      ],
+      "mode": "local",
+      "module": "Cross-module",
+      "legacy": true,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-329",
+      "name": "handoff attachment sender ownership anonymous",
+      "actor": "anonymous",
+      "method": "PUT",
+      "endpoint": "/api/handoffs/7ec000000000000000000008",
+      "statuses": [
+        401
+      ],
+      "mode": "local",
+      "module": "Cross-module",
+      "legacy": true,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-330",
+      "name": "local PDF bytes retained application/pdf",
+      "actor": "C",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        200
+      ],
+      "mode": "local",
+      "module": "Media",
+      "legacy": true,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-331",
+      "name": "local PDF bytes retained application/octet-stream",
+      "actor": "C",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        200
+      ],
+      "mode": "local",
+      "module": "Media",
+      "legacy": true,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-692",
+      "name": "upload current identity denial inactive",
+      "actor": "I",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        401
+      ],
+      "mode": "local",
+      "module": "Local Media Storage Lifecycle",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-693",
+      "name": "upload current identity denial unonboarded",
+      "actor": "U",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        403
+      ],
+      "mode": "local",
+      "module": "Local Media Storage Lifecycle",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-694",
+      "name": "upload current identity denial expired",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        401
+      ],
+      "mode": "local",
+      "module": "Local Media Storage Lifecycle",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-695",
+      "name": "upload current identity denial invalid signature",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        401
+      ],
+      "mode": "local",
+      "module": "Local Media Storage Lifecycle",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-696",
+      "name": "duplicate local names preserve independent bytes",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        200
+      ],
+      "mode": "local",
+      "module": "Local Media Storage Lifecycle",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-697",
+      "name": "original filename cannot choose local output path",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        200
+      ],
+      "mode": "local",
+      "module": "Local Media Storage Lifecycle",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-698",
+      "name": "upload validates malformed JPEG bytes",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        400
+      ],
+      "mode": "local",
+      "module": "Local Media Storage Lifecycle",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-699",
+      "name": "upload validates unsupported SVG",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        400
+      ],
+      "mode": "local",
+      "module": "Local Media Storage Lifecycle",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-700",
+      "name": "upload validates unsupported MKV",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        400
+      ],
+      "mode": "local",
+      "module": "Local Media Storage Lifecycle",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-701",
+      "name": "octet video metadata follows supported extension",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        200
+      ],
+      "mode": "local",
+      "module": "Local Media Storage Lifecycle",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-702",
+      "name": "avatar deletion owner boundary A",
+      "actor": "A",
+      "method": "DELETE",
+      "endpoint": "[dynamic endpoint]",
+      "statuses": [
+        200
+      ],
+      "mode": "local",
+      "module": "Local Media Storage Lifecycle",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-703",
+      "name": "avatar deletion owner boundary C",
+      "actor": "C",
+      "method": "DELETE",
+      "endpoint": "[dynamic endpoint]",
+      "statuses": [
+        403
+      ],
+      "mode": "local",
+      "module": "Local Media Storage Lifecycle",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-704",
+      "name": "avatar canonical foreign owner file survives",
+      "actor": "A",
+      "method": "DELETE",
+      "endpoint": "[dynamic endpoint]",
+      "statuses": [
+        400,
+        403,
+        404
+      ],
+      "mode": "local",
+      "module": "Local Media Storage Lifecycle",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-705",
+      "name": "shared handoff upload supports owner deletion",
+      "actor": "A",
+      "method": "DELETE",
+      "endpoint": "[dynamic endpoint]",
+      "statuses": [
+        200
+      ],
+      "mode": "local",
+      "module": "Local Media Storage Lifecycle",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-706",
+      "name": "avatar replacement retention characterization",
+      "actor": "A",
+      "method": "PUT",
+      "endpoint": "/api/users/me",
+      "statuses": [
+        200
+      ],
+      "mode": "local",
+      "module": "Local Media Storage Lifecycle",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-707",
+      "name": "foreign uploaded avatar reference characterization",
+      "actor": "A",
+      "method": "PUT",
+      "endpoint": "/api/users/me",
+      "statuses": [
+        200
+      ],
+      "mode": "local",
+      "module": "Local Media Storage Lifecycle",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-708",
+      "name": "failed profile update retains old reference and upload",
+      "actor": "A",
+      "method": "PUT",
+      "endpoint": "/api/users/me",
+      "statuses": [
+        400
+      ],
+      "mode": "local",
+      "module": "Local Media Storage Lifecycle",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-709",
+      "name": "draft deletion orphan lifecycle",
+      "actor": "A",
+      "method": "DELETE",
+      "endpoint": "/api/handoffs/7ec000000000000000000008",
+      "statuses": [
+        200
+      ],
+      "mode": "local",
+      "module": "Local Media Storage Lifecycle",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-710",
+      "name": "explicit file deletion reference consistency",
+      "actor": "A",
+      "method": "DELETE",
+      "endpoint": "[dynamic endpoint]",
+      "statuses": [
+        200
+      ],
+      "mode": "local",
+      "module": "Local Media Storage Lifecycle",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-711",
+      "name": "duplicate references survive forbidden foreign deletion",
+      "actor": "C",
+      "method": "DELETE",
+      "endpoint": "[dynamic endpoint]",
+      "statuses": [
+        403
+      ],
+      "mode": "local",
+      "module": "Local Media Storage Lifecycle",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-712",
+      "name": "upload survives rejected foreign destination send",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/channels/7ec000000000000000000004/messages",
+      "statuses": [
+        403
+      ],
+      "mode": "local",
+      "module": "Local Media Storage Lifecycle",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-713",
+      "name": "handoff rejects untrusted attachment URL",
+      "actor": "A",
+      "method": "PUT",
+      "endpoint": "/api/handoffs/7ec000000000000000000008",
+      "statuses": [
+        400
+      ],
+      "mode": "local",
+      "module": "Local Media Storage Lifecycle",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-714",
+      "name": "message media validates alternate cloud provenance",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/channels/7ec000000000000000000003/messages",
+      "statuses": [
+        400
+      ],
+      "mode": "local",
+      "module": "Local Media Storage Lifecycle",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-715",
+      "name": "message media validates untrusted thumbnail",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/channels/7ec000000000000000000003/messages",
+      "statuses": [
+        400
+      ],
+      "mode": "local",
+      "module": "Local Media Storage Lifecycle",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-716",
+      "name": "message media validates negative size and dimensions",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/channels/7ec000000000000000000003/messages",
+      "statuses": [
+        400
+      ],
+      "mode": "local",
+      "module": "Local Media Storage Lifecycle",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-717",
+      "name": "message media validates missing image media URL",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/channels/7ec000000000000000000003/messages",
+      "statuses": [
+        400
+      ],
+      "mode": "local",
+      "module": "Local Media Storage Lifecycle",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-718",
+      "name": "SDK authenticated message folder",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        200
+      ],
+      "mode": "contract",
+      "module": "Offline Cloudinary SDK Contract",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-719",
+      "name": "SDK authenticated avatar folder",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        200
+      ],
+      "mode": "contract",
+      "module": "Offline Cloudinary SDK Contract",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-720",
+      "name": "SDK authenticated unknown folder",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        200
+      ],
+      "mode": "contract",
+      "module": "Offline Cloudinary SDK Contract",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-721",
+      "name": "SDK shared handoff has caller ownership namespace",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        200
+      ],
+      "mode": "contract",
+      "module": "Offline Cloudinary SDK Contract",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-722",
+      "name": "SDK resource type PDF",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        200
+      ],
+      "mode": "contract",
+      "module": "Offline Cloudinary SDK Contract",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-723",
+      "name": "SDK resource type video",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        200
+      ],
+      "mode": "contract",
+      "module": "Offline Cloudinary SDK Contract",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-724",
+      "name": "SDK resource type octet PDF",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        200
+      ],
+      "mode": "contract",
+      "module": "Offline Cloudinary SDK Contract",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-725",
+      "name": "SDK resource type octet video",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        200
+      ],
+      "mode": "contract",
+      "module": "Offline Cloudinary SDK Contract",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-726",
+      "name": "SDK filename metadata sanitized and bounded",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        200
+      ],
+      "mode": "contract",
+      "module": "Offline Cloudinary SDK Contract",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-727",
+      "name": "SDK explicit overwrite prevention",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        200
+      ],
+      "mode": "contract",
+      "module": "Offline Cloudinary SDK Contract",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-728",
+      "name": "SDK caller options cannot select identity or transformation",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        200
+      ],
+      "mode": "contract",
+      "module": "Offline Cloudinary SDK Contract",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-729",
+      "name": "SDK image thumbnail exact requested transform",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        200
+      ],
+      "mode": "contract",
+      "module": "Offline Cloudinary SDK Contract",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-730",
+      "name": "SDK video thumbnail exact requested transform",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        200
+      ],
+      "mode": "contract",
+      "module": "Offline Cloudinary SDK Contract",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-731",
+      "name": "SDK PDF raw attachment and preview call capture",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        200
+      ],
+      "mode": "contract",
+      "module": "Offline Cloudinary SDK Contract",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-732",
+      "name": "SDK PDF preview builder failure is contained",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        200
+      ],
+      "mode": "contract",
+      "module": "Offline Cloudinary SDK Contract",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-733",
+      "name": "SDK prototype-like context denied before upload",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        400
+      ],
+      "mode": "contract",
+      "module": "Offline Cloudinary SDK Contract",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-734",
+      "name": "SDK owner image delete operation",
+      "actor": "A",
+      "method": "DELETE",
+      "endpoint": "[dynamic endpoint]",
+      "statuses": [
+        200
+      ],
+      "mode": "contract",
+      "module": "Offline Cloudinary SDK Contract",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-735",
+      "name": "SDK owner raw delete operation",
+      "actor": "A",
+      "method": "DELETE",
+      "endpoint": "[dynamic endpoint]",
+      "statuses": [
+        200
+      ],
+      "mode": "contract",
+      "module": "Offline Cloudinary SDK Contract",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-736",
+      "name": "SDK owner video delete operation",
+      "actor": "A",
+      "method": "DELETE",
+      "endpoint": "[dynamic endpoint]",
+      "statuses": [
+        200
+      ],
+      "mode": "contract",
+      "module": "Offline Cloudinary SDK Contract",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-737",
+      "name": "SDK deletion requests CDN invalidation",
+      "actor": "A",
+      "method": "DELETE",
+      "endpoint": "[dynamic endpoint]",
+      "statuses": [
+        200
+      ],
+      "mode": "contract",
+      "module": "Offline Cloudinary SDK Contract",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-738",
+      "name": "SDK foreign owner rejected without destroy",
+      "actor": "C",
+      "method": "DELETE",
+      "endpoint": "[dynamic endpoint]",
+      "statuses": [
+        403
+      ],
+      "mode": "contract",
+      "module": "Offline Cloudinary SDK Contract",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-739",
+      "name": "SDK delete rejects namespace containing embedded owner",
+      "actor": "A",
+      "method": "DELETE",
+      "endpoint": "[dynamic endpoint]",
+      "statuses": [
+        400,
+        403,
+        404
+      ],
+      "mode": "contract",
+      "module": "Offline Cloudinary SDK Contract",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-740",
+      "name": "SDK owner handoff deletion reaches exact asset",
+      "actor": "A",
+      "method": "DELETE",
+      "endpoint": "[dynamic endpoint]",
+      "statuses": [
+        200
+      ],
+      "mode": "contract",
+      "module": "Offline Cloudinary SDK Contract",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-741",
+      "name": "SDK duplicate original names request unique identity",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        200
+      ],
+      "mode": "contract",
+      "module": "Offline Cloudinary SDK Contract",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-742",
+      "name": "SDK upload callback failure preserves database",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        500
+      ],
+      "mode": "contract",
+      "module": "Offline Cloudinary SDK Contract",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-743",
+      "name": "SDK success then URL failure compensates upload",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        500
+      ],
+      "mode": "contract",
+      "module": "Offline Cloudinary SDK Contract",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-744",
+      "name": "SDK destroy callback failure preserves asset and reference",
+      "actor": "A",
+      "method": "DELETE",
+      "endpoint": "[dynamic endpoint]",
+      "statuses": [
+        500
+      ],
+      "mode": "contract",
+      "module": "Offline Cloudinary SDK Contract",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-745",
+      "name": "SDK uploaded image to authorized message persists reference",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/channels/7ec000000000000000000003/messages",
+      "statuses": [
+        201
+      ],
+      "mode": "contract",
+      "module": "Offline Cloudinary SDK Contract",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-746",
+      "name": "SDK video upload to message compatibility",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/channels/7ec000000000000000000003/messages",
+      "statuses": [
+        201
+      ],
+      "mode": "contract",
+      "module": "Offline Cloudinary SDK Contract",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-747",
+      "name": "SDK message soft-delete storage lifecycle",
+      "actor": "A",
+      "method": "DELETE",
+      "endpoint": "[dynamic endpoint]",
+      "statuses": [
+        200
+      ],
+      "mode": "contract",
+      "module": "Offline Cloudinary SDK Contract",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-748",
+      "name": "SDK avatar replacement call lifecycle characterization",
+      "actor": "A",
+      "method": "PUT",
+      "endpoint": "/api/users/me",
+      "statuses": [
+        200
+      ],
+      "mode": "contract",
+      "module": "Offline Cloudinary SDK Contract",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-749",
+      "name": "SDK foreign-space uploaded reference characterization",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/channels/7ec000000000000000000003/messages",
+      "statuses": [
+        201
+      ],
+      "mode": "contract",
+      "module": "Offline Cloudinary SDK Contract",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": true
+    },
+    {
+      "caseId": "VOCLE-750",
+      "name": "SDK empty upload denied before stream invocation",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        400
+      ],
+      "mode": "contract",
+      "module": "Offline Cloudinary SDK Contract",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    },
+    {
+      "caseId": "VOCLE-751",
+      "name": "SDK oversized upload denied before stream invocation",
+      "actor": "A",
+      "method": "POST",
+      "endpoint": "/api/media/upload",
+      "statuses": [
+        400
+      ],
+      "mode": "contract",
+      "module": "Offline Cloudinary SDK Contract",
+      "legacy": false,
+      "hasSemanticCheck": true,
+      "hasPreparation": false
+    }
+  ]
+}

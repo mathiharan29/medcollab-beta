@@ -1,0 +1,398 @@
+name: Vocle Functional Regression
+
+on:
+  pull_request:
+    branches: [master]
+    types: [opened, reopened, ready_for_review, synchronize]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: ${{ github.workflow }}-vocle-functional-regression-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  detect:
+    name: Detect
+    runs-on: ubuntu-24.04
+    outputs:
+      targetKind: ${{ steps.target.outputs.targetKind }}
+      targetSha: ${{ steps.target.outputs.targetSha }}
+      scope: ${{ steps.target.outputs.scope }}
+      fingerprint: ${{ steps.fingerprint.outputs.value }}
+    steps:
+      - name: Validate supported PR context
+        working-directory: ${{ github.workspace }}
+        shell: bash
+        env:
+          QA_REPOSITORY: ${{ github.repository }}
+          QA_EVENT: ${{ github.event_name }}
+          QA_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          QA_BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          test "$QA_REPOSITORY" = mathiharan29/medcollab-beta
+          test "$QA_EVENT" = pull_request
+          test "$QA_HEAD_REPOSITORY" = mathiharan29/medcollab-beta
+          test "$QA_BASE_REF" = master
+      - name: Check out exact PR harness revision
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+      - name: Validate catalog and CI contracts
+        run: |
+          node tests/functional-regression/scripts/validate-catalog.mjs
+          node --test tests/functional-regression/scripts/ci-contracts.test.mjs
+          node --test tests/reporting/report.test.mjs tests/reporting/workflow-adapters.test.mjs
+      - id: target
+        name: Resolve exact read-only target
+        env:
+          VOCLE_PR_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name || '' }}
+          VOCLE_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha || '' }}
+        run: node tests/functional-regression/scripts/resolve-target.mjs
+      - id: fingerprint
+        name: Fingerprint exact harness and assertions
+        run: echo "value=$(node tests/functional-regression/scripts/fingerprint.mjs)" >> "$GITHUB_OUTPUT"
+
+  execute:
+    name: Execute
+    needs: detect
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    outputs:
+      result: ${{ steps.report.outputs.result }}
+      verified_backend_all: ${{ steps.report.outputs.verified_backend_all }}
+      report_ready: ${{ steps.report.outputs.report_ready }}
+      artifact_digest: ${{ steps.upload.outputs.artifact-digest }}
+    steps:
+      - name: Validate supported PR context
+        working-directory: ${{ github.workspace }}
+        shell: bash
+        env:
+          QA_REPOSITORY: ${{ github.repository }}
+          QA_EVENT: ${{ github.event_name }}
+          QA_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          QA_BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          test "$QA_REPOSITORY" = mathiharan29/medcollab-beta
+          test "$QA_EVENT" = pull_request
+          test "$QA_HEAD_REPOSITORY" = mathiharan29/medcollab-beta
+          test "$QA_BASE_REF" = master
+      - name: Check out exact harness revision
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          path: harness
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+      - name: Fetch captured source without credentials
+        env:
+          TARGET_KIND: ${{ needs.detect.outputs.targetKind }}
+          TARGET_SHA: ${{ needs.detect.outputs.targetSha }}
+        run: |
+          set -euo pipefail
+          repository='mathiharan29/medcollab-beta'
+          git init target
+          git -C target remote add source "https://github.com/${repository}.git"
+          git -C target fetch --depth=1 source "$TARGET_SHA"
+          git -C target checkout --detach FETCH_HEAD
+          node harness/tests/functional-regression/scripts/verify-target.mjs target "$TARGET_SHA"
+      - name: Prepare pinned runtime dependencies and Mongo binary
+        env:
+          NODE_IMAGE: node:22.20.0-bookworm@sha256:915acd9e9b885ead0c620e27e37c81b74c226e0e1c8177f37a60217b6eabb0d7
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/vocle-functional-output" "$RUNNER_TEMP/vocle-functional-output/runtime"
+          docker pull "$NODE_IMAGE"
+          docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -e npm_config_cache=/tmp/npm-cache --mount "type=bind,source=$PWD/target,target=/target" --workdir /target/medcollab-backend "$NODE_IMAGE" npm ci --ignore-scripts
+          docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -e npm_config_cache=/tmp/npm-cache --mount "type=bind,source=$PWD/harness,target=/harness" --workdir /harness/tests/sanity "$NODE_IMAGE" npm ci --ignore-scripts
+          docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp --mount "type=bind,source=$PWD/target,target=/target,readonly" --mount "type=bind,source=$PWD/harness,target=/harness,readonly" --mount "type=bind,source=$RUNNER_TEMP/vocle-functional-output,target=/output" "$NODE_IMAGE" node /harness/tests/functional-regression/scripts/prepare-mongo.mjs /target /output
+      - name: Run retained sanity and backend modules with loopback-only providers
+        env:
+          NODE_IMAGE: node:22.20.0-bookworm@sha256:915acd9e9b885ead0c620e27e37c81b74c226e0e1c8177f37a60217b6eabb0d7
+          VOCLE_SCOPE: ${{ needs.detect.outputs.scope }}
+        run: |
+          set -euo pipefail
+          docker run --rm --network none --read-only --tmpfs /tmp:rw,exec --user "$(id -u):$(id -g)" \
+            --mount "type=bind,source=$PWD/target,target=/target,readonly" \
+            --mount "type=bind,source=$PWD/harness,target=/harness,readonly" \
+            --mount "type=bind,source=$RUNNER_TEMP/vocle-functional-output,target=/output" \
+            -e VOCLE_TARGET_DIR=/target -e VOCLE_OUTPUT_DIR=/output -e VOCLE_SCOPE="$VOCLE_SCOPE" \
+            -e HOME=/tmp -e TZ=UTC "$NODE_IMAGE" sh -c 'node /harness/tests/functional-regression/scripts/preflight-isolation.mjs && node /harness/tests/functional-regression/scripts/run-backend.mjs'
+      - id: report
+        name: Verify provenance, cleanup, exact IDs and write reports
+        if: always()
+        env:
+          VOCLE_TARGET_DIR: ${{ github.workspace }}/target
+          VOCLE_OUTPUT_DIR: ${{ runner.temp }}/vocle-functional-output
+          VOCLE_SCOPE: ${{ needs.detect.outputs.scope }}
+          VOCLE_TARGET_KIND: ${{ needs.detect.outputs.targetKind }}
+          VOCLE_TARGET_SHA: ${{ needs.detect.outputs.targetSha }}
+          VOCLE_HARNESS_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          VOCLE_FINGERPRINT: ${{ needs.detect.outputs.fingerprint }}
+          VOCLE_REQUIRE_PREFLIGHT: 'true'
+        run: |
+          node harness/tests/functional-regression/scripts/manifest.mjs
+          node harness/tests/developer-workflow/qa.mjs "$VOCLE_OUTPUT_DIR/results.json" "$VOCLE_OUTPUT_DIR"
+          cat "$VOCLE_OUTPUT_DIR/report.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Generate detailed offline backend dashboard even after setup failure
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          VOCLE_TARGET_SHA: ${{ needs.detect.outputs.targetSha }}
+          VOCLE_TARGET_KIND: ${{ needs.detect.outputs.targetKind }}
+          VOCLE_HARNESS_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          VOCLE_SCOPE: ${{ needs.detect.outputs.scope }}
+        run: >-
+          node harness/tests/reporting/report.mjs
+          --input "$RUNNER_TEMP/vocle-functional-output/results.json"
+          --evidence-dir "$RUNNER_TEMP/vocle-functional-output"
+          --output "$RUNNER_TEMP/vocle-functional-output/detailed"
+          --suite backend --current true --history true
+          --artifact "vocle-functional-report-${{ github.run_id }}-${{ github.run_attempt }}"
+      - name: Stage sanitized diagnostic evidence without changing runner gates
+        if: always()
+        run: node harness/tests/reporting/stage.mjs "$RUNNER_TEMP/vocle-functional-output" "$RUNNER_TEMP/vocle-functional-publication"
+      - id: upload
+        name: Upload full diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: vocle-functional-report-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/vocle-functional-publication/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Create validated success marker after diagnostic upload
+        if: steps.report.outputs.verified_backend_all == 'true' && steps.upload.outcome == 'success'
+        run: node harness/tests/functional-regression/scripts/write-success-manifest.mjs "$RUNNER_TEMP/vocle-functional-publication" '${{ steps.upload.outputs.artifact-digest }}'
+      - name: Upload validated full-backend success marker
+        if: steps.report.outputs.verified_backend_all == 'true' && steps.upload.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: vocle-functional-success-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/vocle-functional-publication/success-manifest.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Enforce verified regression gate
+        if: always()
+        env:
+          REPORT_RESULT: ${{ steps.report.outputs.result }}
+          ARTIFACT_RESULT: ${{ steps.upload.outcome }}
+        run: |
+          test "$ARTIFACT_RESULT" = success
+          test "$REPORT_RESULT" = PASS
+
+  flutter:
+    name: Flutter
+    needs: detect
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      TZ: Asia/Kolkata
+      VOCLE_FLUTTER_OUTPUT: ${{ github.workspace }}/vocle-flutter-output
+    steps:
+      - name: Validate supported PR context
+        working-directory: ${{ github.workspace }}
+        shell: bash
+        env:
+          QA_REPOSITORY: ${{ github.repository }}
+          QA_EVENT: ${{ github.event_name }}
+          QA_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          QA_BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          test "$QA_REPOSITORY" = mathiharan29/medcollab-beta
+          test "$QA_EVENT" = pull_request
+          test "$QA_HEAD_REPOSITORY" = mathiharan29/medcollab-beta
+          test "$QA_BASE_REF" = master
+      - name: Check out exact PR revision
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Verify source provenance and prepare report directory
+        env:
+          TARGET_SHA: ${{ needs.detect.outputs.targetSha }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$VOCLE_FLUTTER_OUTPUT"
+          test "$(git rev-parse HEAD)" = "$TARGET_SHA"
+          printf '{"targetKind":"pr-head","targetSha":"%s","harnessSha":"%s","timezone":"%s"}\n' "$TARGET_SHA" "$(git rev-parse HEAD)" "$TZ" > "$VOCLE_FLUTTER_OUTPUT/provenance.json"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+      - name: Set up pinned Flutter SDK
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: stable
+          flutter-version: '3.29.3'
+          cache: true
+      - name: Resolve exact locked dependencies
+        working-directory: medcollab-app
+        run: |
+          flutter --version > "$VOCLE_FLUTTER_OUTPUT/sdk.txt"
+          flutter pub get --enforce-lockfile
+      - id: tests
+        name: Run catalog and retained Flutter tests
+        working-directory: medcollab-app
+        run: |
+          set +e
+          echo 'Running Flutter catalog with a 12-minute command deadline'
+          timeout --signal=TERM --kill-after=30s 12m flutter test --no-pub --reporter json test/functional_regression 2> "$VOCLE_FLUTTER_OUTPUT/catalog.stderr.log" | tee "$VOCLE_FLUTTER_OUTPUT/catalog.ndjson"
+          catalog_exit=${PIPESTATUS[0]}
+          echo "Flutter catalog command exited $catalog_exit"
+          mapfile -t retained < <(find test -maxdepth 1 -name '*_test.dart' -print | sort)
+          echo 'Running retained Flutter tests with a 5-minute command deadline'
+          timeout --signal=TERM --kill-after=30s 5m flutter test --no-pub "${retained[@]}" 2>&1 | tee "$VOCLE_FLUTTER_OUTPUT/retained.log"
+          retained_exit=${PIPESTATUS[0]}
+          echo "Retained Flutter command exited $retained_exit"
+          echo "catalog_exit=$catalog_exit" >> "$GITHUB_OUTPUT"
+          echo "retained_exit=$retained_exit" >> "$GITHUB_OUTPUT"
+          exit 0
+      - id: report
+        name: Aggregate exact Flutter catalog and coverage gate
+        if: always()
+        env:
+          CATALOG_EXIT: ${{ steps.tests.outputs.catalog_exit }}
+          RETAINED_EXIT: ${{ steps.tests.outputs.retained_exit }}
+          TARGET_SHA: ${{ needs.detect.outputs.targetSha }}
+          HARNESS_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          if [[ -s "$VOCLE_FLUTTER_OUTPUT/catalog.ndjson" ]]; then
+            node --input-type=module <<'NODE'
+          import { readFileSync, writeFileSync } from 'node:fs';
+          import { createHash } from 'node:crypto';
+          import { execFileSync } from 'node:child_process';
+          const sha = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+          if (sha !== process.env.TARGET_SHA || sha !== process.env.HARNESS_SHA) throw new Error('Flutter application/harness checkout mismatch');
+          const output = process.env.VOCLE_FLUTTER_OUTPUT;
+          writeFileSync(output + '/catalog-provenance.json', JSON.stringify({ source: { sha, kind: 'commit', verified: true },
+            harnessSha: sha, sourceKind: 'pr-head', inputSha256: createHash('sha256').update(readFileSync(output + '/catalog.ndjson')).digest('hex') }));
+          NODE
+            if ! node tests/functional-regression/scripts/aggregate-flutter.mjs "$VOCLE_FLUTTER_OUTPUT/catalog.ndjson" "$VOCLE_FLUTTER_OUTPUT/report" "$VOCLE_FLUTTER_OUTPUT/catalog-provenance.json" > "$VOCLE_FLUTTER_OUTPUT/aggregation.log" 2>&1; then
+              cat "$VOCLE_FLUTTER_OUTPUT/aggregation.log" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          fi
+          if [[ ! -s "$VOCLE_FLUTTER_OUTPUT/report.json" ]]; then
+            echo '{"tier":"F","result":"ERROR","reason":"Flutter setup, execution or aggregation did not produce a valid report"}' > "$VOCLE_FLUTTER_OUTPUT/report.json"
+            echo '# Flutter infrastructure error' > "$VOCLE_FLUTTER_OUTPUT/report.md"
+            echo '<testsuite name="Vocle Flutter" tests="1" errors="1"><testcase name="infrastructure"><error message="missing report"/></testcase></testsuite>' > "$VOCLE_FLUTTER_OUTPUT/report.xml"
+          fi
+          cat "$VOCLE_FLUTTER_OUTPUT/report.md" >> "$GITHUB_STEP_SUMMARY"
+          node tests/developer-workflow/qa.mjs "$VOCLE_FLUTTER_OUTPUT/report.json" "$VOCLE_FLUTTER_OUTPUT"
+          node -e 'const r=require(process.argv[1]); if (!r.complete || r.implementedAndExecuted !== 32) process.exit(1)' "$VOCLE_FLUTTER_OUTPUT/report.json"
+          echo "catalog_exit=${CATALOG_EXIT:-missing}; retained_exit=${RETAINED_EXIT:-missing}" >> "$GITHUB_STEP_SUMMARY"
+      - name: Generate detailed offline Flutter dashboard even after setup failure
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          VOCLE_TARGET_SHA: ${{ needs.detect.outputs.targetSha }}
+          VOCLE_TARGET_KIND: pr-head
+          VOCLE_HARNESS_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: >-
+          node tests/reporting/report.mjs
+          --input "$VOCLE_FLUTTER_OUTPUT/report.json"
+          --evidence-dir "$VOCLE_FLUTTER_OUTPUT"
+          --output "$VOCLE_FLUTTER_OUTPUT/detailed"
+          --suite flutter --current true --history true
+          --artifact "vocle-flutter-report-${{ github.run_id }}-${{ github.run_attempt }}"
+      - name: Stage sanitized Flutter diagnostic evidence
+        if: always()
+        run: node tests/reporting/stage.mjs "$VOCLE_FLUTTER_OUTPUT" "${{ runner.temp }}/vocle-flutter-publication"
+      - id: upload
+        name: Upload Flutter reports and provenance
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: vocle-flutter-report-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/vocle-flutter-publication/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Enforce Flutter functional gate
+        if: always()
+        env:
+          CATALOG_EXIT: ${{ steps.tests.outputs.catalog_exit }}
+          RETAINED_EXIT: ${{ steps.tests.outputs.retained_exit }}
+          REPORT_RESULT: ${{ steps.report.outcome }}
+          ARTIFACT_RESULT: ${{ steps.upload.outcome }}
+        run: |
+          test "$REPORT_RESULT" = success
+          test "$ARTIFACT_RESULT" = success
+          test "$CATALOG_EXIT" = 0
+          test "$RETAINED_EXIT" = 0
+          node -e 'const r=require(process.argv[1]); if (!r.fullSuccess || !r.complete || r.counts.PASS !== 32) process.exit(1)' "$VOCLE_FLUTTER_OUTPUT/report.json"
+
+  summary:
+    name: Summary
+    needs: [detect, execute, flutter]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Validate supported PR context
+        working-directory: ${{ github.workspace }}
+        shell: bash
+        env:
+          QA_REPOSITORY: ${{ github.repository }}
+          QA_EVENT: ${{ github.event_name }}
+          QA_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          QA_BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          test "$QA_REPOSITORY" = mathiharan29/medcollab-beta
+          test "$QA_EVENT" = pull_request
+          test "$QA_HEAD_REPOSITORY" = mathiharan29/medcollab-beta
+          test "$QA_BASE_REF" = master
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Collect case evidence and report skipped or failed setup lanes
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          VOCLE_REPORT_WORKFLOW: functional-regression
+          VOCLE_TARGET_SHA: ${{ needs.detect.outputs.targetSha }}
+          VOCLE_TARGET_KIND: ${{ needs.detect.outputs.targetKind }}
+          VOCLE_REPORT_JOBS: '{"detect":"${{ needs.detect.result }}","execute":"${{ needs.execute.result }}","flutter":"${{ needs.flutter.result }}"}'
+        run: node tests/reporting/workflow-report.mjs vocle-report-output
+      - id: dashboard_upload
+        name: Upload workflow dashboard including detection failures and skips
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: vocle-regression-dashboard-${{ github.run_id }}-${{ github.run_attempt }}
+          path: vocle-report-output/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Publish clickable report download
+        if: always()
+        env:
+          REPORT_DOWNLOAD_URL: ${{ steps.dashboard_upload.outputs.artifact-url }}
+        run: |
+          if [ -n "$REPORT_DOWNLOAD_URL" ]; then
+            printf '\n## Download the visual QA report\n\n[Download report ZIP](%s)\n\nSign into GitHub, extract the ZIP, and open `vocle-regression-dashboard.html`.\n' "$REPORT_DOWNLOAD_URL" >> "$GITHUB_STEP_SUMMARY"
+          else
+            printf '\nReport upload unavailable; inspect the upload step.\n' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Enforce all required lanes
+        if: always()
+        env:
+          DETECT_RESULT: ${{ needs.detect.result }}
+          EXECUTE_RESULT: ${{ needs.execute.result }}
+          FLUTTER_RESULT: ${{ needs.flutter.result }}
+        run: |
+          echo 'Functional catalog: 187 total / 179 hosted / 8 LOCAL_ONLY' >> "$GITHUB_STEP_SUMMARY"
+          test "$DETECT_RESULT" = success
+          test "$EXECUTE_RESULT" = success
+          test "$FLUTTER_RESULT" = success
