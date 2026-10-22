@@ -2,6 +2,7 @@
 
 import os
 import hashlib
+import string
 from pathlib import Path
 import shutil
 import socket
@@ -98,7 +99,7 @@ class AndroidRuntime:
         key = ""
         while value:
             value, remainder = divmod(value, 36)
-            key = "0123456789abcdefghijklmnopqrstuvwxyz"[remainder] + key
+            key = (string.digits + string.ascii_lowercase)[remainder] + key
         filename = asset["wrapperUrl"].rsplit("/", 1)[-1]
         folder = filename.removesuffix(".zip")
         user_cache = Path(os.environ.get("GRADLE_USER_HOME") or (Path(os.environ.get("USERPROFILE") or os.environ.get("HOME") or "~") / ".gradle"))

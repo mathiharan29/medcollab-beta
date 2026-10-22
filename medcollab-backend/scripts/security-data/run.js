@@ -29,16 +29,19 @@ async function main() {
     guard.environment(); isolation = guard.isolatedLinux(); telemetry = guard.network(); sourceBefore = fingerprint();
     scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'vocle-data-scratch-')); fs.mkdirSync(path.join(scratch, 'uploads'));
     process.chdir(scratch);
+    stage = 'connect disposable MongoDB';
     mongoose = require('mongoose'); await mongoose.connect(guard.URI, { serverSelectionTimeoutMS: 10000 });
     assert.equal(mongoose.connection.name, 'vocle_ci');
     // Expiry tests must not race the TTL background monitor. This disposable
     // server disables only physical sweeping; actual TTL indexes and application
     // expiry checks remain real. Never apply this option to a deployed database.
+    stage = 'verify disposable TTL monitor';
     const ttl = await mongoose.connection.db.admin().command({ getParameter: 1, ttlMonitorEnabled: 1 });
     assert.equal(ttl.ttlMonitorEnabled, false, 'Disposable TTL sweep must be paused');
     isolation.ttlMonitorEnabled = ttl.ttlMonitorEnabled;
     const models = fixtures.models();
-    for (const model of Object.values(models)) { assert.equal(await model.countDocuments(), 0, 'Disposable database is not empty'); await model.init(); }
+    for (const [name, model] of Object.entries(models)) { stage = `initialize ${name} model indexes`; assert.equal(await model.countDocuments(), 0, 'Disposable database is not empty'); await model.init(); }
+    stage = 'start isolated backend';
     child = fork(path.resolve(__dirname, '../security-media/server.js'), [], { cwd: scratch, env: { NODE_ENV: 'test', MONGODB_URI: guard.URI, API_BASE_URL: guard.BASE, PORT: '5000', JWT_SECRET: guard.JWT, JWT_REFRESH_SECRET: 'ci-test-only-refresh-secret-not-for-production-000000000002', OTP_BYPASS: 'false', VOCLE_MEDIA_MODE: 'local' }, stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
     child.stdout.resume(); child.stderr.resume();
     await new Promise((resolve, reject) => {
@@ -74,7 +77,11 @@ async function main() {
     }
     sourceAfter = fingerprint(); assert.equal(sourceBefore, sourceAfter);
   } catch (error) {
-    fatal = { stage, errorType: error.name, category: 'prerequisite/execution/safety failure' }; process.exitCode = 1;
+    // Mongo error codes and controlled stage names identify setup failures
+    // without publishing documents, index values, credentials or child logs.
+    fatal = { stage, errorType: error.name, errorCode: Number.isInteger(error.code) ? error.code : null,
+      errorCodeName: /^[A-Za-z]+$/.test(error.codeName || '') ? error.codeName : null,
+      category: 'prerequisite/execution/safety failure' }; process.exitCode = 1;
     console.error(JSON.stringify(fatal));
   } finally {
     try { await stop(); if (mongoose) await mongoose.disconnect(); if (scratch) { guard.contained(scratch, path.join(scratch, 'uploads')); assert.equal(fs.readdirSync(path.join(scratch, 'uploads')).length, 0); fs.rmdirSync(path.join(scratch, 'uploads')); fs.rmdirSync(scratch); } }

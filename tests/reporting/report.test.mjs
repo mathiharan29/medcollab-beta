@@ -15,9 +15,30 @@ const metadata = await scenarioMetadata(root);
 const ids = metadata.filter(c=>c.tier==='B').slice(0,6).map(c=>c.id);
 const statuses = ['PASS','FAIL','ERROR','BLOCKED','NEEDS_DECISION','SKIP'];
 
+// These fixtures describe a local report, even when this contract suite runs
+// on Actions. Keep the production hosted guard enabled outside this synchronous
+// normalization call; never clear CI identity for a real runner or publication.
+function normalizeLocalFixture(...args) {
+ const runId=process.env.GITHUB_RUN_ID;
+ try { delete process.env.GITHUB_RUN_ID; return normalize(...args); }
+ finally { if(runId===undefined)delete process.env.GITHUB_RUN_ID;else process.env.GITHUB_RUN_ID=runId; }
+}
+
+test('hosted execution rejects Android evidence and fixture isolation restores CI identity',()=>{
+ const previous=process.env.GITHUB_RUN_ID;
+ try {
+  process.env.GITHUB_RUN_ID='synthetic-hosted-contract';
+  const input={tier:'D',selected:['FR-MED-08'],cases:[{id:'FR-MED-08',status:'SKIP',executed:false}]};
+  assert.throws(()=>normalize(input,metadata,{suite:'device'}),/LOCAL_ONLY/);
+  normalizeLocalFixture(input,metadata,{suite:'device'});
+  assert.equal(process.env.GITHUB_RUN_ID,'synthetic-hosted-contract');
+  assert.throws(()=>normalize({results:[{id:'FR-MED-08',status:'PASS',executed:true}]},metadata,{suite:'developer'}),/cannot be relabeled/);
+ } finally { if(previous===undefined)delete process.env.GITHUB_RUN_ID;else process.env.GITHUB_RUN_ID=previous; }
+});
+
 test('local-only presentation preserves unexecuted ERROR, BLOCKED and SKIP outcomes',()=>{
  for(const status of ['ERROR','BLOCKED','SKIP']){
-  const r=normalize({tier:'D',selected:['FR-MED-08'],cases:[{id:'FR-MED-08',status,executed:false,errorCategory:'DEVICE_PREREQUISITE'}]},metadata,{suite:'device'});
+  const r=normalizeLocalFixture({tier:'D',selected:['FR-MED-08'],cases:[{id:'FR-MED-08',status,executed:false,errorCategory:'DEVICE_PREREQUISITE'}]},metadata,{suite:'device'});
   assert.equal(r.results[0].status,status);assert.equal(r.attempted,0);
   assert(summary(r).includes(`FR-MED-08 — LOCAL_ONLY; executed false; ${status}`));
   assert(detailed(r).includes(`**${status}** (LOCAL_ONLY)`));
@@ -120,13 +141,13 @@ test('HTML and Markdown safely handle hostile markup, multiline logs, and missin
 });
 test('synthetic backend, Flutter, device and sanity formats preserve complete inventories',async()=>{
  for(const [suite,count] of [['backend',147],['flutter',32],['device',8],['sanity',48]]){
-  const input=await functionalInput(suite);const r=normalize(input,metadata,{suite});assert.equal(r.results.length,count);assert.equal(r.recorded,count);assert.equal(Object.values(r.counts).reduce((a,b)=>a+b,0),count);
+  const input=await functionalInput(suite);const r=normalizeLocalFixture(input,metadata,{suite});assert.equal(r.results.length,count);assert.equal(r.recorded,count);assert.equal(Object.values(r.counts).reduce((a,b)=>a+b,0),count);
  }
 });
 
 test('large report is generated, deterministic and preserves 187 IDs',async()=>{
  const dir=await mkdtemp(join(tmpdir(),'vocle-large-report-'));
- try{const input={scope:'full',source:{sha:'a'.repeat(40),kind:'commit'},harness:{sha:'b'.repeat(40)},results:metadata.map(c=>({id:c.id,status:'PASS',executed:true,evidence:'x'.repeat(3000)}))};const r=normalize(input,metadata,{suite:'developer'});await writeReports(dir,r);const a=await readFile(join(dir,'vocle-regression-results.json'),'utf8');await writeReports(dir,r);assert.equal(await readFile(join(dir,'vocle-regression-results.json'),'utf8'),a);assert.equal(JSON.parse(a).results.length,187);}finally{await rm(dir,{recursive:true,force:true});}
+ try{const input={scope:'full',source:{sha:'a'.repeat(40),kind:'commit'},harness:{sha:'b'.repeat(40)},results:metadata.map(c=>({id:c.id,status:'PASS',executed:true,evidence:'x'.repeat(3000)}))};const r=normalizeLocalFixture(input,metadata,{suite:'developer'});await writeReports(dir,r);const a=await readFile(join(dir,'vocle-regression-results.json'),'utf8');await writeReports(dir,r);assert.equal(await readFile(join(dir,'vocle-regression-results.json'),'utf8'),a);assert.equal(JSON.parse(a).results.length,187);}finally{await rm(dir,{recursive:true,force:true});}
 });
 test('publication excludes binaries/runtime and sanitizes raw logs without altering originals',async()=>{
  const dir=await mkdtemp(join(tmpdir(),'vocle-stage-test-'));
