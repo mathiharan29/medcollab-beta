@@ -629,10 +629,11 @@ async function execute(c) {
   await settledSnapshot();
   await verifyResetState();
   let preparing = true;
-  const prerequisiteResponses = [];
+  const prerequisiteResponses = [], caseResponses = [];
   const ctx = { http: async (...args) => {
     const response = await http(...args);
     if (preparing) prerequisiteResponses.push({ actor: args[0], method: args[1], endpoint: args[2], status: response.status });
+    else caseResponses.push({ actor: args[0], method: args[1], endpoint: args[2], status: response.status });
     return response;
   }, supervisedHttp, models, users, ids, tokens, evidence: {}, cleanup: [] };
   try {
@@ -691,21 +692,28 @@ async function execute(c) {
     // Preserve real application failures during preparation and continue only
     // after independently confirming that the isolated service remains healthy.
     const serverError = prerequisiteResponses.find(r => r.status >= 500);
-    if (!preparing || !serverError) throw error;
+    const missingNotification = !preparing && error.message === 'Missing socket control: new_notification' &&
+      caseResponses.some(r => r.method === 'POST' && r.endpoint === '/api/message-requests' && r.status === 201);
+    const assertionFailed = !preparing && error instanceof assert.AssertionError;
+    if (!(preparing && serverError) && !missingNotification && !assertionFailed) throw error;
     await health();
     const caseId = `VOCLE-${String(results.length + 1).padStart(3, '0')}`;
-    const failure = { category: 'APPLICATION_PREREQUISITE_FAILURE', status: 'FAIL', caseId,
-      expected: 'Application preparation request succeeds before the dependent case',
-      actual: serverError, diagnostic: safeFailureSummary(error) };
+    const blocked = preparing;
+    const failure = { category: blocked ? 'APPLICATION_PREREQUISITE_FAILURE' : 'APPLICATION_ASSERTION_FAILURE', status: 'FAIL', caseId,
+      expected: blocked ? 'Application preparation request succeeds before the dependent case' : 'The original case assertion and positive event controls succeed',
+      actual: blocked ? serverError : { responses: caseResponses, assertionFailed, missingEvent: missingNotification ? 'new_notification' : null,
+        observed: typeof error.actual === 'number' || typeof error.actual === 'boolean' ? error.actual : null,
+        expected: typeof error.expected === 'number' || typeof error.expected === 'boolean' ? error.expected : null },
+      diagnostic: blocked ? safeFailureSummary(error) : missingNotification ? 'Expected notification absent after authenticated socket setup and HTTP 201 producer; isolation health verified' : 'Original assertion failed; later case steps may not have executed' };
     applicationFailures.push(failure);
     results.push({ caseId, name: c.name, actor: c.actor, method: c.method,
       endpoint: typeof c.endpoint === 'string' ? c.endpoint : '[dynamic endpoint]', module: c.module,
       context: c.context, mutationCategory: c.category, sources: c.sources,
-      status: 'BLOCKED', executed: false, classification: 'blocked by application prerequisite failure',
+      status: blocked ? 'BLOCKED' : 'FAIL', executed: !blocked, classification: blocked ? 'blocked by application prerequisite failure' : 'original application assertion or event control failed',
       expected: { statuses: c.statuses, semanticCheck: !!c.check },
-      actual: { status: null, targetActionExecuted: false, prerequisiteFailure: failure },
+      actual: { status: null, targetActionExecuted: !blocked, prerequisiteFailure: failure },
       report: { securityArea: securityArea(c.category), module: c.module, whatItChecks: whatItChecks(c),
-        testSetup: setupFor(c), actionPerformed: 'Target action not executed because application preparation returned HTTP 500',
+        testSetup: setupFor(c), actionPerformed: blocked ? 'Target action not executed because application preparation returned HTTP 500' : 'Original case action started; an original assertion or event control failed; later steps may not have executed',
         mutation: mutationDescription(c), expectedSecurityBehaviour: expectedBehaviour(c) } });
     process.exitCode = 1;
   } finally {
@@ -722,7 +730,7 @@ function report() {
     return counts;
   }, {})).sort(([a], [b]) => a.localeCompare(b));
   const executed = results.filter(r => r.executed !== false).length;
-  const summary = { planned: cases.length, executed, passed: results.filter(r => r.passed === true).length, unexpected: unexpected.length, blocked: results.length - executed, applicationFailures, notExecuted: cases.length - executed, infrastructureFailure: fatal, moduleBreakdown: Object.fromEntries(moduleBreakdown), results };
+  const summary = { planned: cases.length, executed, passed: results.filter(r => r.passed === true).length, unexpected: unexpected.length, failed: results.filter(r=>r.status==='FAIL').length, blocked: results.length - executed, applicationFailures, notExecuted: cases.length - executed, infrastructureFailure: fatal, moduleBreakdown: Object.fromEntries(moduleBreakdown), results };
   fs.writeFileSync(path.join(directory, 'results.json'), JSON.stringify(summary, null, 2));
   const markdown = [`# Vocle API discovery`, '', `Executed ${summary.executed}/${summary.planned}; passed ${summary.passed}; observations ${summary.unexpected}; application-blocked ${summary.blocked}.`, `Infrastructure: ${fatal || 'healthy'}.`, '', ...applicationFailures.map(r => `- FAIL ${r.category} (${r.caseId}): ${r.actual.method} ${r.actual.endpoint} returned ${r.actual.status}; dependent action not executed.`), '', 'Module breakdown:', ...moduleBreakdown.map(([module, count]) => `- ${module}: ${count}`), '', 'Observations are candidates, not confirmed vulnerabilities. See results.json for every case and source.', '', ...unexpected.map(r => `- ${r.caseId}: ${r.actor} ${r.method} ${r.endpoint}; ${r.mutationCategory}; expected ${r.expected.statuses?.join('/') || 'not applicable'}, got ${r.actual.status}; ${r.classification}; manual confirmation worthwhile.`)].join('\n');
   fs.writeFileSync(path.join(directory, 'summary.md'), markdown);
@@ -769,7 +777,7 @@ function report() {
     '## Recorded testcase catalog (includes explicitly unexecuted blocked cases)',
     '',
     ...results.flatMap(result => {
-      if(result.executed === false) return [`### ${result.caseId} � ${result.name}`, '', '**BLOCKED � target action not executed**', '', JSON.stringify(result.actual.prerequisiteFailure), ''];
+      if(result.executed === false || result.status === 'FAIL') return [`### ${result.caseId} — ${result.name}`, '', result.status === 'FAIL' ? '**FAIL — original assertion/control failed; later steps may not have executed**' : '**BLOCKED — target action not executed**', '', JSON.stringify(result.actual.prerequisiteFailure), ''];
       const state = result.actual.stateUnchanged ? 'controlled database/application state remained unchanged' : 'controlled database/application state changed';
       const lines = [
         `### ${result.caseId} — ${result.name}`,
