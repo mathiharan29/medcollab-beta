@@ -5,6 +5,18 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 
+export async function settledWorkflowJobs(read, { attempts = 61, wait = ms => new Promise(resolve => setTimeout(resolve, ms)) } = {}) {
+  const deadline = Date.now() + 300000;
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    if (Date.now() >= deadline) break;
+    const jobs = (await read(attempt)).jobs.filter(j => j.name !== 'Visual QA report' && !j.name.startsWith('Visual QA report /'));
+    if (jobs.length && jobs.every(j => j.status === 'completed' && j.conclusion &&
+      (j.conclusion === 'skipped' || j.steps?.length > 0))) return jobs;
+    if (attempt + 1 < attempts) await wait(5000);
+  }
+  throw new Error('Completed source job metadata did not become available within five minutes; no workflow execution evidence inferred');
+}
+
 export const profiles = {
   'vocle-backend-environment-test.yml': { title: 'Backend environment & API security', artifact: 'vocle-security-discovery', kind: 'discovery', scope: 'Real HTTP and controlled database/socket state. Observations require separate security review.' },
   'vocle-data-security.yml': { title: 'MongoDB data security', artifact: 'vocle-mongodb-data-security', kind: 'data', manifest: 'security-data', scope: 'Disposable MongoDB; HTTP, model and handler scopes remain individually labeled.' },

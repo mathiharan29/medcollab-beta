@@ -5,13 +5,23 @@ import { compare } from './report.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { profiles, catalogFor, adaptSecurity, recoverSecurity, jobEvidence } from './workflow-adapters.mjs';
+import { profiles, catalogFor, adaptSecurity, recoverSecurity, jobEvidence, settledWorkflowJobs } from './workflow-adapters.mjs';
 import { summary, junit, sanitize } from './report.mjs';
 import { execFileSync } from 'node:child_process';
 
 test('included workflow inventory excludes Security Environment Test',()=>{
   assert.equal(Object.keys(profiles).length,6);
   assert(!profiles['vocle-security-environment-test.yml']);
+});
+
+test('workflow collection waits for completed source steps and fails closed on missing metadata',async()=>{
+ const own={name:'Visual QA report / Visual QA report',status:'in_progress',steps:[]};
+ const completed={name:'Scan',status:'completed',conclusion:'success',steps:[{name:'Run scan',conclusion:'success'}]};
+ let reads=0, waits=0;
+ const jobs=await settledWorkflowJobs(async()=>({jobs:[own,++reads===1?{...completed,status:'in_progress',conclusion:null,steps:[]}:completed]}),{attempts:2,wait:async()=>{waits++;}});
+ assert.equal(reads,2);assert.equal(waits,1);assert.deepEqual(jobs,[completed]);
+ await assert.rejects(settledWorkflowJobs(async()=>({jobs:[own]}),{attempts:2,wait:async()=>{}}),/no workflow execution evidence inferred/);
+ await assert.rejects(settledWorkflowJobs(async()=>({jobs:[{...completed,steps:[]}]}),{attempts:1}),/metadata/);
 });
 for(const [file,fixture,count,pass,observations] of [
   ['vocle-backend-environment-test.yml','37361855710',691,611,80],

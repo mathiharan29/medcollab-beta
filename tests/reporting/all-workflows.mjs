@@ -6,7 +6,7 @@ import { hash } from './scenarios.mjs';
 import { priorCompatible } from './history.mjs';
 // Independent reporting job: read existing evidence, never run application/provider code.
 import { api, artifactReports } from './history.mjs';
-import { profiles, catalogFor, adaptSecurity, recoverSecurity, jobEvidence } from './workflow-adapters.mjs';
+import { profiles, catalogFor, adaptSecurity, recoverSecurity, jobEvidence, settledWorkflowJobs } from './workflow-adapters.mjs';
 import { sanitize, writeReports, summary } from './report.mjs';
 import { writeFile } from 'node:fs/promises';
 const workflow=process.env.VOCLE_REPORT_FILE, profile=profiles[workflow];
@@ -17,7 +17,7 @@ const originalGate=Object.values(needs).some(n=>['failure','cancelled'].includes
 const fingerprint=execFileSync(process.execPath,[join(root,'tests/functional-regression/scripts/fingerprint.mjs')],{encoding:'utf8',windowsHide:true,timeout:30000}).trim();
 const options={context:captureContext(root),execution:executionIdentity(),fingerprint, environmentFingerprint:hash(JSON.stringify({version:1,scope:profile.kind,platform:process.platform,node:process.versions.node,backendLock:await (await import('node:fs/promises')).readFile(join(root,'medcollab-backend/package-lock.json'),'utf8')})),sha:process.env.VOCLE_REPORT_SHA||process.env.GITHUB_SHA,runUrl,title:profile.title,gate:originalGate};
 const errors=[];let jobs=[],artifacts=[];
-try { jobs=(await api(`/actions/runs/${runId}/jobs?per_page=100`)).jobs.filter(j=>j.name!=='Visual QA report'&&!j.name.startsWith('Visual QA report /')); } catch(e){errors.push({status:'ERROR',category:'JOB_EVIDENCE',message:e.message});}
+try { jobs=await settledWorkflowJobs(attempt=>api(`/actions/runs/${runId}/attempts/${process.env.GITHUB_RUN_ATTEMPT}/jobs?per_page=100&inspection=${Date.now()}-${attempt}`)); } catch(e){errors.push({status:'ERROR',category:'JOB_EVIDENCE',message:e.message});}
 try { artifacts=(await api(`/actions/runs/${runId}/artifacts?per_page=100`)).artifacts.filter(a=>!a.expired); } catch(e){errors.push({status:'ERROR',category:'ARTIFACT_EVIDENCE',message:e.message});}
 let report=jobEvidence(jobs,options);report.workflowJobs=jobs.map(j=>({name:j.name,conclusion:j.conclusion,steps:j.steps}));report.lanes=[];
 if(originalGate==='SKIP')report.infrastructure=[{status:'SKIP',category:'WORKFLOW',message:'Original workflow jobs intentionally skipped; no test execution claimed.'}];
