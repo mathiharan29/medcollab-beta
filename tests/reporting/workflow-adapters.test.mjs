@@ -34,7 +34,7 @@ test('authoritative job results preserve failures and skips without claiming mis
  assert.throws(()=>jobOutcomeEvidence({scan:{result:'unknown'}}),/authoritative/);
 });
 for(const [file,fixture,count,pass,observations] of [
-  ['vocle-backend-environment-test.yml','37361855710',691,611,80],
+  ['vocle-api-realtime-security.yml','37361855710',691,611,80],
   ['vocle-media-security.yml','37361859575',97,62,35],
   ['vocle-data-security.yml','37361864154',31,22,9],
 ])test('synthetic '+file+' outcomes remain observations, not passes/failures',async()=>{

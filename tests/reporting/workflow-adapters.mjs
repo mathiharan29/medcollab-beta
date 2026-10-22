@@ -33,7 +33,7 @@ export function jobOutcomeEvidence(needs, options = {}) {
 }
 
 export const profiles = {
-  'vocle-backend-environment-test.yml': { title: 'Vocle API & Realtime Security', artifact: 'vocle-security-discovery', kind: 'discovery', scope: 'Real HTTP and controlled database/socket state. Observations require separate security review.' },
+  'vocle-api-realtime-security.yml': { title: 'Vocle API & Realtime Security', artifact: 'vocle-security-discovery', kind: 'discovery', scope: 'Real HTTP and controlled database/socket state. Observations require separate security review.' },
   'vocle-data-security.yml': { title: 'MongoDB data security', artifact: 'vocle-mongodb-data-security', kind: 'data', manifest: 'security-data', scope: 'Disposable MongoDB; HTTP, model and handler scopes remain individually labeled.' },
   'vocle-media-security.yml': { title: 'Offline media security', artifact: 'vocle-offline-media-security', kind: 'media', manifest: 'security-media', scope: 'Real isolated backend with test-owned SDK doubles. No real provider coverage.' },
   'vocle-cloudinary-security.yml': { title: 'Cloudinary security', artifact: 'vocle-real-cloudinary-security', kind: 'cloudinary', manifest: 'security-cloudinary', scope: 'Only existing recorded provider evidence is reported. No provider operations are performed by reporting. Controller-level evidence does not prove route/auth/database coverage.' },

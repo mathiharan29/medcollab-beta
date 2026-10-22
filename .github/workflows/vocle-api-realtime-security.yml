@@ -10,7 +10,7 @@ permissions:
   actions: read
 
 concurrency:
-  group: ${{ github.workflow }}-vocle-backend-environment-test-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-vocle-api-realtime-security-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -140,5 +140,5 @@ jobs:
     needs: [boot-backend]
     uses: ./.github/workflows/vocle-reporting.yml
     with:
-      workflow_file: vocle-backend-environment-test.yml
+      workflow_file: vocle-api-realtime-security.yml
       original_jobs: ${{ toJSON(needs) }}

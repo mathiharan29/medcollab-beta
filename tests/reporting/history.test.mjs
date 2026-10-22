@@ -49,6 +49,22 @@ test('synthetic report inputs cannot become historical execution evidence',()=>{
 });
 
 const run = (id, extra = {}) => ({id,status:'completed',conclusion:'failure',run_attempt:1,event:'pull_request',pull_requests:[{number:42}],head_repository:{full_name:syntheticContext.repository},...extra});
+
+test('security workflow rename retains compatible history from the previous workflow identity',async()=>hosted(async()=>{
+ const current=report('99'),previous=report('1');
+ for(const r of [current,previous]){r.suite='security';r.scope='discovery';sealReport(r);}
+ const paths=[];
+ const request=async path=>{
+  paths.push(path);
+  if(path.includes('/workflows/vocle-api-realtime-security.yml/'))return {workflow_runs:[]};
+  if(path.includes('/workflows/vocle-backend-environment-test.yml/'))return {workflow_runs:[run(1)]};
+  if(path.includes('/attempts/'))return {status:'completed',head_sha:'a'.repeat(40)};
+  return {artifacts:[{id:1,name:'vocle-qa-dashboard-vocle-backend-environment-test.yml-1-1',digest:'sha256:'+'d'.repeat(64)}]};
+ };
+ const result=await priorCompatible(current,compare,{request,download:async()=>[previous]});
+ assert.equal(result.runId,1);assert(paths.some(p=>p.includes('vocle-api-realtime-security.yml')));
+ assert(paths.some(p=>p.includes('vocle-backend-environment-test.yml')));
+}));
 async function hosted(fn) {
   const old={GITHUB_TOKEN:process.env.GITHUB_TOKEN,GITHUB_RUN_ID:process.env.GITHUB_RUN_ID};
   process.env.GITHUB_TOKEN='synthetic-history-test';process.env.GITHUB_RUN_ID='99';

@@ -42,13 +42,15 @@ export async function priorCompatible(current, compare, { request = api, downloa
     if (--remaining < 0 || Date.now() >= deadline) throw new Error('History lookup request/time budget exhausted');
     return request(path);
   };
-  const securityWorkflows = { discovery: 'vocle-backend-environment-test.yml', media: 'vocle-media-security.yml', data: 'vocle-data-security.yml', cloudinary: 'vocle-cloudinary-security.yml' };
+  const securityWorkflows = { discovery: 'vocle-api-realtime-security.yml', media: 'vocle-media-security.yml', data: 'vocle-data-security.yml', cloudinary: 'vocle-cloudinary-security.yml' };
   const workflow = securityWorkflows[current.scope] || (current.suite === 'sanity' ? 'vocle-sanity.yml' : 'vocle-functional-regression.yml');
   const prefix = current.suite === 'security' ? `vocle-qa-dashboard-${workflow}-` : current.suite === 'sanity' ? 'vocle-sanity-diagnostics-' : current.suite === 'flutter' ? 'vocle-flutter-report-' : 'vocle-functional-report-';
+  const workflows = current.suite === 'security' && current.scope === 'discovery' ? [workflow, 'vocle-backend-environment-test.yml'] : [workflow];
+  const prefixes = workflows.map(name => current.suite === 'security' ? `vocle-qa-dashboard-${name}-` : prefix);
   let lastReason = 'No compatible completed previous execution';
   const runs = [];
-  for (let page = 1; page <= maxPages; page++) {
-    const listing = await get(`/actions/workflows/${workflow}/runs?status=completed&per_page=100&page=${page}`);
+  for (const workflowName of workflows) for (let page = 1; page <= maxPages; page++) {
+    const listing = await get(`/actions/workflows/${workflowName}/runs?status=completed&per_page=100&page=${page}`);
     runs.push(...listing.workflow_runs || []);
     if ((listing.workflow_runs || []).length < 100) break;
   }
@@ -72,7 +74,7 @@ export async function priorCompatible(current, compare, { request = api, downloa
     for (let page = 1; page <= maxPages; page++) {
       const listing = await get(`/actions/runs/${runId}/artifacts?per_page=100&page=${page}`);
       const artifacts = listing.artifacts || [];
-      for (const a of artifacts.filter(a => a.name === `${prefix}${runId}-${attempt}`)) {
+      for (const a of artifacts.filter(a => prefixes.some(p => a.name === `${p}${runId}-${attempt}`))) {
         if (a.expired) { lastReason = 'Previous artifact expired'; continue; }
         if (!/^sha256:[a-f0-9]{64}$/.test(a.digest || '')) { lastReason = 'Previous artifact lacks integrity digest'; continue; }
         try {
