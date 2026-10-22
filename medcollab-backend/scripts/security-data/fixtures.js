@@ -7,6 +7,25 @@ function models() {
   m.SupportTicket = require('../../src/features/support/support.controller').SupportTicket;
   return m;
 }
+async function initializeIndexes(models, onStage = () => {}) {
+  const failures = [];
+  for (const [name, model] of Object.entries(models)) {
+    onStage(`initialize ${name} model indexes`);
+    assert.equal(await model.countDocuments(), 0, 'Disposable database is not empty');
+    try { await model.init(); }
+    catch (error) {
+      // MongoDB has accepted the connection and rejected application schema
+      // indexes. Preserve the defect and the real indexes; never sync, drop,
+      // replace or edit them to make the security assertions pass.
+      if (![85, 86].includes(error.code)) throw error;
+      await model.collection.indexes(); // A live, queryable collection is required.
+      failures.push({ category: 'APPLICATION_INDEX_CONFLICT', status: 'FAIL', model: name,
+        errorType: error.name, errorCode: error.code, expected: 'Declared application indexes initialize without conflicts',
+        actual: 'MongoDB rejected the unchanged application index declarations; indexes were not repaired' });
+    }
+  }
+  return failures;
+}
 async function context(m, api) {
   const ids = Object.fromEntries(Object.keys(m).map(n => [n, new Set()]));
   let sequence = 0;
@@ -46,4 +65,4 @@ async function context(m, api) {
   };
   return c;
 }
-module.exports = { models, context };
+module.exports = { models, context, initializeIndexes };

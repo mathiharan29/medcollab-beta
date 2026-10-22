@@ -10,3 +10,18 @@ for (const action of ["require('node:net').connect(27017, 'synthetic.invalid')",
   assert.equal(r.status, 0, 'External operation must fail before I/O');
 }
 console.log('Data guard: exact disposable URI, credential/proxy rejection and external transport denials passed');
+
+// Index conflicts are application evidence, not a reason to rewrite indexes or
+// hide database connectivity failures. Verify both paths without a live DB.
+(async () => {
+  const { initializeIndexes } = require('./fixtures');
+  let queried = 0;
+  const model = code => ({ countDocuments: async () => 0, init: async () => { throw Object.assign(new Error('synthetic'), { code }); }, collection: { indexes: async () => { queried++; return [{ name: '_id_' }]; } } });
+  const conflicts = await initializeIndexes({ Space: model(86) });
+  assert.equal(conflicts.length, 1); assert.equal(conflicts[0].category, 'APPLICATION_INDEX_CONFLICT');
+  assert.equal(queried, 1);
+  await assert.rejects(initializeIndexes({ Space: model(6) }), error => error.code === 6);
+  const unavailable = model(86); unavailable.collection.indexes = async () => { throw new Error('unavailable'); };
+  await assert.rejects(initializeIndexes({ Space: unavailable }), /unavailable/);
+  console.log('Data index initialization: application conflicts preserved; connectivity failures remain fatal');
+})().catch(error => { console.error(error); process.exitCode = 1; });

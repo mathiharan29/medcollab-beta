@@ -19,3 +19,11 @@ Full execution is `node scripts/security-data/run.js` **inside the workflow's di
 `cases.js` separates HTTP, model/index and synthetic handler scopes. `fixtures.js` journals exact IDs and narrowly scopes generated OTP/inbox records to synthetic users, then verifies zero residue. `run.js` supervises the existing local-mode backend entrypoint, discards child logs and records sanitized booleans/counts/statuses. `check.js --artifacts` validates report hygiene/completeness before upload. Actual report exceptions, unsafe I/O, prerequisite failure, incomplete execution and cleanup failures block; unmet application requirements remain observations.
 
 Successful route controls and state assertions must survive any remediation. Review observations separately before enabling strict application gates. This discovery runner preserves its existing observation semantics.
+
+Application schema index conflicts (MongoDB codes 85/86) are recorded separately
+as blocking application failures. The runner does not repair or replace indexes;
+it verifies the collection remains queryable and continues independent cases
+against the real indexes MongoDB created. Other initialization errors still abort.
+An original case assertion failure stays FAIL and keeps CI red while remaining
+cases run after safety and cleanup verification. Missing application methods are
+identified explicitly; unknown exceptions still fail as execution errors.

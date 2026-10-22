@@ -36,6 +36,7 @@ for(const [file,title] of [['dashboard.html','Dashboard'],['detailed-report.md',
 $('artifact-help').textContent='GitHub artifact downloads require sign-in. Local file buttons work after extracting all five reports together. Original workflow gates remain unchanged.';
 $('scope').textContent='Functional catalog: 187 total / 179 hosted / 8 LOCAL_ONLY. Selected '+report.selected+'; recorded '+report.recorded+'; attempted '+report.attempted+'. A failed case can leave later steps unreached. Missing evidence never means PASS.';
 $('note').textContent=report.note;
+if(report.applicationFailures?.length){const panel=node('section',undefined,'panel');panel.append(node('h2','Application prerequisite failures'));for(const failure of report.applicationFailures)panel.append(node('pre',JSON.stringify(failure,null,2),'FAIL'));$('note').after(panel);}
 const localOnly=report.catalogCoverage?.cases||report.results.filter(r=>r.executionMode==='LOCAL_ONLY');
 if(localOnly.length){const panel=node('section',undefined,'panel');panel.style.marginTop='18px';panel.append(node('h2','Android local availability'));for(const r of localOnly)panel.append(node('p',r.id+' • LOCAL_ONLY • executed '+Boolean(r.executed)+' • '+r.status));$('scope').after(panel);}
 

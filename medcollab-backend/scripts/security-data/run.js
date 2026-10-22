@@ -11,7 +11,7 @@ function fingerprint() {
   return createHash('sha256').update(walk(root).map(p => path.relative(root, p).replace(/\\/g, '/') + ':' + createHash('sha256').update(fs.readFileSync(p)).digest('hex')).join('\n')).digest('hex');
 }
 async function main() {
-  const results = []; let stage = 'preflight', fatal = null, child, mongoose, scratch, telemetry, isolation, sourceBefore, sourceAfter;
+  const results = [], applicationFailures = []; let stage = 'preflight', fatal = null, child, mongoose, scratch, telemetry, isolation, sourceBefore, sourceAfter;
   const dir = path.join(process.env.RUNNER_TEMP || os.tmpdir(), 'vocle-data-results');
   const stop = async () => {
     if (!child || child.exitCode !== null || child.signalCode) return;
@@ -40,7 +40,8 @@ async function main() {
     assert.equal(ttl.ttlMonitorEnabled, false, 'Disposable TTL sweep must be paused');
     isolation.ttlMonitorEnabled = ttl.ttlMonitorEnabled;
     const models = fixtures.models();
-    for (const [name, model] of Object.entries(models)) { stage = `initialize ${name} model indexes`; assert.equal(await model.countDocuments(), 0, 'Disposable database is not empty'); await model.init(); }
+    applicationFailures.push(...await fixtures.initializeIndexes(models, value => { stage = value; }));
+    if (applicationFailures.length) process.exitCode = 1;
     stage = 'start isolated backend';
     child = fork(path.resolve(__dirname, '../security-media/server.js'), [], { cwd: scratch, env: { NODE_ENV: 'test', MONGODB_URI: guard.URI, API_BASE_URL: guard.BASE, PORT: '5000', JWT_SECRET: guard.JWT, JWT_REFRESH_SECRET: 'ci-test-only-refresh-secret-not-for-production-000000000002', OTP_BYPASS: 'false', VOCLE_MEDIA_MODE: 'local' }, stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
     child.stdout.resume(); child.stderr.resume();
@@ -64,16 +65,29 @@ async function main() {
         for (const actor of ['A', 'B', 'C']) tokens[actor] = require('jsonwebtoken').sign({ userId: String(c[actor]._id) }, guard.JWT, { expiresIn: '1h' });
         assert.equal((await api('A', 'GET', '/api/users/me')).status, 200);
         stage = `${test.caseId} action`;
-        const result = await test.run(c);
-        assert.equal(typeof result.secure, 'boolean'); assert.ok(result.evidence);
+        let result, failure;
+        try { result = await test.run(c); }
+        catch (error) {
+          const missingApplicationMethod = error instanceof TypeError && /Channel\.directMemberKey is not a function/.test(error.message);
+          if (!(error instanceof assert.AssertionError) && !missingApplicationMethod) throw error;
+          // The case's original assertion remains unchanged and failing. Keep
+          // the gate red, but do not abort independent cases as infrastructure.
+          failure = { status: 'FAIL', errorType: error.name, executed: true,
+            actual: error instanceof assert.AssertionError ? { assertionFailed: true,
+              actual: typeof error.actual === 'number' || typeof error.actual === 'boolean' ? error.actual : 'See case assertion',
+              expected: typeof error.expected === 'number' || typeof error.expected === 'boolean' ? error.expected : test.expected }
+              : { missingApplicationMethod: 'Channel.directMemberKey' } };
+          process.exitCode = 1;
+        }
+        if (!failure) { assert.equal(typeof result.secure, 'boolean'); assert.ok(result.evidence); }
         const safety = await backendSafety(); assert.equal(telemetry.blocked, 0); assert.equal(safety.network.blocked, 0);
-        results.push({ ...manifest.cases.find(x => x.caseId === test.caseId), passed: result.secure, actual: result.evidence, safety });
+        results.push({ ...manifest.cases.find(x => x.caseId === test.caseId), ...(failure || { passed: result.secure, actual: result.evidence }), safety });
       } finally {
         stage = `${test.caseId} cleanup`;
         const cleanup = await c.cleanup(); if (results.at(-1)?.caseId === test.caseId) results.at(-1).cleanup = cleanup;
         tokens = {};
       }
-      console.log(`${test.caseId}: ${results.at(-1).passed ? 'PASS' : 'OBSERVATION'}`);
+      console.log(`${test.caseId}: ${results.at(-1).status || (results.at(-1).passed ? 'PASS' : 'OBSERVATION')}`);
     }
     sourceAfter = fingerprint(); assert.equal(sourceBefore, sourceAfter);
   } catch (error) {
@@ -87,10 +101,10 @@ async function main() {
     try { await stop(); if (mongoose) await mongoose.disconnect(); if (scratch) { guard.contained(scratch, path.join(scratch, 'uploads')); assert.equal(fs.readdirSync(path.join(scratch, 'uploads')).length, 0); fs.rmdirSync(path.join(scratch, 'uploads')); fs.rmdirSync(scratch); } }
     catch { fatal ||= { stage: 'final cleanup', category: 'unconfirmed cleanup' }; process.exitCode = 1; }
     fs.mkdirSync(dir, { recursive: true });
-    const report = { planned: cases.length, executed: results.length, passed: results.filter(r => r.passed).length, observations: results.filter(r => !r.passed).length, notExecuted: cases.length - results.length, combinedCatalogCount: manifest.combinedCatalogCount, infrastructureFailure: fatal, sourceBefore, sourceAfter, isolation, parentNetwork: telemetry, provenance: { runId: process.env.GITHUB_RUN_ID || null, source: process.env.VOCLE_SOURCE_SHA || null }, results };
+    const report = { planned: cases.length, executed: results.length, passed: results.filter(r => r.passed === true).length, observations: results.filter(r => r.passed === false).length, failed: results.filter(r => r.status === 'FAIL').length, applicationFailures, notExecuted: cases.length - results.length, combinedCatalogCount: manifest.combinedCatalogCount, infrastructureFailure: fatal, sourceBefore, sourceAfter, isolation, parentNetwork: telemetry, provenance: { runId: process.env.GITHUB_RUN_ID || null, source: process.env.VOCLE_SOURCE_SHA || null }, results };
     fs.writeFileSync(path.join(dir, 'results.json'), JSON.stringify(report, null, 2) + '\n');
     fs.writeFileSync(path.join(dir, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
-    fs.writeFileSync(path.join(dir, 'summary.md'), `# Vocle MongoDB/data security\n\n${report.executed}/${report.planned} executed; ${report.passed} passes; ${report.observations} observations; infrastructure ${fatal ? 'FAILED' : 'healthy'}.\n\nNo production connections or provider calls. App observations do not block CI. Model/handler probes are labeled separately from real HTTP.\n\n` + results.map(r => `- ${r.caseId}: ${r.name} — ${r.passed ? 'PASS' : 'OBSERVATION'} (${r.scope})`).join('\n') + '\n');
+    fs.writeFileSync(path.join(dir, 'summary.md'), `# Vocle MongoDB/data security\n\n${report.executed}/${report.planned} executed; ${report.passed} passes; ${report.observations} observations; ${report.failed} assertion failures; infrastructure ${fatal ? 'FAILED' : 'healthy'}.\n\nNo production connections or provider calls. App observations do not block CI; assertion failures and application index conflicts do. Model/handler probes are labeled separately from real HTTP.\n\n` + applicationFailures.map(r => `- FAIL ${r.category}: ${r.model}; MongoDB ${r.errorCode}; ${r.actual}`).join('\n') + '\n' + results.map(r => `- ${r.caseId}: ${r.name} — ${r.status || (r.passed ? 'PASS' : 'OBSERVATION')} (${r.scope})`).join('\n') + '\n');
     console.log(`Data security: ${report.executed}/${report.planned}; ${report.passed} passes; ${report.observations} observations; infrastructure ${fatal ? 'FAILED' : 'healthy'}`);
   }
 }

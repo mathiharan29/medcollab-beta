@@ -274,6 +274,7 @@ let mongoose, models, users;
 let fixtureUserBaseline;
 const tokens = {};
 const results = [];
+const applicationFailures = [];
 let fatal = null;
 let stage = 'safety preflight';
 let authSupervisor = null;
@@ -627,7 +628,13 @@ async function execute(c) {
   // preventing an old callback from mutating newly recreated fixed IDs.
   await settledSnapshot();
   await verifyResetState();
-  const ctx = { http, supervisedHttp, models, users, ids, tokens, evidence: {}, cleanup: [] };
+  let preparing = true;
+  const prerequisiteResponses = [];
+  const ctx = { http: async (...args) => {
+    const response = await http(...args);
+    if (preparing) prerequisiteResponses.push({ actor: args[0], method: args[1], endpoint: args[2], status: response.status });
+    return response;
+  }, supervisedHttp, models, users, ids, tokens, evidence: {}, cleanup: [] };
   try {
   if (typeof c.prepare === 'function') await c.prepare(ctx);
   if (c.prepare === 'acknowledge') {
@@ -637,6 +644,7 @@ async function execute(c) {
       handoff?.status === 'acknowledged', 'Replay prerequisite failed');
   }
   if (c.prepare === 'draft') await models.Handoff.findByIdAndUpdate(ids.handoff, { status: 'draft', submittedAt: null }, { runValidators: true });
+  preparing = false;
   let body = c.body === 'handoff' ? handoffBody() : typeof c.body === 'function' ? c.body(ctx) : c.body && structuredClone(c.body);
   if (c.foreignField) body[c.foreignField] = c.foreignField === 'channelId' ? ids.otherChannel : c.foreignField === 'spaceId' ? ids.otherSpace : String(users.C._id);
   if (c.mutation) {
@@ -679,6 +687,27 @@ async function execute(c) {
   results.push(result);
   // A server error is an observation only if the service remains healthy.
   if (r.status >= 500) await health();
+  } catch (error) {
+    // Preserve real application failures during preparation and continue only
+    // after independently confirming that the isolated service remains healthy.
+    const serverError = prerequisiteResponses.find(r => r.status >= 500);
+    if (!preparing || !serverError) throw error;
+    await health();
+    const caseId = `VOCLE-${String(results.length + 1).padStart(3, '0')}`;
+    const failure = { category: 'APPLICATION_PREREQUISITE_FAILURE', status: 'FAIL', caseId,
+      expected: 'Application preparation request succeeds before the dependent case',
+      actual: serverError, diagnostic: safeFailureSummary(error) };
+    applicationFailures.push(failure);
+    results.push({ caseId, name: c.name, actor: c.actor, method: c.method,
+      endpoint: typeof c.endpoint === 'string' ? c.endpoint : '[dynamic endpoint]', module: c.module,
+      context: c.context, mutationCategory: c.category, sources: c.sources,
+      status: 'BLOCKED', executed: false, classification: 'blocked by application prerequisite failure',
+      expected: { statuses: c.statuses, semanticCheck: !!c.check },
+      actual: { status: null, targetActionExecuted: false, prerequisiteFailure: failure },
+      report: { securityArea: securityArea(c.category), module: c.module, whatItChecks: whatItChecks(c),
+        testSetup: setupFor(c), actionPerformed: 'Target action not executed because application preparation returned HTTP 500',
+        mutation: mutationDescription(c), expectedSecurityBehaviour: expectedBehaviour(c) } });
+    process.exitCode = 1;
   } finally {
     for (const cleanup of ctx.cleanup.reverse()) await cleanup();
     await wait(150);
@@ -687,14 +716,15 @@ async function execute(c) {
 function report() {
   const directory = path.join(process.env.RUNNER_TEMP || require('node:os').tmpdir(), 'vocle-security-results');
   fs.mkdirSync(directory, { recursive: true });
-  const unexpected = results.filter(r => !r.passed);
+  const unexpected = results.filter(r => r.passed === false);
   const moduleBreakdown = Object.entries(results.reduce((counts, result) => {
     counts[result.module] = (counts[result.module] || 0) + 1;
     return counts;
   }, {})).sort(([a], [b]) => a.localeCompare(b));
-  const summary = { planned: cases.length, executed: results.length, passed: results.length - unexpected.length, unexpected: unexpected.length, notExecuted: cases.length - results.length, infrastructureFailure: fatal, moduleBreakdown: Object.fromEntries(moduleBreakdown), results };
+  const executed = results.filter(r => r.executed !== false).length;
+  const summary = { planned: cases.length, executed, passed: results.filter(r => r.passed === true).length, unexpected: unexpected.length, blocked: results.length - executed, applicationFailures, notExecuted: cases.length - executed, infrastructureFailure: fatal, moduleBreakdown: Object.fromEntries(moduleBreakdown), results };
   fs.writeFileSync(path.join(directory, 'results.json'), JSON.stringify(summary, null, 2));
-  const markdown = [`# Vocle API discovery`, '', `Executed ${summary.executed}/${summary.planned}; passed ${summary.passed}; observations ${summary.unexpected}.`, `Infrastructure: ${fatal || 'healthy'}.`, '', 'Module breakdown:', ...moduleBreakdown.map(([module, count]) => `- ${module}: ${count}`), '', 'Observations are candidates, not confirmed vulnerabilities. See results.json for every case and source.', '', ...unexpected.map(r => `- ${r.caseId}: ${r.actor} ${r.method} ${r.endpoint}; ${r.mutationCategory}; expected ${r.expected.statuses?.join('/') || 'not applicable'}, got ${r.actual.status}; ${r.classification}; manual confirmation worthwhile.`)].join('\n');
+  const markdown = [`# Vocle API discovery`, '', `Executed ${summary.executed}/${summary.planned}; passed ${summary.passed}; observations ${summary.unexpected}; application-blocked ${summary.blocked}.`, `Infrastructure: ${fatal || 'healthy'}.`, '', ...applicationFailures.map(r => `- FAIL ${r.category} (${r.caseId}): ${r.actual.method} ${r.actual.endpoint} returned ${r.actual.status}; dependent action not executed.`), '', 'Module breakdown:', ...moduleBreakdown.map(([module, count]) => `- ${module}: ${count}`), '', 'Observations are candidates, not confirmed vulnerabilities. See results.json for every case and source.', '', ...unexpected.map(r => `- ${r.caseId}: ${r.actor} ${r.method} ${r.endpoint}; ${r.mutationCategory}; expected ${r.expected.statuses?.join('/') || 'not applicable'}, got ${r.actual.status}; ${r.classification}; manual confirmation worthwhile.`)].join('\n');
   fs.writeFileSync(path.join(directory, 'summary.md'), markdown);
   const categoryBreakdown = Object.entries(results.reduce((counts, result) => {
     counts[result.report.securityArea] = (counts[result.report.securityArea] || 0) + 1;
@@ -736,9 +766,10 @@ function report() {
     '',
     'Observations are not confirmed vulnerabilities. A finding is only labelled confirmed after separate review and reproduction.',
     '',
-    '## Executed testcase catalog',
+    '## Recorded testcase catalog (includes explicitly unexecuted blocked cases)',
     '',
     ...results.flatMap(result => {
+      if(result.executed === false) return [`### ${result.caseId} — ${result.name}`, '', '**BLOCKED — target action not executed**', '', JSON.stringify(result.actual.prerequisiteFailure), ''];
       const state = result.actual.stateUnchanged ? 'controlled database/application state remained unchanged' : 'controlled database/application state changed';
       const lines = [
         `### ${result.caseId} â€” ${result.name}`,

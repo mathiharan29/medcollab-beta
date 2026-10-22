@@ -36,6 +36,21 @@ test('scanner job evidence never claims testcase or secret match coverage',()=>{
  const report=jobEvidence([{id:1,name:'Scan',steps:[{number:1,name:'Run Gitleaks',conclusion:'failure',started_at:'2026-10-11T00:00:00Z',completed_at:'2026-10-11T00:00:02Z'},{number:2,name:'Later step',conclusion:'skipped'}]}],{sha:'a'.repeat(40),gate:'FAILURE',title:'Secret scan'});
  assert.equal(report.inventoryKind,'workflow checks');assert.equal(report.counts.FAIL,1);assert.equal(report.counts.SKIP,1);assert.equal(report.results[0].durationMs,2000);assert.equal(report.results[0].category,'WORKFLOW_STEP');assert(!report.note.includes('confirmed vulnerability'));
 });
+
+test('application prerequisite failures stay distinct from infrastructure and unexecuted cases',async()=>{
+ const profile=profiles['vocle-data-security.yml'],catalog=await catalogFor(profile);
+ const input={executed:1,passed:0,observations:0,applicationFailures:[{category:'APPLICATION_INDEX_CONFLICT',status:'FAIL',model:'Space',errorCode:86}],results:[
+  {caseId:catalog[0].caseId,status:'FAIL',executed:true,actual:{assertionFailed:true}},
+  {caseId:catalog[1].caseId,status:'BLOCKED',executed:false,actual:{targetActionExecuted:false}}
+ ]};
+ const report=adaptSecurity(input,catalog,profile,{sha:'a'.repeat(40),gate:'FAILURE'});
+ assert.equal(report.originalSecurityCounts.executed,1);assert.equal(report.attempted,1);
+ assert.equal(report.counts.FAIL,1);assert.equal(report.counts.BLOCKED,1);assert.equal(report.counts.PASS,0);
+ assert.equal(report.applicationFailures[0].errorCode,86);assert.equal(report.infrastructure.length,0);
+ assert(summary(report).includes('APPLICATION\\_INDEX\\_CONFLICT'));
+ assert(junit(report).includes('name="Vocle.application-prerequisites" tests="1" failures="1"'));
+ const invalid=structuredClone(input);invalid.executed=2;assert.throws(()=>adaptSecurity(invalid,catalog,profile),/tally/);
+});
 test('malformed security evidence preserves recorded failures and observations without importing passes',async()=>{
  const profile=profiles['vocle-data-security.yml'],catalog=await catalogFor(profile);
  const input={passed:999,results:[{caseId:catalog[0].caseId,status:'FAIL'},{caseId:catalog[1].caseId,status:'OBSERVATION'},{caseId:catalog[2].caseId,status:'PASS'}]};
