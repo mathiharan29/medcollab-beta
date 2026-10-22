@@ -1,4 +1,4 @@
-name: Vocle Backend Environment Test
+name: Vocle API & Realtime Security
 
 on:
   pull_request:
@@ -15,6 +15,7 @@ concurrency:
 
 jobs:
   boot-backend:
+    name: API and realtime security checks
     runs-on: ubuntu-latest
     timeout-minutes: 20
     defaults:
@@ -108,7 +109,7 @@ jobs:
       - name: Smoke-test test-only authentication identities
         run: node scripts/security-test-auth-smoke.js
 
-      - name: Discover API authorization and validation behavior
+      - name: Run API and realtime security checks
         run: node scripts/security-api-discovery.js
 
       - name: Generate API coverage report
