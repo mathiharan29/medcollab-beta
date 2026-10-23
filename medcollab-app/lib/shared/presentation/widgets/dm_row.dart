@@ -15,6 +15,8 @@ class DMRow extends StatelessWidget {
     this.isOnline = false,
     this.typingLabel,
     this.onTap,
+    this.leading,
+    this.elevated = false,
     super.key,
   });
 
@@ -26,6 +28,12 @@ class DMRow extends StatelessWidget {
   final bool isOnline;
   final String? typingLabel;
   final VoidCallback? onTap;
+
+  /// Replaces the initials avatar (e.g. Needl hub icon).
+  final Widget? leading;
+
+  /// Adds a light shadow so the card separates from the grey background.
+  final bool elevated;
 
   static Color colorFromName(String name) {
     const palette = <Color>[
@@ -63,19 +71,30 @@ class DMRow extends StatelessWidget {
                   : AppColors.borderDefault,
               width: typingLabel != null ? 1 : 0.5,
             ),
+            boxShadow: elevated
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.07),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
           ),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Row(
             children: [
-              AppAvatar(
-                name: name,
-                imageUrl: imageUrl,
-                size: 38,
-                showPresence: true,
-                isOnline: isOnline,
-                backgroundColor: colorFromName(name).withValues(alpha: 0.18),
-                foregroundColor: colorFromName(name),
-              ),
+              leading ??
+                  AppAvatar(
+                    name: name,
+                    imageUrl: imageUrl,
+                    size: 38,
+                    showPresence: true,
+                    isOnline: isOnline,
+                    backgroundColor:
+                        colorFromName(name).withValues(alpha: 0.18),
+                    foregroundColor: colorFromName(name),
+                  ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(

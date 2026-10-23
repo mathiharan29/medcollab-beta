@@ -39,9 +39,11 @@ class NotificationsState extends Equatable {
       return switch (filter) {
         NotificationFilter.mentions =>
           n.category == AppNotificationCategory.mention,
+        // Space channel traffic only; pure DMs (no spaceId) are excluded.
         NotificationFilter.channels =>
-          n.category == AppNotificationCategory.message ||
-              n.category == AppNotificationCategory.reply,
+          (n.category == AppNotificationCategory.message ||
+                  n.category == AppNotificationCategory.reply) &&
+              (n.metadata.spaceId?.isNotEmpty ?? false),
         NotificationFilter.invites =>
           n.category == AppNotificationCategory.invite,
         NotificationFilter.handoffs =>

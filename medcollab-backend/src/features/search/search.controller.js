@@ -45,8 +45,8 @@ async function accessibleChannelIds(userId) {
  */
 const globalSearch = asyncHandler(async (req, res) => {
   const q = (req.query.q || '').trim();
-  if (q.length < 2) {
-    return respond.badRequest(res, 'Search query must be at least 2 characters');
+  if (q.length < 1) {
+    return respond.badRequest(res, 'Search query must be at least 1 character');
   }
 
   const type = (req.query.type || 'all').toLowerCase();
@@ -150,7 +150,9 @@ const globalSearch = asyncHandler(async (req, res) => {
       { displayTitle: regex },
     ];
     if (digitQuery.length >= 4) {
-      const phoneRe = new RegExp(escapeRegex(digitQuery));
+      // Prefer the last 10 digits (drops +91 / leading 0 noise).
+      const phoneDigits = digitQuery.length > 10 ? digitQuery.slice(-10) : digitQuery;
+      const phoneRe = new RegExp(escapeRegex(phoneDigits));
       orClauses.push({ phone: phoneRe });
     }
 

@@ -29,7 +29,22 @@ abstract final class ShellTabHistory {
   static bool goBack() {
     final nav = shell;
     if (nav == null) return false;
-    if (_stack.length < 2) return false;
+    if (_stack.length < 2) {
+      // No tab history (e.g. stack reset on rebuild) but not on Home:
+      // go Home first instead of letting the caller treat it as an exit.
+      if (nav.currentIndex != 0) {
+        try {
+          _stack
+            ..clear()
+            ..add(0);
+          nav.goBranch(0);
+          return true;
+        } catch (e, st) {
+          debugPrint('ShellTabHistory.goBack (home) failed: $e\n$st');
+        }
+      }
+      return false;
+    }
     _stack.removeLast();
     final previous = _stack.last;
     try {

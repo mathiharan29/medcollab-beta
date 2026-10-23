@@ -22,9 +22,6 @@ class AppNavigationBackHandler extends StatefulWidget {
 class _AppNavigationBackHandlerState extends State<AppNavigationBackHandler> {
   DateTime? _lastExitAttempt;
 
-  bool _isShellTab(String location) =>
-      AppRoutes.shellPaths.contains(location);
-
   bool _allowImmediateExit(String location) =>
       location == AppRoutes.splash ||
       location == AppRoutes.phoneEntry ||
@@ -62,16 +59,15 @@ class _AppNavigationBackHandlerState extends State<AppNavigationBackHandler> {
         ? router.state.uri.path
         : router.state.matchedLocation;
 
-    if (_isShellTab(location) || _allowImmediateExit(location)) {
+    // Home (index 0) with an empty tab stack: double-back to exit.
+    if (location == AppRoutes.home || _allowImmediateExit(location)) {
       _promptExit();
       return;
     }
 
-    if (location != AppRoutes.home) {
-      router.go(AppRoutes.home);
-    } else {
-      _promptExit();
-    }
+    // Any other shell tab (or orphan route) goes Home first — never exit on
+    // the first back, even when ShellTabHistory has no usable shell/stack.
+    router.go(AppRoutes.home);
   }
 
   @override

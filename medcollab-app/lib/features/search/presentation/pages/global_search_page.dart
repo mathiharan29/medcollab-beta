@@ -50,14 +50,15 @@ class _GlobalSearchPageState extends State<GlobalSearchPage> {
     _query.value = trimmed;
     _debounce?.cancel();
 
-    if (trimmed.length < 2) {
+    if (trimmed.isEmpty) {
+      _requestId++; // drop any in-flight response
       _loading.value = false;
       _results.value = null;
       return;
     }
 
-    // Wait until typing pauses — avoid hammering the API on every letter.
-    _debounce = Timer(const Duration(milliseconds: 550), () async {
+    // Short pause so we don't fire on every keystroke, but still feel instant.
+    _debounce = Timer(const Duration(milliseconds: 200), () async {
       final id = ++_requestId;
       _loading.value = true;
       try {
@@ -163,7 +164,7 @@ class _GlobalSearchPageState extends State<GlobalSearchPage> {
                     return ValueListenableBuilder<bool>(
                       valueListenable: _loading,
                       builder: (context, loading, _) {
-                        if (query.length < 2) {
+                        if (query.isEmpty) {
                           return AppEmptyState(
                             compact: true,
                             icon: Icons.search,

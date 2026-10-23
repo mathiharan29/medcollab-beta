@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:medcollab_app/core/di/app_dependencies.dart';
@@ -23,10 +25,61 @@ Future<void> showAddNeedlPeopleSheet(
   var history = 'all';
   var busy = false;
   String? error;
+  String? searchError;
   var query = '';
   var results = <UserModel>[];
+  var suggestions = <UserModel>[];
+  var loadingSuggestions = true;
+  var searching = false;
+  var searchSeq = 0;
+  var sheetOpen = true;
+  Timer? debounce;
+  StateSetter? modalSetState;
 
   final existingIds = existingMembers.map((m) => m.id).toSet();
+  final selfId = context.read<AuthBloc>().state.user?.id ?? '';
+
+  void refreshModal(VoidCallback fn) {
+    if (!sheetOpen) return;
+    final setter = modalSetState;
+    if (setter == null) {
+      fn();
+    } else {
+      setter(fn);
+    }
+  }
+
+  // Preload known colleagues from existing DMs / Needls (same source as
+  // StartDmPage) so the list isn't empty before typing.
+  unawaited(() async {
+    try {
+      final dms = await AppDependencies.instance.channelRepository.getMyDMs();
+      final byId = <String, UserModel>{};
+      for (final dm in dms) {
+        final people = <UserModel>[
+          if (dm.peer != null) dm.peer!,
+          ...dm.members,
+        ];
+        for (final u in people) {
+          if (u.id.isEmpty || u.id == selfId || existingIds.contains(u.id)) {
+            continue;
+          }
+          byId.putIfAbsent(u.id, () => u);
+        }
+      }
+      refreshModal(() {
+        suggestions = byId.values.toList()
+          ..sort(
+            (a, b) => a.displayName
+                .toLowerCase()
+                .compareTo(b.displayName.toLowerCase()),
+          );
+        loadingSuggestions = false;
+      });
+    } catch (_) {
+      refreshModal(() => loadingSuggestions = false);
+    }
+  }());
 
   await showModalBottomSheet<void>(
     context: context,
@@ -36,6 +89,7 @@ Future<void> showAddNeedlPeopleSheet(
     builder: (sheetContext) {
       return StatefulBuilder(
         builder: (context, setModal) {
+          modalSetState = setModal;
           bool isPhoneQuery(String raw) {
             final digits = raw.replaceAll(RegExp(r'\D'), '');
             if (digits.length < 10) return false;
@@ -53,34 +107,88 @@ Future<void> showAddNeedlPeopleSheet(
 
           Future<void> search(String raw) async {
             query = raw.trim();
-            if (query.length < 2) {
-              setModal(() => results = const []);
+            final seq = ++searchSeq;
+            if (query.isEmpty) {
+              // Back to suggestions from existing DMs.
+              refreshModal(() {
+                results = const [];
+                searching = false;
+                searchError = null;
+              });
               return;
             }
+            refreshModal(() {
+              searching = true;
+              searchError = null;
+            });
             try {
               if (isPhoneQuery(query)) {
                 final lookup = await AppDependencies.instance.userRepository
                     .lookupByPhone(phoneE164(query));
+                if (seq != searchSeq) return;
                 final user = lookup.user;
-                setModal(() {
+                refreshModal(() {
                   results = user.id.isNotEmpty &&
+                          user.id != selfId &&
                           !existingIds.contains(user.id)
                       ? [user]
                       : const [];
+                  searching = false;
                 });
                 return;
               }
               final users = await AppDependencies.instance.memberRepository
                   .searchMembers(query: query);
-              setModal(() {
-                results = users
-                    .where((u) => u.id.isNotEmpty && !existingIds.contains(u.id))
-                    .toList();
+              if (seq != searchSeq) return;
+              final lower = query.toLowerCase();
+              // Known colleagues matching locally first, then server results.
+              final merged = <String, UserModel>{
+                for (final u in suggestions)
+                  if (u.displayName.toLowerCase().contains(lower)) u.id: u,
+              };
+              for (final u in users) {
+                if (u.id.isEmpty ||
+                    u.id == selfId ||
+                    existingIds.contains(u.id)) {
+                  continue;
+                }
+                merged.putIfAbsent(u.id, () => u);
+              }
+              refreshModal(() {
+                results = merged.values.toList();
+                searching = false;
               });
-            } catch (_) {
-              setModal(() => results = const []);
+            } catch (e) {
+              if (seq != searchSeq) return;
+              refreshModal(() {
+                results = const [];
+                searching = false;
+                searchError = e is AppException
+                    ? e.message
+                    : isPhoneQuery(query)
+                        ? 'Could not look up this number'
+                        : 'Could not search colleagues. Try again.';
+              });
             }
           }
+
+          void onQueryChanged(String raw) {
+            debounce?.cancel();
+            // Reflect typing immediately (suggestions <-> results) while the
+            // debounced request is pending.
+            final trimmed = raw.trim();
+            if (trimmed.isEmpty) {
+              search(raw);
+              return;
+            }
+            debounce = Timer(
+              const Duration(milliseconds: 200),
+              () => search(raw),
+            );
+          }
+
+          final showSuggestions = query.isEmpty;
+          final listUsers = showSuggestions ? suggestions : results;
 
           Future<void> submit() async {
             if (selected.isEmpty || busy) return;
@@ -140,8 +248,13 @@ Future<void> showAddNeedlPeopleSheet(
                       hintText: 'Name or mobile number',
                       prefixIcon: Icon(Icons.search),
                     ),
-                    onChanged: (v) => search(v),
+                    onChanged: onQueryChanged,
                   ),
+                  if (searching)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 4),
+                      child: LinearProgressIndicator(minHeight: 2),
+                    ),
                   const SizedBox(height: 12),
                   Text(
                     'Include chat history',
@@ -209,12 +322,46 @@ Future<void> showAddNeedlPeopleSheet(
                         style: const TextStyle(color: AppColors.statusError),
                       ),
                     ),
+                  if (searchError != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        searchError!,
+                        style: const TextStyle(color: AppColors.statusError),
+                      ),
+                    ),
                   const SizedBox(height: 8),
+                  if (showSuggestions && suggestions.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text(
+                        'Your Vocle colleagues',
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.textMuted,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
                   Expanded(
-                    child: ListView.builder(
-                      itemCount: results.length,
+                    child: listUsers.isEmpty
+                        ? Center(
+                            child: Text(
+                              showSuggestions
+                                  ? (loadingSuggestions
+                                      ? 'Loading your colleagues…'
+                                      : 'Search by name or 10-digit mobile number')
+                                  : (searching || searchError != null
+                                      ? ''
+                                      : 'No colleagues found'),
+                              style: AppTextStyles.caption.copyWith(
+                                color: AppColors.textMuted,
+                              ),
+                            ),
+                          )
+                        : ListView.builder(
+                      itemCount: listUsers.length,
                       itemBuilder: (context, index) {
-                        final user = results[index];
+                        final user = listUsers[index];
                         final isOn = selected.containsKey(user.id);
                         return CheckboxListTile(
                           value: isOn,
@@ -252,6 +399,8 @@ Future<void> showAddNeedlPeopleSheet(
       );
     },
   );
+  sheetOpen = false;
+  debounce?.cancel();
 }
 
 /// Lists everyone in a Needl (group DM).

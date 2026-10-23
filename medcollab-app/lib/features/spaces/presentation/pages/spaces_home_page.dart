@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:medcollab_app/core/constants/app_enums.dart';
 import 'package:medcollab_app/core/di/app_dependencies.dart';
 import 'package:medcollab_app/core/error/app_exception.dart';
 import 'package:medcollab_app/core/router/app_routes.dart';
@@ -8,6 +7,7 @@ import 'package:medcollab_app/core/theme/app_colors.dart';
 import 'package:medcollab_app/core/theme/app_spacing.dart';
 import 'package:medcollab_app/core/utils/phone_utils.dart';
 import 'package:medcollab_app/features/spaces/data/models/space_model.dart';
+import 'package:medcollab_app/features/spaces/presentation/widgets/create_space_dialog.dart';
 import 'package:medcollab_app/shared/presentation/widgets/app_avatar.dart';
 import 'package:medcollab_app/shared/presentation/widgets/app_empty_state.dart';
 import 'package:medcollab_app/shared/presentation/widgets/app_skeleton.dart';
@@ -193,77 +193,8 @@ class _SpacesHomePageState extends State<SpacesHomePage>
   }
 
   Future<void> _showCreateDialog(BuildContext context) async {
-    final nameController = TextEditingController();
-    var type = SpaceType.department;
-    void disposeController() => nameController.dispose();
-
-    final created = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setLocal) => AlertDialog(
-          title: const Text('Create space'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Space name',
-                  hintText: 'e.g. Medicine PG 2024',
-                ),
-                textCapitalization: TextCapitalization.words,
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<SpaceType>(
-                value: type,
-                decoration: const InputDecoration(labelText: 'Type'),
-                items: SpaceType.values
-                    .map(
-                      (t) => DropdownMenuItem(
-                        value: t,
-                        child: Text(t.label),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (v) => setLocal(() => type = v ?? type),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () async {
-                if (nameController.text.trim().length < 2) return;
-                try {
-                  await _spaceRepository.createSpace(
-                    name: nameController.text.trim(),
-                    type: type,
-                  );
-                  if (ctx.mounted) Navigator.pop(ctx, true);
-                } catch (e) {
-                  if (ctx.mounted) {
-                    ScaffoldMessenger.of(ctx).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          e is AppException ? e.message : 'Failed to create',
-                        ),
-                      ),
-                    );
-                  }
-                }
-              },
-              child: const Text('Create'),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    disposeController();
-    if (created == true) _reload();
+    final created = await CreateSpaceDialog.show(context);
+    if (created && mounted) _reload();
   }
 
   Future<void> _showJoinDialog(BuildContext context) async {

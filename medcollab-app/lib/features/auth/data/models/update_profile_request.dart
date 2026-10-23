@@ -11,6 +11,7 @@ class UpdateProfileRequest extends Equatable {
     this.city,
     this.displayTitle,
     this.pgYear,
+    this.vocleUsername,
   });
 
   final String name;
@@ -20,6 +21,7 @@ class UpdateProfileRequest extends Equatable {
   final String? city;
   final String? displayTitle;
   final int? pgYear;
+  final String? vocleUsername;
 
   Map<String, dynamic> toJson() => {
         'name': name.trim(),
@@ -32,9 +34,20 @@ class UpdateProfileRequest extends Equatable {
         if (displayTitle != null && displayTitle!.trim().isNotEmpty)
           'displayTitle': displayTitle!.trim(),
         if (pgYear != null) 'pgYear': pgYear,
+        if (vocleUsername != null && vocleUsername!.trim().isNotEmpty)
+          'vocleUsername': vocleUsername!.trim().toLowerCase(),
       };
 
   @override
   List<Object?> get props =>
-      [name, role, speciality, institution, city, displayTitle, pgYear];
+      [
+        name,
+        role,
+        speciality,
+        institution,
+        city,
+        displayTitle,
+        pgYear,
+        vocleUsername,
+      ];
 }

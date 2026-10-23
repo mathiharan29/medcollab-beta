@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:medcollab_app/core/utils/json_map_utils.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
 import 'package:medcollab_app/features/auth/data/models/user_model.dart';
+import 'package:medcollab_app/features/handoffs/data/models/handoff_assignment_entry.dart';
 import 'package:medcollab_app/features/handoffs/data/models/handoff_patient_model.dart';
 import 'package:medcollab_app/features/handoffs/data/models/handoff_write_back_note.dart';
 
@@ -22,6 +23,7 @@ class HandoffModel extends Equatable {
     this.acknowledgedAt,
     this.acknowledgementNote = '',
     this.writeBackNotes = const [],
+    this.assignmentHistory = const [],
     this.createdAt,
     this.updatedAt,
   });
@@ -61,6 +63,7 @@ class HandoffModel extends Equatable {
           : null,
       acknowledgementNote: json['acknowledgementNote'] as String? ?? '',
       writeBackNotes: parseWriteBackNotes(json['writeBackNotes']),
+      assignmentHistory: parseAssignmentHistory(json['assignmentHistory']),
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'].toString())
           : null,
@@ -84,8 +87,18 @@ class HandoffModel extends Equatable {
   final DateTime? acknowledgedAt;
   final String acknowledgementNote;
   final List<HandoffWriteBackNote> writeBackNotes;
+  final List<HandoffAssignmentEntry> assignmentHistory;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+
+  /// True when [userId] reassigned this handoff (assignment history or a
+  /// `reassign` write-back note authored by them).
+  bool wasReassignedBy(String userId) {
+    if (userId.isEmpty) return false;
+    if (assignmentHistory.any((e) => e.byUserId == userId)) return true;
+    return writeBackNotes
+        .any((n) => n.kind == 'reassign' && n.author.id == userId);
+  }
 
   bool get isDraft => status == HandoffStatus.draft;
   bool get isArchived => status == HandoffStatus.acknowledged;
@@ -136,6 +149,7 @@ class HandoffModel extends Equatable {
     DateTime? acknowledgedAt,
     String? acknowledgementNote,
     List<HandoffWriteBackNote>? writeBackNotes,
+    List<HandoffAssignmentEntry>? assignmentHistory,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -154,6 +168,7 @@ class HandoffModel extends Equatable {
       acknowledgedAt: acknowledgedAt ?? this.acknowledgedAt,
       acknowledgementNote: acknowledgementNote ?? this.acknowledgementNote,
       writeBackNotes: writeBackNotes ?? this.writeBackNotes,
+      assignmentHistory: assignmentHistory ?? this.assignmentHistory,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -175,6 +190,7 @@ class HandoffModel extends Equatable {
         acknowledgedAt,
         acknowledgementNote,
         writeBackNotes,
+        assignmentHistory,
         createdAt,
         updatedAt,
       ];

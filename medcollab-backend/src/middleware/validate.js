@@ -93,6 +93,11 @@ const validateUpdateProfile = [
     .optional()
     .trim()
     .isLength({ max: 300 }).withMessage('Bio cannot exceed 300 characters'),
+  body('vocleUsername')
+    .optional({ values: 'falsy' })
+    .trim()
+    .isLength({ min: 3, max: 30 }).withMessage('Username must be 3–30 characters')
+    .matches(/^[A-Za-z0-9_]+$/).withMessage('Username may only contain letters, numbers and underscore'),
   handleValidationErrors,
 ];
 

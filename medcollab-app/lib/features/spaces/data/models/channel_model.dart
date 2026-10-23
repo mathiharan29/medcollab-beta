@@ -16,6 +16,7 @@ class ChannelModel extends Equatable {
     this.position = 0,
     this.peer,
     this.members = const [],
+    this.isNeedl = false,
   });
 
   factory ChannelModel.fromJson(Map<String, dynamic> json) {
@@ -45,6 +46,7 @@ class ChannelModel extends Equatable {
       position: json['position'] as int? ?? 0,
       peer: peerJson != null ? UserModel.fromJson(peerJson) : null,
       members: members,
+      isNeedl: json['isNeedl'] == true,
     );
   }
 
@@ -59,10 +61,18 @@ class ChannelModel extends Equatable {
   final UserModel? peer;
   final List<UserModel> members;
 
+  /// Server-provided multi-person DM flag (Slack-style MPIM).
+  final bool isNeedl;
+
   bool get isDirect => type == ChannelType.direct;
 
   /// 1:1 DM vs multi-person Needl vs notes-to-self.
-  bool get isGroupDm => isDirect && members.length > 2;
+  /// Space channels (non-null [spaceId]) are never Needls.
+  bool get isGroupDm {
+    if (!isDirect) return false;
+    if (spaceId != null && spaceId!.isNotEmpty) return false;
+    return isNeedl || members.length > 2;
+  }
 
   bool get isSelfNotes =>
       isDirect && members.length == 1;
@@ -118,6 +128,7 @@ class ChannelModel extends Equatable {
     int? position,
     UserModel? peer,
     List<UserModel>? members,
+    bool? isNeedl,
   }) {
     return ChannelModel(
       id: id ?? this.id,
@@ -130,6 +141,7 @@ class ChannelModel extends Equatable {
       position: position ?? this.position,
       peer: peer ?? this.peer,
       members: members ?? this.members,
+      isNeedl: isNeedl ?? this.isNeedl,
     );
   }
 
@@ -145,5 +157,6 @@ class ChannelModel extends Equatable {
         position,
         peer,
         members,
+        isNeedl,
       ];
 }

@@ -11,7 +11,7 @@ import 'package:medcollab_app/features/handoffs/data/repositories/handoff_reposi
 
 part 'global_handoffs_state.dart';
 
-enum GlobalHandoffFilter { pending, active, completed, drafts }
+enum GlobalHandoffFilter { pending, active, completed, drafts, reassigned }
 
 class GlobalHandoffsCubit extends Cubit<GlobalHandoffsState> {
   GlobalHandoffsCubit({
@@ -20,7 +20,7 @@ class GlobalHandoffsCubit extends Cubit<GlobalHandoffsState> {
     required this.currentUserId,
   })  : _repository = handoffRepository,
         _socketClient = socketClient,
-        super(const GlobalHandoffsState()) {
+        super(GlobalHandoffsState(currentUserId: currentUserId)) {
     _listenForHandoffEvents();
     _connectionSub = _socketClient.connectionStream.listen((connected) {
       if (connected) _scheduleReload();
@@ -34,6 +34,7 @@ class GlobalHandoffsCubit extends Cubit<GlobalHandoffsState> {
 
   StreamSubscription<Map<String, dynamic>>? _submittedSub;
   StreamSubscription<Map<String, dynamic>>? _ackSub;
+  StreamSubscription<Map<String, dynamic>>? _reassignedSub;
   StreamSubscription<bool>? _connectionSub;
   Timer? _reloadDebounce;
 
@@ -67,6 +68,9 @@ class GlobalHandoffsCubit extends Cubit<GlobalHandoffsState> {
     _ackSub = _socketClient
         .onMapEvent(SocketEvents.handoffAcknowledged)
         .listen((_) => _scheduleReload());
+    _reassignedSub = _socketClient
+        .onMapEvent(SocketEvents.handoffReassigned)
+        .listen((_) => _scheduleReload());
   }
 
   void _scheduleReload() {
@@ -79,6 +83,7 @@ class GlobalHandoffsCubit extends Cubit<GlobalHandoffsState> {
     _reloadDebounce?.cancel();
     _submittedSub?.cancel();
     _ackSub?.cancel();
+    _reassignedSub?.cancel();
     _connectionSub?.cancel();
     return super.close();
   }

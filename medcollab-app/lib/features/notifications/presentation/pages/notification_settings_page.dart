@@ -294,6 +294,18 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                                           .copyWith(readReceiptsEnabled: v),
                                     ),
                           ),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                            child: Text(
+                              'When off, your Seen receipts are hidden from '
+                              'others in 1:1 DMs. Existing ticks may remain '
+                              'until both parties refresh.',
+                              style:
+                                  Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        color: AppColors.textSecondary,
+                                      ),
+                            ),
+                          ),
                         ],
                       ),
                     ),

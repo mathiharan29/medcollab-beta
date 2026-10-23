@@ -9,16 +9,19 @@ class AppFab extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.icon = Icons.add,
+    this.heroTag,
     super.key,
   });
 
   final String label;
   final VoidCallback onPressed;
   final IconData icon;
+  final Object? heroTag;
 
   @override
   Widget build(BuildContext context) {
     return FloatingActionButton.extended(
+      heroTag: heroTag,
       onPressed: onPressed,
       icon: Icon(icon, size: AppDesignSystem.iconMd),
       label: Text(label),

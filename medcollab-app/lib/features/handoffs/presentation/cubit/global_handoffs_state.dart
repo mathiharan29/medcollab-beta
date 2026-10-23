@@ -7,6 +7,7 @@ class GlobalHandoffsState extends Equatable {
     this.handoffs = const [],
     this.filter = GlobalHandoffFilter.pending,
     this.searchQuery = '',
+    this.currentUserId = '',
   });
 
   final bool isLoading;
@@ -14,8 +15,16 @@ class GlobalHandoffsState extends Equatable {
   final List<HandoffModel> handoffs;
   final GlobalHandoffFilter filter;
   final String searchQuery;
+  final String currentUserId;
 
   List<HandoffModel> get visibleHandoffs => handoffsForFilter(filter);
+
+  /// True when the user is the sender or current assignee. Handoffs the user
+  /// only reassigned away stay visible solely under the Reassigned tab.
+  bool _isCurrentParticipant(HandoffModel h) =>
+      currentUserId.isEmpty ||
+      h.fromUser.id == currentUserId ||
+      h.toUser.id == currentUserId;
 
   /// Filtered (+ search) list for a specific tab — used by swipe PageView.
   List<HandoffModel> handoffsForFilter(GlobalHandoffFilter tab) {
@@ -24,20 +33,25 @@ class GlobalHandoffsState extends Equatable {
       GlobalHandoffFilter.pending => handoffs
           .where(
             (h) =>
-                h.status == HandoffStatus.submitted && !_isShiftPast(h),
+                _isCurrentParticipant(h) &&
+                h.status == HandoffStatus.submitted &&
+                !_isShiftPast(h),
           )
           .toList(),
       // Acknowledged and still on/after the shift day.
       GlobalHandoffFilter.active => handoffs
           .where(
             (h) =>
-                h.status == HandoffStatus.acknowledged && !_isShiftPast(h),
+                _isCurrentParticipant(h) &&
+                h.status == HandoffStatus.acknowledged &&
+                !_isShiftPast(h),
           )
           .toList(),
       // Past shift date: completed (acked) or not attended (still pending).
       GlobalHandoffFilter.completed => handoffs
           .where(
             (h) =>
+                _isCurrentParticipant(h) &&
                 _isShiftPast(h) &&
                 (h.status == HandoffStatus.acknowledged ||
                     h.status == HandoffStatus.submitted),
@@ -45,6 +59,10 @@ class GlobalHandoffsState extends Equatable {
           .toList(),
       GlobalHandoffFilter.drafts =>
         handoffs.where((h) => h.status == HandoffStatus.draft).toList(),
+      // Handoffs this user reassigned to another doctor.
+      GlobalHandoffFilter.reassigned => handoffs
+          .where((h) => h.wasReassignedBy(currentUserId))
+          .toList(),
     };
     if (searchQuery.isEmpty) return list;
     final q = searchQuery.toLowerCase();
@@ -83,6 +101,7 @@ class GlobalHandoffsState extends Equatable {
     List<HandoffModel>? handoffs,
     GlobalHandoffFilter? filter,
     String? searchQuery,
+    String? currentUserId,
   }) {
     return GlobalHandoffsState(
       isLoading: isLoading ?? this.isLoading,
@@ -90,10 +109,11 @@ class GlobalHandoffsState extends Equatable {
       handoffs: handoffs ?? this.handoffs,
       filter: filter ?? this.filter,
       searchQuery: searchQuery ?? this.searchQuery,
+      currentUserId: currentUserId ?? this.currentUserId,
     );
   }
 
   @override
   List<Object?> get props =>
-      [isLoading, error, handoffs, filter, searchQuery];
+      [isLoading, error, handoffs, filter, searchQuery, currentUserId];
 }

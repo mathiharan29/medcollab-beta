@@ -37,6 +37,46 @@ class _StartDmPageState extends State<StartDmPage> {
   String? _busyRequestId;
   final Set<String> _multiSelectIds = {};
   final Map<String, UserModel> _multiSelectUsers = {};
+  List<UserModel> _suggestions = const [];
+  bool _loadingSuggestions = false;
+
+  static const _debounceDuration = Duration(milliseconds: 200);
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadSuggestions());
+  }
+
+  /// Vocle network only: people from your existing DMs / Needls.
+  /// Never reads the phone address book.
+  Future<void> _loadSuggestions() async {
+    if (!mounted) return;
+    final selfId = context.read<AuthBloc>().state.user?.id ?? '';
+    setState(() => _loadingSuggestions = true);
+    try {
+      final dms = await AppDependencies.instance.channelRepository.getMyDMs();
+      final byId = <String, UserModel>{};
+      for (final dm in dms) {
+        final people = <UserModel>[
+          if (dm.peer != null) dm.peer!,
+          ...dm.members,
+        ];
+        for (final u in people) {
+          if (u.id == selfId || u.id.isEmpty) continue;
+          byId.putIfAbsent(u.id, () => u);
+        }
+      }
+      if (!mounted) return;
+      setState(() {
+        _suggestions = byId.values.toList();
+        _loadingSuggestions = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loadingSuggestions = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -73,7 +113,7 @@ class _StartDmPageState extends State<StartDmPage> {
     }
 
     if (_isPhoneQuery(trimmed)) {
-      _debounce = Timer(const Duration(milliseconds: 400), () => _lookupPhone(trimmed));
+      _debounce = Timer(_debounceDuration, () => _lookupPhone(trimmed));
       return;
     }
 
@@ -89,7 +129,7 @@ class _StartDmPageState extends State<StartDmPage> {
 
     final selfUser = context.read<AuthBloc>().state.user;
     final selfId = selfUser?.id ?? '';
-    _debounce = Timer(const Duration(milliseconds: 400), () async {
+    _debounce = Timer(_debounceDuration, () async {
       if (!mounted) return;
       setState(() {
         _searching = true;
@@ -197,15 +237,31 @@ class _StartDmPageState extends State<StartDmPage> {
 
   Future<void> _createGroupDm() async {
     if (_multiSelectIds.isEmpty) return;
+    final ids = _multiSelectIds.toList();
+    // Needl = 2+ other people. A single selection is always a 1:1 DM.
+    if (ids.length == 1) {
+      final user = _multiSelectUsers[ids.first];
+      if (user != null) {
+        await _startDm(user);
+      }
+      return;
+    }
     setState(() => _busyUserId = 'group');
     try {
-      final ids = _multiSelectIds.toList();
-      final channel = ids.length == 1
-          ? await AppDependencies.instance.channelRepository
-              .createOrGetDM(ids.first)
-          : await AppDependencies.instance.channelRepository
-              .createGroupDm(ids);
+      final channel = await AppDependencies.instance.channelRepository
+          .createGroupDm(ids);
       if (!mounted) return;
+      // Guard against stale 1:1 responses if the API ever falls through.
+      if (!channel.isGroupDm && channel.members.length <= 2) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Needl needs at least 2 other people. Select more colleagues.',
+            ),
+          ),
+        );
+        return;
+      }
       openDmChat(
         context,
         channelId: channel.id,
@@ -504,14 +560,18 @@ class _StartDmPageState extends State<StartDmPage> {
             _phoneLookup == null &&
             _nameResults.isEmpty &&
             _error == null);
+    final showSuggestions =
+        trimmed.isEmpty && !_searching && _suggestions.isNotEmpty;
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
-          _multiSelectIds.isEmpty
-              ? 'New Needl'
-              : '${_multiSelectIds.length} selected',
+          _multiSelectIds.length >= 2
+              ? 'Create Needl'
+              : _multiSelectIds.isEmpty
+                  ? 'Start a DM'
+                  : '${_multiSelectIds.length} selected',
         ),
         backgroundColor: AppColors.background,
         actions: [
@@ -559,7 +619,7 @@ class _StartDmPageState extends State<StartDmPage> {
             padding: const EdgeInsets.all(AppSpacing.md),
             child: AppSearchBar(
               controller: _searchController,
-              hintText: 'Name or mobile — check boxes to start a Needl',
+              hintText: 'Search Vocle colleagues by name or number',
               onChanged: _onQueryChanged,
               onClear: () => _onQueryChanged(''),
             ),
@@ -571,99 +631,118 @@ class _StartDmPageState extends State<StartDmPage> {
               child: ErrorBanner(message: _error!),
             ),
           Expanded(
-            child: showEmpty
-                ? AppEmptyState(
-                    icon: Icons.person_search_outlined,
-                    title: trimmed.isEmpty
-                        ? 'Find a colleague'
-                        : 'No results',
-                    subtitle: trimmed.isEmpty
-                        ? 'Search by name (from your groups) or enter a '
-                            '10-digit mobile number. Outside your network, '
-                            'they must accept a request before chat opens.'
-                        : _isPhoneQuery(trimmed)
-                            ? 'This number is not on Vocle yet, or the doctor '
-                                'has not completed setup.'
-                            : 'Try a full name, or search by mobile number.',
-                  )
-                : ListView(
+            child: showSuggestions
+                ? ListView(
                     padding: const EdgeInsets.all(AppSpacing.md),
                     children: [
-                      if (_phoneLookup != null)
-                        _phoneLookupCard(_phoneLookup!)
-                      else
-                        ..._nameResults.map((user) {
-                          final busy = _busyUserId == user.id;
-                          final selected = _multiSelectIds.contains(user.id);
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                            child: ClinicalCard(
-                              onTap: busy
-                                  ? null
-                                  : () => showPeerProfileCard(
-                                        context,
-                                        user: user,
-                                      ),
-                              child: Row(
-                                children: [
-                                  Checkbox(
-                                    value: selected,
-                                    onChanged: (_) => _toggleMulti(user),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                        child: Text(
+                          'Your Vocle colleagues',
+                          style:
+                              Theme.of(context).textTheme.labelLarge?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textSecondary,
                                   ),
-                                  AppAvatar(
-                                    name: user.displayName,
-                                    imageUrl: user.avatarUrl,
-                                  ),
-                                  const SizedBox(width: AppSpacing.sm),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          user.displayName,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .titleSmall,
-                                        ),
-                                        _userSubtitle(user),
-                                        Text(
-                                          selected
-                                              ? 'Selected for Needl'
-                                              : 'Tap profile · Message needs approval if new',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .labelSmall
-                                              ?.copyWith(
-                                                color: AppColors.textMuted,
-                                              ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  if (busy)
-                                    const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  else
-                                    IconButton(
-                                      tooltip: 'Message / request',
-                                      onPressed: () => _startDmOrRequest(user),
-                                      icon: const Icon(Icons.chat_outlined),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          );
-                        }),
+                        ),
+                      ),
+                      ..._suggestions.map(_userResultTile),
                     ],
-                  ),
+                  )
+                : showEmpty
+                    ? AppEmptyState(
+                        icon: Icons.person_search_outlined,
+                        title: trimmed.isEmpty
+                            ? 'Find a colleague'
+                            : 'No results',
+                        subtitle: trimmed.isEmpty
+                            ? (_loadingSuggestions
+                                ? 'Loading your Vocle colleagues...'
+                                : 'Search Vocle colleagues by name or enter a '
+                                    '10-digit mobile number. Outside your '
+                                    'network, they must accept a request '
+                                    'before chat opens.')
+                            : _isPhoneQuery(trimmed)
+                                ? 'This number is not on Vocle yet, or the '
+                                    'doctor has not completed setup.'
+                                : 'Try a full name, or search by mobile number.',
+                      )
+                    : ListView(
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        children: [
+                          if (_phoneLookup != null)
+                            _phoneLookupCard(_phoneLookup!)
+                          else
+                            ..._nameResults.map(_userResultTile),
+                        ],
+                      ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Search / suggestion row. While any colleague is selected, the primary
+  /// tap toggles the checkbox; the chat icon always opens a 1:1 DM.
+  Widget _userResultTile(UserModel user) {
+    final busy = _busyUserId == user.id;
+    final selected = _multiSelectIds.contains(user.id);
+    final multiMode = _multiSelectIds.isNotEmpty;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: ClinicalCard(
+        onTap: busy
+            ? null
+            : multiMode
+                ? () => _toggleMulti(user)
+                : () => showPeerProfileCard(context, user: user),
+        child: Row(
+          children: [
+            Checkbox(
+              value: selected,
+              onChanged: (_) => _toggleMulti(user),
+            ),
+            AppAvatar(
+              name: user.displayName,
+              imageUrl: user.avatarUrl,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    user.displayName,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  _userSubtitle(user),
+                  Text(
+                    selected
+                        ? 'Selected for Needl'
+                        : multiMode
+                            ? 'Tap to add to Needl'
+                            : 'Tap profile \u00b7 Message needs approval if new',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: AppColors.textMuted,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+            if (busy)
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            else if (!multiMode)
+              IconButton(
+                tooltip: 'Start 1:1 DM',
+                onPressed: () => _startDmOrRequest(user),
+                icon: const Icon(Icons.chat_outlined),
+              ),
+          ],
+        ),
       ),
     );
   }

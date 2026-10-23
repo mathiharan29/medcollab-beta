@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
@@ -24,6 +25,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late final TextEditingController _specialityController;
   late final TextEditingController _institutionController;
   late final TextEditingController _customRoleController;
+  late final TextEditingController _usernameController;
   late UserRole _role;
   String? _pgPrepSubject;
   bool _submitting = false;
@@ -35,6 +37,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _nameController = TextEditingController(text: user.name);
     _institutionController = TextEditingController(text: user.institution ?? '');
     _customRoleController = TextEditingController();
+    _usernameController =
+        TextEditingController(text: user.vocleUsername ?? '');
     _role = user.role;
 
     final spec = user.speciality ?? '';
@@ -54,6 +58,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _specialityController.dispose();
     _institutionController.dispose();
     _customRoleController.dispose();
+    _usernameController.dispose();
     super.dispose();
   }
 
@@ -75,6 +80,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           role: _role,
           speciality: speciality,
           institution: _institutionController.text.trim(),
+          vocleUsername: _usernameController.text.trim(),
         ),
       );
       if (!mounted) return;
@@ -143,6 +149,34 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     _pgPrepSubject = null;
                   }
                 });
+              },
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _usernameController,
+              enabled: !_submitting,
+              autocorrect: false,
+              textInputAction: TextInputAction.done,
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9_]')),
+                LengthLimitingTextInputFormatter(30),
+              ],
+              decoration: const InputDecoration(
+                labelText: 'Vocle username',
+                hintText: 'e.g. dr_anita',
+                prefixText: '@',
+                helperText: 'Letters, numbers and underscore (min 3)',
+              ),
+              validator: (value) {
+                final v = value?.trim() ?? '';
+                // Optional until the backend field ships for all users, but
+                // when provided it must be a valid handle.
+                if (v.isEmpty) return null;
+                if (v.length < 3) return 'Use at least 3 characters';
+                if (!RegExp(r'^[A-Za-z0-9_]+$').hasMatch(v)) {
+                  return 'Only letters, numbers and underscore';
+                }
+                return null;
               },
             ),
             const SizedBox(height: 24),

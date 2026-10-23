@@ -31,12 +31,18 @@ const getMe = asyncHandler(async (req, res) => {
  */
 const updateMe = asyncHandler(async (req, res) => {
   const allowed = ['name', 'displayTitle', 'role', 'speciality', 'pgYear',
-                   'institution', 'city', 'bio', 'notifications', 'avatarUrl'];
+                   'institution', 'city', 'bio', 'notifications', 'avatarUrl',
+                   'vocleUsername'];
 
   const updates = {};
   allowed.forEach((field) => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];
   });
+
+  // Blank username means "not set" — never store an empty string on a unique index.
+  if (typeof updates.vocleUsername === 'string' && !updates.vocleUsername.trim()) {
+    delete updates.vocleUsername;
+  }
 
   // Promote to onboarded once they have the minimum required fields
   const user = await User.findById(req.user._id);
@@ -143,8 +149,8 @@ const getUserById = asyncHandler(async (req, res) => {
 const searchUsers = asyncHandler(async (req, res) => {
   const { q, spaceId } = req.query;
 
-  if (!q || q.trim().length < 2) {
-    return respond.badRequest(res, 'Search query must be at least 2 characters');
+  if (!q || q.trim().length < 1) {
+    return respond.badRequest(res, 'Search query must be at least 1 character');
   }
 
   const searchRegex = new RegExp(escapeRegex(q.trim()), 'i');
@@ -176,8 +182,10 @@ const searchUsers = asyncHandler(async (req, res) => {
   ];
   // Allow finding known colleagues by partial/full mobile digits too.
   if (digitQuery.length >= 4) {
-    orClauses.push({ phone: new RegExp(escapeRegex(digitQuery) + '$') });
-    orClauses.push({ phone: new RegExp(escapeRegex(digitQuery)) });
+    // Prefer the last 10 digits (drops +91 / leading 0 noise).
+    const phoneDigits = digitQuery.length > 10 ? digitQuery.slice(-10) : digitQuery;
+    orClauses.push({ phone: new RegExp(escapeRegex(phoneDigits) + '$') });
+    orClauses.push({ phone: new RegExp(escapeRegex(phoneDigits)) });
   }
 
   const users = await User.find({

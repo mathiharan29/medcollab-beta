@@ -15,7 +15,9 @@ import 'package:medcollab_app/features/channels/presentation/widgets/create_chan
 import 'package:medcollab_app/features/spaces/data/models/channel_model.dart';
 import 'package:medcollab_app/features/spaces/data/models/last_message_preview.dart';
 import 'package:medcollab_app/features/spaces/data/models/space_model.dart';
+import 'package:medcollab_app/features/spaces/presentation/widgets/create_space_dialog.dart';
 import 'package:medcollab_app/features/spaces/presentation/widgets/space_invite_share_sheet.dart';
+import 'package:medcollab_app/shared/presentation/widgets/app_fab.dart';
 import 'package:medcollab_app/features/notifications/presentation/utils/notification_unread_utils.dart';
 import 'package:medcollab_app/shared/presentation/widgets/app_avatar.dart';
 import 'package:medcollab_app/shared/presentation/widgets/app_empty_state.dart';
@@ -241,19 +243,15 @@ class _NeedlTab extends StatelessWidget {
           onRefresh: () async => onReload(),
           child: needls.isEmpty
               ? ListView(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppGaps.screenH,
-                    24,
-                    AppGaps.screenH,
-                    AppGaps.screenH,
-                  ),
+                  padding: const EdgeInsets.all(AppGaps.screenH),
                   children: [
                     AppEmptyState(
-                      icon: Icons.groups_outlined,
+                      icon: Icons.hub_outlined,
                       title: 'No Needls yet',
                       subtitle:
-                          'A Needl is a group chat with 3+ colleagues. '
-                          'Add people from a DM, or start a multi-person chat.',
+                          'A Needl is a private chat with two or more '
+                          'colleagues that you created or joined — like a '
+                          'group DM. Space channels stay under Groups.',
                       action: FilledButton.icon(
                         onPressed: () => context.push(AppRoutes.startDm),
                         icon: const Icon(Icons.person_add_alt_1_outlined, size: 18),
@@ -263,12 +261,7 @@ class _NeedlTab extends StatelessWidget {
                   ],
                 )
               : ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppGaps.screenH,
-                    8,
-                    AppGaps.screenH,
-                    AppGaps.screenH,
-                  ),
+                  padding: const EdgeInsets.all(AppGaps.screenH),
                   itemCount: needls.length,
                   separatorBuilder: (_, __) =>
                       const SizedBox(height: AppGaps.itemGap),
@@ -298,6 +291,21 @@ class _NeedlTab extends StatelessWidget {
                           name: needl.displayName,
                           preview: '$memberHint · $previewText',
                           imageUrl: null,
+                          elevated: true,
+                          leading: Container(
+                            width: 38,
+                            height: 38,
+                            decoration: BoxDecoration(
+                              color: AppColors.tealPrimary
+                                  .withValues(alpha: 0.14),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.hub_outlined,
+                              size: 20,
+                              color: AppColors.tealDark,
+                            ),
+                          ),
                           timestamp: hasDraft
                               ? null
                               : _formatTimestamp(preview?.sentAt),
@@ -344,8 +352,26 @@ class _GroupsTab extends StatelessWidget {
     return total;
   }
 
+  Future<void> _createGroup(BuildContext context) async {
+    final created = await CreateSpaceDialog.show(context);
+    if (created) onReload();
+  }
+
   @override
   Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      floatingActionButton: AppFab(
+        heroTag: 'messages-groups-new-group-fab',
+        label: '+ New group',
+        icon: Icons.group_add_outlined,
+        onPressed: () => _createGroup(context),
+      ),
+      body: _buildBody(context),
+    );
+  }
+
+  Widget _buildBody(BuildContext context) {
     return FutureBuilder<List<Object>>(
       future: Future.wait([
         spacesFuture,

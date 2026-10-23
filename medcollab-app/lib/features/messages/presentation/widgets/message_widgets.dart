@@ -152,19 +152,27 @@ class MessageComposer extends StatelessWidget {
         onPickDocument != null ||
         onPickCamera != null;
 
+    // Floating pill (WhatsApp-style): transparent outer bar, no full-bleed
+    // top border. [showTopBorder] is kept for call-site compatibility.
     return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
-        border: showTopBorder
-            ? const Border(
-                top: BorderSide(color: AppColors.borderDefault, width: 0.5),
-              )
-            : null,
-      ),
+      color: Colors.transparent,
       child: SafeArea(
         top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(8, 4, 8, 6),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceCard,
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: AppColors.borderDefault, width: 0.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.fromLTRB(4, 4, 4, 4),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -180,14 +188,6 @@ class MessageComposer extends StatelessWidget {
               Expanded(
                 child: Container(
                   constraints: const BoxConstraints(minHeight: 44),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceInput,
-                    borderRadius: BorderRadius.circular(22),
-                    border: Border.all(
-                      color: AppColors.borderDefault,
-                      width: 0.5,
-                    ),
-                  ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
@@ -435,13 +435,31 @@ class MessageBubble extends StatelessWidget {
                   children: [
                     ...quickReactions.map(
                       (e) => Expanded(
-                        child: InkWell(
-                          onTap: () => Navigator.pop(ctx, 'react:$e'),
-                          borderRadius: BorderRadius.circular(20),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Center(
-                              child: Text(e, style: const TextStyle(fontSize: 26)),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 8,
+                            horizontal: 2,
+                          ),
+                          child: Center(
+                            child: InkResponse(
+                              onTap: () => Navigator.pop(ctx, 'react:$e'),
+                              radius: 24,
+                              child: Container(
+                                width: 40,
+                                height: 40,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: AppColors.surfaceInput,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: AppColors.borderDefault,
+                                  ),
+                                ),
+                                child: Text(
+                                  e,
+                                  style: const TextStyle(fontSize: 22),
+                                ),
+                              ),
                             ),
                           ),
                         ),

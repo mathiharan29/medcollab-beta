@@ -10,6 +10,7 @@ import 'package:medcollab_app/core/notifications/push_notification_router.dart';
 import 'package:medcollab_app/core/presence/presence_cubit.dart';
 import 'package:medcollab_app/core/router/app_navigation_back_handler.dart';
 import 'package:medcollab_app/core/theme/app_theme.dart';
+import 'package:medcollab_app/core/theme/theme_mode_cubit.dart';
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_state.dart';
 import 'package:medcollab_app/features/notifications/presentation/cubit/notification_badge_cubit.dart';
@@ -24,10 +25,12 @@ class MedCollabApp extends StatefulWidget {
 
 class _MedCollabAppState extends State<MedCollabApp> {
   StreamSubscription<PushPayload>? _pushTapSub;
+  final ThemeModeCubit _themeCubit = ThemeModeCubit();
 
   @override
   void initState() {
     super.initState();
+    _themeCubit.load();
     final deps = AppDependencies.instance;
     _pushTapSub = deps.fcmService.onNotificationTap.listen((payload) {
       // Cold start: the navigator may not exist yet. The router holds the
@@ -42,6 +45,7 @@ class _MedCollabAppState extends State<MedCollabApp> {
   @override
   void dispose() {
     _pushTapSub?.cancel();
+    _themeCubit.close();
     super.dispose();
   }
 
@@ -57,6 +61,7 @@ class _MedCollabAppState extends State<MedCollabApp> {
           value: deps.notificationBadgeCubit,
         ),
         BlocProvider<NavBadgesCubit>.value(value: deps.navBadgesCubit),
+        BlocProvider<ThemeModeCubit>.value(value: _themeCubit),
       ],
       child: BlocListener<AuthBloc, AuthState>(
         listenWhen: (prev, next) => prev.user?.id != next.user?.id,
@@ -64,13 +69,17 @@ class _MedCollabAppState extends State<MedCollabApp> {
           deps.navBadgesCubit.setUserId(state.user?.id);
         },
         child: AppLifecycleHandler(
-          child: MaterialApp.router(
-            title: AppConstants.appName,
-            debugShowCheckedModeBanner: false,
-            theme: AppTheme.light,
-            routerConfig: deps.appRouter.router,
-            builder: (context, child) => AppNavigationBackHandler(
-              child: child ?? const SizedBox.shrink(),
+          child: BlocBuilder<ThemeModeCubit, ThemeSettingsState>(
+            builder: (context, themeState) => MaterialApp.router(
+              title: AppConstants.appName,
+              debugShowCheckedModeBanner: false,
+              theme: AppTheme.lightFor(themeState.palette),
+              darkTheme: AppTheme.darkFor(themeState.palette),
+              themeMode: themeState.mode,
+              routerConfig: deps.appRouter.router,
+              builder: (context, child) => AppNavigationBackHandler(
+                child: child ?? const SizedBox.shrink(),
+              ),
             ),
           ),
         ),

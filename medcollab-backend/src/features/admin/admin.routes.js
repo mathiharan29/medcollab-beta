@@ -21,6 +21,7 @@ router.get('/users', adminController.listUsers);
 router.get('/growth', adminController.getGrowth);
 router.get('/retention', adminController.getRetention);
 router.get('/infrastructure', adminController.getInfrastructure);
+router.get('/support', adminController.listSupportTickets);
 
 router.get('/users/:id', ...validateMongoId('id'), adminController.getUser);
 

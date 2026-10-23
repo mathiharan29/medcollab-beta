@@ -10,6 +10,7 @@ import 'package:medcollab_app/core/router/app_routes.dart';
 import 'package:medcollab_app/core/theme/app_colors.dart';
 import 'package:medcollab_app/core/theme/app_radius.dart';
 import 'package:medcollab_app/core/theme/app_text_styles.dart';
+import 'package:medcollab_app/core/theme/theme_mode_cubit.dart';
 import 'package:medcollab_app/core/utils/clinical_formatters.dart';
 import 'package:medcollab_app/features/auth/data/models/user_model.dart';
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_bloc.dart';
@@ -17,6 +18,7 @@ import 'package:medcollab_app/features/auth/presentation/bloc/auth_event.dart';
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_state.dart';
 import 'package:medcollab_app/features/dev/presentation/pages/developer_mode_page.dart';
 import 'package:medcollab_app/features/profile/presentation/pages/avatar_crop_page.dart';
+import 'package:medcollab_app/features/profile/presentation/widgets/availability_sheet.dart';
 import 'package:medcollab_app/shared/presentation/widgets/app_avatar.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -85,6 +87,7 @@ class ProfilePage extends StatelessWidget {
                           onTap: () => context.push(AppRoutes.spacesList),
                         ),
                         const _RowDivider(),
+                        _AppearanceRow(onTap: _showAppearanceSheet),
                         _SettingsRow(
                           icon: Icons.notifications_outlined,
                           label: 'Notification settings',
@@ -299,78 +302,118 @@ class ProfilePage extends StatelessWidget {
   Future<void> _showAvailabilitySheet(
     BuildContext context,
     AvailabilityStatus current,
-  ) async {
+  ) =>
+      showAvailabilitySheet(context, current);
+
+  Future<void> _showAppearanceSheet(BuildContext context) async {
+    final cubit = context.read<ThemeModeCubit>();
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       backgroundColor: AppColors.surfaceCard,
       shape: const RoundedRectangleBorder(borderRadius: AppRadius.sheet),
       builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-              child: Text(
-                'Availability',
-                style: AppTextStyles.screenTitle.copyWith(fontSize: 16),
+        child: BlocBuilder<ThemeModeCubit, ThemeSettingsState>(
+          bloc: cubit,
+          builder: (ctx, themeState) => Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                child: Text(
+                  'Appearance',
+                  style: AppTextStyles.screenTitle.copyWith(fontSize: 16),
+                ),
               ),
-            ),
-            ...AvailabilityStatus.values.map((status) {
-              final color = availabilityColor(status);
-              final selected = status == current;
-              return ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 2,
+              for (final mode in ThemeMode.values)
+                ListTile(
+                  leading: Icon(
+                    switch (mode) {
+                      ThemeMode.light => Icons.light_mode_outlined,
+                      ThemeMode.dark => Icons.dark_mode_outlined,
+                      ThemeMode.system => Icons.settings_suggest_outlined,
+                    },
+                    color: AppColors.textSecondary,
+                  ),
+                  title: Text(
+                    _themeModeLabel(mode),
+                    style: AppTextStyles.cardTitle,
+                  ),
+                  trailing: themeState.mode == mode
+                      ? const Icon(Icons.check, color: AppColors.tealPrimary)
+                      : null,
+                  onTap: () {
+                    cubit.setMode(mode);
+                  },
                 ),
-                leading: Icon(Icons.circle, size: 12, color: color),
-                title: Text(
-                  availabilityLabel(status),
-                  style: AppTextStyles.cardTitle,
+              const Divider(height: 20),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Color theme',
+                    style: AppTextStyles.screenTitle.copyWith(fontSize: 16),
+                  ),
                 ),
-                subtitle: Text(
-                  availabilitySubtitle(status),
-                  style: AppTextStyles.caption,
+              ),
+              for (final palette in ThemePalette.values)
+                ListTile(
+                  leading: CircleAvatar(
+                    radius: 12,
+                    backgroundColor: palette.primary,
+                  ),
+                  title: Text(palette.label, style: AppTextStyles.cardTitle),
+                  trailing: themeState.palette == palette
+                      ? Icon(Icons.check, color: palette.primary)
+                      : null,
+                  onTap: () {
+                    cubit.setPalette(palette);
+                  },
                 ),
-                trailing: selected
-                    ? const Icon(Icons.check, color: AppColors.tealPrimary)
-                    : null,
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  final deps = AppDependencies.instance;
-                  final userId =
-                      context.read<AuthBloc>().state.user?.id ?? '';
-                  try {
-                    final availability = await deps.userRepository
-                        .updateAvailability(status: status);
-                    if (!context.mounted) return;
-                    context
-                        .read<AuthBloc>()
-                        .add(AuthAvailabilityUpdated(availability));
-                    deps.presenceCubit.applyLocal(
-                      userId: userId,
-                      status: status,
-                      isOnline: deps.socketClient.isConnected,
-                    );
-                    if (deps.socketClient.isConnected) {
-                      deps.socketClient
-                          .updateAvailability(status: status.value);
-                    }
-                  } catch (_) {
-                    if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Could not update availability'),
-                      ),
-                    );
-                  }
-                },
-              );
-            }),
-            const SizedBox(height: 8),
-          ],
+              const SizedBox(height: 8),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+}
+
+String _themeModeLabel(ThemeMode mode) => switch (mode) {
+      ThemeMode.light => 'Light',
+      ThemeMode.dark => 'Dark',
+      ThemeMode.system => 'System default',
+    };
+
+/// "Appearance" row (+ trailing divider). Hidden when no [ThemeModeCubit] is
+/// provided above (e.g. isolated widget tests).
+class _AppearanceRow extends StatelessWidget {
+  const _AppearanceRow({required this.onTap});
+
+  final Future<void> Function(BuildContext context) onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    ThemeModeCubit? cubit;
+    try {
+      cubit = context.read<ThemeModeCubit>();
+    } catch (_) {
+      cubit = null;
+    }
+    if (cubit == null) return const SizedBox.shrink();
+    return BlocBuilder<ThemeModeCubit, ThemeSettingsState>(
+      bloc: cubit,
+      builder: (context, themeState) => Column(
+        children: [
+          _SettingsRow(
+            icon: Icons.brightness_6_outlined,
+            label: 'Appearance',
+            subtitle: _themeModeLabel(themeState.mode),
+            onTap: () => onTap(context),
+          ),
+          const _RowDivider(),
+        ],
       ),
     );
   }

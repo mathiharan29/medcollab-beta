@@ -27,6 +27,7 @@ class UserModel extends Equatable {
     this.lastSeenAt,
     this.isVerified = false,
     this.isOnboarded = false,
+    this.vocleUsername,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -56,6 +57,7 @@ class UserModel extends Equatable {
           : null,
       isVerified: json['isVerified'] as bool? ?? false,
       isOnboarded: json['isOnboarded'] as bool? ?? false,
+      vocleUsername: json['vocleUsername'] as String?,
     );
   }
 
@@ -75,6 +77,9 @@ class UserModel extends Equatable {
   final DateTime? lastSeenAt;
   final bool isVerified;
   final bool isOnboarded;
+
+  /// Optional public @handle (backend field may not exist yet).
+  final String? vocleUsername;
 
   String get displayName {
     if (name != null && name!.trim().isNotEmpty) {
@@ -109,6 +114,7 @@ class UserModel extends Equatable {
         if (lastSeenAt != null) 'lastSeenAt': lastSeenAt!.toIso8601String(),
         'isVerified': isVerified,
         'isOnboarded': isOnboarded,
+        if (vocleUsername != null) 'vocleUsername': vocleUsername,
       };
 
   UserModel copyWith({
@@ -128,6 +134,7 @@ class UserModel extends Equatable {
     DateTime? lastSeenAt,
     bool? isVerified,
     bool? isOnboarded,
+    String? vocleUsername,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -146,6 +153,7 @@ class UserModel extends Equatable {
       lastSeenAt: lastSeenAt ?? this.lastSeenAt,
       isVerified: isVerified ?? this.isVerified,
       isOnboarded: isOnboarded ?? this.isOnboarded,
+      vocleUsername: vocleUsername ?? this.vocleUsername,
     );
   }
 
@@ -167,5 +175,6 @@ class UserModel extends Equatable {
         lastSeenAt,
         isVerified,
         isOnboarded,
+        vocleUsername,
       ];
 }

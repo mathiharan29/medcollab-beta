@@ -13,6 +13,8 @@
     growth: null,
     retention: null,
     infrastructure: null,
+    support: [],
+    supportError: '',
     users: [],
     pagination: null,
     filter: 'pending',
@@ -264,14 +266,22 @@
       if (activeParam) qs.set('active', activeParam);
       if (state.q.trim()) qs.set('q', state.q.trim());
       qs.set('limit', '100');
-      const [overview, list, growth, retention, infrastructure] =
+      state.supportError = '';
+      const [overview, list, growth, retention, infrastructure, support] =
         await Promise.all([
           api('/api/admin/overview'),
           api(`/api/admin/users?${qs}`),
           api('/api/admin/growth?days=30'),
           api('/api/admin/retention'),
           api('/api/admin/infrastructure'),
+          // Feedback inbox failing must not break the rest of the dashboard.
+          api('/api/admin/support').catch((err) => {
+            if (err.status === 401 || err.status === 403) throw err;
+            state.supportError = err.message || 'Could not load feedback';
+            return { tickets: [] };
+          }),
         ]);
+      state.support = support.tickets || [];
       state.overview = overview;
       state.growth = growth;
       state.retention = retention;
@@ -302,6 +312,61 @@
       })
       .join('')}</div>
       <p class="muted foot">Last ${series.length} days · ${state.growth?.totalNew ?? 0} new users</p>`;
+  }
+
+  function ticketStatusBadge(status) {
+    const cls = status === 'closed' ? 'ok' : status === 'triaged' ? 'warn' : 'bad';
+    return `<span class="badge ${cls}">${escapeHtml(status || 'open')}</span>`;
+  }
+
+  function feedbackSection() {
+    const openTickets = state.overview?.support?.openTickets;
+    const rows = state.support;
+    return `
+        <section class="panel" id="feedback">
+          <div class="panel-head">
+            <h2>Feedback</h2>
+            <span class="muted">${escapeHtml(openTickets ?? '—')} open · showing latest ${rows.length}</span>
+          </div>
+          ${state.supportError ? `<p class="banner error">${escapeHtml(state.supportError)}</p>` : ''}
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Type</th><th>Title</th><th>Description</th><th>From</th><th>Status</th><th>Created</th></tr>
+              </thead>
+              <tbody>
+                ${
+                  rows.length === 0
+                    ? `<tr><td colspan="6" class="empty">No feedback tickets yet.</td></tr>`
+                    : rows
+                        .map(
+                          (t) => `<tr>
+                            <td><span class="badge warn">${escapeHtml(t.type || '—')}</span></td>
+                            <td><strong>${escapeHtml(t.title || '—')}</strong></td>
+                            <td class="ticket-desc">${escapeHtml(t.description || '')}</td>
+                            <td>${escapeHtml(t.userName || '—')}<div class="muted mono">${escapeHtml(t.userPhone || '')}</div></td>
+                            <td>${ticketStatusBadge(t.status)}</td>
+                            <td>${t.createdAt ? escapeHtml(new Date(t.createdAt).toLocaleString()) : '—'}<div class="muted">${escapeHtml(formatRelative(t.createdAt))}</div></td>
+                          </tr>`
+                        )
+                        .join('')
+                }
+              </tbody>
+            </table>
+          </div>
+        </section>`;
+  }
+
+  function updateNav() {
+    const nav = document.getElementById('admin-nav');
+    if (!nav) return;
+    const loggedIn = Boolean(state.admin && state.ready);
+    nav.hidden = !loggedIn;
+    const count = document.getElementById('nav-feedback-count');
+    if (count) {
+      const n = state.overview?.support?.openTickets;
+      count.textContent = loggedIn && n ? String(n) : '';
+    }
   }
 
   function renderDashboard() {
@@ -349,6 +414,7 @@
           ${stat('Pending verify', u?.pendingVerification)}
           ${stat('Spaces', state.overview?.spaces?.total)}
           ${stat('Messages', state.overview?.messages?.total)}
+          ${stat('Open feedback', state.overview?.support?.openTickets)}
           ${stat('Handoffs ack', h ? `${h.acknowledged}/${h.total}` : '—', h ? `${h.ackRatePercent}%` : undefined)}
           ${stat('Media tracked', infraOverview ? `${infraOverview.storageUsedMb} MB` : '—', 'Sum of uploads since tracking started')}
         </section>
@@ -458,8 +524,10 @@
               : ''
           }
         </section>
+        ${feedbackSection()}
       </div>
     `;
+    updateNav();
 
     document.getElementById('logout').onclick = () => {
       clearTokens();
@@ -528,10 +596,12 @@
   function render() {
     if (!state.ready) {
       root.innerHTML = `<div class="login-shell"><p class="muted">Loading…</p></div>`;
+      updateNav();
       return;
     }
     if (!state.admin) {
       renderLogin();
+      updateNav();
       return;
     }
     renderDashboard();

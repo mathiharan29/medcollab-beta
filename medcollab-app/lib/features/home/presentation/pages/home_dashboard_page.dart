@@ -16,6 +16,7 @@ import 'package:medcollab_app/features/home/data/dashboard_preferences_service.d
 import 'package:medcollab_app/features/home/presentation/cubit/home_dashboard_cubit.dart';
 import 'package:medcollab_app/features/home/presentation/cubit/home_dashboard_state.dart';
 import 'package:medcollab_app/features/home/presentation/widgets/doctor_workspace_widgets.dart';
+import 'package:medcollab_app/features/profile/presentation/widgets/availability_sheet.dart';
 import 'package:medcollab_app/features/spaces/data/models/channel_model.dart';
 import 'package:medcollab_app/features/spaces/data/models/space_model.dart';
 import 'package:medcollab_app/shared/presentation/widgets/app_empty_state.dart';
@@ -468,7 +469,18 @@ class _ShiftCard extends StatelessWidget {
             const Spacer(),
           if (showAvailability) ...[
             if (showShift) const SizedBox(width: 8),
-            AvailabilityPill(status: availability, onDark: true, compact: true),
+            Tooltip(
+              message: 'Change availability',
+              child: InkWell(
+                onTap: () => showAvailabilitySheet(context, availability),
+                borderRadius: const BorderRadius.all(Radius.circular(999)),
+                child: AvailabilityPill(
+                  status: availability,
+                  onDark: true,
+                  compact: true,
+                ),
+              ),
+            ),
           ],
         ],
       ),
@@ -527,6 +539,7 @@ class _WelcomeEmptyCard extends StatelessWidget {
         title: const Text('Join with invite code'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             TextField(
               controller: codeController,
@@ -539,6 +552,10 @@ class _WelcomeEmptyCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.tealDark,
+                side: const BorderSide(color: AppColors.tealPrimary),
+              ),
               onPressed: () {
                 Navigator.pop(ctx);
                 context.push(AppRoutes.scanInviteQr);
@@ -546,25 +563,33 @@ class _WelcomeEmptyCard extends StatelessWidget {
               icon: const Icon(Icons.qr_code_scanner),
               label: const Text('Scan QR code'),
             ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('Cancel'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () {
+                      final extracted = PhoneUtils.extractInviteCode(
+                            codeController.text,
+                          ) ??
+                          codeController.text.trim().toUpperCase();
+                      if (extracted.length < 4) return;
+                      Navigator.pop(ctx, extracted);
+                    },
+                    child: const Text('Continue'),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final extracted = PhoneUtils.extractInviteCode(
-                    codeController.text,
-                  ) ??
-                  codeController.text.trim().toUpperCase();
-              if (extracted.length < 4) return;
-              Navigator.pop(ctx, extracted);
-            },
-            child: const Text('Continue'),
-          ),
-        ],
       ),
     );
     if (code == null || !context.mounted) return;

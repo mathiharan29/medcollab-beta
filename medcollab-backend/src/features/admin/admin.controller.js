@@ -511,7 +511,24 @@ const getInfrastructure = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * GET /api/admin/support
+ * In-app bug / feature / feedback tickets, newest first (max 100).
+ */
+const listSupportTickets = asyncHandler(async (req, res) => {
+  const tickets = await SupportTicket.find({})
+    .select('type title description status userName userPhone createdAt')
+    .sort({ createdAt: -1 })
+    .limit(100)
+    .lean();
+
+  const rows = tickets.map((t) => ({ ...t, id: t._id.toString() }));
+
+  return respond.ok(res, 'Support tickets', { tickets: rows });
+});
+
 module.exports = {
+  listSupportTickets,
   getOverview,
   listUsers,
   getUser,

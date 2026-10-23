@@ -119,6 +119,64 @@ class _HandoffDetailPageState extends State<HandoffDetailPage> {
     }
   }
 
+  /// Accent color per write-back kind (teal note, orange can't cover,
+  /// amber covered late).
+  static Color _writeBackAccent(String kind) {
+    switch (kind) {
+      case 'cant_cover':
+      case 'missed':
+        return AppColors.statusPending;
+      case 'covered_late':
+        return AppColors.statusWarning;
+      case 'reassign':
+        return AppColors.inOt;
+      default:
+        return AppColors.tealPrimary;
+    }
+  }
+
+  static Color _writeBackTint(String kind) {
+    switch (kind) {
+      case 'cant_cover':
+      case 'missed':
+        return AppColors.statusPendTint;
+      case 'covered_late':
+        return AppColors.statusWarnTint;
+      case 'reassign':
+        return const Color(0xFFDBEAFE);
+      default:
+        return AppColors.tealTint;
+    }
+  }
+
+  /// Always-readable choice chip: dark label on light/tinted fill.
+  Widget _writeBackChip({
+    required String label,
+    required String value,
+    required String current,
+    required VoidCallback onSelected,
+  }) {
+    final selected = current == value;
+    final accent = _writeBackAccent(value);
+    return ChoiceChip(
+      label: Text(label),
+      selected: selected,
+      showCheckmark: true,
+      checkmarkColor: AppColors.textPrimary,
+      labelStyle: AppTextStyles.caption.copyWith(
+        color: AppColors.textPrimary,
+        fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+      ),
+      backgroundColor: AppColors.surfaceCard,
+      selectedColor: _writeBackTint(value),
+      side: BorderSide(
+        color: selected ? accent : AppColors.borderDefault,
+        width: selected ? 1.5 : 1,
+      ),
+      onSelected: (_) => onSelected(),
+    );
+  }
+
   Future<void> _composeWriteBack(HandoffModel handoff) async {
     final controller = TextEditingController();
     String kind = 'note';
@@ -148,21 +206,24 @@ class _HandoffDetailPageState extends State<HandoffDetailPage> {
                   Wrap(
                     spacing: 8,
                     children: [
-                      ChoiceChip(
-                        label: const Text('Note'),
-                        selected: kind == 'note',
-                        onSelected: (_) => setLocal(() => kind = 'note'),
+                      _writeBackChip(
+                        label: 'Note',
+                        value: 'note',
+                        current: kind,
+                        onSelected: () => setLocal(() => kind = 'note'),
                       ),
-                      ChoiceChip(
-                        label: const Text("Can't cover"),
-                        selected: kind == 'cant_cover',
-                        onSelected: (_) =>
+                      _writeBackChip(
+                        label: "Can't cover",
+                        value: 'cant_cover',
+                        current: kind,
+                        onSelected: () =>
                             setLocal(() => kind = 'cant_cover'),
                       ),
-                      ChoiceChip(
-                        label: const Text('Covered late'),
-                        selected: kind == 'covered_late',
-                        onSelected: (_) =>
+                      _writeBackChip(
+                        label: 'Covered late',
+                        value: 'covered_late',
+                        current: kind,
+                        onSelected: () =>
                             setLocal(() => kind = 'covered_late'),
                       ),
                     ],
@@ -498,11 +559,12 @@ class _HandoffDetailPageState extends State<HandoffDetailPage> {
                               width: double.infinity,
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: AppColors.surfaceCard,
+                                color: _writeBackTint(n.kind),
                                 borderRadius: AppRadius.card,
                                 border: Border.all(
-                                  color: AppColors.borderDefault,
-                                  width: 0.5,
+                                  color: _writeBackAccent(n.kind)
+                                      .withValues(alpha: 0.6),
+                                  width: 1,
                                 ),
                               ),
                               child: Column(
@@ -512,6 +574,7 @@ class _HandoffDetailPageState extends State<HandoffDetailPage> {
                                     '${n.author.displayName} · ${n.kindLabel}',
                                     style: AppTextStyles.caption.copyWith(
                                       fontWeight: FontWeight.w600,
+                                      color: AppColors.textPrimary,
                                     ),
                                   ),
                                   const SizedBox(height: 4),

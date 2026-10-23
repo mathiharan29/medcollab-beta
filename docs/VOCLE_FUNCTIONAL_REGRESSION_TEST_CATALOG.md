@@ -404,6 +404,25 @@ U+C; isolated process lifecycle; sources B/app.js/server.js/middleware/errorHand
 | FR-RUN-02 | Stop DB during read, restore and request again | Bounded error/no fabricated empty success; recovery permits fresh read; no automatic failed-write replay assumed | B/P1 | NEW |
 | FR-RUN-03 | Flutter fake timeout/5xx/malformed response then success across list and detail | Error state distinct from empty result; loading terminates; retry restores correct data | F/P1 | NEW |
 
+### 24. Oct 2026 product bugfixes
+
+U+C+H+D; sources F/features/messages, F/features/handoffs, F/features/profile, F/features/spaces, F/features/notifications, F/core/theme, B/features/handoffs, B/features/users, B/features/channels.
+
+| ID | Title and actions | Expected result | Tier/priority | Coverage / question |
+|---|---|---|---|---|
+| FR-UX-01 | Open Needl list with 1:1 DMs, group DMs and notes-to-self present | Needl list shows only group DMs (3+ people); 1:1 DMs stay under Messages/DMs | F/P1 | NEW |
+| FR-UX-02 | Start a DM, select 2+ colleagues, tap Create Needl twice in a row (multi-create) with different member sets, then reopen each | Each Needl has exactly the selected membership; no members leak from the earlier create; no duplicate channel for an identical set | B/P1 | NEW |
+| FR-UX-03 | Open Start a DM with empty query on an account whose phone book contains non-Vocle contacts | Suggestions list only Vocle colleagues from existing DMs/Needls; phone address book never read or shown | F/P1 | NEW |
+| FR-UX-04 | A submits H to B; B reassigns H to C; B reloads Handoffs, opens Reassigned tab, opens detail; also check A and C inboxes | Item stays visible to B (type=all and type=reassigned) with assignmentHistory; B has read-only detail without ack/reassign actions; C sees it under Pending; handoff_reassigned socket event reloads lists | B/P0 | partial: handoffs-05, FR-JRN-03 |
+| FR-UX-05 | Open Alerts, filter Channels, tap a channel notification | Channels filter matches by notification spaceId; tap opens the correct space/channel route | F/P1 | NEW |
+| FR-UX-06 | Set vocleUsername in Edit profile, save, kill and relaunch app, reopen profile | Username persists from server profile after relaunch; validation errors shown inline | D/P1 | NEW |
+| FR-UX-07 | Open Join QR for a space in light and dark themes | QR and code have sufficient contrast and remain scannable; code/text readable in both themes | D/P2 | NEW |
+| FR-UX-08 | Toggle theme to dark from profile/settings, navigate Home, Spaces, DM, Alerts, relaunch | Dark theme applies app-wide with readable text; choice persists across relaunch | D/P1 | NEW |
+| FR-UX-09 | Open chat, focus floating composer, type multi-line, attach, open keyboard, scroll history | Composer floats above keyboard without covering last message; send/attach remain tappable; scroll position stable | D/P1 | NEW |
+| FR-UX-10 | Add people to Needl: open sheet, observe suggestions, type 1 character, type name, type 10-digit phone, force network failure | Known colleagues preloaded from DMs; search fires from 1 char after 200 ms debounce; phone lookup works; failure shows error text instead of silent empty list; existing members excluded | F/P1 | NEW |
+| FR-UX-11 | A turns Read receipts off in notification settings; B reads A's 1:1 DM message; both refresh | A's Seen is hidden from B in 1:1 DMs and no new read receipts written; helper text explains existing ticks may remain until both refresh | B/P1 | NEW |
+| FR-UX-12 | On Home root press system back once, then again within the exit window, and from nested route | Nested back pops route; first root back shows exit hint without leaving; second back exits app | D/P2 | NEW |
+
 ## Cross-feature journeys (not extra feature modules)
 
 U+C+H through public APIs for B; D0 uses actual UI and local backend. Dependencies are explicit chain order; failures block later steps, while independent component cases still run. Sources are the participating module anchors above. No model seeding may substitute the operation validated by the journey.

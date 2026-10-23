@@ -118,11 +118,17 @@ const getMyHandoffs = asyncHandler(async (req, res) => {
     } else {
       query.status = { $in: visibleToReceiver };
     }
+  } else if (type === 'reassigned') {
+    // Handoffs this user reassigned to someone else.
+    query['assignmentHistory.byUserId'] = req.user._id;
   } else {
-    // 'all' — both sent (any status) and received (non-draft)
+    // 'all' — sent (any status), received (non-draft), or previously
+    // reassigned by / away from me (so past assignees keep visibility).
     query.$or = [
       { fromUserId: req.user._id },
       { toUserId: req.user._id, status: { $in: [HANDOFF_STATUS.SUBMITTED, HANDOFF_STATUS.ACKNOWLEDGED] } },
+      { 'assignmentHistory.byUserId': req.user._id },
+      { 'assignmentHistory.fromUserId': req.user._id },
     ];
   }
 
@@ -130,6 +136,7 @@ const getMyHandoffs = asyncHandler(async (req, res) => {
     .sort({ shiftDate: -1, createdAt: -1 })
     .populate('fromUserId', 'name displayTitle role avatarUrl')
     .populate('toUserId', 'name displayTitle role avatarUrl')
+    .populate('writeBackNotes.authorId', 'name displayTitle role avatarUrl')
     .lean();
 
   return respond.ok(res, 'Handoffs fetched', { handoffs });
@@ -151,12 +158,18 @@ const getHandoffById = asyncHandler(async (req, res) => {
   const userId = req.user._id.toString();
   const isSender = handoff.fromUserId._id.toString() === userId;
   const isReceiver = handoff.toUserId._id.toString() === userId;
+  // Previous assignees keep read-only visibility (Reassigned tab); writes stay locked.
+  const isPreviousParticipant = (handoff.assignmentHistory || []).some(
+    (entry) =>
+      entry.byUserId?.toString() === userId ||
+      entry.fromUserId?.toString() === userId
+  );
 
   // Space admins can also view for audit purposes
   const space = await Space.findById(handoff.spaceId);
   const isAdmin = space?.isAdmin(req.user._id);
 
-  if (!isSender && !isReceiver && !isAdmin) {
+  if (!isSender && !isReceiver && !isPreviousParticipant && !isAdmin) {
     return respond.forbidden(res, 'Access denied');
   }
 

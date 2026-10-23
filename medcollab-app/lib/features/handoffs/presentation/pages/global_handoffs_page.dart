@@ -272,12 +272,19 @@ class _GlobalHandoffsViewState extends State<_GlobalHandoffsView> {
                             final handoff = handoffs[index];
                             return HandoffCard(
                               handoff: handoff,
-                              onTap: () => context.push(
-                                AppRoutes.spaceHandoffDetailPath(
-                                  handoff.spaceId,
-                                  handoff.id,
-                                ),
-                              ),
+                              onTap: () async {
+                                final cubit =
+                                    context.read<GlobalHandoffsCubit>();
+                                await context.push(
+                                  AppRoutes.spaceHandoffDetailPath(
+                                    handoff.spaceId,
+                                    handoff.id,
+                                  ),
+                                );
+                                // Reload so reassigned items move to the
+                                // Reassigned tab instead of vanishing.
+                                if (!cubit.isClosed) await cubit.load();
+                              },
                             );
                           },
                         ),
@@ -298,6 +305,7 @@ class _GlobalHandoffsViewState extends State<_GlobalHandoffsView> {
         GlobalHandoffFilter.active => 'Active',
         GlobalHandoffFilter.completed => 'Done',
         GlobalHandoffFilter.drafts => 'Drafts',
+        GlobalHandoffFilter.reassigned => 'Reassigned',
       };
 }
 

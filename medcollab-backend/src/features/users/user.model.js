@@ -133,6 +133,18 @@ const userSchema = new mongoose.Schema(
       default: '',
     },
 
+    // Optional public @handle (3-30 chars: a-z, 0-9, underscore). Stored lowercase.
+    vocleUsername: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      minlength: 3,
+      maxlength: 30,
+      match: [/^[a-z0-9_]+$/, 'Username may only contain letters, numbers and underscore'],
+      unique: true,
+      sparse: true,
+    },
+
     // ── Authentication ────────────────────────────────────────────────────
     isVerified: {
       type: Boolean,
@@ -257,6 +269,7 @@ userSchema.methods.toPublicProfile = function () {
     institution: this.institution,
     avatarUrl: this.avatarUrl,
     bio: this.bio,
+    vocleUsername: this.vocleUsername,
     availability: this.availability,
     notifications: this.notifications,
     lastSeenAt: this.lastSeenAt,
