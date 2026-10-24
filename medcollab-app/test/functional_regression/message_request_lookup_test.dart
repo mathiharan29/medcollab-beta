@@ -35,6 +35,7 @@ class _Lookups extends UserRepository {
       relationship: phase == 'canMessage' ? 'connected' : 'stranger',
       canMessage: phase == 'canMessage',
       canRequest: phase == 'canRequest',
+      acceptsMessageRequests: phase == 'canRequest',
       pendingRequest: phase == 'sent' || phase == 'received'
           ? PendingRequestHint(id: 'request-synthetic', direction: phase)
           : null,
@@ -122,10 +123,18 @@ void main() {
     final search = find.byType(TextField).first;
     await tester.enterText(search, '9000000001');
     await tester.pump(const Duration(milliseconds: 420));
-    await tester.pump();
-    await tester.pump();
+    // Avoid pumpAndSettle — search spinner animations never settle.
+    for (var i = 0; i < 8; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
     expect(lookups.phones, ['+919000000001']);
-    final sendActionVisible = find.text('Send request').evaluate().isNotEmpty;
+    for (var i = 0;
+        i < 20 && find.text('Send request').evaluate().isEmpty;
+        i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    expect(find.text('Send request'), findsOneWidget,
+        reason: 'A requestable lookup must show an enabled Send request CTA');
     expect(requests.sendCalls, 0);
     lookups.phase = 'sent';
     await tester.enterText(search, '9000000002');
@@ -152,8 +161,5 @@ void main() {
     expect(requests.acceptCalls, 2);
     expect(find.text('Opened dm-accepted-synthetic'), findsOneWidget,
         reason: 'Acceptance must navigate to the returned channel ID');
-
-    expect(sendActionVisible, isTrue,
-        reason: 'A requestable lookup must show an enabled Send request CTA');
   });
 }

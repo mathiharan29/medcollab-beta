@@ -59,7 +59,11 @@ try {
     error: item.error, durationMs: item.durationMs,
   }));
 } catch (error) {
-  results = [{ id: 'sanity-adapter-setup', module: 'HARNESS', status: 'ERROR', errorCategory: 'SETUP', error: error.message }];
+  // Expand setup failures across every selected retained ID so the orchestrator
+  // never sees a non-catalog harness sentinel that aborts aggregation.
+  results = selectedIds.map((id) => ({
+    id, module: id.replace(/-\d{2}$/, ''), status: 'ERROR', errorCategory: 'SETUP', error: error.message,
+  }));
 } finally {
   try {
     await stopChild(backend?.child);

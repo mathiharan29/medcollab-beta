@@ -42,6 +42,16 @@ class _HandoffDetailPageState extends State<HandoffDetailPage> {
     _reload();
   }
 
+  @override
+  void didUpdateWidget(covariant HandoffDetailPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // GoRouter may reuse this State when only :handoffId changes (push link).
+    if (oldWidget.handoffId != widget.handoffId ||
+        oldWidget.spaceId != widget.spaceId) {
+      _reload();
+    }
+  }
+
   void _reload() {
     setState(() {
       _handoffFuture = _repository.getHandoffById(widget.handoffId);
@@ -414,6 +424,28 @@ class _HandoffDetailPageState extends State<HandoffDetailPage> {
           final message = snapshot.error is AppException
               ? (snapshot.error as AppException).message
               : 'Handoff not found';
+          final missing = snapshot.error is NotFoundException ||
+              message.toLowerCase().contains('not found');
+          // Stale push/bookmark targets: surface the error then land on the
+          // handoffs list so the user is never stranded (FR-LINK-03 / FR-SAVE-02).
+          if (missing) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
+              final messenger = ScaffoldMessenger.maybeOf(context);
+              messenger
+                ?..hideCurrentSnackBar()
+                ..showSnackBar(
+                  SnackBar(
+                    content: Text(message),
+                    action: SnackBarAction(
+                      label: 'Retry',
+                      onPressed: _reload,
+                    ),
+                  ),
+                );
+              if (context.mounted) context.go(AppRoutes.handoffs);
+            });
+          }
           return Scaffold(
             backgroundColor: AppColors.backgroundApp,
             appBar: AppBar(
@@ -425,10 +457,36 @@ class _HandoffDetailPageState extends State<HandoffDetailPage> {
                   size: 18,
                   color: AppColors.textOnDark,
                 ),
-                onPressed: () => context.pop(),
+                onPressed: () {
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go(AppRoutes.handoffs);
+                  }
+                },
               ),
             ),
-            body: Center(child: Text(message)),
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(message, textAlign: TextAlign.center),
+                    const SizedBox(height: 16),
+                    FilledButton(
+                      onPressed: _reload,
+                      child: const Text('Retry'),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () => context.go(AppRoutes.handoffs),
+                      child: const Text('Back to handoffs'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           );
         }
 

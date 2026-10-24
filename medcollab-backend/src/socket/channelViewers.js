@@ -4,7 +4,8 @@
  */
 async function getUserIdsViewingChannel(channelId) {
   try {
-    const { getIO } = require('../index');
+    // Same package as this file (`src/socket`), not `src/index` (does not exist).
+    const { getIO } = require('./index');
     const io = getIO();
     if (!io || !channelId) return new Set();
     const sockets = await io.in(`channel:${channelId}`).fetchSockets();

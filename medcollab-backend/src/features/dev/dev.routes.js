@@ -69,7 +69,9 @@ router.post(
     ];
 
     const created = [];
+    const mongoose = require('mongoose');
     for (const sample of samples) {
+      // Schema requires referenceId + referenceType; use disposable ObjectIds.
       const notification = await Notification.create({
         userId: req.user._id,
         type: sample.type,
@@ -77,6 +79,11 @@ router.post(
         body: sample.body,
         priority: sample.priority,
         actorName: 'Vocle Beta',
+        referenceId: new mongoose.Types.ObjectId(),
+        referenceType:
+          sample.type === NOTIFICATION_TYPES.HANDOFF_RECEIVED
+            ? 'Handoff'
+            : 'Message',
       });
       created.push(notification);
       try {

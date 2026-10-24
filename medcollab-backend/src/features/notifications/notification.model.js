@@ -77,7 +77,7 @@ const notificationSchema = new mongoose.Schema(
     referenceType: {
       type: String,
       required: true,
-      enum: ['Message', 'Handoff', 'Space', 'Channel'],
+      enum: ['Message', 'Handoff', 'Space', 'Channel', 'MessageRequest'],
     },
 
     // Deep link data for client-side navigation

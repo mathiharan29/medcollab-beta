@@ -100,9 +100,11 @@ async function canMessageUser(callerId, targetUserId) {
     return false;
   }
 
+  // Exact 1:1 DM only — a group Needl that happens to contain both users
+  // must not count as an open pair conversation.
   const existingDm = await Channel.findOne({
     type: CHANNEL_TYPES.DIRECT,
-    members: { $all: [callerId, targetUserId] },
+    members: { $all: [callerId, targetUserId], $size: 2 },
     isArchived: false,
   })
     .select('_id')

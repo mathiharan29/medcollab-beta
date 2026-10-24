@@ -66,12 +66,12 @@ class _FeatureRequestPageState extends State<FeatureRequestPage> {
         content: Text(
           delivered
               ? 'Thanks — Vocle beta team received your request'
-              : 'Saved on device. Email $_supportEmail if urgent '
-                  '(API unavailable offline)',
+              : 'Could not submit — check your connection and try again. '
+                  'Draft kept on this screen. Email $_supportEmail if urgent.',
         ),
       ),
     );
-    Navigator.of(context).pop();
+    if (delivered) Navigator.of(context).pop();
   }
 
   @override

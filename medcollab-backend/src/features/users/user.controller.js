@@ -149,8 +149,8 @@ const getUserById = asyncHandler(async (req, res) => {
 const searchUsers = asyncHandler(async (req, res) => {
   const { q, spaceId } = req.query;
 
-  if (!q || q.trim().length < 1) {
-    return respond.badRequest(res, 'Search query must be at least 1 character');
+  if (!q || q.trim().length < 2) {
+    return respond.badRequest(res, 'Search query must be at least 2 characters');
   }
 
   const searchRegex = new RegExp(escapeRegex(q.trim()), 'i');

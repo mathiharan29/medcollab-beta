@@ -290,6 +290,7 @@ class AppRouter {
               final spaceId = state.pathParameters['spaceId']!;
               final handoffId = state.pathParameters['handoffId']!;
               return HandoffDetailPage(
+                key: ValueKey('handoff-detail-$handoffId'),
                 spaceId: spaceId,
                 handoffId: handoffId,
               );

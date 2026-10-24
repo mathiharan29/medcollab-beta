@@ -78,6 +78,7 @@ class _MedCollabAppState extends State<MedCollabApp> {
               themeMode: themeState.mode,
               routerConfig: deps.appRouter.router,
               builder: (context, child) => AppNavigationBackHandler(
+                router: deps.appRouter.router,
                 child: child ?? const SizedBox.shrink(),
               ),
             ),

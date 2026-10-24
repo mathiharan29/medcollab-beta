@@ -56,9 +56,11 @@ const fileFilter = (req, file, cb) => {
     return;
   }
 
+  // Pass only the error — `cb(err, false)` can drop the error and yield 500s.
   cb(
-    new Error('File type not allowed. Accepted: JPEG, PNG, WebP, HEIC, PDF, MP4, MOV'),
-    false,
+    new Error(
+      'File type not allowed. Accepted: JPEG, PNG, WebP, HEIC, PDF, MP4, MOV',
+    ),
   );
 };
 

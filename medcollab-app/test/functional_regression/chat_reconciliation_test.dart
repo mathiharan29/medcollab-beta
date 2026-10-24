@@ -198,10 +198,14 @@ void main() {
     expect(cubit.state.messages.where((item) => item.id == 'persisted-1').length, 1);
   });
 
-  testWidgets('FR-RT-04 typing state handles peers, self, duplicate, expiry and disposal', (tester) async {
+  test('FR-RT-04 typing state handles peers, self, duplicate, expiry and disposal', () async {
+    final previousExpiry = ChannelChatCubit.typingExpiryDuration;
+    ChannelChatCubit.typingExpiryDuration = const Duration(milliseconds: 30);
+    addTearDown(() => ChannelChatCubit.typingExpiryDuration = previousExpiry);
+
     cubit = ChannelChatCubit(messageRepository: messages, mediaRepository: media,
         socketClient: socket, channelId: 'chat-regression', currentUserId: 'me');
-    await tester.pump();
+    await settle();
     socket.emitEvent(SocketEvents.userTyping,
         {'channelId': 'chat-regression', 'userId': 'me', 'userName': 'Me'});
     socket.emitEvent(SocketEvents.userTyping,
@@ -217,7 +221,7 @@ void main() {
     socket.emitEvent(SocketEvents.userStoppedTyping,
         {'channelId': 'chat-regression', 'userId': 'peer-a'});
     expect(cubit.state.typingUserNames, ['Ben']);
-    await tester.pump(const Duration(seconds: 5));
+    await Future<void>.delayed(const Duration(milliseconds: 60));
     expect(cubit.state.typingUserNames, isEmpty,
         reason: 'A stale peer typing indicator must expire without a stop event');
     await cubit.close();

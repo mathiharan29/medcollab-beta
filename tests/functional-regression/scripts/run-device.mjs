@@ -4,6 +4,7 @@ import { promisify } from 'node:util';
 import { resolve, join, dirname } from 'node:path';
 import { readFile, writeFile, mkdir, rm } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
+import os from 'node:os';
 import { deviceCases, devicePackage, deviceSdk, emulatorSerial, selectedDeviceCases, validateRestart, classifyDeviceDiagnostics } from './device-contracts.mjs';
 import { prepareDeviceWorkspace, verifyDeviceSource, verifyDeviceCleanupPath, command, hash } from './prepare-device-workspace.mjs';
 
@@ -133,6 +134,12 @@ try {
   process.env.VOCLE_OUTPUT_DIR = workspace.runRoot;
   // Use a known downloaded test binary when supplied, never a Mongo URI.
   if (option('mongo-bin')) process.env.MONGOMS_SYSTEM_BINARY = resolve(option('mongo-bin'));
+  // Persist mongodb-memory-server downloads across device runs so each case
+  // does not re-fetch ~600MB into the ephemeral evidence folder.
+  const hostCacheRoot = process.env.LOCALAPPDATA || process.env.HOME || process.env.TMPDIR || os.tmpdir();
+  const mongoCache = join(hostCacheRoot, 'vocle-runtime-cache', 'mongo-binaries');
+  await mkdir(mongoCache, { recursive: true });
+  process.env.MONGOMS_DOWNLOAD_DIR = mongoCache;
   const { startDeviceServer } = await import('./device-server.mjs');
   for (const id of selected) {
     let caseCleanup = { status: 'ERROR' };
@@ -155,8 +162,9 @@ try {
           `--dart-define=API_BASE_URL=${active.apiOrigin}`, `--dart-define=SOCKET_URL=${active.apiOrigin}`,
           `--dart-define=DEVICE_CONTROL_URL=${active.controlOrigin}`, `--dart-define=DEVICE_RUN_ID=${active.runId}`,
           `--dart-define=DEVICE_PHASE=${phase}`];
+        // First assembleDebug on a cold disposable Gradle cache often exceeds 10m.
         const phaseResult = await runLogged(flutter, args, workspace.app,
-          join(workspace.runRoot, 'diagnostics', `${id}-${phase}.log`), 600000);
+          join(workspace.runRoot, 'diagnostics', `${id}-${phase}.log`), 25 * 60 * 1000);
         // The control gateway can fail during result submission. The native
         // driver retains the original case outcome instead of overwriting it
         // with a reporting timeout or turning a business FAIL into ERROR.

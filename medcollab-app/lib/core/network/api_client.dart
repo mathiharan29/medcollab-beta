@@ -36,8 +36,10 @@ class ApiClient {
         storage: _storage,
         dio: _dio,
         refreshToken: _refreshAccessToken,
-        onSessionExpired: onSessionExpired,
-        onAccessTokenRefreshed: onAccessTokenRefreshed,
+        // Read callbacks at invoke time — callers assign these after construct.
+        onSessionExpired: () => onSessionExpired?.call(),
+        onAccessTokenRefreshed: (token) async =>
+            onAccessTokenRefreshed?.call(token),
       ),
     );
 

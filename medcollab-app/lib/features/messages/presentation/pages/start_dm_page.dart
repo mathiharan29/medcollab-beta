@@ -413,7 +413,12 @@ class _StartDmPageState extends State<StartDmPage> {
   Widget _phoneLookupCard(UserLookupResult lookup) {
     final user = lookup.user;
     final pending = lookup.pendingRequest;
-    final busy = _busyUserId == user.id || _busyRequestId == pending?.id;
+    // Only treat as busy when a concrete id matches — `null == null` would
+    // hide the Send request CTA for every non-pending lookup (FR-REQ-06).
+    final busy = _busyUserId == user.id ||
+        (pending != null &&
+            _busyRequestId != null &&
+            _busyRequestId == pending.id);
 
     Widget action;
     late final String helper;

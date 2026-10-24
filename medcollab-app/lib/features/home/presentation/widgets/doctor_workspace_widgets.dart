@@ -318,60 +318,71 @@ class _PendingHandoffCard extends StatelessWidget {
           // Refresh Home immediately so pending list doesn't stay stale.
           context.read<HomeDashboardCubit>().load();
         },
-        child: Container(
-          decoration: BoxDecoration(
-            color: AppColors.surfaceCard,
-            borderRadius: AppRadius.card,
-            border: Border(
-              left: BorderSide(color: accent, width: 4),
-              top: const BorderSide(color: AppColors.borderDefault, width: 0.5),
-              right:
-                  const BorderSide(color: AppColors.borderDefault, width: 0.5),
-              bottom:
-                  const BorderSide(color: AppColors.borderDefault, width: 0.5),
+        child: ClipRRect(
+          borderRadius: AppRadius.card,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: AppColors.surfaceCard,
+              borderRadius: AppRadius.card,
+              border: Border.all(color: AppColors.borderDefault, width: 0.5),
             ),
-          ),
-          padding: const EdgeInsets.fromLTRB(13, 11, 13, 11),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.cardTitle.copyWith(
-                        fontWeight: FontWeight.w600,
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(width: 4, color: accent),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(9, 11, 13, 11),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTextStyles.cardTitle.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  subtitle,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTextStyles.caption,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: chip.$1,
+                              borderRadius: AppRadius.pill,
+                            ),
+                            child: Text(
+                              chip.$3,
+                              style: AppTextStyles.badge.copyWith(
+                                color: chip.$2,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.caption,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: chip.$1,
-                  borderRadius: AppRadius.pill,
-                ),
-                child: Text(
-                  chip.$3,
-                  style: AppTextStyles.badge.copyWith(
-                    color: chip.$2,
-                    fontWeight: FontWeight.w500,
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

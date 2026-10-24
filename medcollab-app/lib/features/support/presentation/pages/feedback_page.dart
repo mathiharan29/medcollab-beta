@@ -63,12 +63,12 @@ class _FeedbackPageState extends State<FeedbackPage> {
         content: Text(
           delivered
               ? 'Thanks — Vocle beta team received your feedback'
-              : 'Saved on device. Email $_supportEmail if urgent '
-                  '(API unavailable offline)',
+              : 'Could not submit — check your connection and try again. '
+                  'Draft kept on this screen. Email $_supportEmail if urgent.',
         ),
       ),
     );
-    Navigator.of(context).pop();
+    if (delivered) Navigator.of(context).pop();
   }
 
   @override

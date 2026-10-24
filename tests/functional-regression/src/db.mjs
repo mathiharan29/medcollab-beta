@@ -8,10 +8,20 @@ export async function startMongo(backendRoot, downloadDirectory, { enableTestCom
   const require = backendRequire(backendRoot);
   const { MongoMemoryServer } = require('mongodb-memory-server');
   const previous = process.env.MONGOMS_DOWNLOAD_DIR;
-  process.env.MONGOMS_DOWNLOAD_DIR = downloadDirectory;
+  // Prefer an already-configured host cache (device lane) over a per-run folder.
+  process.env.MONGOMS_DOWNLOAD_DIR = previous || downloadDirectory;
   try {
     if (dbPath) await mkdir(dbPath, { recursive: true });
-    const server = await MongoMemoryServer.create({ instance: { ip: '127.0.0.1', ...(dbPath ? { dbPath, storageEngine: 'wiredTiger' } : {}), ...(enableTestCommands ? { args: ['--setParameter', 'enableTestCommands=1'] } : {}) } });
+    // Disposable WSL+VFS guests are slower than bare metal; default 10s launch
+    // timeout falsely fails MongoMemoryServer during full-187.
+    const server = await MongoMemoryServer.create({
+      instance: {
+        ip: '127.0.0.1',
+        launchTimeout: 120000,
+        ...(dbPath ? { dbPath, storageEngine: 'wiredTiger' } : {}),
+        ...(enableTestCommands ? { args: ['--setParameter', 'enableTestCommands=1'] } : {}),
+      },
+    });
     const uri = server.getUri();
     if (!/^mongodb:\/\/127\.0\.0\.1:/.test(uri)) { await server.stop(); throw new Error('Mongo server was not loopback'); }
     return { server, uri };

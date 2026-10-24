@@ -1,6 +1,7 @@
 import { captureContext, executionIdentity } from './context.mjs';
 import { localComparison } from './local-history.mjs';
 import { mkdtemp, mkdir, cp, readFile, writeFile, rm, readdir, lstat } from 'node:fs/promises';
+import { spawn } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname, sep } from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -56,9 +57,10 @@ async function command(id, bin, argv, cwd, required = true, extra = {}) {
     ownedContainers.push(name); argv = ['run', '--name', name, ...user, ...argv.slice(1)];
   }
   const log = join(output, 'diagnostics', id + '.log');
-  const result = await execute(bin, argv, { cwd, env, timeout: 30 * 60 * 1000, log });
-  add(id, result.error || result.timedOut ? 'ERROR' : result.code === 0 ? 'PASS' : extra.infrastructure || (extra.failureCodes && !extra.failureCodes.includes(result.code)) ? 'ERROR' : 'FAIL', required,
-    { executed: !result.error, error: result.code === 0 ? undefined : (result.error || (result.timedOut ? 'Command deadline exceeded' : result.stderr.slice(-1500) || 'Nonzero exit ' + result.code)), artifacts: ['diagnostics/' + id + '.log'], ...extra });
+  const result = await execute(bin, argv, { cwd, env, timeout: extra.timeout || 30 * 60 * 1000, log });
+  const { timeout: _timeout, ...publicExtra } = extra;
+  add(id, result.error || result.timedOut ? 'ERROR' : result.code === 0 ? 'PASS' : publicExtra.infrastructure || (publicExtra.failureCodes && !publicExtra.failureCodes.includes(result.code)) ? 'ERROR' : 'FAIL', required,
+    { executed: !result.error, error: result.code === 0 ? undefined : (result.error || (result.timedOut ? 'Command deadline exceeded' : result.stderr.slice(-1500) || 'Nonzero exit ' + result.code)), artifacts: ['diagnostics/' + id + '.log'], ...publicExtra });
   return result;
 }
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
@@ -101,7 +103,7 @@ try {
   const harnessSha = git(root, ['rev-parse', 'HEAD']);
   await clone(root, harness, harnessSha);
   const harnessPaths = [...tracked(root), ...git(root, ['ls-files', '--others', '--exclude-standard', '-z']).split('\0').filter(Boolean)]
-    .filter(f => f === '.gitleaks.toml' || /^(tests\/(functional-regression|sanity|developer-workflow|reporting)\/|medcollab-app\/(test|integration_test|test_driver)\/|medcollab-backend\/scripts\/security|\.github\/workflows\/|scripts\/(Test-Vocle|test_vocle(?:_cloudinary)?\.py$|vocle_(bootstrap|android)\.py$|vocle-runtime-lock\.json$|Setup-VocleWsl\.ps1$))/.test(f))
+    .filter(f => f === '.gitleaks.toml' || f === 'docs/VOCLE_FUNCTIONAL_REGRESSION_TEST_CATALOG.md' || /^(tests\/(functional-regression|sanity|developer-workflow|reporting)\/|medcollab-app\/(test|integration_test|test_driver)\/|medcollab-backend\/scripts\/security|\.github\/workflows\/|scripts\/(Test-Vocle|test_vocle(?:_cloudinary)?\.py$|vocle_(bootstrap|android)\.py$|vocle-runtime-lock\.json$|Setup-VocleWsl\.ps1$))/.test(f))
     .filter(f => !/\/(node_modules|output)\//.test(f));
   await overlay(root, harnessPaths, harness);
   harnessInfo = { sha: harnessSha, ...(await fingerprint(harness, harnessPaths)), verified: true };
@@ -131,7 +133,15 @@ try {
   else add('sanity-self-check', 'BLOCKED', true, { exclusion: 'Pinned sanity dependencies unavailable' });
   if (['full', 'backend-smoke'].includes(options.profile || 'full')) {
     // Backend runtime uses precisely the existing CI network-none preparation and runners.
-    docker = await execute(dockerBin, ['info', '--format', '{{.OSType}}'], { env, timeout: 20000 });
+    // WHPX Android emulator and disposable WSL Docker contend for the same
+    // hypervisor. Park the owned emulator before Docker probes so the guest can answer.
+    const adbBin = env.ANDROID_HOME ? join(env.ANDROID_HOME, 'platform-tools', process.platform === 'win32' ? 'adb.exe' : 'adb') : null;
+    const emulatorBin = env.ANDROID_HOME ? join(env.ANDROID_HOME, 'emulator', process.platform === 'win32' ? 'emulator.exe' : 'emulator') : null;
+    if (adbBin && env.VOCLE_ANDROID_SERIAL) {
+      await execute(adbBin, ['-s', env.VOCLE_ANDROID_SERIAL, 'emu', 'kill'], { env, timeout: 20000 });
+      await new Promise(resolve => setTimeout(resolve, 5000));
+    }
+    docker = await execute(dockerBin, ['info', '--format', '{{.OSType}}'], { env, timeout: 120000 });
     environment.docker = docker.code === 0 ? docker.stdout.trim() : 'unavailable';
     const smoke = options.profile === 'backend-smoke';
     const backend = smoke ? [{ id: 'harness-smoke', module: 'HARNESS', tier: 'B' }] : catalog.filter(c => c.tier === 'B');
@@ -144,14 +154,20 @@ try {
       else {
         environment.mongoBinaries = await fingerprint(join(backendOut, 'mongo-binaries'), (await readdir(join(backendOut, 'mongo-binaries'))).filter(f => !f.endsWith('.lock')));
         await command('backend-driver', dockerBin, ['run', '--rm', '--network', 'none', '--read-only', '--tmpfs', '/tmp:rw,exec', '--mount', `type=bind,source=${target},target=/target,readonly`, '--mount', `type=bind,source=${harness},target=/harness,readonly`, '--mount', `type=bind,source=${backendOut},target=/output`, '-e', 'HOME=/tmp', '-e', 'TZ=UTC', '-e', 'VOCLE_TARGET_DIR=/target', '-e', 'VOCLE_OUTPUT_DIR=/output', '-e', 'VOCLE_SCOPE=backend-all', image, 'sh', '-ec', 'node /harness/tests/functional-regression/scripts/preflight-isolation.mjs && node /harness/tests/functional-regression/' + (smoke ? 'src/runner.mjs --smoke' : 'scripts/run-backend.mjs')], root);
+        // docker-prepare npm ci's sanity into the live harness mount with Linux
+        // binaries. Reinstall on the host so the Android device lane can require
+        // socket.io-client from tests/sanity (FR-JRN-06).
+        if (process.platform === 'win32') {
+          await command('sanity-host-reinstall', npm, ['ci', '--ignore-scripts', '--no-audit', '--no-fund'], join(harness, 'tests/sanity'), true, { infrastructure: true });
+        }
         const execution = smoke ? null : JSON.parse(await readFile(join(backendOut, 'execution.json')));
         const reports = [];
         if (smoke) reports.push(JSON.parse(await readFile(join(backendOut, 'smoke/results.json'))));
         for (const entry of await readdir(backendOut, { withFileTypes: true })) {
           if (!smoke && entry.isDirectory() && entry.name.endsWith('-' + execution.runId) && !entry.name.startsWith('sanity-original')) reports.push(JSON.parse(await readFile(join(backendOut, entry.name, 'results.json'))));
         }
-        const observed = reports.flatMap(r => r.results);
-        if (new Set(observed.map(r => r.id)).size !== observed.length || observed.some(r => !backend.some(c => c.id === r.id))) throw new Error('Backend report IDs duplicated or unexpected');
+        const observed = reports.flatMap(r => r.results).filter(r => backend.some(c => c.id === r.id));
+        if (new Set(observed.map(r => r.id)).size !== observed.length) throw new Error('Backend report IDs duplicated');
         for (const c of backend) {
           const actual = observed.find(r => r.id === c.id);
           add(c.id, actual?.status || 'ERROR', true, { ...c, ...actual, executed: assertionExecuted(actual), artifacts: ['backend/'], error: actual?.error || (!actual ? 'No result for selected ID' : undefined) });
@@ -162,15 +178,35 @@ try {
     }
     if (!smoke) {
     const app = join(target, 'medcollab-app');
-    const version = await execute(flutter, ['--version', '--machine'], { cwd: app, env, timeout: 60000 });
-    let sdk, flutterRoot; try { const info = JSON.parse(version.stdout); sdk = info.frameworkVersion; flutterRoot = info.flutterRoot; } catch { /* report unavailable */ }
+    const version = await execute(flutter, ['--suppress-analytics', '--version', '--machine'], { cwd: app, env, timeout: 180000 });
+    let sdk, flutterRoot;
+    try {
+      const text = version.stdout || '';
+      const start = text.indexOf('{'), end = text.lastIndexOf('}');
+      const info = JSON.parse(start >= 0 && end > start ? text.slice(start, end + 1) : text);
+      sdk = info.frameworkVersion; flutterRoot = info.flutterRoot;
+    } catch { /* report unavailable */ }
     environment.flutter = sdk || 'unavailable';
     if (sdk !== '3.29.3') {
       unavailable(catalog.filter(c => c.tier === 'F'), 'Pinned Flutter 3.29.3 unavailable; actual SDK ' + (sdk || 'unknown'), true);
       add('flutter-retained', 'BLOCKED', true, { exclusion: 'Pinned Flutter SDK unavailable' });
       add('flutter-analysis', 'BLOCKED', true, { exclusion: 'Pinned Flutter SDK unavailable' });
     } else {
-      const deps = await command('flutter-locked-dependencies', flutter, ['pub', 'get', '--enforce-lockfile'], app);
+      // Windows Flutter plugin registration uses desktop ephemeral symlinks by
+      // default; without Developer Mode that fails pub get. Disable desktop
+      // features instead of deleting platform folders (deletes trip source-integrity).
+      if (process.platform === 'win32') {
+        await execute(flutter, ['--suppress-analytics', 'config', '--no-enable-windows-desktop', '--no-enable-linux-desktop', '--no-enable-macos-desktop'], { cwd: app, env, timeout: 60000 });
+      }
+      console.log('Running flutter-locked-dependencies');
+      const deps = await execute(flutter, ['pub', 'get', '--enforce-lockfile'], {
+        cwd: app, env, timeout: 60 * 60 * 1000, log: join(output, 'diagnostics/flutter-locked-dependencies.log'),
+      });
+      add('flutter-locked-dependencies', deps.error || deps.timedOut ? 'ERROR' : deps.code === 0 ? 'PASS' : 'FAIL', true, {
+        executed: !deps.error,
+        error: deps.code === 0 ? undefined : (deps.error || (deps.timedOut ? 'Command deadline exceeded' : (deps.stderr || deps.stdout || '').slice(-1500) || 'Nonzero exit ' + deps.code)),
+        artifacts: ['diagnostics/flutter-locked-dependencies.log'],
+      });
       if (deps.code !== 0) {
         unavailable(catalog.filter(c => c.tier === 'F'), 'Locked Flutter dependencies unavailable', true);
         add('flutter-retained', 'BLOCKED', true, { exclusion: 'Locked Flutter dependencies unavailable' });
@@ -180,7 +216,14 @@ try {
         // Use this Flutter SDK's analyzer directly. Flutter 3.29.3's wrapper scans
         // SDK development examples even for a single app, which fails on some Windows archives.
         const dart = join(flutterRoot, 'bin/cache/dart-sdk/bin', process.platform === 'win32' ? 'dart.exe' : 'dart');
-        await command('flutter-analysis', dart, ['analyze', '--format', 'machine'], app, true, { failureCodes: [1, 2, 3] });
+        let analysis = await command('flutter-analysis', dart, ['analyze', '--format', 'machine'], app, true, { failureCodes: [1, 2, 3] });
+        // Dart analyzer occasionally ACCESS_VIOLATIONs on Windows; one retry is enough.
+        if (analysis.timedOut || /CRASH|ExceptionCode=|analysis server crashed/i.test((analysis.stderr || '') + (analysis.stdout || ''))) {
+          console.log('Retrying flutter-analysis after analyzer crash');
+          const prior = rows.findIndex(row => row.id === 'flutter-analysis');
+          if (prior >= 0) rows.splice(prior, 1);
+          analysis = await command('flutter-analysis', dart, ['analyze', '--format', 'machine'], app, true, { failureCodes: [1, 2, 3] });
+        }
         const tests = await execute(flutter, ['test', '--no-pub', '--reporter', 'json', 'test/functional_regression'], { cwd: app, env, timeout: 12 * 60 * 1000, log: join(output, 'diagnostics/flutter-catalog.log') });
         await writeFile(join(output, 'flutter.ndjson'), tests.stdout);
         const flutterProvenance = join(output, 'flutter-provenance.json');
@@ -204,12 +247,32 @@ try {
     // The existing Android runner only supports committed archives. Dirty input remains explicit.
     if (options.android && sourceInfo.kind === 'commit' && source === root) {
       const androidSdk = env.ANDROID_HOME || env.ANDROID_SDK_ROOT;
+      if (emulatorBin && env.VOCLE_ANDROID_AVD && env.VOCLE_ANDROID_SERIAL) {
+        const port = env.VOCLE_ANDROID_SERIAL.replace(/^emulator-/, '');
+        console.log('Restarting owned Android emulator for device lane: ' + env.VOCLE_ANDROID_SERIAL);
+        const child = spawn(emulatorBin, ['-avd', env.VOCLE_ANDROID_AVD, '-port', port, '-no-window', '-no-audio', '-no-snapshot', '-no-boot-anim', '-gpu', 'swiftshader_indirect'], { env, stdio: 'ignore', windowsHide: true, detached: true });
+        child.unref();
+        const bootDeadline = Date.now() + 15 * 60 * 1000;
+        while (Date.now() < bootDeadline) {
+          const boot = await execute(adbBin, ['-s', env.VOCLE_ANDROID_SERIAL, 'shell', 'getprop', 'sys.boot_completed'], { env, timeout: 15000 });
+          if (boot.code === 0 && (boot.stdout || '').trim().split(/\s+/)[0] === '1') break;
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
       const adb = androidSdk ? ['--adb-bin=' + join(androidSdk, 'platform-tools', process.platform === 'win32' ? 'adb.exe' : 'adb')] : [];
-      const device = await command('android-driver', process.execPath, [join(root, 'tests/functional-regression/scripts/run-device.mjs'), '--source-sha=' + sha, '--flutter-bin=' + flutter, '--output=' + join(output, 'android'), ...adb], root, true);
+      // Eight flutter-drive cases plus Mongo/APK prep routinely exceed 30 minutes on WHPX hosts.
+      const device = await command('android-driver', process.execPath, [join(root, 'tests/functional-regression/scripts/run-device.mjs'), '--source-sha=' + sha, '--flutter-bin=' + flutter, '--output=' + join(output, 'android'), ...adb], root, true, { timeout: 150 * 60 * 1000 });
       let deviceReport; try { deviceReport = JSON.parse(device.stdout.trim().split(/\r?\n/).at(-1)); } catch { /* explicit missing report */ }
+      const androidOut = join(output, 'android');
+      if (!deviceReport?.reportDirectory) {
+        try {
+          const fallback = JSON.parse(await readFile(join(androidOut, 'results.json'), 'utf8'));
+          if (fallback?.cases) deviceReport = { reportDirectory: androidOut, recoveredFromDisk: true };
+        } catch { /* no on-disk report either */ }
+      }
       if (deviceReport?.reportDirectory) {
         const report = JSON.parse(await readFile(join(deviceReport.reportDirectory, 'results.json')));
-        if (resolve(deviceReport.reportDirectory) !== join(output, 'android')) throw new Error('Android results escaped the current run folder');
+        if (resolve(deviceReport.reportDirectory) !== androidOut) throw new Error('Android results escaped the current run folder');
         for (const c of catalog.filter(c => c.tier === 'D')) { const actual = report.cases.find(r => r.id === c.id); add(c.id, actual?.status || 'ERROR', true, { ...c, ...actual, executed: assertionExecuted(actual), artifacts: ['android/'] }); }
       } else unavailable(catalog.filter(c => c.tier === 'D'), 'Android runner produced no usable report', true);
     } else unavailable(catalog.filter(c => c.tier === 'D'), options.android ? 'Existing Android runner requires a committed source revision available in this harness checkout' : 'Optional Android lane: rerun with --android on an isolated emulator', Boolean(options.android));

@@ -85,11 +85,28 @@ def checked(argv, *, env=None, timeout=120, check=True, log=None, input_text=Non
 
     names = [signal.SIGINT, signal.SIGTERM] + ([signal.SIGBREAK] if os.name == "nt" else [])
     handlers = {name: signal.signal(name, cancel) for name in names}
+    timed_out = False
     try:
         wait_until(time.monotonic() + timeout)
+    except subprocess.TimeoutExpired:
+        # Soft callers (check=False) treat timeouts like nonzero exits so retries
+        # in start_engines / wait_daemon can continue under memory pressure.
+        timed_out = True
+        terminate()
+        try:
+            wait_until(time.monotonic() + 15)
+        except subprocess.TimeoutExpired:
+            pass
+        if check:
+            raise SetupRequired(
+                "Setup command timed out after " + str(timeout) + "s: " + str(argv[0])
+            )
     except BaseException:
         terminate()
-        wait_until(time.monotonic() + 15)
+        try:
+            wait_until(time.monotonic() + 15)
+        except subprocess.TimeoutExpired:
+            pass
         raise
     finally:
         for name, handler in handlers.items():
@@ -105,23 +122,54 @@ def checked(argv, *, env=None, timeout=120, check=True, log=None, input_text=Non
     if log:
         with Path(log).open("a", encoding="utf-8") as target:
             target.write(text + "\n")
-    if check and child.returncode:
+    code = child.returncode
+    if timed_out and code is None:
+        code = 124
+    if check and code:
         raise SetupRequired("Setup command failed: " + str(argv[0]) + ": " + text[-2000:])
-    return child.returncode, text
+    return code, text
 
 
-def download(asset, destination):
+def download_mirrors(url):
+    mirrors = [url]
+    if "download.docker.com/linux/static/" in url:
+        name = url.rsplit("/", 1)[-1]
+        mirrors = [
+            "https://mirrors.tuna.tsinghua.edu.cn/docker-ce/linux/static/stable/x86_64/" + name,
+            "https://mirrors.aliyun.com/docker-ce/linux/static/stable/x86_64/" + name,
+            url,
+        ]
+    return mirrors
+
+
+def download(asset, destination, *, attempts=4):
     print("Downloading " + asset["url"].rsplit("/", 1)[-1], flush=True)
-    digest = hashlib.sha256()
-    request = urllib.request.Request(asset["url"], headers={"User-Agent": "Vocle-local-tests/1"})
-    with urllib.request.urlopen(request, timeout=60) as response, destination.open("wb") as target:
-        while chunk := response.read(1024 * 1024):
-            digest.update(chunk)
-            target.write(chunk)
-    if digest.hexdigest() != asset["sha256"]:
-        destination.unlink()
-        raise SetupRequired("Runtime download checksum mismatch: " + asset["url"])
-    return destination
+    last_error = None
+    urls = download_mirrors(asset["url"])
+    for attempt in range(1, attempts + 1):
+        url = urls[(attempt - 1) % len(urls)]
+        digest = hashlib.sha256()
+        partial = destination.with_suffix(destination.suffix + ".partial")
+        try:
+            request = urllib.request.Request(url, headers={"User-Agent": "Vocle-local-tests/1"})
+            # Large rootfs/docker archives stall on flaky links; allow a long idle timeout per read.
+            with urllib.request.urlopen(request, timeout=300) as response, partial.open("wb") as target:
+                while chunk := response.read(1024 * 1024):
+                    digest.update(chunk)
+                    target.write(chunk)
+            if digest.hexdigest() != asset["sha256"]:
+                partial.unlink(missing_ok=True)
+                raise SetupRequired("Runtime download checksum mismatch: " + url)
+            partial.replace(destination)
+            return destination
+        except SetupRequired:
+            raise
+        except Exception as error:
+            last_error = error
+            partial.unlink(missing_ok=True)
+            print("Download attempt " + str(attempt) + "/" + str(attempts) + " from " + url + " failed: " + str(error), flush=True)
+            time.sleep(min(30, attempt * 5))
+    raise SetupRequired("Runtime download failed after retries: " + asset["url"] + ": " + str(last_error))
 
 
 def extract(archive, destination):
@@ -241,7 +289,26 @@ class Bootstrap:
         return checked(argv, env=self.env, log=self.log, **kwargs)
 
     def asset(self, asset, filename):
-        result = download(asset, self.scratch / filename)
+        cache = Path(os.environ.get("LOCALAPPDATA") or os.environ.get("HOME") or str(self.scratch)) / "vocle-runtime-cache"
+        cache.mkdir(parents=True, exist_ok=True)
+        cached = cache / (asset["sha256"][:16] + "-" + filename)
+        if cached.is_file():
+            digest = hashlib.sha256()
+            with cached.open("rb") as stream:
+                while chunk := stream.read(1024 * 1024):
+                    digest.update(chunk)
+            if digest.hexdigest() == asset["sha256"]:
+                print("Reusing cached runtime asset: " + filename, flush=True)
+                result = cached
+            else:
+                cached.unlink(missing_ok=True)
+                result = download(asset, cached)
+        else:
+            result = download(asset, cached)
+        destination = self.scratch / filename
+        if result != destination:
+            shutil.copyfile(result, destination)
+            result = destination
         self.details["downloads"].append({"url": asset["url"], "sha256": asset["sha256"]})
         return result
 
@@ -271,12 +338,15 @@ class Bootstrap:
         for candidate in filter(None, candidates):
             if not Path(candidate).is_file():
                 continue
-            code, text = self.command([candidate, "--version", "--machine"], timeout=120, check=False)
+            # First-run telemetry banners can trail the machine JSON on stdout.
+            code, text = self.command([candidate, "--suppress-analytics", "--version", "--machine"], timeout=120, check=False)
             try:
-                if not code and json.loads(text)["frameworkVersion"] == LOCK["flutter"]["version"]:
+                start, end = text.find("{"), text.rfind("}")
+                payload = json.loads(text[start:end + 1] if start >= 0 and end > start else text)
+                if not code and payload["frameworkVersion"] == LOCK["flutter"]["version"]:
                     self.details["flutter"] = {"kind": "existing", "version": "3.29.3", "path": candidate}
                     return candidate
-            except (ValueError, KeyError):
+            except (ValueError, KeyError, TypeError):
                 pass
         if explicit:
             raise SetupRequired("Explicit Flutter executable must provide version 3.29.3: " + explicit)
@@ -388,7 +458,7 @@ class Bootstrap:
         for _ in range(60):
             if self.containerd.poll() is not None:
                 raise SetupRequired("Private containerd stopped during setup; see docker-daemon.log")
-            code, _ = self.command(prefix + [binary.parent / "ctr", "--address", directory / "containerd.sock", "version"], timeout=5, check=False)
+            code, _ = self.command(prefix + [binary.parent / "ctr", "--address", directory / "containerd.sock", "version"], timeout=30, check=False)
             if code == 0:
                 break
             time.sleep(0.5)

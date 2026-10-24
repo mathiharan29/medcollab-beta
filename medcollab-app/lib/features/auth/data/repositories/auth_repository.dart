@@ -121,9 +121,16 @@ class AuthRepository extends BaseRepository {
         data: fcmToken != null ? {'fcmToken': fcmToken} : null,
       );
     } finally {
-      await _socketClient.disconnect();
-      await _storage.clearSession();
+      await clearLocalSession();
     }
+  }
+
+  /// Drop socket + tokens without calling the logout API (expired refresh).
+  Future<void> clearLocalSession() async {
+    try {
+      await _socketClient.disconnect();
+    } catch (_) {}
+    await _storage.clearSession();
   }
 
   Future<bool> hasSession() => _storage.hasSession();
@@ -156,7 +163,12 @@ class AuthRepository extends BaseRepository {
       await _socketClient.updateAccessToken(refreshed);
       _socketClient.syncSpaceRooms();
     } catch (_) {
-      // Session may have expired — AuthBloc handles via API interceptor.
+      // Resume refresh denied — drop local session and notify auth UI (FR-RT-06).
+      try {
+        await _socketClient.disconnect();
+      } catch (_) {}
+      await _storage.clearSession();
+      apiClient.onSessionExpired?.call();
     }
   }
 

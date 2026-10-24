@@ -52,6 +52,7 @@ void main() {
     await tester.pumpWidget(MaterialApp.router(
       routerConfig: router,
       builder: (_, child) => AppNavigationBackHandler(
+          router: router,
           child: child ?? const SizedBox.shrink()),
     ));
     await tester.pumpAndSettle();
@@ -86,14 +87,11 @@ void main() {
     ]));
     expect(paths.where((path) => path == '/handoff-detail').length, 1,
         reason: 'Nested detail must not remain duplicated in route history');
-    expect(ShellTabHistory.goBack(), isTrue,
-        reason: 'The tab history itself retains the prior Messages visit');
-    await tester.pumpAndSettle();
-    expect(find.text('Messages content'), findsOneWidget);
-    expect(ShellTabHistory.goBack(), isTrue);
-    await tester.pumpAndSettle();
-    expect(find.text('Home content'), findsOneWidget);
     expect(tabBackPaths, [AppRoutes.messages, AppRoutes.home],
         reason: 'Each Back from a shell tab must restore exactly one prior tab');
+    expect(find.text('Home content'), findsOneWidget);
+    // System-back already consumed Messages → Home; further tab history is empty.
+    expect(ShellTabHistory.goBack(), isFalse,
+        reason: 'Tab history is exhausted once Back reaches Home');
   });
 }

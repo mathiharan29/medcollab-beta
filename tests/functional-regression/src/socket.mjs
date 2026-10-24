@@ -1,11 +1,19 @@
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { repoRoot } from './config.mjs';
+import { backendRequire } from './db.mjs';
 
 const sanityRequire = createRequire(join(repoRoot, 'tests/sanity/package.json'));
 
-export async function connectSocket(_backendRoot, origin, token, timeoutMs = 10000) {
-  const { io } = sanityRequire('socket.io-client');
+export async function connectSocket(backendRoot, origin, token, timeoutMs = 10000) {
+  // Prefer the disposable backend install (device lane) so a Docker Linux
+  // npm ci into tests/sanity cannot break Windows host socket.io-client.
+  let io;
+  if (backendRoot) {
+    try { ({ io } = backendRequire(backendRoot)('socket.io-client')); }
+    catch { /* fall through to harness sanity install */ }
+  }
+  if (!io) ({ io } = sanityRequire('socket.io-client'));
   const socket = io(origin, { auth: { token }, transports: ['websocket'], timeout: timeoutMs, autoConnect: false });
   const authenticated = waitFor(socket, 'authenticated', () => true, timeoutMs);
   socket.connect();

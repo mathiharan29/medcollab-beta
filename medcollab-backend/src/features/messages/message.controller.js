@@ -87,12 +87,18 @@ const sendMessage = asyncHandler(async (req, res) => {
 
   const {
     type = MESSAGE_TYPES.TEXT,
-    content,
+    content: rawContent,
     priority = MESSAGE_PRIORITY.NORMAL,
     threadId,
     mentions,
     replyToId,
   } = req.body;
+
+  // Persist trimmed text so route length checks match Mongo maxlength.
+  const content =
+    rawContent && typeof rawContent.text === 'string'
+      ? { ...rawContent, text: rawContent.text.trim() }
+      : rawContent;
 
   // Validate media URLs point to trusted domains only.
   if (content?.mediaUrl) {
@@ -329,7 +335,7 @@ const editMessage = asyncHandler(async (req, res) => {
     return respond.badRequest(res, 'Only text messages can be edited');
   }
 
-  message.content.text = req.body.content.text;
+  message.content.text = String(req.body.content?.text ?? '').trim();
   message.isEdited = true;
   message.editedAt = new Date();
   await message.save();

@@ -100,6 +100,7 @@ void main() {
       authRepository: _UiAuth(storage, socket),
       userRepository: _UiUser(storage),
     );
+    api.onSessionExpired = () => auth.add(const AuthSessionExpired());
     addTearDown(auth.close);
     final ready = auth.stream.firstWhere((state) => state.status == AuthStatus.authenticated);
     auth.add(const AuthStarted());

@@ -216,22 +216,29 @@ const acceptRequest = asyncHandler(async (req, res) => {
   const fromId = request.fromUserId._id.toString();
   const toId = request.toUserId._id.toString();
   const sortedMembers = [fromId, toId].sort();
-  const channel = await Channel.findOneAndUpdate(
-    {
-      type: CHANNEL_TYPES.DIRECT,
-      members: { $all: sortedMembers, $size: 2 },
-    },
-    {
-      $setOnInsert: {
+  // Avoid findOneAndUpdate upsert: Mongo rejects $setOnInsert.members when the
+  // filter also matches on members ($all) — "path 'members' is matched twice".
+  let channel = await Channel.findOne({
+    type: CHANNEL_TYPES.DIRECT,
+    members: { $all: sortedMembers, $size: 2 },
+  });
+  if (!channel) {
+    try {
+      channel = await Channel.create({
         spaceId: null,
         type: CHANNEL_TYPES.DIRECT,
         members: [request.fromUserId._id, request.toUserId._id],
         createdBy: req.user._id,
         name: null,
-      },
-    },
-    { upsert: true, new: true }
-  );
+      });
+    } catch (error) {
+      channel = await Channel.findOne({
+        type: CHANNEL_TYPES.DIRECT,
+        members: { $all: sortedMembers, $size: 2 },
+      });
+      if (!channel) throw error;
+    }
+  }
 
   const populated = await Channel.findById(channel._id)
     .populate(

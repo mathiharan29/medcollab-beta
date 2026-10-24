@@ -134,12 +134,11 @@ const initSocket = (httpServer) => {
       logger.socket(`${socket.userName} joined ${spaceIds.length} space rooms`);
 
       // ── Register Event Handlers ────────────────────────────────────────────
-      // Skip re-registration on recovered connections to prevent duplicate listeners.
-      if (!isRecovered) {
-        registerMessageHandlers(io, socket);
-        registerPresenceHandlers(io, socket);
-        registerSpaceHandlers(io, socket);
-      }
+      // Always register on connection — including recovered sockets. Recovery
+      // restores rooms/offset but not prior JS listeners (FR-RT-07).
+      registerMessageHandlers(io, socket);
+      registerPresenceHandlers(io, socket);
+      registerSpaceHandlers(io, socket);
       // Future: registerHandoffHandlers(io, socket);
 
       // ── Acknowledge Successful Connection ──────────────────────────────────
@@ -257,4 +256,5 @@ module.exports = {
   emitMessageDeleted,
   emitNotification,
   joinUserToSpaceRoom: require('./spaceRooms').joinUserToSpaceRoom,
+  leaveUserFromSpaceRoom: require('./spaceRooms').leaveUserFromSpaceRoom,
 };

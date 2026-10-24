@@ -284,24 +284,30 @@ const createOrGetDM = asyncHandler(async (req, res) => {
     );
   }
 
-  // Atomic upsert to prevent TOCTOU race when two users create the same DM simultaneously.
+  // Find-or-create (not upsert): Mongo rejects $setOnInsert.members when the
+  // filter also matches on members ($all) — "path 'members' is matched twice".
   const sortedMembers = [req.user._id.toString(), targetUserId].sort();
-  let channel = await Channel.findOneAndUpdate(
-    {
-      type: CHANNEL_TYPES.DIRECT,
-      'members': { $all: sortedMembers, $size: 2 },
-    },
-    {
-      $setOnInsert: {
+  let channel = await Channel.findOne({
+    type: CHANNEL_TYPES.DIRECT,
+    members: { $all: sortedMembers, $size: 2 },
+  });
+  if (!channel) {
+    try {
+      channel = await Channel.create({
         spaceId: null,
         type: CHANNEL_TYPES.DIRECT,
         members: [req.user._id, targetUserId],
         createdBy: req.user._id,
         name: null,
-      },
-    },
-    { upsert: true, new: true }
-  );
+      });
+    } catch (error) {
+      channel = await Channel.findOne({
+        type: CHANNEL_TYPES.DIRECT,
+        members: { $all: sortedMembers, $size: 2 },
+      });
+      if (!channel) throw error;
+    }
+  }
 
   const populated = await Channel.findById(channel._id)
     .populate(
@@ -362,12 +368,13 @@ const createGroupDM = asyncHandler(async (req, res) => {
 
   const memberIds = [req.user._id.toString(), ...uniqueOthers].sort();
   const objectIds = memberIds.map((id) => id);
-
-  let channel = await Channel.findOne({
+  const membershipFilter = {
     type: CHANNEL_TYPES.DIRECT,
     members: { $all: objectIds, $size: memberIds.length },
     isArchived: false,
-  });
+  };
+
+  let channel = await Channel.findOne(membershipFilter);
 
   if (!channel) {
     const users = await User.find({ _id: { $in: uniqueOthers } })
@@ -383,13 +390,19 @@ const createGroupDM = asyncHandler(async (req, res) => {
         .slice(0, 4)
         .join(', ') || 'Needl';
 
-    channel = await Channel.create({
-      spaceId: null,
-      type: CHANNEL_TYPES.DIRECT,
-      members: objectIds,
-      createdBy: req.user._id,
-      name: defaultName,
-    });
+    try {
+      channel = await Channel.create({
+        spaceId: null,
+        type: CHANNEL_TYPES.DIRECT,
+        members: objectIds,
+        createdBy: req.user._id,
+        name: defaultName,
+      });
+    } catch (error) {
+      // Concurrent creators of the same membership set — return the winner.
+      channel = await Channel.findOne(membershipFilter);
+      if (!channel) throw error;
+    }
   } else {
     const current = (channel.name || '').trim();
     if (!current || current.toLowerCase() === 'direct message') {

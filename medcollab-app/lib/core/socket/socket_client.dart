@@ -65,6 +65,8 @@ class SocketClient {
     );
   }
 
+  Timer? _connectWaitTimer;
+
   Future<void> _connectAndWait() async {
     final socket = _socket;
     if (socket == null) return;
@@ -77,26 +79,43 @@ class SocketClient {
     final completer = Completer<void>();
     void onConnect(dynamic _) {
       socket.off('connect', onConnect);
+      _connectWaitTimer?.cancel();
+      _connectWaitTimer = null;
       if (!completer.isCompleted) completer.complete();
     }
 
     socket.on('connect', onConnect);
     socket.connect();
 
+    _connectWaitTimer?.cancel();
+    _connectWaitTimer = Timer(AppConstants.connectTimeout, () {
+      socket.off('connect', onConnect);
+      if (!completer.isCompleted) {
+        completer.completeError(TimeoutException('socket connect'));
+      }
+    });
+
     try {
-      await completer.future.timeout(AppConstants.connectTimeout);
+      await completer.future;
     } on TimeoutException {
       // Connection may still complete in the background.
+    } finally {
+      _connectWaitTimer?.cancel();
+      _connectWaitTimer = null;
     }
   }
 
   Future<void> disconnect() async {
     _recoverDebounce?.cancel();
+    _connectWaitTimer?.cancel();
+    _connectWaitTimer = null;
     _joinedChannels.clear();
     _socket?.dispose();
     _socket = null;
     _accessToken = null;
-    _connectionController.add(false);
+    if (!_connectionController.isClosed) {
+      _connectionController.add(false);
+    }
   }
 
   Future<void> reconnect(String newAccessToken) async {

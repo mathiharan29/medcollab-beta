@@ -77,6 +77,13 @@ const errorHandler = (err, req, res, next) => {
   else if (err.code === 'LIMIT_FILE_SIZE') {
     statusCode = 400;
     message = `File too large. Maximum size is ${process.env.MAX_FILE_SIZE_MB || 25}MB`;
+  } else if (
+    err.name === 'MulterError' ||
+    err.code === 'LIMIT_UNEXPECTED_FILE' ||
+    (typeof err.message === 'string' && err.message.startsWith('File type not allowed'))
+  ) {
+    statusCode = 400;
+    message = err.message || 'Unsupported file type';
   }
 
   // In production, don't leak internal error details for unexpected 500s.

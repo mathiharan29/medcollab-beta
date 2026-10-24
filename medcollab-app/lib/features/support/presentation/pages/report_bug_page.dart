@@ -66,12 +66,13 @@ class _ReportBugPageState extends State<ReportBugPage> {
         content: Text(
           delivered
               ? 'Thanks — Vocle beta team received your report'
-              : 'Saved on device. Email $_supportEmail if urgent '
-                  '(API unavailable offline)',
+              : 'Could not submit — check your connection and try again. '
+                  'Draft kept on this screen. Email $_supportEmail if urgent.',
         ),
       ),
     );
-    Navigator.of(context).pop();
+    // Keep inputs on API failure so the user can retry (FR-SUP-04).
+    if (delivered) Navigator.of(context).pop();
   }
 
   @override

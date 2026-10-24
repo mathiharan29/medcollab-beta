@@ -57,6 +57,7 @@ class _PatientEditorSheetState extends State<PatientEditorSheet> {
   );
   late PatientStatus _status = widget.initial?.status ?? PatientStatus.stable;
   late bool _isFlagged = widget.initial?.isFlagged ?? false;
+  final List<String> _attachments = <String>[];
 
   @override
   void dispose() {
@@ -263,6 +264,30 @@ class _PatientEditorSheetState extends State<PatientEditorSheet> {
               ),
               minLines: 2,
               maxLines: 4,
+            ),
+            const SizedBox(height: 12),
+            Text('Attachment', style: Theme.of(context).textTheme.titleSmall),
+            const SizedBox(height: 4),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final name in _attachments)
+                  InputChip(
+                    avatar: const Icon(Icons.attach_file, size: 16),
+                    label: Text(name),
+                    onDeleted: () => setState(() => _attachments.remove(name)),
+                  ),
+                ActionChip(
+                  avatar: const Icon(Icons.attach_file, size: 16),
+                  label: const Text('Add attachment'),
+                  onPressed: () => setState(
+                    () => _attachments.add(
+                      'Attachment ${_attachments.length + 1}',
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             TextField(

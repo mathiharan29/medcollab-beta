@@ -39,14 +39,40 @@ class AppListSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
-      itemCount: itemCount,
-      separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
-      itemBuilder: (_, __) => _SkeletonRow(showLeading: showLeading),
+    // Finite height (e.g. Expanded): scrollable ListView.
+    // Unbounded height (nested scrollables / launch shell): compact Column
+    // so we never assert on viewport sizing (FR-NAV-01) or overflow (FR-SRCH-04).
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bounded = constraints.maxHeight.isFinite;
+        if (bounded) {
+          return ListView.separated(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
+            ),
+            itemCount: itemCount,
+            separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
+            itemBuilder: (_, __) => _SkeletonRow(showLeading: showLeading),
+          );
+        }
+        final visible = itemCount.clamp(0, 4);
+        return Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (var i = 0; i < visible; i++) ...[
+                if (i > 0) const SizedBox(height: AppSpacing.sm),
+                _SkeletonRow(showLeading: showLeading),
+              ],
+            ],
+          ),
+        );
+      },
     );
   }
 }

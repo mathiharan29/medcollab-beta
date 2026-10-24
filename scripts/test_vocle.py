@@ -18,6 +18,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import time
 import uuid
 import venv
 
@@ -31,6 +32,10 @@ ENV_KEYS = {
     "PROGRAMFILES(X86)", "PROGRAMW6432", "LANG", "LC_ALL", "JAVA_HOME",
     "ANDROID_HOME", "ANDROID_SDK_ROOT", "GITHUB_REPOSITORY", "GITHUB_EVENT_PATH",
     "GITHUB_EVENT_NAME", "GITHUB_REF", "GITHUB_RUN_ID", "GITHUB_RUN_ATTEMPT",
+    # TLS / npm: allow pre-set CA bundles through; session_environment may also synthesize one.
+    "SSL_CERT_FILE", "NODE_EXTRA_CA_CERTS", "REQUESTS_CA_BUNDLE", "CURL_CA_BUNDLE",
+    "NPM_CONFIG_CAFILE", "NPM_CONFIG_FETCH_RETRIES", "NPM_CONFIG_FETCH_RETRY_MINTIMEOUT",
+    "NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT",
 }
 
 
@@ -78,6 +83,53 @@ def parse_args(argv=None):
     return args
 
 
+def windows_ca_bundle(scratch):
+    """Export Windows trust roots so Node/npm trust AV HTTPS inspection (e.g. Avast)."""
+    if os.name != "nt":
+        return None
+    destination = scratch / "windows-roots.pem"
+    if destination.is_file() and destination.stat().st_size > 0:
+        return destination
+    # Prefer a host-exported bundle when present (avoids PowerShell store quirks).
+    host_bundle = Path(os.environ.get("LOCALAPPDATA") or "") / "vocle-runtime-cache" / "windows-roots.pem"
+    if host_bundle.is_file() and host_bundle.stat().st_size > 0:
+        try:
+            shutil.copyfile(host_bundle, destination)
+            return destination
+        except OSError:
+            pass
+    out = str(destination).replace("'", "''")
+    script = (
+        f"$out = '{out}'; $certs = @(); "
+        "foreach ($store in @('Cert:\\LocalMachine\\Root','Cert:\\CurrentUser\\Root',"
+        "'Cert:\\LocalMachine\\CA','Cert:\\CurrentUser\\CA')) { "
+        "  $certs += @(Get-ChildItem $store -ErrorAction SilentlyContinue) }; "
+        "$sb = New-Object System.Text.StringBuilder; $n = 0; "
+        "foreach ($c in $certs) { try { "
+        "  $b64 = [Convert]::ToBase64String($c.RawData); "
+        "  [void]$sb.AppendLine('-----BEGIN CERTIFICATE-----'); "
+        "  for ($i = 0; $i -lt $b64.Length; $i += 64) { "
+        "    [void]$sb.AppendLine($b64.Substring($i, [Math]::Min(64, $b64.Length - $i))) }; "
+        "  [void]$sb.AppendLine('-----END CERTIFICATE-----'); $n++ } catch {} }; "
+        "if ($n -eq 0) { exit 2 }; "
+        "[IO.File]::WriteAllText($out, $sb.ToString())"
+    )
+    try:
+        completed = subprocess.run(
+            ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script],
+            capture_output=True, text=True, timeout=60, check=False)
+        if completed.returncode == 0 and destination.is_file() and destination.stat().st_size > 0:
+            try:
+                host_bundle.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(destination, host_bundle)
+            except OSError:
+                pass
+            return destination
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return None
+
+
 def session_environment(scratch, environment=None):
     original = os.environ if environment is None else environment
     env = {k.upper(): v for k, v in original.items() if k.upper() in ENV_KEYS}
@@ -100,6 +152,11 @@ def session_environment(scratch, environment=None):
         directory = scratch / folder
         directory.mkdir(exist_ok=True)
         env[key] = str(directory)
+    # Reuse the host Pub cache when present. A cold disposable cache routinely
+    # exceeds the Flutter pub-get deadline on flaky networks and blocks the F lane.
+    host_pub = Path(original.get("PUB_CACHE") or (Path(original.get("LOCALAPPDATA") or "") / "Pub/Cache"))
+    if host_pub.is_dir():
+        env["PUB_CACHE"] = str(host_pub.resolve())
     bin_dir = scratch / "venv" / ("Scripts" if os.name == "nt" else "bin")
     env["VIRTUAL_ENV"] = str(scratch / "venv")
     env["PATH"] = str(bin_dir) + os.pathsep + env.get("PATH", "")
@@ -111,6 +168,20 @@ def session_environment(scratch, environment=None):
     docker_config = Path(original.get("DOCKER_CONFIG") or (Path(original.get("USERPROFILE") or original.get("HOME") or "~") / ".docker"))
     if docker_config.is_dir():
         env["DOCKER_CONFIG"] = str(docker_config.resolve())
+    # npm registry TLS often fails under desktop AV HTTPS scanning unless Node
+    # sees the local interceptor root. Prefer an explicit host bundle when set.
+    if not env.get("NODE_EXTRA_CA_CERTS"):
+        bundle = windows_ca_bundle(scratch)
+        if bundle:
+            path = str(bundle.resolve())
+            env["NODE_EXTRA_CA_CERTS"] = path
+            env.setdefault("SSL_CERT_FILE", path)
+            env.setdefault("NPM_CONFIG_CAFILE", path)
+            env.setdefault("REQUESTS_CA_BUNDLE", path)
+            env.setdefault("CURL_CA_BUNDLE", path)
+    env.setdefault("NPM_CONFIG_FETCH_RETRIES", "5")
+    env.setdefault("NPM_CONFIG_FETCH_RETRY_MINTIMEOUT", "20000")
+    env.setdefault("NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT", "120000")
     return env
 
 
@@ -213,10 +284,23 @@ def remove_session(scratch):
     # Gradle dependency names exceed MAX_PATH even in a short session folder.
     # Validate the ordinary absolute path above, then use Windows' extended form.
     target = "\\\\?\\" + str(resolved) if os.name == "nt" else resolved
-    if sys.version_info >= (3, 12):
-        shutil.rmtree(target, onexc=writable_retry)
-    else:
-        shutil.rmtree(target, onerror=writable_retry)
+    # Emulator qemu lock files can linger briefly after taskkill on Windows.
+    last_error = None
+    for attempt in range(8):
+        try:
+            if sys.version_info >= (3, 12):
+                shutil.rmtree(target, onexc=writable_retry)
+            else:
+                shutil.rmtree(target, onerror=writable_retry)
+            return
+        except OSError as error:
+            last_error = error
+            if os.name == "nt" and getattr(error, "winerror", None) == 32 and attempt < 7:
+                time.sleep(2 + attempt)
+                continue
+            raise
+    if last_error:
+        raise last_error
 
 
 def run_session(args):
@@ -270,17 +354,27 @@ def run_session(args):
             bootstrap.command([session_python, "-m", "pip", "install", "--disable-pip-version-check", "pytest", "requests", "httpx"], timeout=600)
             _, installed = bootstrap.command([session_python, "-m", "pip", "freeze"])
             bootstrap.details["pythonPackages"] = installed.splitlines()
+        if args.profile == "full":
+            print("Selecting or installing pinned Flutter 3.29.3...", flush=True)
+            config["flutter_bin"] = bootstrap.flutter(args.flutter_bin)
+        # Boot the Android emulator before the disposable WSL Docker engine on
+        # low-RAM Windows hosts so WHPX cold-start is not OOM-killed, then park
+        # it so Docker/WSL can start without sharing WHPX/RAM. run.mjs restarts
+        # the same AVD for the device lane after backend/Flutter work.
+        if args.android:
+            bootstrap.android()
+            if bootstrap.android_runtime:
+                print("Parking Android emulator before Linux container runtime...", flush=True)
+                # Keep VOCLE_ANDROID_* in env so run.mjs can restart the same AVD.
+                bootstrap.android_runtime.close()
+                # Give WHPX/qemu time to release RAM and AVD locks before WSL.
+                time.sleep(8)
         if args.profile in ("full", "backend-smoke", "security"):
             print("Preparing local Linux container runtime...", flush=True)
             config["docker_bin"] = bootstrap.docker(args.runtime)
             if os.name == "nt" and config["docker_bin"].endswith(".json"):
                 config["docker_proxy"] = config["docker_bin"]
                 config["docker_bin"] = sys.executable
-        if args.profile == "full":
-            print("Selecting or installing pinned Flutter 3.29.3...", flush=True)
-            config["flutter_bin"] = bootstrap.flutter(args.flutter_bin)
-        if args.android:
-            bootstrap.android()
         config_path = scratch / "session.json"
         config_path.write_text(json.dumps(config), encoding="utf-8")
         python = scratch / "venv" / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
@@ -329,6 +423,16 @@ def run_session(args):
                 state["cleanup"], state["cleanupError"], state["status"], code = "ERROR", str(error), "ERROR", 1
         if scratch and can_remove:
             try:
+                # Drop adb so tmp/adb.log and emulator sockets release before rmtree.
+                sdk = ""
+                if bootstrap and getattr(bootstrap, "env", None):
+                    sdk = bootstrap.env.get("ANDROID_HOME") or bootstrap.env.get("ANDROID_SDK_ROOT") or ""
+                if not sdk:
+                    sdk = os.environ.get("ANDROID_HOME") or os.environ.get("ANDROID_SDK_ROOT") or ""
+                adb = Path(sdk) / "platform-tools" / ("adb.exe" if os.name == "nt" else "adb")
+                if adb.is_file():
+                    subprocess.run([str(adb), "kill-server"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+                    time.sleep(2)
                 remove_session(scratch)
                 state["cleanup"] = "PASS"
             except Exception as error:

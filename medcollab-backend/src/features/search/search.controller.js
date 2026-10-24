@@ -45,8 +45,8 @@ async function accessibleChannelIds(userId) {
  */
 const globalSearch = asyncHandler(async (req, res) => {
   const q = (req.query.q || '').trim();
-  if (q.length < 1) {
-    return respond.badRequest(res, 'Search query must be at least 1 character');
+  if (q.length < 2) {
+    return respond.badRequest(res, 'Search query must be at least 2 characters');
   }
 
   const type = (req.query.type || 'all').toLowerCase();

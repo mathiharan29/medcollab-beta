@@ -50,8 +50,10 @@ class DeviceDecision implements Exception {
 
 void safeDeviceOrigin(String value) {
   final uri = Uri.parse(value);
+  // 10.0.2.2 is the classic emulator→host alias. 127.0.0.1 is used with
+  // `adb reverse` on Windows WHPX hosts where 10.0.2.2 is unreachable.
   if (uri.scheme != 'http' ||
-      uri.host != '10.0.2.2' ||
+      (uri.host != '10.0.2.2' && uri.host != '127.0.0.1') ||
       !uri.hasPort ||
       uri.userInfo.isNotEmpty ||
       uri.query.isNotEmpty ||

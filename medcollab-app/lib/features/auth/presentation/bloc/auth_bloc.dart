@@ -399,14 +399,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthSessionExpired event,
     Emitter<AuthState> emit,
   ) async {
-    final fcmToken = await _fcmService?.prepareLogoutToken();
-    try {
-      await _authRepository.logout(fcmToken: fcmToken);
-    } catch (_) {
-      // Ensure local session is cleared even if API fails.
-    }
-    await _fcmService?.clearLocalToken();
+    // Emit first so resume/refresh denial cannot leave Home mounted (FR-RT-06).
+    // Skip the logout API — the refresh token is already dead.
     emit(const AuthState(status: AuthStatus.unauthenticated));
+    try {
+      await _authRepository.clearLocalSession();
+    } catch (_) {}
+    await _fcmService?.clearLocalToken();
   }
 
   void _onAvailabilityUpdated(

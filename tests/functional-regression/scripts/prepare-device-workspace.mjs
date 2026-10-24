@@ -7,6 +7,14 @@ import { fileURLToPath } from 'node:url';
 import { captureContext, executionIdentity } from '../../developer-workflow/context.mjs';
 import { devicePackage } from './device-contracts.mjs';
 
+async function stripDesktopPlatforms(app) {
+  // Flutter plugin registration creates Windows/Linux ephemeral symlinks. On
+  // hosts without Developer Mode that fails pub get even for Android-only runs.
+  for (const platform of ['windows', 'linux', 'macos']) {
+    await rm(join(app, platform), { recursive: true, force: true, maxRetries: 3, retryDelay: 250 });
+  }
+}
+
 const root = resolve(import.meta.dirname, '../../..');
 export const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 export function command(bin, args, cwd, timeout = 30000) {
@@ -36,6 +44,7 @@ export async function prepareDeviceWorkspace(sha = command('git', ['rev-parse', 
   command('git', ['archive', '--format=tar', `--output=${archive}`, sha], root);
   command('tar', ['-xf', archive, '-C', target], root);
   const app = join(target, 'medcollab-app');
+  await stripDesktopPlatforms(app);
   const tests = 'medcollab-app/integration_test/functional_regression';
   await cp(join(root, tests), join(target, tests), { recursive: true });
   await mkdir(join(app, 'test_driver'), { recursive: true });

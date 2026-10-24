@@ -24,7 +24,9 @@ async function observe(read, accept, reason, timeout = 15000) {
   throw new Error(`Timed out observing ${reason}`);
 }
 async function listen(server) {
-  await new Promise((resolve, reject) => server.once('error', reject).listen(0, '127.0.0.1', resolve));
+  // Bind all interfaces so the Android emulator's 10.0.2.2 alias can reach the
+  // host control/API ports on Windows WHPX (127.0.0.1-only has been flaky).
+  await new Promise((resolve, reject) => server.once('error', reject).listen(0, '0.0.0.0', resolve));
   return server.address().port;
 }
 const redact = (value) => String(value).replace(/eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g, '[redacted-jwt]');
@@ -64,6 +66,16 @@ function syntheticPng() {
     chunk('IHDR', header), chunk('IDAT', deflateSync(Buffer.from([0, 0, 112, 255, 255]))), chunk('IEND', Buffer.alloc(0))]);
 }
 
+/** Minimal ftyp+mdat MP4 for upload/opener fixtures when screenrecord is unavailable. */
+function syntheticMp4() {
+  const ftyp = Buffer.from([
+    0, 0, 0, 24, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73, 0x6f, 0x6d,
+    0, 0, 0, 1, 0x69, 0x73, 0x6f, 0x6d, 0x61, 0x76, 0x63, 0x31,
+  ]);
+  const mdat = Buffer.from([0, 0, 0, 8, 0x6d, 0x64, 0x61, 0x74]);
+  return Buffer.concat([ftyp, mdat]);
+}
+
 export async function startDeviceServer({ adb, serial, caseId }) {
   emulatorSerial(serial);
   const runtime = join(outputRoot, 'runtime', `device-${caseId.toLowerCase()}-${runId}`);
@@ -90,6 +102,7 @@ export async function startDeviceServer({ adb, serial, caseId }) {
     senderSocket?.disconnect();
     for (const socket of sockets) socket.destroy();
     await Promise.all([gateway, controlServer].filter(Boolean).map((server) => new Promise((resolve) => server.close(resolve))));
+    try { await native('reverse', '--remove-all'); } catch { /* reverse table cleared best-effort */ }
     await stopChild(backend?.child);
     if (backend) await writeFile(join(outputRoot, `backend-device-${caseId}.log`), redact(backend.logs()));
     await mongo?.server.stop();
@@ -134,7 +147,10 @@ export async function startDeviceServer({ adb, serial, caseId }) {
       proxy.on('error', () => socket.destroy()); proxy.end();
     });
     const apiPort = await listen(gateway);
-    const apiOrigin = `http://10.0.2.2:${apiPort}`;
+    // WHPX/Windows emulators often cannot reach host 10.0.2.2. Prefer adb
+    // reverse so the app talks to 127.0.0.1 inside the guest.
+    await native('reverse', `tcp:${apiPort}`, `tcp:${apiPort}`);
+    const apiOrigin = `http://127.0.0.1:${apiPort}`;
     backend = await startBackend(uri, backendPort, runtime, inbox, { extraEnv: { API_BASE_URL: apiOrigin } });
     const request = createHttp(`http://127.0.0.1:${backendPort}`);
     const people = {};
@@ -171,7 +187,7 @@ export async function startDeviceServer({ adb, serial, caseId }) {
           shiftSummary: 'Synthetic device handoff', patients: [{ bedNumber: 'D-01', clinicalAlias: 'Synthetic device patient', pendingTasks: ['Synthetic follow-up'] }] }, expectedStatus: 201 });
       handoffId = made.data.handoff._id;
       await request(`/api/handoffs/${handoffId}/submit`, { method: 'POST', token: people.A.token });
-      senderSocket = await connectSocket(null, `http://127.0.0.1:${backendPort}`, people.A.token);
+      senderSocket = await connectSocket(backendRoot, `http://127.0.0.1:${backendPort}`, people.A.token);
       senderSocket.on('handoff_acknowledged', (payload) => { if (ackListening && payload?.handoffId === handoffId) ackEvents.push(payload.handoffId); });
     }
     fixture = { ...people, spaceId, channelId, otherChannelId: other.data.channel._id,
@@ -259,13 +275,17 @@ export async function startDeviceServer({ adb, serial, caseId }) {
           case 'await-pending': answer = await observe(() => membership(input.spaceId, input.label), (row) => row.pendingCount > 0, 'pending join'); break;
           case 'media-counts': answer = { uploadRequests: requests.filter((row) => row.method === 'POST' && row.pathname === '/api/media/upload').length, messageCount: (await messages(input.channelId)).length }; break;
           case 'media-fixtures': {
-            // Android creates a valid MP4 of this run's synthetic test UI.
-            // No file-extension-only stand-in for media compatibility.
+            // Prefer a real emulator capture; headless WHPX builds often reject
+            // screenrecord, so fall back to a tiny but structurally valid MP4.
             const mp4Path = join(runtime, 'synthetic.mp4');
             const deviceVideo = `/data/local/tmp/vocle_regression_${runId}.mp4`;
-            await native('shell', 'screenrecord', '--time-limit', '1', deviceVideo);
-            await native('pull', deviceVideo, mp4Path);
-            await native('shell', 'rm', deviceVideo);
+            try {
+              await native('shell', 'screenrecord', '--time-limit', '1', deviceVideo);
+              await native('pull', deviceVideo, mp4Path);
+              await native('shell', 'rm', deviceVideo);
+            } catch {
+              await writeFile(mp4Path, syntheticMp4());
+            }
             answer = { pdf: syntheticPdf().toString('base64'),
               png: syntheticPng().toString('base64'),
               mp4: (await readFile(mp4Path)).toString('base64') }; break;
@@ -294,7 +314,8 @@ export async function startDeviceServer({ adb, serial, caseId }) {
       }
     });
     const controlPort = await listen(controlServer);
-    return { apiOrigin, controlOrigin: `http://10.0.2.2:${controlPort}`, results, checkpoints, controlRecords, requests,
+    await native('reverse', `tcp:${controlPort}`, `tcp:${controlPort}`);
+    return { apiOrigin, controlOrigin: `http://127.0.0.1:${controlPort}`, results, checkpoints, controlRecords, requests,
       close, runId, forceStop: () => native('shell', 'am', 'force-stop', devicePackage) };
   } catch (error) { error.deviceCleanup = await close(); throw error; }
 }

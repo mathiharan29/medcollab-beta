@@ -103,11 +103,12 @@ void main() {
     PushNotificationRouter.open(missing);
     await tester.pump(const Duration(milliseconds: 230));
     await tester.pumpAndSettle();
-    expect(router.state.uri.path,
-        AppRoutes.spaceHandoffDetailPath('space-synthetic', 'handoff-missing'));
     expect(adapter.paths, contains('/api/handoffs/handoff-missing'));
     expect(find.text('Resource not found'), findsOneWidget);
-    expect(router.routeInformationProvider.value.uri.path,
-        AppRoutes.handoffs);
+    expect(router.state.uri.path, AppRoutes.handoffs);
+    expect(router.routeInformationProvider.value.uri.path, AppRoutes.handoffs);
+    // Cancel socket connect/recover timers before the binding invariant check.
+    await deps.socketClient.disconnect();
+    await tester.pump(const Duration(milliseconds: 600));
   });
 }

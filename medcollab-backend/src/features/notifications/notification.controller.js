@@ -104,6 +104,8 @@ const markReadByChannel = asyncHandler(async (req, res) => {
   }
 
   const mongoose = require('mongoose');
+  // Use the native collection so string channelIds are not cast away by the
+  // ObjectId schema path (legacy rows may store either representation).
   const channelMatch = [{ 'metadata.channelId': channelId }];
   if (mongoose.Types.ObjectId.isValid(channelId)) {
     channelMatch.push({
@@ -111,9 +113,14 @@ const markReadByChannel = asyncHandler(async (req, res) => {
     });
   }
 
-  const result = await Notification.updateMany(
+  const userObjectId =
+    req.user._id instanceof mongoose.Types.ObjectId
+      ? req.user._id
+      : new mongoose.Types.ObjectId(String(req.user._id));
+
+  const result = await Notification.collection.updateMany(
     {
-      userId: req.user._id,
+      userId: userObjectId,
       read: false,
       $or: channelMatch,
     },
@@ -123,7 +130,7 @@ const markReadByChannel = asyncHandler(async (req, res) => {
   const unreadCount = await Notification.getUnreadCount(req.user._id);
 
   return respond.ok(res, 'Channel notifications marked as read', {
-    modifiedCount: result.modifiedCount,
+    modifiedCount: result.modifiedCount ?? result.nModified ?? 0,
     unreadCount,
   });
 });

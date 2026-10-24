@@ -30,6 +30,7 @@ class _GlobalSearchPageState extends State<GlobalSearchPage> {
   final _loading = ValueNotifier<bool>(false);
   final _results = ValueNotifier<GlobalSearchResult?>(null);
   final _query = ValueNotifier<String>('');
+  final _error = ValueNotifier<String?>(null);
   Timer? _debounce;
   int _requestId = 0;
   String? _openingDoctorId;
@@ -42,6 +43,7 @@ class _GlobalSearchPageState extends State<GlobalSearchPage> {
     _loading.dispose();
     _results.dispose();
     _query.dispose();
+    _error.dispose();
     super.dispose();
   }
 
@@ -54,6 +56,7 @@ class _GlobalSearchPageState extends State<GlobalSearchPage> {
       _requestId++; // drop any in-flight response
       _loading.value = false;
       _results.value = null;
+      _error.value = null;
       return;
     }
 
@@ -61,14 +64,16 @@ class _GlobalSearchPageState extends State<GlobalSearchPage> {
     _debounce = Timer(const Duration(milliseconds: 200), () async {
       final id = ++_requestId;
       _loading.value = true;
+      _error.value = null;
       try {
         final result = await AppDependencies.instance.searchRepository
             .search(query: trimmed);
         if (!mounted || id != _requestId) return;
         _results.value = result;
+        _error.value = null;
       } catch (_) {
         if (!mounted || id != _requestId) return;
-        // Keep prior results visible on failure.
+        _error.value = 'Could not search. Check your connection and try again.';
       } finally {
         if (mounted && id == _requestId) {
           _loading.value = false;
@@ -158,6 +163,9 @@ class _GlobalSearchPageState extends State<GlobalSearchPage> {
             child: ValueListenableBuilder<String>(
               valueListenable: _query,
               builder: (context, query, _) {
+                return ValueListenableBuilder<String?>(
+                  valueListenable: _error,
+                  builder: (context, error, _) {
                 return ValueListenableBuilder<GlobalSearchResult?>(
                   valueListenable: _results,
                   builder: (context, results, _) {
@@ -172,6 +180,15 @@ class _GlobalSearchPageState extends State<GlobalSearchPage> {
                             subtitle:
                                 'Find messages, colleagues, channels, handoffs, '
                                 'and attachments across your groups.',
+                          );
+                        }
+
+                        if (error != null && !loading) {
+                          return AppEmptyState(
+                            compact: true,
+                            icon: Icons.error_outline,
+                            title: 'Could not search',
+                            subtitle: error,
                           );
                         }
 
@@ -304,6 +321,8 @@ class _GlobalSearchPageState extends State<GlobalSearchPage> {
                         );
                       },
                     );
+                  },
+                );
                   },
                 );
               },

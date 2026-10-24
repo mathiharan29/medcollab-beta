@@ -254,23 +254,36 @@ messageSchema.pre('save', async function () {
 // ── Instance Methods ──────────────────────────────────────────────────────────
 
 /**
- * Toggle one emoji for a user. Multiple emojis per user are allowed.
- * Same emoji again removes only that emoji; other reactions stay.
+ * Toggle one emoji for a user. At most one emoji per user (switching
+ * replaces the prior reaction). Same emoji again removes it.
  */
 messageSchema.methods.toggleReaction = function (emoji, userId) {
   const uid = userId.toString();
   const group = this.reactions.find((r) => r.emoji === emoji);
+  const alreadyOnThis =
+    group && group.userIds.some((id) => id.toString() === uid);
 
-  if (group) {
-    const already = group.userIds.some((id) => id.toString() === uid);
-    if (already) {
-      group.userIds = group.userIds.filter((id) => id.toString() !== uid);
-      if (group.userIds.length === 0) {
+  // Remove this user from every other emoji group first (switch = replace).
+  this.reactions = this.reactions
+    .map((r) => {
+      if (r.emoji === emoji) return r;
+      return {
+        emoji: r.emoji,
+        userIds: r.userIds.filter((id) => id.toString() !== uid),
+      };
+    })
+    .filter((r) => r.userIds.length > 0);
+
+  const current = this.reactions.find((r) => r.emoji === emoji);
+  if (alreadyOnThis) {
+    if (current) {
+      current.userIds = current.userIds.filter((id) => id.toString() !== uid);
+      if (current.userIds.length === 0) {
         this.reactions = this.reactions.filter((r) => r.emoji !== emoji);
       }
-    } else {
-      group.userIds.push(userId);
     }
+  } else if (current) {
+    current.userIds.push(userId);
   } else {
     this.reactions.push({ emoji, userIds: [userId] });
   }

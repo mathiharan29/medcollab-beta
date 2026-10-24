@@ -36,13 +36,34 @@ class AndroidRuntime:
         self.env["PATH"] = str(java / "bin") + os.pathsep + self.env["PATH"]
         # The committed Gradle arguments refer to this relative truststore.
         # Provide the JDK's trusted CAs only in the disposable build workspace.
+        # On Windows, also import desktop AV HTTPS-inspection roots (e.g. Avast)
+        # so plugin portal / dependency downloads do not fail TLS verify.
         truststore = self.scratch / "android-truststore.jks"
         shutil.copyfile(java / "lib/security/cacerts", truststore)
+        if os.name == "nt":
+            cache = Path(os.environ.get("LOCALAPPDATA") or "") / "vocle-runtime-cache"
+            keytool = java / "bin" / "keytool.exe"
+            for alias, name in (("vocle-avast-root", "avast-web-shield-root.pem"),
+                                ("vocle-windows-roots", "windows-roots.pem")):
+                pem = cache / name
+                if pem.is_file() and keytool.is_file():
+                    self.command([
+                        str(keytool), "-importcert", "-noprompt", "-alias", alias,
+                        "-file", str(pem), "-keystore", str(truststore), "-storepass", "changeit",
+                    ], check=False)
         self.env["VOCLE_ANDROID_TRUSTSTORE"] = str(truststore)
         self.prepare_gradle()
+        # Reset adb and kill orphaned qemu from prior Vocle runs so stale
+        # emulator-* rows do not block an otherwise empty machine.
+        if os.name == "nt":
+            for image in ("qemu-system-x86_64-headless.exe", "qemu-system-x86_64.exe", "emulator.exe"):
+                subprocess.run(["taskkill.exe", "/IM", image, "/F"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+            time.sleep(2)
+        self.command([self.adb, "kill-server"], check=False)
+        self.command([self.adb, "start-server"], check=False)
         _, devices = self.command([self.adb, "devices"])
         if any(line.strip() and not line.startswith(("List of devices", "*")) for line in devices.splitlines()):
-            raise SetupRequired("Close other Android emulators and disconnect physical devices before the isolated Android run.")
+            raise SetupRequired("Close other Android emulators and disconnect physical devices before the isolated Android run. adb devices:\n" + devices)
         images = sorted((sdk / "system-images").glob("*/*/x86_64/package.xml"), reverse=True)
         if not images:
             raise SetupRequired("Install an x86_64 Android system image using Android Studio's SDK Manager before the Android lane.")
@@ -57,8 +78,10 @@ class AndroidRuntime:
         print("Creating a disposable Android emulator from installed image: " + package, flush=True)
         self.command([managers[-1], "create", "avd", "--force", "--name", name, "--path", directory,
                       "--package", package, "--device", "pixel"], timeout=120, input_text="no\n")
+        # Keep the disposable AVD lean on 8GB Windows hosts (WHPX + WSL Docker).
+        # 1024MB leaves headroom when Cursor/AV leave ~2GB free physical RAM.
         with (directory / "config.ini").open("a", encoding="utf-8") as config:
-            config.write("\nhw.ramSize=4096\nhw.cpu.ncore=4\ndisk.dataPartition.size=4G\n")
+            config.write("\nhw.ramSize=1024\nhw.cpu.ncore=2\ndisk.dataPartition.size=4G\n")
         port = None
         for candidate in range(5580, 5650, 2):
             with socket.socket() as console, socket.socket() as transport:
@@ -72,25 +95,49 @@ class AndroidRuntime:
         if port is None:
             raise SetupRequired("No free local port for the owned Android emulator")
         self.serial = "emulator-" + str(port)
+        self.avd_name = name
+        self.emulator_bin = str(emulator)
+        self.emulator_port = port
+        self.env.update(VOCLE_ANDROID_SERIAL=self.serial, VOCLE_ANDROID_AVD=name)
+        self.command([self.adb, "start-server"], check=False)
         self.log = (self.output / "android-emulator.log").open("wb")
+        # Prefer DETACHED_PROCESS over CREATE_NO_WINDOW: the latter has been
+        # observed to make qemu exit immediately (status 4294967295) on this host.
+        win_flags = subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0
         self.process = subprocess.Popen([str(emulator), "-avd", name, "-port", str(port), "-no-window", "-no-audio",
                                          "-no-snapshot", "-no-boot-anim", "-gpu", "swiftshader_indirect"],
                                         env=self.env, stdin=subprocess.DEVNULL, stdout=self.log,
-                                        stderr=subprocess.STDOUT, **({"creationflags": subprocess.CREATE_NO_WINDOW} if os.name == "nt" else {}))
+                                        stderr=subprocess.STDOUT, creationflags=win_flags,
+                                        close_fds=False)
         self.state.update(kind="disposable-emulator", serial=self.serial, systemImage=package,
-                          ramMb=4096, cpuCores=4,
+                          ramMb=1024, cpuCores=2,
                           sdk=str(sdk), java=str(java), userAvdReused=False, cleanup="PENDING")
-        deadline = time.monotonic() + 300
+        # Cold boot of a Play Store image under WHPX + disposable WSL Docker often
+        # exceeds five minutes on first run; allow fifteen before failing.
+        deadline = time.monotonic() + 900
+        last_report = 0
         while time.monotonic() < deadline:
-            if self.process.poll() is not None:
-                raise SetupRequired("Owned Android emulator stopped; see android-emulator.log")
+            exit_code = self.process.poll()
+            if exit_code is not None:
+                try:
+                    self.log.flush()
+                except Exception:
+                    pass
+                raise SetupRequired(
+                    f"Owned Android emulator stopped (exit {exit_code}); see android-emulator.log"
+                )
             code, boot = self.command([self.adb, "-s", self.serial, "shell", "getprop", "sys.boot_completed"], timeout=15, check=False)
-            if code == 0 and boot == "1":
+            token = (boot or "").strip().split()[0] if boot else ""
+            if code == 0 and token == "1":
                 self.command([self.adb, "-s", self.serial, "shell", "input", "keyevent", "82"], check=False)
                 print("Disposable Android emulator ready: " + self.serial, flush=True)
                 return
+            elapsed = int(time.monotonic() - (deadline - 900))
+            if elapsed - last_report >= 60:
+                print("Waiting for Android emulator boot (" + str(elapsed) + "s)...", flush=True)
+                last_report = elapsed
             time.sleep(2)
-        raise SetupRequired("Owned Android emulator did not boot in five minutes; see android-emulator.log")
+        raise SetupRequired("Owned Android emulator did not boot in fifteen minutes; see android-emulator.log")
 
     def prepare_gradle(self):
         asset = LOCK["gradle"]
@@ -124,13 +171,50 @@ class AndroidRuntime:
 
     def close(self):
         try:
-            if self.process and self.process.poll() is None:
+            # Node may have parked then restarted the AVD under a new PID while
+            # self.process still points at the original (already-exited) handle.
+            # Always stop by serial, then force-kill leftover qemu if needed.
+            if self.adb and self.serial:
                 self.command([self.adb, "-s", self.serial, "emu", "kill"], timeout=15, check=False)
+            if self.process and self.process.poll() is None:
                 try:
                     self.process.wait(timeout=30)
                 except subprocess.TimeoutExpired:
                     self.process.terminate()
-                    self.process.wait(timeout=15)
+                    try:
+                        self.process.wait(timeout=15)
+                    except subprocess.TimeoutExpired:
+                        pass
+            # Windows often keeps qemu lock files briefly after emu kill.
+            deadline = time.monotonic() + 90
+            while time.monotonic() < deadline:
+                alive = self.process and self.process.poll() is None
+                if not alive and os.name == "nt":
+                    # Detached restart from run.mjs leaves qemu without our Popen handle.
+                    probe = subprocess.run(
+                        ["tasklist.exe", "/FI", "IMAGENAME eq qemu-system-x86_64-headless.exe"],
+                        capture_output=True, text=True, check=False)
+                    if "qemu-system-x86_64-headless.exe" not in (probe.stdout or ""):
+                        probe = subprocess.run(
+                            ["tasklist.exe", "/FI", "IMAGENAME eq qemu-system-x86_64.exe"],
+                            capture_output=True, text=True, check=False)
+                        if "qemu-system-x86_64.exe" not in (probe.stdout or ""):
+                            break
+                elif not alive:
+                    break
+                time.sleep(1)
+            if os.name == "nt":
+                if self.process and self.process.poll() is None:
+                    subprocess.run(["taskkill.exe", "/pid", str(self.process.pid), "/T", "/F"],
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+                    try:
+                        self.process.wait(timeout=15)
+                    except subprocess.TimeoutExpired:
+                        pass
+                for image in ("qemu-system-x86_64-headless.exe", "qemu-system-x86_64.exe", "emulator.exe"):
+                    subprocess.run(["taskkill.exe", "/IM", image, "/F"],
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+            time.sleep(5)
             self.state["cleanup"] = "PASS"
         finally:
             if self.log:

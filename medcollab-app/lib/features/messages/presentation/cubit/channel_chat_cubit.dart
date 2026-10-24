@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:medcollab_app/core/chat/active_chat_tracker.dart';
 import 'package:medcollab_app/core/chat/chat_transcript_cache.dart';
@@ -85,6 +86,10 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
   StreamSubscription<Map<String, dynamic>>? _notificationSub;
 
   final Map<String, String> _typingUsers = {};
+  final Map<String, Timer> _typingExpiry = {};
+  /// Overridable in unit tests so expiry can be asserted without long pumps.
+  @visibleForTesting
+  static Duration typingExpiryDuration = const Duration(seconds: 5);
 
   Future<void> _markChannelNotificationsRead() async {
     final repo = _notificationRepository;
@@ -182,6 +187,7 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
       replyTo: replyTo,
       createdAt: DateTime.now(),
       localOnly: true,
+      deliveryState: MessageDeliveryState.sending,
     );
     _upsertRootMessage(optimistic);
     emit(state.copyWith(isSending: true, error: null, clearPendingReply: true));
@@ -251,6 +257,7 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
       replyTo: replyTo,
       createdAt: DateTime.now(),
       localOnly: true,
+      deliveryState: MessageDeliveryState.sending,
     );
     final localMedia = Map<String, List<int>>.from(state.localMediaByMessageId)
       ..[tempId] = bytes;
@@ -333,6 +340,13 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
       if (userId.isEmpty || userId == currentUserId) return;
       final userName = data['userName']?.toString() ?? 'Someone';
       _typingUsers[userId] = userName;
+      _typingExpiry[userId]?.cancel();
+      _typingExpiry[userId] = Timer(typingExpiryDuration, () {
+        if (isClosed) return;
+        _typingUsers.remove(userId);
+        _typingExpiry.remove(userId);
+        emit(state.copyWith(typingUserNames: _typingUsers.values.toList()));
+      });
       emit(state.copyWith(typingUserNames: _typingUsers.values.toList()));
     });
 
@@ -343,6 +357,8 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
       if (msgChannelId != channelId) return;
       final userId = data['userId']?.toString() ?? '';
       if (userId.isEmpty) return;
+      _typingExpiry[userId]?.cancel();
+      _typingExpiry.remove(userId);
       _typingUsers.remove(userId);
       emit(state.copyWith(typingUserNames: _typingUsers.values.toList()));
     });
@@ -576,6 +592,10 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
   Future<void> close() {
     emitTypingStop();
     ActiveChatTracker.instance.leave(channelId);
+    for (final timer in _typingExpiry.values) {
+      timer.cancel();
+    }
+    _typingExpiry.clear();
     _connectionSub?.cancel();
     _socketClient.leaveChannel(channelId);
     _messageSub?.cancel();

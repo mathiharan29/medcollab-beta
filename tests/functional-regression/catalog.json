@@ -1,6 +1,5 @@
 {
   "schemaVersion": 1,
-  "source": "docs/VOCLE_FUNCTIONAL_REGRESSION_TEST_CATALOG.md",
   "cases": [
     {
       "id": "authentication-and-profiles-01",
@@ -3252,8 +3251,8 @@
       "title": "Register A/B, onboard, A creates S, B joins, exchange text, A submits H, B acknowledges, relogin and reload",
       "actions": "Register A/B, onboard, A creates S, B joins, exchange text, A submits H, B acknowledges, relogin and reload",
       "expected": "Stable identities/membership/messages/handoff status and notifications across sessions; no invented handoff system message",
-      "sourceReference": "23. Runtime/error recovery: ",
-      "catalogLine": 413,
+      "sourceReference": "24. Oct 2026 product bugfixes (manual QA checklist; not yet registered as FR-* IDs): ",
+      "catalogLine": 430,
       "questionIds": [],
       "relatedSanityIds": [],
       "dependencies": []
@@ -3269,8 +3268,8 @@
       "title": "Lookup opted-in D, send request, D accepts, exchange DM, mark read, reopen from both users",
       "actions": "Lookup opted-in D, send request, D accepts, exchange DM, mark read, reopen from both users",
       "expected": "Consent changes ability to message, one DM ID, exact messages/receipt and notification route",
-      "sourceReference": "23. Runtime/error recovery: ",
-      "catalogLine": 414,
+      "sourceReference": "24. Oct 2026 product bugfixes (manual QA checklist; not yet registered as FR-* IDs): ",
+      "catalogLine": 431,
       "questionIds": [],
       "relatedSanityIds": [],
       "dependencies": []
@@ -3286,8 +3285,8 @@
       "title": "Submit H to B",
       "actions": "Submit H to B; B cant_cover note; reassign C; C acknowledges; A refreshes inbox/history",
       "expected": "Responsibility moves without losing patients/tasks; history/notes/ack reset/new ack and alerts consistent",
-      "sourceReference": "23. Runtime/error recovery: ",
-      "catalogLine": 415,
+      "sourceReference": "24. Oct 2026 product bugfixes (manual QA checklist; not yet registered as FR-* IDs): ",
+      "catalogLine": 432,
       "questionIds": [],
       "relatedSanityIds": [
         "handoffs-05"
@@ -3305,8 +3304,8 @@
       "title": "B leaves S, reloads spaces/search/Needl and syncs socket",
       "actions": "B leaves S, reloads spaces/search/Needl and syncs socket; rejoins current invite",
       "expected": "Supported lists recover membership; no stale active rooms after sync; immediate transition semantics Q10",
-      "sourceReference": "23. Runtime/error recovery: ",
-      "catalogLine": 416,
+      "sourceReference": "24. Oct 2026 product bugfixes (manual QA checklist; not yet registered as FR-* IDs): ",
+      "catalogLine": 433,
       "questionIds": [
         "Q10"
       ],
@@ -3324,8 +3323,8 @@
       "title": "Device compose draft, background/offline, resume, send when online, receive peer reply, logout/relogin",
       "actions": "Device compose draft, background/offline, resume, send when online, receive peer reply, logout/relogin",
       "expected": "Draft and committed content survive their supported storage scope; exactly one displayed committed message after refetch",
-      "sourceReference": "23. Runtime/error recovery: ",
-      "catalogLine": 417,
+      "sourceReference": "24. Oct 2026 product bugfixes (manual QA checklist; not yet registered as FR-* IDs): ",
+      "catalogLine": 434,
       "questionIds": [],
       "relatedSanityIds": [],
       "dependencies": []
@@ -3341,8 +3340,8 @@
       "title": "Device receive injected handoff notification cold-start",
       "actions": "Device receive injected handoff notification cold-start; login if needed; open, acknowledge, inspect sender",
       "expected": "Right handoff/assignee displayed; one acknowledgement; sender sees local backend update; no real provider proof",
-      "sourceReference": "23. Runtime/error recovery: ",
-      "catalogLine": 418,
+      "sourceReference": "24. Oct 2026 product bugfixes (manual QA checklist; not yet registered as FR-* IDs): ",
+      "catalogLine": 435,
       "questionIds": [],
       "relatedSanityIds": [],
       "dependencies": []

@@ -124,12 +124,16 @@ void main() {
         expect(body['title'], 'Synthetic ${entry.path}');
         expect(body['description'],
             'Synthetic support details for regression testing');
-        expect(find.text(entry.path), findsOneWidget,
-            reason: 'Submission returns to the support entry screen');
         if (attempt == 1) {
           retainedAfterFailure[entry.path] =
               find.byType(TextFormField).evaluate().isNotEmpty;
+          // Failure keeps the form open with inputs for retry.
+          expect(find.text(entry.submit), findsOneWidget);
+          await tester.pageBack();
+          await tester.pumpAndSettle();
         }
+        expect(find.text(entry.path), findsOneWidget,
+            reason: 'Submission returns to the support entry screen');
       }
       expect(adapter.bodies[entry.endpoint], hasLength(2));
     }

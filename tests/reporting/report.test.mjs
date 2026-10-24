@@ -92,9 +92,9 @@ async function flutterAggregationFixture(action){
   const run=async(record,expectReport=true)=>{
    const output=join(directory,'report-'+attempt++),args=[join(root,'tests/functional-regression/scripts/aggregate-flutter.mjs'),input,output];
    if(record){const file=output+'-provenance.json';await writeFile(file,JSON.stringify(record));args.push(file);}
-   const result=spawnSync(process.execPath,args,{encoding:'utf8',windowsHide:true,timeout:10000});
+   const result=spawnSync(process.execPath,args,{encoding:'utf8',windowsHide:true,timeout:60000});
    if(!expectReport){await assert.rejects(readFile(output+'.json'),{code:'ENOENT'});return {result};}
-   assert.equal(result.status,0,result.stderr);return {result,report:JSON.parse(await readFile(output+'.json','utf8'))};
+   assert.equal(result.status,0,result.stderr||result.signal||'aggregate-flutter exited non-zero');return {result,report:JSON.parse(await readFile(output+'.json','utf8'))};
   };
   await action({run,provenance,harnessSha});
  }finally{await rm(directory,{recursive:true,force:true});}

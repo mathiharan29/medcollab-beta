@@ -6,7 +6,7 @@ const Space = require('./space.model');
 const Channel = require('../channels/channel.model');
 const User = require('../users/user.model');
 const { accessibleChannelFilter } = require('../../utils/accessibleChannels');
-const { joinUserToSpaceRoom } = require('../../socket');
+const { joinUserToSpaceRoom, leaveUserFromSpaceRoom } = require('../../socket');
 const { respond } = require('../../utils/apiResponse');
 const asyncHandler = require('../../utils/asyncHandler');
 const { SPACE_ROLES, CHANNEL_TYPES } = require('../../constants');
@@ -329,6 +329,7 @@ const removeMember = asyncHandler(async (req, res) => {
 
   space.members = space.members.filter((m) => m.userId.toString() !== targetId);
   await space.save();
+  leaveUserFromSpaceRoom(targetId, space._id);
 
   return respond.ok(res, 'Member removed');
 });
@@ -351,6 +352,7 @@ const leaveSpace = asyncHandler(async (req, res) => {
     (m) => m.userId.toString() !== req.user._id.toString()
   );
   await space.save();
+  leaveUserFromSpaceRoom(req.user._id, space._id);
 
   return respond.ok(res, `Left "${space.name}"`);
 });

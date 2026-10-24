@@ -984,7 +984,8 @@ class MessageBubbleContent extends StatelessWidget {
           ),
           if (showTimestamp ||
               (isMine &&
-                  message.deliveryState == MessageDeliveryState.failed))
+                  (message.deliveryState == MessageDeliveryState.failed ||
+                      message.deliveryState == MessageDeliveryState.sending)))
             Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Row(
@@ -997,6 +998,17 @@ class MessageBubbleContent extends StatelessWidget {
                         color: timestampColor,
                       ),
                     ),
+                  if (isMine &&
+                      message.deliveryState ==
+                          MessageDeliveryState.sending) ...[
+                    if (time.isNotEmpty) const SizedBox(width: 6),
+                    Text(
+                      MessageDeliveryState.sending.label,
+                      style: AppTextStyles.timestamp.copyWith(
+                        color: timestampColor,
+                      ),
+                    ),
+                  ],
                   if (isMine &&
                       message.deliveryState ==
                           MessageDeliveryState.failed) ...[

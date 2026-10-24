@@ -68,6 +68,10 @@ void main() {
     final router = GoRouter(initialLocation: '/bookmarks', routes: [
       GoRoute(path: '/bookmarks', builder: (_, __) => const BookmarksPage()),
       GoRoute(
+        path: AppRoutes.handoffs,
+        builder: (_, __) => const Scaffold(body: Text('Handoffs list')),
+      ),
+      GoRoute(
         path: '/spaces/:spaceId/handoffs/:handoffId',
         builder: (_, state) => HandoffDetailPage(
           spaceId: state.pathParameters['spaceId']!,
@@ -84,11 +88,11 @@ void main() {
     expect(find.text('Unavailable synthetic handoff'), findsOneWidget);
     await tester.tap(find.text('Unavailable synthetic handoff'));
     await tester.pumpAndSettle();
-    expect(router.state.uri.path, target);
     expect(adapter.paths, contains('/api/handoffs/handoff-missing'));
     expect(find.text('Resource not found'), findsOneWidget);
-
-    // The user must have a recovery action after following a stale bookmark.
+    // Missing target falls back to the handoffs list with a Retry action.
+    expect(router.state.uri.path, AppRoutes.handoffs);
     expect(find.text('Retry'), findsOneWidget);
+    expect(target, isNotEmpty);
   });
 }
