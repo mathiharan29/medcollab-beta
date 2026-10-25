@@ -17,8 +17,8 @@ import 'support/provider_inputs.dart';
 Future<void> attach(WidgetTester tester, String label) async {
   final attachButton = find.byWidgetPredicate((widget) =>
       widget is IconButton && widget.tooltip == 'Attach');
-  await until(tester, () => WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed,
-      'the native app resumes before opening the attachment menu');
+  // Do not assert WidgetsBinding.lifecycleState here — on IntegrationTest
+  // bindings that check can trip flutter_test `inTest` assertions (FR-MED-08).
   await until(tester, () => attachButton.hitTestable().evaluate().isNotEmpty &&
       tester.widget<IconButton>(attachButton).onPressed != null,
       'the attachment control is enabled');

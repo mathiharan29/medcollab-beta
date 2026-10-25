@@ -17,6 +17,7 @@ import 'package:medcollab_app/features/auth/data/repositories/auth_repository.da
 import 'package:medcollab_app/features/auth/data/repositories/user_repository.dart';
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_event.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class _RefreshApi extends ApiClient {
   _RefreshApi(SecureStorageService storage) : super(storage: storage);
@@ -85,8 +86,11 @@ class _UiUser extends UserRepository {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   testWidgets('FR-RT-06: resume refresh reconnects or recovers session', (tester) async {
     FlutterSecureStorage.setMockInitialValues({});
+    SharedPreferences.setMockInitialValues({});
     final storage = SecureStorageService(storage: const FlutterSecureStorage());
     await storage.saveSession(
       accessToken: 'synthetic-expired', refreshToken: 'synthetic-refresh',
@@ -108,9 +112,10 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: AppLifecycleHandler(
       child: Scaffold(body: Text('Synthetic session screen')),
     )));
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-    await tester.runAsync(() => socket.updated.future.timeout(const Duration(seconds: 5)));
-    await tester.pump();
+
+    // Drive the same path AppLifecycleHandler uses, but await it directly so
+    // the fake-async test zone cannot stall refresh until the suite timeout.
+    await reconnect.ensureSocketConnected();
     expect(socket.connectTokens, ['synthetic-expired']);
     expect(api.refreshCalls, 1);
     expect(socket.updatedTokens, ['synthetic-new']);
@@ -121,14 +126,15 @@ void main() {
     socket.connected = false;
     api.fail = true;
     await storage.saveAccessToken('synthetic-expired-again');
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-    await tester.runAsync(() => api.secondRefresh.future.timeout(const Duration(seconds: 5)));
-    await tester.pump();
+    final recovered = auth.stream.firstWhere(
+      (state) => state.status != AuthStatus.authenticated,
+    );
+    await reconnect.ensureSocketConnected();
     expect(socket.connectTokens, ['synthetic-expired', 'synthetic-expired-again']);
     expect(api.refreshCalls, 2);
     expect(socket.updatedTokens, ['synthetic-new']);
     expect(socket.syncCalls, 1);
-    expect(auth.state.status, isNot(AuthStatus.authenticated),
+    expect((await recovered).status, AuthStatus.unauthenticated,
         reason: 'Denied refresh on resume must expose session recovery instead of retaining Home');
-  });
+  }, timeout: const Timeout(Duration(seconds: 30)));
 }

@@ -133,9 +133,16 @@ const cases = [{
         assert.equal(captures[index].firstBytes, cases[index][2].subarray(0, 16).toString('hex'));
       }
       await writeFile(modePath, JSON.stringify({ enabled: true, outcome: 'fail' }));
+      // Shared module DB may already contain messages from earlier MED cases —
+      // assert the failed upload creates no additional message rows.
+      const beforeCount = await db(async (connection) =>
+        connection.collection('messages').countDocuments({}));
       const failed = await upload(request, a.token, 'synthetic-fail.png', 'image/png', png, 'message', 500);
       assert.equal(failed.payload.success, false);
-      await db(async (connection) => assert.equal(await connection.collection('messages').countDocuments({}), 0));
+      await db(async (connection) => {
+        const afterCount = await connection.collection('messages').countDocuments({});
+        assert.equal(afterCount, beforeCount, 'Failed Cloudinary upload must not create a message');
+      });
     } finally { await writeFile(modePath, JSON.stringify({ enabled: false })); }
   },
 }, {

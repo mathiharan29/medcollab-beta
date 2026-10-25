@@ -64,8 +64,14 @@ class SpaceRepository extends BaseRepository {
             );
           }
           final space = parseNested(json, 'space', SpaceModel.fromJson);
-          final channels =
-              parseNestedList(json, 'channels', ChannelModel.fromJson);
+          // Channel parse must not block a successful join (device LINK-04).
+          List<ChannelModel> channels = const [];
+          try {
+            channels =
+                parseNestedList(json, 'channels', ChannelModel.fromJson);
+          } catch (_) {
+            channels = const [];
+          }
           return JoinSpaceResult.joined(
             SpaceModel(
               id: space.id,

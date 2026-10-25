@@ -63,12 +63,20 @@ class _JoinInvitePageState extends State<JoinInvitePage> {
         return;
       }
       final space = result.space!;
-      AppDependencies.instance.socketClient.syncSpaceRooms();
+      try {
+        AppDependencies.instance.socketClient.syncSpaceRooms();
+      } catch (_) {
+        /* non-fatal — navigation must still proceed after a successful join */
+      }
+      // Prefer the app router so join still navigates if this page unmounts
+      // during the await (device QR → join flow).
+      AppDependencies.instance.appRouter.router.go(
+        AppRoutes.spaceDetailPath(space.id),
+      );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Joined ${space.name}')),
       );
-      context.go(AppRoutes.spaceDetailPath(space.id));
     } on AppException catch (e) {
       if (!mounted) return;
       setState(() => _joining = false);

@@ -43,8 +43,8 @@ const joinUserToSpaceRoom = (userId, spaceId) => {
 
 /**
  * Remove all active sockets for [userId] from a space room (leave / kick).
- * Awaits Socket.IO leave so room membership is settled before REST returns
- * (FR-JRN-04 / FR-SPC-06 presence leak).
+ * Re-syncs rooms from MongoDB membership so eviction is authoritative before
+ * REST returns (FR-JRN-04 / FR-SPC-06 presence leak).
  */
 const leaveUserFromSpaceRoom = async (userId, spaceId) => {
   if (!io) return;
@@ -52,25 +52,22 @@ const leaveUserFromSpaceRoom = async (userId, spaceId) => {
   const uid = userId.toString();
   const sid = spaceId.toString();
   const room = `space:${sid}`;
-  let left = 0;
 
-  const sockets = [...io.sockets.sockets.values()].filter(
-    (socket) => socket.userId?.toString() === uid
-  );
+  const sockets = [...io.sockets.sockets.values()].filter((socket) => {
+    const socketUid = (socket.userId || socket.data?.userId || '').toString();
+    return socketUid === uid;
+  });
 
   await Promise.all(
     sockets.map(async (socket) => {
       await socket.leave(room);
-      if (Array.isArray(socket.spaceIds)) {
-        socket.spaceIds = socket.spaceIds.map(String).filter((id) => id !== sid);
-        socket.data.spaceIds = socket.spaceIds;
-      }
-      left += 1;
+      // Authoritative: drop any stale space rooms that no longer match DB membership.
+      await syncSocketSpaceRooms(socket);
     })
   );
 
-  if (left > 0) {
-    logger.socket(`User ${uid} left space room ${room} (${left} socket(s))`);
+  if (sockets.length > 0) {
+    logger.socket(`User ${uid} left space room ${room} (${sockets.length} socket(s))`);
   }
 };
 
