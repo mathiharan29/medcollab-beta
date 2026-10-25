@@ -13,6 +13,36 @@ const { SOCKET_EVENTS } = require('../../constants');
 const logger = require('../../utils/logger');
 const { normalizePhoneToE164 } = require('../../services/msg91Widget.service');
 const { MESSAGE_REQUEST_STATUS } = require('../../constants');
+const {
+  normalizeOwnedMediaPublicId,
+  deleteStoredMedia,
+} = require('../media/media.controller');
+
+const avatarPublicIdFromUrl = (rawUrl, userId) => {
+  if (!rawUrl) return null;
+  let pathname;
+  try {
+    pathname = rawUrl.startsWith('/') ? rawUrl : new URL(rawUrl).pathname;
+  } catch {
+    return null;
+  }
+
+  let publicId = null;
+  if (pathname.startsWith('/uploads/')) {
+    publicId = decodeURIComponent(pathname.slice('/uploads/'.length));
+  } else {
+    const marker = `/medcollab/avatars/${userId}/`;
+    const markerIndex = pathname.indexOf(marker);
+    if (markerIndex >= 0) {
+      publicId = pathname
+        .slice(markerIndex + 1)
+        .replace(/\.[^/.]+$/, '');
+    }
+  }
+
+  const normalized = normalizeOwnedMediaPublicId(publicId, userId);
+  return normalized?.startsWith(`medcollab/avatars/${userId}/`) ? normalized : null;
+};
 
 /**
  * GET /api/users/me
@@ -66,6 +96,23 @@ const updateMe = asyncHandler(async (req, res) => {
     { $set: updates },
     { new: true, runValidators: true }
   );
+
+  if (
+    updates.avatarUrl !== undefined &&
+    updates.avatarUrl !== user.avatarUrl
+  ) {
+    const previousPublicId = avatarPublicIdFromUrl(
+      user.avatarUrl,
+      req.user._id.toString()
+    );
+    if (previousPublicId) {
+      try {
+        await deleteStoredMedia(previousPublicId);
+      } catch (err) {
+        logger.warn(`Previous avatar cleanup failed: ${err.message}`);
+      }
+    }
+  }
 
   return respond.ok(res, 'Profile updated', { user: updated.toPublicProfile() });
 });

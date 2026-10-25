@@ -61,6 +61,8 @@ const registerPresenceHandlers = (io, socket) => {
       broadcastPresenceUpdate(io, socket, {
         isOnline: true,
         status: user?.availability?.status,
+        until: user?.availability?.until,
+        note: user?.availability?.note,
       });
     })
     .catch(() => {
@@ -87,17 +89,26 @@ const registerPresenceHandlers = (io, socket) => {
       }
 
       // Persist to database
-      await User.findByIdAndUpdate(userId, {
-        'availability.status': status,
-        'availability.until': until || null,
-        'availability.note': note || '',
-        'availability.updatedAt': new Date(),
-      });
+      const updated = await User.findByIdAndUpdate(
+        userId,
+        {
+          'availability.status': status,
+          'availability.until': until || null,
+          'availability.note': note || '',
+          'availability.updatedAt': new Date(),
+        },
+        { new: true }
+      );
 
       logger.socket(`Availability update: ${socket.userName} → ${status}`);
 
       // Broadcast to all spaces this user is in
-      broadcastPresenceUpdate(io, socket, { status, isOnline: true });
+      broadcastPresenceUpdate(io, socket, {
+        status: updated.availability.status,
+        until: updated.availability.until,
+        note: updated.availability.note,
+        isOnline: true,
+      });
 
     } catch (err) {
       logger.error('Availability update failed via socket', err.message);
@@ -149,8 +160,8 @@ const broadcastPresenceUpdate = (io, socket, update) => {
       availability: update.status
         ? {
             status: update.status,
-            until: update.until || null,
-            note: update.note || '',
+            until: update.until ?? null,
+            note: update.note ?? '',
           }
         : undefined,
       updatedAt: new Date().toISOString(),

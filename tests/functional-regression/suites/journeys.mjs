@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import { runModule } from '../src/module-runner.mjs';
-import { DecisionPending } from '../src/runner.mjs';
 import { capturedOtp } from '../src/fixtures.mjs';
 import { connectSocket, waitFor } from '../src/socket.mjs';
 
@@ -181,6 +180,13 @@ const cases = [{
       const beforeSearch = (await request('/api/search?q=journey%20search%20root&type=messages', { token: f.B.token })).data.messages;
       assert.ok(beforeSearch.some((item) => item._id === root._id));
       await request(`/api/spaces/${f.space._id}/leave`, { method: 'POST', token: f.B.token });
+      const immediateNote = 'synthetic-journey-immediate-eviction';
+      const immediatePredicate = (event) => event?.userId === f.A.userId && event?.availability?.note === immediateNote;
+      const immediateOwnerEvent = waitFor(socketA, 'presence_update', immediatePredicate, 3000);
+      const immediateLeak = waitFor(socketB, 'presence_update', immediatePredicate, 1500).then(() => true, () => false);
+      await request('/api/users/me/availability', { method: 'PUT', token: f.A.token, body: { status: 'on_call', note: immediateNote } });
+      await immediateOwnerEvent;
+      assert.equal(await immediateLeak, false, 'Leave REST did not immediately evict the departed socket from the space room');
       const spacesAfterLeave = (await request('/api/spaces', { token: f.B.token })).data.spaces;
       assert.ok(!spacesAfterLeave.some((item) => item._id === f.space._id));
       const searchAfterLeave = (await request('/api/search?q=journey%20search%20root&type=messages', { token: f.B.token })).data.messages;
@@ -212,7 +218,6 @@ const cases = [{
         assert.equal(await connection.collection('messages').countDocuments({ _id: new connection.base.Types.ObjectId(reply._id) }), 1);
       });
       assert.equal(staleAfterSync, false, 'Explicit room sync left the departed user receiving a correlated space event');
-      throw new DecisionPending('Q10: immediate event eviction before explicit sync remains undecided', ['Leave/rejoin persistence and lists verified', 'Search and Needl exclusion/recovery verified', 'Explicit socket sync room counts verified']);
     } finally { socketA.disconnect(); socketB.disconnect(); }
   },
 }];

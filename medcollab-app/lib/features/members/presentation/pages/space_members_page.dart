@@ -11,6 +11,7 @@ import 'package:medcollab_app/features/members/data/models/space_member_model.da
 import 'package:medcollab_app/features/members/presentation/cubit/members_cubit.dart';
 import 'package:medcollab_app/features/members/presentation/widgets/member_widgets.dart';
 import 'package:medcollab_app/features/messages/presentation/widgets/message_request_prompt.dart';
+import 'package:medcollab_app/features/spaces/data/repositories/space_repository.dart';
 import 'package:medcollab_app/shared/presentation/widgets/app_empty_state.dart';
 import 'package:medcollab_app/shared/presentation/widgets/app_search_bar.dart';
 import 'package:medcollab_app/shared/presentation/widgets/app_skeleton.dart';
@@ -33,6 +34,10 @@ class SpaceMembersPage extends StatefulWidget {
 
 class _SpaceMembersPageState extends State<SpaceMembersPage> {
   final _searchController = TextEditingController();
+  List<PendingJoinRequest> _pendingJoins = const [];
+  bool _loadingPending = false;
+  bool _didRequestPending = false;
+  String? _approvingUserId;
 
   @override
   void initState() {
@@ -44,6 +49,60 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadPendingJoins({required bool isAdmin}) async {
+    if (!isAdmin) {
+      if (_pendingJoins.isNotEmpty) {
+        setState(() => _pendingJoins = const []);
+      }
+      return;
+    }
+    setState(() => _loadingPending = true);
+    try {
+      final pending = await AppDependencies.instance.spaceRepository
+          .getPendingJoins(widget.spaceId);
+      if (!mounted) return;
+      setState(() {
+        _pendingJoins = pending;
+        _loadingPending = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loadingPending = false);
+    }
+  }
+
+  Future<void> _approvePending(PendingJoinRequest request) async {
+    if (_approvingUserId != null) return;
+    setState(() => _approvingUserId = request.userId);
+    try {
+      await AppDependencies.instance.spaceRepository
+          .approvePendingJoin(widget.spaceId, request.userId);
+      if (!mounted) return;
+      setState(() {
+        _pendingJoins =
+            _pendingJoins.where((item) => item.userId != request.userId).toList();
+        _approvingUserId = null;
+      });
+      if (!mounted) return;
+      context.read<MembersCubit>().loadMembers(silent: true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${request.displayName} approved')),
+      );
+    } on AppException catch (error) {
+      if (!mounted) return;
+      setState(() => _approvingUserId = null);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message)),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _approvingUserId = null);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not approve join request')),
+      );
+    }
   }
 
   bool _canRemove(SpaceMemberModel actor, SpaceMemberModel target) {
@@ -160,6 +219,17 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
                                     context.read<AuthBloc>().state.user?.id,
                               )
                               .firstOrNull;
+                          final isAdmin = me?.spaceRole == SpaceRole.owner ||
+                              me?.spaceRole == SpaceRole.admin;
+                          if (isAdmin &&
+                              !_didRequestPending &&
+                              !state.isLoading) {
+                            _didRequestPending = true;
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (!mounted) return;
+                              _loadPendingJoins(isAdmin: true);
+                            });
+                          }
 
                           return Column(
                             children: [
@@ -167,6 +237,15 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
                                 Padding(
                                   padding: const EdgeInsets.all(8),
                                   child: ErrorBanner(message: state.error!),
+                                ),
+                              if (isAdmin &&
+                                  (_pendingJoins.isNotEmpty ||
+                                      _loadingPending))
+                                _PendingJoinsSection(
+                                  pending: _pendingJoins,
+                                  loading: _loadingPending,
+                                  approvingUserId: _approvingUserId,
+                                  onApprove: _approvePending,
                                 ),
                               Expanded(
                                 child: members.isEmpty
@@ -295,6 +374,64 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
             },
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _PendingJoinsSection extends StatelessWidget {
+  const _PendingJoinsSection({
+    required this.pending,
+    required this.loading,
+    required this.approvingUserId,
+    required this.onApprove,
+  });
+
+  final List<PendingJoinRequest> pending;
+  final bool loading;
+  final String? approvingUserId;
+  final Future<void> Function(PendingJoinRequest request) onApprove;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Pending joins',
+            style: Theme.of(context).textTheme.labelMedium,
+          ),
+          const SizedBox(height: 4),
+          if (loading && pending.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: LinearProgressIndicator(minHeight: 2),
+            )
+          else
+            ...pending.map(
+              (request) => ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(request.displayName),
+                subtitle: request.message.isEmpty
+                    ? const Text('Waiting for approval')
+                    : Text(request.message),
+                trailing: FilledButton(
+                  onPressed: approvingUserId == request.userId
+                      ? null
+                      : () => onApprove(request),
+                  child: approvingUserId == request.userId
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Approve'),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import { runModule } from '../src/module-runner.mjs';
-import { DecisionPending } from '../src/runner.mjs';
 import { connectSocket, waitFor } from '../src/socket.mjs';
 
 async function spaceFixture(identity, request, name) {
@@ -136,9 +135,13 @@ const cases = [{
       const rest = await request('/api/users/me/availability', { method: 'PUT', token: a.token, body: { status: 'on_call', note: 'Synthetic REST note', until: restUntil } });
       assert.equal(rest.data.availability.note, 'Synthetic REST note');
       const peerRest = await restEvent;
+      assert.equal(peerRest.availability.note, 'Synthetic REST note');
+      assert.equal(new Date(peerRest.availability.until).toISOString(), restUntil);
       const socketEvent = waitFor(socketB, 'presence_update', (payload) => payload?.userId === a.userId && payload?.availability?.status === 'in_ot');
       socketA.emit('update_availability', { status: 'in_ot', note: 'Synthetic socket note', until: socketUntil });
       const peerSocket = await socketEvent;
+      assert.equal(peerSocket.availability.note, 'Synthetic socket note');
+      assert.equal(new Date(peerSocket.availability.until).toISOString(), socketUntil);
       const me = await request('/api/users/me', { token: a.token });
       assert.equal(me.data.user.availability.status, 'in_ot');
       assert.equal(me.data.user.availability.note, 'Synthetic socket note');
@@ -149,11 +152,6 @@ const cases = [{
         assert.equal(stored.availability.note, 'Synthetic socket note');
         assert.equal(stored.availability.until.toISOString(), socketUntil);
       });
-      throw new DecisionPending('Q8: intended socket availability note/until convergence needs product decision', [
-        `REST peer event availability ${JSON.stringify(peerRest.availability)}`,
-        `Socket peer event availability ${JSON.stringify(peerSocket.availability)}`,
-        'HTTP and MongoDB persisted the socket note and until fields',
-      ]);
     } finally { socketA.disconnect(); socketB.disconnect(); }
   },
 }];

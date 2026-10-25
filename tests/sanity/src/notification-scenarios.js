@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { createFixtureUsers } from './fixtures.js';
 import { closeDatabase, connectDatabase } from './database.js';
 import { expectSuccess, request } from './http.js';
-import { closeRealtime, connectRealtime, joinChannel, waitFor } from './socket-client.js';
+import { closeRealtime, connectRealtime, waitFor } from './socket-client.js';
 
 const results = [];
 const assert = (value, message) => { if (!value) throw new Error(message); };
@@ -32,7 +32,8 @@ async function run() {
     general = created.channels.find((item) => item.name === 'general'); emergency = created.channels.find((item) => item.name === 'emergency');
     await request('/api/spaces/join', { method: 'POST', token: people.B.token, body: { inviteCode: created.space.inviteCode } });
     clientB = await connectRealtime(people.B.token);
-    await Promise.all([joinChannel(clientB, general._id), joinChannel(clientB, emergency._id)]);
+    // Do not join channel rooms here — viewing suppresses ordinary/mention
+    // inbox+socket notifications. Prerequisites: B is non-viewing unless specified.
 
     await scenario('notifications-01', async () => {
       const event = waitFor(clientB.socket, 'new_notification', (payload) => payload?.type === 'new_message');

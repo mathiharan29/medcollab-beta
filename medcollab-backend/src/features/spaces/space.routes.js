@@ -9,6 +9,7 @@
  * PUT    /api/spaces/:id                 — Update space info (admin only)
  * GET    /api/spaces/:id/members         — List members with availability
  * DELETE /api/spaces/:id/members/:userId — Remove a member (admin only)
+ * POST   /api/spaces/:id/pending/:userId/approve — Approve pending join
  * POST   /api/spaces/:id/leave           — Leave a space
  */
 
@@ -116,6 +117,25 @@ router.post('/:id/invite', validateMongoId('id'), spaceController.regenerateInvi
  * Returns members sorted by: on_call → in_ot → available → off_duty
  */
 router.get('/:id/members', validateMongoId('id'), spaceController.getMembers);
+
+/**
+ * @route   GET /api/spaces/:id/pending
+ * @desc    List pending join requests
+ * @access  Protected + Space Admin/Owner only
+ */
+router.get('/:id/pending', validateMongoId('id'), spaceController.getPendingJoins);
+
+/**
+ * @route   POST /api/spaces/:id/pending/:userId/approve
+ * @desc    Approve a pending join request
+ * @access  Protected + Space Admin/Owner only
+ */
+router.post(
+  '/:id/pending/:userId/approve',
+  validateMongoId('id'),
+  validateMongoId('userId'),
+  spaceController.approveJoinRequest
+);
 
 /**
  * @route   DELETE /api/spaces/:id/members/:userId

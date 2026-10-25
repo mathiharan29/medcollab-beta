@@ -122,6 +122,9 @@ channelRouter.post(
       .optional()
       .isIn(['all', 'today', 'none'])
       .withMessage('history must be all, today, or none'),
+    // Phone-local midnight as ISO (preferred) or legacy minute offset east of UTC.
+    body('todayStart').optional().isISO8601().withMessage('todayStart must be ISO-8601'),
+    body('timezoneOffsetMinutes').optional().isInt({ min: -840, max: 840 }),
     handleValidationErrors,
   ],
   channelController.expandDM

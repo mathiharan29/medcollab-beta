@@ -33,6 +33,10 @@ abstract final class ApiEndpoints {
   static String spaceMembers(String id) => '$spaces/$id/members';
   static String spaceMember(String spaceId, String userId) =>
       '$spaces/$spaceId/members/$userId';
+  static String spacePendingJoins(String spaceId) =>
+      '$spaces/$spaceId/pending';
+  static String approvePendingJoin(String spaceId, String userId) =>
+      '$spaces/$spaceId/pending/$userId/approve';
   static String leaveSpace(String id) => '$spaces/$id/leave';
   static String spaceChannels(String spaceId) => '$spaces/$spaceId/channels';
   static String spaceHandoffs(String spaceId) => '$spaces/$spaceId/handoffs';

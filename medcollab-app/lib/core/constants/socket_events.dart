@@ -38,6 +38,7 @@ abstract final class SocketEvents {
 
   // Spaces
   static const String spaceMemberJoined = 'space_member_joined';
+  static const String spaceMemberLeft = 'space_member_left';
 
   // Errors
   static const String error = 'error';

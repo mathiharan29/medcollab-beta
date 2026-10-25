@@ -1,8 +1,12 @@
 import 'dart:async';
 
 import 'package:medcollab_app/core/constants/api_endpoints.dart';
+import 'package:medcollab_app/core/chat/chat_transcript_cache.dart';
 import 'package:medcollab_app/core/error/app_exception.dart';
 import 'package:medcollab_app/core/socket/socket_client.dart';
+import 'package:medcollab_app/core/storage/bookmark_service.dart';
+import 'package:medcollab_app/core/storage/draft_message_service.dart';
+import 'package:medcollab_app/core/storage/recent_items_service.dart';
 import 'package:medcollab_app/core/storage/secure_storage_service.dart';
 import 'package:medcollab_app/features/auth/data/models/auth_login_result.dart';
 import 'package:medcollab_app/features/auth/data/models/auth_session_model.dart';
@@ -13,6 +17,7 @@ import 'package:medcollab_app/features/auth/data/models/verify_msg91_token_reque
 import 'package:medcollab_app/features/auth/data/models/verify_otp_request.dart';
 import 'package:medcollab_app/features/auth/data/models/verify_otp_response.dart';
 import 'package:medcollab_app/shared/data/repositories/base_repository.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Auth API — mirrors backend `auth.controller.js`.
 class AuthRepository extends BaseRepository {
@@ -20,11 +25,20 @@ class AuthRepository extends BaseRepository {
     required super.apiClient,
     required SecureStorageService storage,
     required SocketClient socketClient,
+    DraftMessageService? draftMessageService,
+    BookmarkService? bookmarkService,
+    RecentItemsService? recentItemsService,
   })  : _storage = storage,
-        _socketClient = socketClient;
+        _socketClient = socketClient,
+        _draftMessageService = draftMessageService,
+        _bookmarkService = bookmarkService,
+        _recentItemsService = recentItemsService;
 
   final SecureStorageService _storage;
   final SocketClient _socketClient;
+  final DraftMessageService? _draftMessageService;
+  final BookmarkService? _bookmarkService;
+  final RecentItemsService? _recentItemsService;
 
   /// `POST /api/auth/request-otp`
   Future<RequestOtpResponse> requestOtp(RequestOtpRequest request) {
@@ -64,7 +78,8 @@ class AuthRepository extends BaseRepository {
   /// `POST /api/auth/verify-msg91-token`
   ///
   /// Exchanges MSG91 widget access token for MedCollab JWT pair.
-  Future<AuthLoginResult> verifyMsg91Token(VerifyMsg91TokenRequest request) async {
+  Future<AuthLoginResult> verifyMsg91Token(
+      VerifyMsg91TokenRequest request) async {
     final result = await execute(
       () => apiClient.post(
         ApiEndpoints.verifyMsg91Token,
@@ -130,7 +145,41 @@ class AuthRepository extends BaseRepository {
     try {
       await _socketClient.disconnect();
     } catch (_) {}
+    final drafts = _draftMessageService;
+    final bookmarks = _bookmarkService;
+    final recentItems = _recentItemsService;
+    await Future.wait([
+      if (drafts != null) drafts.clearAll(),
+      if (bookmarks != null) bookmarks.clearAll(),
+      if (recentItems != null) recentItems.clearAll(),
+      _clearSharedAccountCaches(),
+    ]);
+    ChatTranscriptCache.clearAll();
     await _storage.clearSession();
+  }
+
+  Future<void> _clearSharedAccountCaches() async {
+    final preferences = await SharedPreferences.getInstance();
+    const exactKeys = {
+      'medcollab_bookmarks_v1',
+      'medcollab_recent_spaces_v1',
+      'medcollab_recent_channels_v1',
+      'medcollab_pinned_home_v1',
+      'medcollab_dashboard_widgets_v4',
+      'vocle_feedback',
+      'vocle_feature_requests',
+      'vocle_support_bugs',
+    };
+    const prefixes = {'draft_msg_', 'vocle_notif_lines_'};
+    final keys = preferences
+        .getKeys()
+        .where(
+          (key) =>
+              exactKeys.contains(key) ||
+              prefixes.any((prefix) => key.startsWith(prefix)),
+        )
+        .toList();
+    await Future.wait(keys.map(preferences.remove));
   }
 
   Future<bool> hasSession() => _storage.hasSession();

@@ -52,6 +52,11 @@ dev_dependencies:
     sdk: flutter
   integration_test:
     sdk: flutter
+  # Platform-interface stubs used by functional_regression device fakes.
+  firebase_core_platform_interface: any
+  firebase_messaging_platform_interface: any
+  image_picker_platform_interface: any
+  camera_platform_interface: any
   flutter_lints: ^5.0.0
   flutter_launcher_icons: ^0.14.3
 

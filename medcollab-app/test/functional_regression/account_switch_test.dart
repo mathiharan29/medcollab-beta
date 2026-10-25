@@ -34,23 +34,32 @@ class _LocalLogoutApi extends ApiClient {
 class _LogoutSocket extends FakeSocketClient {
   int disconnectCalls = 0;
   @override
-  Future<void> disconnect() async { disconnectCalls++; }
+  Future<void> disconnect() async {
+    disconnectCalls++;
+  }
 }
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('FR-OFF-06: account switch captures local data exposure [NEEDS_DECISION Q11]', () async {
+  test('FR-OFF-06: account switch clears local account data', () async {
     FlutterSecureStorage.setMockInitialValues({});
     SharedPreferences.setMockInitialValues({});
     final preferences = await SharedPreferences.getInstance();
     final secure = SecureStorageService(storage: const FlutterSecureStorage());
     final api = _LocalLogoutApi(secure);
     final socket = _LogoutSocket();
-    final auth = AuthRepository(apiClient: api, storage: secure, socketClient: socket);
     final drafts = DraftMessageService();
     final bookmarks = BookmarkService(prefs: preferences);
     final recent = RecentItemsService(prefs: preferences);
+    final auth = AuthRepository(
+      apiClient: api,
+      storage: secure,
+      socketClient: socket,
+      draftMessageService: drafts,
+      bookmarkService: bookmarks,
+      recentItemsService: recent,
+    );
 
     await secure.saveSession(
       accessToken: 'synthetic-access-a',
@@ -88,14 +97,13 @@ void main() {
     expect(await secure.getAccessToken(), 'synthetic-access-b');
     expect(await secure.getRefreshToken(), 'synthetic-refresh-b');
 
-    // Capture current behavior. Q11 decides whether these should be cleared,
-    // retained with an account key, or otherwise hidden from Doctor B.
     final exposedDraft = await DraftMessageService().getDraft('channel-a');
     final exposedBookmarks = await BookmarkService(prefs: preferences).getAll();
-    final exposedRecent = await RecentItemsService(prefs: preferences).getRecentChannels();
-    expect(exposedDraft, 'Doctor A synthetic draft');
-    expect(exposedBookmarks.map((item) => item.id), ['message-a']);
-    expect(exposedRecent.map((item) => item.channelId), ['channel-a']);
+    final exposedRecent =
+        await RecentItemsService(prefs: preferences).getRecentChannels();
+    expect(exposedDraft, isNull);
+    expect(exposedBookmarks, isEmpty);
+    expect(exposedRecent, isEmpty);
     await socket.disposeFake();
   });
 }

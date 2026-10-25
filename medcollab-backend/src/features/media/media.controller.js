@@ -10,6 +10,7 @@ const { respond } = require('../../utils/apiResponse');
 const asyncHandler = require('../../utils/asyncHandler');
 const { saveLocalUpload, deleteLocalUpload } = require('../../utils/localMediaStorage');
 const logger = require('../../utils/logger');
+const Handoff = require('../handoffs/handoff.model');
 
 const bumpUserStorage = (userId, deltaBytes) => {
   if (!userId || !deltaBytes) return;
@@ -175,6 +176,7 @@ const normalizeOwnedMediaPublicId = (rawPublicId, userId) => {
   const allowed = [
     `medcollab/messages/${userId}/`,
     `medcollab/avatars/${userId}/`,
+    'medcollab/handoffs/',
   ];
   const owns = allowed.some(
     (prefix) =>
@@ -184,6 +186,51 @@ const normalizeOwnedMediaPublicId = (rawPublicId, userId) => {
   );
   return owns ? normalized : null;
 };
+
+const deleteStoredMedia = async (publicId) => {
+  if (!isCloudinaryConfigured()) {
+    return deleteLocalUpload(publicId);
+  }
+
+  for (const resourceType of ['image', 'raw', 'video']) {
+    const result = await cloudinary.uploader.destroy(publicId, {
+      resource_type: resourceType,
+    });
+    if (result.result === 'ok') return true;
+    if (result.result !== 'not found') return false;
+  }
+  return false;
+};
+
+const clearDeletedHandoffAttachments = async (publicId) => {
+  const handoffs = await Handoff.find({
+    'patients.attachments.url': { $regex: `${publicId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:$|[?#])` },
+  });
+
+  for (const handoff of handoffs) {
+    let changed = false;
+    for (const patient of handoff.patients) {
+      for (const attachment of patient.attachments) {
+        if (!attachment.url || !attachment.url.includes(publicId)) continue;
+        attachment.url = null;
+        attachment.thumbnailUrl = null;
+        attachment.fileName = attachment.mimeType?.startsWith('image/')
+          ? 'Image deleted'
+          : 'Message deleted';
+        changed = true;
+      }
+    }
+    if (changed) await handoff.save();
+  }
+};
+
+const handoffAttachmentOwnedBy = (publicId, userId) =>
+  Handoff.exists({
+    fromUserId: userId,
+    'patients.attachments.url': {
+      $regex: `${publicId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:$|[?#])`,
+    },
+  });
 
 /**
  * DELETE /api/media/:publicId
@@ -195,37 +242,27 @@ const deleteFile = asyncHandler(async (req, res) => {
   if (!publicId) {
     return respond.forbidden(res, 'You can only delete your own files');
   }
-
-  if (!isCloudinaryConfigured()) {
-    const deleted = deleteLocalUpload(publicId);
-    return deleted
-      ? respond.ok(res, 'File deleted')
-      : respond.notFound(res, 'File not found');
+  if (
+    publicId.startsWith('medcollab/handoffs/') &&
+    !(await handoffAttachmentOwnedBy(publicId, req.user._id))
+  ) {
+    return respond.forbidden(res, 'You can only delete your own handoff files');
   }
 
   try {
-    let result = await cloudinary.uploader.destroy(publicId, {
-      resource_type: 'image',
-    });
-    if (result.result === 'not found') {
-      result = await cloudinary.uploader.destroy(publicId, {
-        resource_type: 'raw',
-      });
-    }
-    if (result.result === 'not found') {
-      result = await cloudinary.uploader.destroy(publicId, {
-        resource_type: 'video',
-      });
-    }
-
-    if (result.result === 'ok') {
-      return respond.ok(res, 'File deleted');
-    }
-    return respond.notFound(res, 'File not found');
+    const deleted = await deleteStoredMedia(publicId);
+    if (!deleted) return respond.notFound(res, 'File not found');
+    await clearDeletedHandoffAttachments(publicId);
+    return respond.ok(res, 'File deleted');
   } catch (err) {
     logger.error(`Cloudinary delete failed: ${err.message}`);
     return respond.serverError(res, 'File deletion failed');
   }
 });
 
-module.exports = { uploadFile, deleteFile };
+module.exports = {
+  uploadFile,
+  deleteFile,
+  normalizeOwnedMediaPublicId,
+  deleteStoredMedia,
+};

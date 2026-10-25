@@ -20,6 +20,7 @@ import 'package:medcollab_app/features/bookmarks/presentation/pages/bookmarks_pa
 import 'package:medcollab_app/features/channels/data/models/channel_detail_model.dart';
 import 'package:medcollab_app/features/media/data/services/media_picker_service.dart';
 import 'package:medcollab_app/features/messages/data/models/message_model.dart';
+import 'package:medcollab_app/features/messages/data/models/message_delivery_state.dart';
 import 'package:medcollab_app/features/messages/presentation/cubit/channel_chat_cubit.dart';
 import 'package:medcollab_app/features/messages/presentation/pages/thread_page.dart';
 import 'package:medcollab_app/features/messages/presentation/utils/message_list_utils.dart';
@@ -43,6 +44,7 @@ class ChannelChatPage extends StatefulWidget {
     required this.channelId,
     this.spaceId,
     this.channel,
+    this.initialMessageId,
     super.key,
   });
 
@@ -50,6 +52,7 @@ class ChannelChatPage extends StatefulWidget {
   final String? spaceId;
   final String channelId;
   final ChannelModel? channel;
+  final String? initialMessageId;
 
   bool get isDm => spaceId == null || spaceId!.isEmpty;
 
@@ -73,6 +76,7 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
   Timer? _highlightClearTimer;
   bool _isTyping = false;
   String? _highlightMessageId;
+  bool _didOpenInitialMessage = false;
 
   bool get _isDm => widget.isDm;
 
@@ -189,8 +193,7 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
       final fetched = detail.channel;
       if (!_isDm) {
         final spaces = await deps.spaceRepository.getMySpaces();
-        final space =
-            spaces.where((s) => s.id == widget.spaceId).firstOrNull;
+        final space = spaces.where((s) => s.id == widget.spaceId).firstOrNull;
         final spaceName = space?.name ?? '';
         if (spaceName.isNotEmpty) {
           await deps.recentItemsService.recordChannelVisit(
@@ -210,18 +213,15 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
         UserModel? peer = fetched.peer;
         peer ??= fetched.members.where((m) => m.id != selfId).firstOrNull;
         peer ??= _spaceMembers.where((m) => m.id != selfId).firstOrNull;
-        final members = fetched.members.isNotEmpty
-            ? fetched.members
-            : _spaceMembers;
+        final members =
+            fetched.members.isNotEmpty ? fetched.members : _spaceMembers;
         final isNeedl = members.length > 2 || fetched.isGroupDm;
         setState(() {
           _pinnedMessages = detail.pinnedMessages;
           _resolvedChannel = fetched.copyWith(
             peer: peer,
             members: members,
-            name: isNeedl
-                ? fetched.name
-                : (peer?.displayName ?? fetched.name),
+            name: isNeedl ? fetched.name : (peer?.displayName ?? fetched.name),
           );
         });
       }
@@ -370,8 +370,8 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
     }
 
     try {
-      final fresh = await AppDependencies.instance.memberRepository
-          .getUserById(peer.id);
+      final fresh =
+          await AppDependencies.instance.memberRepository.getUserById(peer.id);
       if (!context.mounted) return;
       await showPeerProfileCard(context, user: fresh);
     } catch (_) {
@@ -502,8 +502,7 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
   @override
   Widget build(BuildContext context) {
     final deps = AppDependencies.instance;
-    final currentUserId =
-        context.read<AuthBloc>().state.user?.id ?? '';
+    final currentUserId = context.read<AuthBloc>().state.user?.id ?? '';
 
     return BlocProvider(
       create: (_) => ChannelChatCubit(
@@ -517,9 +516,10 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
         },
         channelId: widget.channelId,
         currentUserId: currentUserId,
+        spaceId: widget.spaceId,
+        memberRepository: deps.memberRepository,
         readReceiptsEnabled: () =>
-            deps.authBloc.state.user?.notifications.readReceiptsEnabled ??
-            true,
+            deps.authBloc.state.user?.notifications.readReceiptsEnabled ?? true,
       ),
       child: Builder(
         builder: (context) {
@@ -527,8 +527,8 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
           final peer = _dmPeer(channel, currentUserId);
           // Prefer peer name; avoid flashing "Channel" / bare "Direct message".
           final title = _chatTitle(channel, peer);
-          final isNeedlChat = _isDm &&
-              (channel?.isGroupDm == true || _spaceMembers.length > 2);
+          final isNeedlChat =
+              _isDm && (channel?.isGroupDm == true || _spaceMembers.length > 2);
           final subtitle = isNeedlChat
               ? '${(_spaceMembers.isNotEmpty ? _spaceMembers : channel?.members ?? const []).length} people · Tap for list'
               : _isDm
@@ -541,14 +541,17 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
               (context.watch<PresenceCubit>().state[peer.id]?.isOnline ??
                   false);
           final showReadReceipts = _isDm &&
-              (context.watch<AuthBloc>().state.user?.notifications
+              (context
+                      .watch<AuthBloc>()
+                      .state
+                      .user
+                      ?.notifications
                       .readReceiptsEnabled ??
                   true);
           final nameByUserId = <String, String>{
             for (final m in _spaceMembers)
               if (m.id.isNotEmpty) m.id: m.displayName,
-            if (peer != null && peer.id.isNotEmpty)
-              peer.id: peer.displayName,
+            if (peer != null && peer.id.isNotEmpty) peer.id: peer.displayName,
             for (final m in channel?.members ?? const <UserModel>[])
               if (m.id.isNotEmpty) m.id: m.displayName,
           };
@@ -583,8 +586,8 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
               titleSpacing: 0,
               title: InkWell(
                 onTap: () {
-                  final isNeedl = channel?.isGroupDm == true ||
-                      _spaceMembers.length > 2;
+                  final isNeedl =
+                      channel?.isGroupDm == true || _spaceMembers.length > 2;
                   if (_isDm && isNeedl) {
                     showNeedlMembersSheet(
                       context,
@@ -839,6 +842,15 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
                       } else if (grew) {
                         _scrollToBottom();
                       }
+                      final initialId = widget.initialMessageId;
+                      if (!_didOpenInitialMessage &&
+                          initialId != null &&
+                          state.messages.any((m) => m.id == initialId)) {
+                        _didOpenInitialMessage = true;
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (mounted) _jumpToQuoted(initialId);
+                        });
+                      }
                     },
                     builder: (context, state) {
                       if (state.isLoading && state.messages.isEmpty) {
@@ -861,7 +873,8 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
                             child: state.messages.isEmpty
                                 ? _EmptyChatState(isDm: _isDm)
                                 : ListView.builder(
-                                    key: PageStorageKey('chat-list-${widget.channelId}'),
+                                    key: PageStorageKey(
+                                        'chat-list-${widget.channelId}'),
                                     controller: _scrollController,
                                     cacheExtent: 480,
                                     padding: const EdgeInsets.symmetric(
@@ -879,76 +892,93 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
                                           :final showSender,
                                           :final isMine,
                                         ) =>
-                                          MessageBubble(
+                                          GestureDetector(
                                             key: GlobalObjectKey(message.id),
-                                            message: message,
-                                            isMine: isMine,
-                                            // Sender names in space channels + Needls (group DMs).
-                                            showSender: (!_isDm ||
-                                                    isNeedlChat) &&
-                                                showSender,
-                                            currentUserId: currentUserId,
-                                            isDm: _isDm,
-                                            showReadReceipts: showReadReceipts,
-                                            nameByUserId: nameByUserId,
-                                            isPinned: _isMessagePinned(message),
-                                            isHighlighted:
-                                                _highlightMessageId ==
+                                            onTap: message.deliveryState ==
+                                                    MessageDeliveryState.failed
+                                                ? () => context
+                                                    .read<ChannelChatCubit>()
+                                                    .retryFailedMessage(
+                                                      message.id,
+                                                    )
+                                                : null,
+                                            child: MessageBubble(
+                                              message: message,
+                                              isMine: isMine,
+                                              // Sender names in space channels + Needls (group DMs).
+                                              showSender:
+                                                  (!_isDm || isNeedlChat) &&
+                                                      showSender,
+                                              currentUserId: currentUserId,
+                                              isDm: _isDm,
+                                              showReadReceipts:
+                                                  showReadReceipts,
+                                              nameByUserId: nameByUserId,
+                                              isPinned:
+                                                  _isMessagePinned(message),
+                                              isHighlighted:
+                                                  _highlightMessageId ==
+                                                      message.id,
+                                              localImageBytes:
+                                                  state.localMediaByMessageId[
+                                                      message.id],
+                                              onQuoteReply: message.localOnly
+                                                  ? null
+                                                  : () {
+                                                      context
+                                                          .read<
+                                                              ChannelChatCubit>()
+                                                          .setPendingReply(
+                                                              message);
+                                                      _composerFocusNode
+                                                          .requestFocus();
+                                                    },
+                                              onJumpToQuoted:
+                                                  message.hasQuoteReply
+                                                      ? () => _jumpToQuoted(
+                                                            message.replyTo!
+                                                                .messageId,
+                                                          )
+                                                      : null,
+                                              onOpenThread: message.localOnly
+                                                  ? null
+                                                  : () => _openThread(
+                                                        context,
+                                                        message,
+                                                      ),
+                                              onCopy: () =>
+                                                  _copyMessage(message),
+                                              onEdit: isMine &&
+                                                      message.type ==
+                                                          MessageType.text
+                                                  ? () => _editMessage(
+                                                        context,
+                                                        message,
+                                                      )
+                                                  : null,
+                                              onDelete: isMine
+                                                  ? () => _confirmDeleteMessage(
+                                                        context,
+                                                        message,
+                                                      )
+                                                  : null,
+                                              onBookmark: () =>
+                                                  _bookmarkMessage(
+                                                message,
+                                                channel,
+                                              ),
+                                              onPin: () => _pinMessage(message),
+                                              onUnpin: () =>
+                                                  _unpinMessage(message),
+                                              onForward: () =>
+                                                  _forwardMessage(message),
+                                              onReact: (emoji) => context
+                                                  .read<ChannelChatCubit>()
+                                                  .toggleReaction(
                                                     message.id,
-                                            localImageBytes: state
-                                                .localMediaByMessageId[message.id],
-                                            onQuoteReply: message.localOnly
-                                                ? null
-                                                : () {
-                                                    context
-                                                        .read<ChannelChatCubit>()
-                                                        .setPendingReply(message);
-                                                    _composerFocusNode.requestFocus();
-                                                  },
-                                            onJumpToQuoted:
-                                                message.hasQuoteReply
-                                                    ? () => _jumpToQuoted(
-                                                          message.replyTo!
-                                                              .messageId,
-                                                        )
-                                                    : null,
-                                            onOpenThread: message.localOnly
-                                                ? null
-                                                : () => _openThread(
-                                                      context,
-                                                      message,
-                                                    ),
-                                            onCopy: () =>
-                                                _copyMessage(message),
-                                            onEdit: isMine &&
-                                                    message.type ==
-                                                        MessageType.text
-                                                ? () => _editMessage(
-                                                      context,
-                                                      message,
-                                                    )
-                                                : null,
-                                            onDelete: isMine
-                                                ? () => _confirmDeleteMessage(
-                                                      context,
-                                                      message,
-                                                    )
-                                                : null,
-                                            onBookmark: () => _bookmarkMessage(
-                                              message,
-                                              channel,
+                                                    emoji,
+                                                  ),
                                             ),
-                                            onPin: () => _pinMessage(message),
-                                            onUnpin: () =>
-                                                _unpinMessage(message),
-                                            onForward: () =>
-                                                _forwardMessage(message),
-                                            onReact: (emoji) => context
-                                                .read<ChannelChatCubit>()
-                                                .toggleReaction(
-                                                  message.id,
-                                                  emoji,
-                                                ),
                                           ),
                                       };
                                     },
@@ -964,7 +994,8 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
                       p.isSending != n.isSending ||
                       p.isUploading != n.isUploading ||
                       p.typingUserNames != n.typingUserNames ||
-                      p.pendingReply != n.pendingReply,
+                      p.pendingReply != n.pendingReply ||
+                      p.readOnlyReason != n.readOnlyReason,
                   builder: (context, state) {
                     final cubit = context.read<ChannelChatCubit>();
                     return Column(
@@ -980,44 +1011,64 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
                               ),
                             ),
                           ),
-                        if (state.pendingReply != null)
+                        if (state.readOnlyReason != null)
+                          Material(
+                            color: AppColors.warning.withValues(alpha: 0.12),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.lock_outline, size: 18),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      state.readOnlyReason!,
+                                      style: AppTextStyles.bodySmall,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        if (state.pendingReply != null && !state.isReadOnly)
                           ReplyQuoteBar(
                             message: state.pendingReply!,
                             onCancel: cubit.clearPendingReply,
                           ),
-                        _TypingBinder(
-                          controller: _textController,
-                          cubit: cubit,
-                          onTyping: _handleTyping,
-                          child: MentionAwareComposer(
-                          controller: _textController,
-                          focusNode: _composerFocusNode,
-                          mentionCandidates: _mentionCandidates,
-                          excludeSelfId: currentUserId,
-                          isBusy: state.isSending || state.isUploading,
-                          showTopBorder: state.pendingReply == null,
-                          onSend: (text, mentions) async {
-                            cubit.sendMessage(text, mentions: mentions);
-                            _textController.clear();
-                            await _clearDraft();
-                            _isTyping = false;
-                            cubit.emitTypingStop();
-                            _scrollToBottom(force: true);
-                          },
-                          onPickGallery: () => _sendAttachment(
-                            context,
-                            _mediaPicker.pickFromGallery,
+                        if (!state.isReadOnly)
+                          _TypingBinder(
+                            controller: _textController,
+                            cubit: cubit,
+                            onTyping: _handleTyping,
+                            child: MentionAwareComposer(
+                              controller: _textController,
+                              focusNode: _composerFocusNode,
+                              mentionCandidates: _mentionCandidates,
+                              excludeSelfId: currentUserId,
+                              isBusy: state.isSending || state.isUploading,
+                              showTopBorder: state.pendingReply == null,
+                              onSend: (text, mentions) async {
+                                cubit.sendMessage(text, mentions: mentions);
+                                _textController.clear();
+                                await _clearDraft();
+                                _isTyping = false;
+                                cubit.emitTypingStop();
+                                _scrollToBottom(force: true);
+                              },
+                              onPickGallery: () => _sendAttachment(
+                                context,
+                                _mediaPicker.pickFromGallery,
+                              ),
+                              onPickCamera: () => _sendAttachment(
+                                context,
+                                _mediaPicker.captureFromCamera,
+                              ),
+                              onPickDocument: () => _sendAttachment(
+                                context,
+                                _mediaPicker.pickDocument,
+                              ),
+                            ),
                           ),
-                          onPickCamera: () => _sendAttachment(
-                            context,
-                            _mediaPicker.captureFromCamera,
-                          ),
-                          onPickDocument: () => _sendAttachment(
-                            context,
-                            _mediaPicker.pickDocument,
-                          ),
-                        ),
-                        ),
                       ],
                     );
                   },
@@ -1155,7 +1206,9 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
                                               DateFormat.MMMd().add_jm().format(
                                                     m.createdAt!.toLocal(),
                                                   ),
-                                          ].where((s) => s.isNotEmpty).join(' · '),
+                                          ]
+                                              .where((s) => s.isNotEmpty)
+                                              .join(' · '),
                                         ),
                                         onTap: () =>
                                             Navigator.pop(sheetContext),
@@ -1196,8 +1249,7 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
     final images = media.where((m) => m.type == MessageType.image).toList();
     final documents = media
         .where(
-          (m) =>
-              m.type == MessageType.document || m.type == MessageType.video,
+          (m) => m.type == MessageType.document || m.type == MessageType.video,
         )
         .toList();
 
@@ -1372,7 +1424,8 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
       });
     }
     try {
-      final pinned = await AppDependencies.instance.channelRepository.pinMessage(
+      final pinned =
+          await AppDependencies.instance.channelRepository.pinMessage(
         widget.channelId,
         message.id,
       );
@@ -1406,13 +1459,11 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
   Future<void> _unpinMessage(MessageModel message) async {
     if (message.id.isEmpty) return;
     setState(() {
-      _pinnedMessages = _pinnedMessages
-          .where((p) {
-            final pid =
-                (p.messageId.isNotEmpty ? p.messageId : p.message.id).trim();
-            return pid != message.id.trim();
-          })
-          .toList(growable: false);
+      _pinnedMessages = _pinnedMessages.where((p) {
+        final pid =
+            (p.messageId.isNotEmpty ? p.messageId : p.message.id).trim();
+        return pid != message.id.trim();
+      }).toList(growable: false);
     });
     try {
       final pinned =
@@ -1657,7 +1708,7 @@ class _ChatDocList extends StatelessWidget {
       separatorBuilder: (_, __) => const Divider(height: 1),
       itemBuilder: (context, index) {
         final m = messages[index];
-          final name = m.content.fileName ?? 'Document';
+        final name = m.content.fileName ?? 'Document';
         final url = m.content.mediaUrl;
         return ListTile(
           leading: const Icon(Icons.insert_drive_file_outlined),

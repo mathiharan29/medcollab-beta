@@ -37,6 +37,7 @@
 
 const mongoose = require('mongoose');
 const { CHANNEL_TYPES } = require('../../constants');
+const { memberPairKey } = require('../../utils/memberPairKey');
 
 const channelSchema = new mongoose.Schema(
   {
@@ -84,6 +85,14 @@ const channelSchema = new mongoose.Schema(
         ref: 'User',
       },
     ],
+
+    // Sorted membership key for 1:1 / group DM upsert uniqueness.
+    // Null for space channels (not used for find-or-create).
+    memberPairKey: {
+      type: String,
+      default: null,
+      index: true,
+    },
 
     // ── Last Message Preview ──────────────────────────────────────────────
     // Embedded for channel list screen performance
@@ -142,6 +151,23 @@ channelSchema.index({ spaceId: 1, type: 1 });
 channelSchema.index({ spaceId: 1, isArchived: 1, position: 1 });
 // For DM lookup: find the DM channel between two specific users
 channelSchema.index({ type: 1, members: 1 });
+// Atomic find-or-create for DMs (pair + group). Sparse so space channels omit the key.
+channelSchema.index(
+  { type: 1, memberPairKey: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      type: CHANNEL_TYPES.DIRECT,
+      memberPairKey: { $type: 'string' },
+    },
+  }
+);
+
+channelSchema.pre('validate', function setMemberPairKey() {
+  if (this.type === CHANNEL_TYPES.DIRECT && Array.isArray(this.members) && this.members.length) {
+    this.memberPairKey = memberPairKey(this.members);
+  }
+});
 
 // ── Statics ───────────────────────────────────────────────────────────────────
 
@@ -149,9 +175,10 @@ channelSchema.index({ type: 1, members: 1 });
  * Find existing DM channel between two users, or return null
  */
 channelSchema.statics.findDMChannel = async function (userId1, userId2) {
+  const key = memberPairKey([userId1, userId2]);
   return this.findOne({
     type: CHANNEL_TYPES.DIRECT,
-    members: { $all: [userId1, userId2], $size: 2 },
+    memberPairKey: key,
   });
 };
 

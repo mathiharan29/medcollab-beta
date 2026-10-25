@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import { runModule } from '../src/module-runner.mjs';
-import { DecisionPending } from '../src/runner.mjs';
 import { backendRoot } from '../src/config.mjs';
 import { connectSocket, waitFor } from '../src/socket.mjs';
 
@@ -137,8 +136,19 @@ const cases = [{
       sockets.push(owner, leaving, removed);
       assert.equal(await sync(leaving), 1);
       assert.equal(await sync(removed), 1);
+      const probe = async (note, peers) => {
+        const predicate = (event) => event?.userId === a.userId && event?.availability?.note === note;
+        const ownerEvent = waitFor(owner, 'presence_update', predicate, 3000);
+        const unexpected = peers.map((socket) => waitFor(socket, 'presence_update', predicate, 1500).then(() => true, () => false));
+        const updated = await request('/api/users/me/availability', { method: 'PUT', token: a.token, body: { status: 'on_call', note } });
+        assert.equal(updated.data.availability.note, note);
+        await ownerEvent;
+        return Promise.all(unexpected);
+      };
       await request(`/api/spaces/${space._id}/leave`, { method: 'POST', token: b.token });
       await request(`/api/spaces/${space._id}/members/${c.userId}`, { method: 'DELETE', token: a.token });
+      const immediateLeaks = await probe('synthetic-immediate-revocation', [leaving, removed]);
+      assert.deepEqual(immediateLeaks, [false, false], 'REST revocation did not immediately evict sockets from the space room');
       for (const person of [b, c]) {
         const list = await request('/api/spaces', { token: person.token });
         assert.ok(!list.data.spaces.some((item) => item._id === space._id));
@@ -154,15 +164,6 @@ const cases = [{
       });
       assert.equal(await sync(leaving), 0);
       assert.equal(await sync(removed), 0);
-      const probe = async (note, peers) => {
-        const predicate = (event) => event?.userId === a.userId && event?.availability?.note === note;
-        const ownerEvent = waitFor(owner, 'presence_update', predicate, 3000);
-        const unexpected = peers.map((socket) => waitFor(socket, 'presence_update', predicate, 1500).then(() => true, () => false));
-        const updated = await request('/api/users/me/availability', { method: 'PUT', token: a.token, body: { status: 'on_call', note } });
-        assert.equal(updated.data.availability.note, note);
-        await ownerEvent;
-        return Promise.all(unexpected);
-      };
       const afterSyncLeaks = await probe('synthetic-post-sync-revocation', [leaving, removed]);
       leaving.disconnect(); removed.disconnect();
       const reconnectedB = await connectSocket(backendRoot, origin, b.token);
@@ -173,9 +174,6 @@ const cases = [{
       const afterReconnectLeaks = await probe('synthetic-post-reconnect-revocation', [reconnectedB, reconnectedC]);
       assert.deepEqual(afterReconnectLeaks, [false, false], 'Revoked users rejoined a space room after reconnect');
       assert.deepEqual(afterSyncLeaks, [false, false], 'Explicit room sync left revoked users subscribed to a space room');
-      throw new DecisionPending('Q10: immediate room eviction before explicit sync/reconnect needs product decision', [
-        'leave and removal persisted', 'lists and search excluded former members', 'sync and reconnect showed zero spaces', 'reconnected sockets received no correlated space event',
-      ]);
     } finally { for (const socket of sockets) socket.disconnect(); }
   },
 }, {
@@ -189,6 +187,8 @@ const cases = [{
     for (let attempt = 0; attempt < 2; attempt++) {
       const joined = await request('/api/spaces/join', { method: 'POST', token: b.token, body: { inviteCode: space.inviteCode } });
       assert.match(joined.payload.message, /waiting for admin approval/i);
+      assert.equal(joined.data.pending, true);
+      assert.equal(joined.data.spaceId, space._id);
     }
     const list = await request('/api/spaces', { token: b.token });
     assert.ok(!list.data.spaces.some((item) => item._id === space._id));
@@ -199,9 +199,24 @@ const cases = [{
       assert.equal(String(stored.pendingRequests[0].userId), b.userId);
       assert.ok(!stored.members.some((member) => String(member.userId) === b.userId));
     });
-    throw new DecisionPending('Q14: pending-join client state and approval completion need product decision', [
-      'requireApproval persisted', 'repeat join created one pending request', 'requester has no membership or channel detail access',
-    ]);
+    const pendingList = await request(`/api/spaces/${space._id}/pending`, { token: a.token });
+    assert.equal(pendingList.data.pending.length, 1);
+    assert.equal(String(pendingList.data.pending[0].userId), b.userId);
+    assert.equal(String(pendingList.data.pending[0].user?._id || pendingList.data.pending[0].user?.id), b.userId);
+    await request(`/api/spaces/${space._id}/pending`, { token: b.token, expectedStatus: 403 });
+    const approved = await request(`/api/spaces/${space._id}/pending/${b.userId}/approve`, { method: 'POST', token: a.token });
+    assert.equal(approved.data.space.members.find((member) => member.userId === b.userId)?.role, 'member');
+    assert.deepEqual(new Set(approved.data.channels.map((channel) => channel.name)), new Set(['general', 'emergency', 'academics']));
+    const approvedList = await request('/api/spaces', { token: b.token });
+    assert.ok(approvedList.data.spaces.some((item) => item._id === space._id));
+    const approvedDetail = await request(`/api/spaces/${space._id}`, { token: b.token });
+    assert.equal(approvedDetail.data.space._id, space._id);
+    assert.deepEqual(new Set(approvedDetail.data.space.channels.map((channel) => channel.name)), new Set(['general', 'emergency', 'academics']));
+    await db(async (connection) => {
+      const stored = await connection.collection('spaces').findOne({ _id: new connection.base.Types.ObjectId(space._id) });
+      assert.equal(stored.pendingRequests.length, 0);
+      assert.equal(stored.members.find((member) => String(member.userId) === b.userId)?.role, 'member');
+    });
   },
 }];
 

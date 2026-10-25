@@ -494,12 +494,16 @@ const getSpaceHandoffs = asyncHandler(async (req, res) => {
 
   const query = {
     spaceId,
-    // Non-admins can only see submitted/acknowledged handoffs (not other people's drafts)
-    status: space.isAdmin(req.user._id)
-      ? status || { $exists: true }
-      : { $in: [HANDOFF_STATUS.SUBMITTED, HANDOFF_STATUS.ACKNOWLEDGED] },
+    // Drafts are private to their author, including from space admins.
+    $and: [{
+      $or: [
+        { status: { $ne: HANDOFF_STATUS.DRAFT } },
+        { fromUserId: req.user._id },
+      ],
+    }],
   };
 
+  if (status) query.$and.push({ status });
   if (date) {
     const day = new Date(date);
     const next = new Date(day);
@@ -508,16 +512,29 @@ const getSpaceHandoffs = asyncHandler(async (req, res) => {
   }
   if (shiftType) query.shiftType = shiftType;
   if (fromUserId) query.fromUserId = fromUserId;
-  if (before) query._id = { $lt: before };
 
+  if (before) {
+    const cursor = await Handoff.findOne({ ...query, _id: before })
+      .select('shiftDate _id')
+      .lean();
+    if (!cursor) return respond.badRequest(res, 'Invalid handoff cursor');
+    query.$and.push({
+      $or: [
+        { shiftDate: { $lt: cursor.shiftDate } },
+        { shiftDate: cursor.shiftDate, _id: { $lt: cursor._id } },
+      ],
+    });
+  }
+
+  const pageLimit = Math.min(parseInt(limit, 10) || 20, 50);
   const handoffs = await Handoff.find(query)
     .sort({ shiftDate: -1, _id: -1 })
-    .limit(Math.min(parseInt(limit), 50) + 1)
+    .limit(pageLimit + 1)
     .populate('fromUserId', 'name displayTitle role avatarUrl')
     .populate('toUserId', 'name displayTitle role avatarUrl')
     .lean();
 
-  const hasMore = handoffs.length > parseInt(limit);
+  const hasMore = handoffs.length > pageLimit;
   if (hasMore) handoffs.pop();
 
   return respond.ok(res, 'Space handoffs fetched', { handoffs, hasMore });

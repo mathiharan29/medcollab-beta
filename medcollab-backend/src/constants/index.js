@@ -189,6 +189,7 @@ const SOCKET_EVENTS = {
 
   // Spaces
   SPACE_MEMBER_JOINED: 'space_member_joined',
+  SPACE_MEMBER_LEFT: 'space_member_left',
 
   // Errors
   ERROR: 'error',

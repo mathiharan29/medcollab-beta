@@ -85,7 +85,7 @@ Future<(ApiClient, SecureStorageService, _AuthAdapter)> _client(
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('FR-NAV-02: concurrent 401 refresh and bounded-retry policy [NEEDS_DECISION Q7]', () async {
+  test('FR-NAV-02: concurrent 401 refresh and recoverable retry', () async {
     final (client, storage, adapter) = await _client(
       _AuthAdapter(waitForConcurrentOldRequests: true),
     );
@@ -128,7 +128,6 @@ void main() {
     expect(repeatAdapter.seenAuthorizations,
         ['Bearer synthetic-old', 'Bearer synthetic-new-1', 'Bearer synthetic-new-2']);
     expect(await repeatStorage.getAccessToken(), 'synthetic-new-2');
-    // This captures current recursive retry behavior. Q7 decides the bound.
     expect(expiredSignals, 1,
         reason: 'A failed refresh must notify the auth UI that its session expired');
   });

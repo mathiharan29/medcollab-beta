@@ -180,8 +180,18 @@ class RecentItemsService {
 
   Future<void> unpinItem(String id) async {
     await init();
-    final items = await getPinnedItems()..removeWhere((p) => p.id == id);
+    final items = await getPinnedItems()
+      ..removeWhere((p) => p.id == id);
     await _saveList(_pinnedKey, items.map((e) => e.toJson()).toList());
+  }
+
+  Future<void> clearAll() async {
+    await init();
+    await Future.wait([
+      _prefs!.remove(_spacesKey),
+      _prefs!.remove(_channelsKey),
+      _prefs!.remove(_pinnedKey),
+    ]);
   }
 
   Future<List<T>> _loadList<T>(

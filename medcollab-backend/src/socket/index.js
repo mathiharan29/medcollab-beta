@@ -97,9 +97,13 @@ const initSocket = (httpServer) => {
 
       const user = await authenticateSocket(token);
 
-      // Attach user info to the socket object — available in all handlers
+      // Attach user info to the socket object — available in all handlers.
+      // Also mirror into socket.data so connection-state recovery can restore
+      // identity when skipMiddlewares skips this middleware (FR-RT-07).
       socket.userId = user._id;
       socket.userName = user.name || 'Doctor';
+      socket.data.userId = user._id.toString();
+      socket.data.userName = socket.userName;
 
       next(); // Allow connection
     } catch (err) {
@@ -111,9 +115,17 @@ const initSocket = (httpServer) => {
   // ── Connection Handler ─────────────────────────────────────────────────────
   io.on('connection', async (socket) => {
     const isRecovered = socket.recovered;
+    if (!socket.userId && socket.data?.userId) {
+      socket.userId = socket.data.userId;
+      socket.userName = socket.data.userName || 'Doctor';
+    }
     logger.socket(`Connected: ${socket.userName} (${socket.id})${isRecovered ? ' [recovered]' : ''}`);
 
     try {
+      if (!socket.userId) {
+        throw new Error('Socket identity missing after connect');
+      }
+
       // ── Join Space Rooms ───────────────────────────────────────────────────
       // Fetch all spaces this user belongs to and join their rooms.
       // This allows space-level broadcasts (presence updates, announcements).

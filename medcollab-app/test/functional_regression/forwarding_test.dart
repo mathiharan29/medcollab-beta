@@ -103,7 +103,7 @@ void main() {
         reason: 'Retry must preserve exact source attribution and media URL');
   });
 
-  testWidgets('FR-LINK-02: copy exact message link [NEEDS_DECISION Q13]',
+  testWidgets('FR-LINK-02: copy exact message link and resolve route',
       (tester) async {
     String? copied;
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
@@ -133,11 +133,15 @@ void main() {
     await tester.tap(find.text('Copy message link'));
     await tester.pumpAndSettle();
     expect(copied, 'vocle://c/source-channel/m/source-message');
-    expect(Uri.parse(copied!).scheme, 'vocle');
-    expect(Uri.parse(copied!).host, 'c');
-    expect(Uri.parse(copied!).pathSegments,
-        ['source-channel', 'm', 'source-message']);
+    final uri = Uri.parse(copied!);
+    expect(uri.scheme, 'vocle');
+    expect(uri.host, 'c');
+    expect(uri.pathSegments, ['source-channel', 'm', 'source-message']);
+    expect(
+      '/links/c/${uri.pathSegments[0]}/m/${uri.pathSegments[2]}',
+      '/links/c/source-channel/m/source-message',
+      reason: 'Copied vocle:// links must map to the in-app message route',
+    );
     expect(find.text('Forward message'), findsNothing);
-    // Q13 remains open: there is no verified app route for this copied URI.
   });
 }

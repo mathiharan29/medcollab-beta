@@ -170,7 +170,10 @@ const joinSpace = asyncHandler(async (req, res) => {
       space.pendingRequests.push({ userId: req.user._id });
       await space.save();
     }
-    return respond.ok(res, 'Join request sent. Waiting for admin approval.');
+    return respond.ok(res, 'Join request sent. Waiting for admin approval.', {
+      pending: true,
+      spaceId: space._id,
+    });
   }
 
   // Direct join
@@ -206,6 +209,57 @@ const joinSpace = asyncHandler(async (req, res) => {
   }
 
   return respond.ok(res, `Joined "${space.name}"`, { space, channels });
+});
+
+/**
+ * POST /api/spaces/:id/pending/:userId/approve
+ * Approve a pending join request (admin/owner only)
+ */
+const approveJoinRequest = asyncHandler(async (req, res) => {
+  const space = await Space.findById(req.params.id);
+  if (!space) return respond.notFound(res, 'Space not found');
+  if (!space.isAdmin(req.user._id)) return respond.forbidden(res, 'Admins only');
+
+  const targetId = req.params.userId;
+  const pending = space.pendingRequests.find(
+    (request) => request.userId.toString() === targetId
+  );
+  if (!pending) return respond.notFound(res, 'Pending join request not found');
+
+  if (!space.isMember(targetId)) {
+    space.members.push({ userId: targetId, role: SPACE_ROLES.MEMBER });
+  }
+  space.pendingRequests = space.pendingRequests.filter(
+    (request) => request.userId.toString() !== targetId
+  );
+  await space.save();
+
+  const channels = await Channel.find(
+    accessibleChannelFilter(targetId, { spaceId: space._id }),
+  )
+    .sort({ position: 1 })
+    .lean();
+
+  joinUserToSpaceRoom(targetId, space._id);
+
+  try {
+    const { getIO } = require('../../socket');
+    const { SOCKET_EVENTS } = require('../../constants');
+    const approvedUser = await User.findById(targetId).select('name').lean();
+    getIO().to(`space:${space._id}`).emit(SOCKET_EVENTS.SPACE_MEMBER_JOINED, {
+      spaceId: space._id.toString(),
+      userId: targetId,
+      userName: approvedUser?.name || '',
+      memberCount: space.members.length,
+    });
+  } catch (_) {
+    /* non-fatal */
+  }
+
+  return respond.ok(res, `Approved join request for "${space.name}"`, {
+    space,
+    channels,
+  });
 });
 
 /**
@@ -329,7 +383,12 @@ const removeMember = asyncHandler(async (req, res) => {
 
   space.members = space.members.filter((m) => m.userId.toString() !== targetId);
   await space.save();
-  leaveUserFromSpaceRoom(targetId, space._id);
+  await leaveUserFromSpaceRoom(targetId, space._id);
+  emitSpaceMemberLeft(space._id, targetId, {
+    reason: 'removed',
+    byUserId: req.user._id,
+    byUserName: req.user.name || '',
+  });
 
   return respond.ok(res, 'Member removed');
 });
@@ -352,13 +411,61 @@ const leaveSpace = asyncHandler(async (req, res) => {
     (m) => m.userId.toString() !== req.user._id.toString()
   );
   await space.save();
-  leaveUserFromSpaceRoom(req.user._id, space._id);
+  await leaveUserFromSpaceRoom(req.user._id, space._id);
+  emitSpaceMemberLeft(space._id, req.user._id, { reason: 'left' });
 
   return respond.ok(res, `Left "${space.name}"`);
 });
 
+/**
+ * Notify the affected user (and space room) that membership ended.
+ * Clients keep history readable and disable the composer (Q10).
+ */
+const emitSpaceMemberLeft = (spaceId, userId, { reason, byUserId, byUserName } = {}) => {
+  try {
+    const { getIO } = require('../../socket');
+    const { SOCKET_EVENTS } = require('../../constants');
+    const payload = {
+      spaceId: spaceId.toString(),
+      userId: userId.toString(),
+      reason: reason || 'left',
+      byUserId: byUserId ? byUserId.toString() : null,
+      byUserName: byUserName || null,
+    };
+    const io = getIO();
+    io.to(`user:${userId}`).emit(SOCKET_EVENTS.SPACE_MEMBER_LEFT, payload);
+    io.to(`space:${spaceId}`).emit(SOCKET_EVENTS.SPACE_MEMBER_LEFT, payload);
+  } catch (_) {
+    /* non-fatal */
+  }
+};
+
+/**
+ * GET /api/spaces/:id/pending
+ * List pending join requests (admin/owner only)
+ */
+const getPendingJoins = asyncHandler(async (req, res) => {
+  const space = await Space.findById(req.params.id);
+  if (!space) return respond.notFound(res, 'Space not found');
+  if (!space.isAdmin(req.user._id)) return respond.forbidden(res, 'Admins only');
+
+  const ids = space.pendingRequests.map((request) => request.userId);
+  const users = await User.find({ _id: { $in: ids } })
+    .select('name displayTitle role speciality avatarUrl')
+    .lean();
+  const byId = new Map(users.map((user) => [user._id.toString(), user]));
+  const pending = space.pendingRequests.map((request) => ({
+    userId: request.userId,
+    requestedAt: request.requestedAt,
+    message: request.message || '',
+    user: byId.get(request.userId.toString()) || null,
+  }));
+
+  return respond.ok(res, 'Pending joins fetched', { pending });
+});
+
 module.exports = {
   createSpace, getMySpaces, getSpaceById,
-  joinSpace, previewInvite, regenerateInviteCode, updateSpace,
+  joinSpace, approveJoinRequest, getPendingJoins, previewInvite, regenerateInviteCode, updateSpace,
   getMembers, removeMember, leaveSpace,
 };

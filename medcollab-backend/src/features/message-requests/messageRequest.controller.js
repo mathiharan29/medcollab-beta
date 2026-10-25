@@ -206,39 +206,40 @@ const acceptRequest = asyncHandler(async (req, res) => {
   if (request.toUserId._id.toString() !== req.user._id.toString()) {
     return respond.forbidden(res, 'Only the recipient can accept this request');
   }
-  if (request.status !== MESSAGE_REQUEST_STATUS.PENDING) {
+  if (
+    request.status !== MESSAGE_REQUEST_STATUS.PENDING &&
+    request.status !== MESSAGE_REQUEST_STATUS.ACCEPTED
+  ) {
     return respond.badRequest(res, 'This request is no longer pending');
   }
 
-  request.status = MESSAGE_REQUEST_STATUS.ACCEPTED;
-  await request.save();
+  const newlyAccepted = request.status === MESSAGE_REQUEST_STATUS.PENDING;
+  if (newlyAccepted) {
+    request.status = MESSAGE_REQUEST_STATUS.ACCEPTED;
+    await request.save();
+  }
 
   const fromId = request.fromUserId._id.toString();
   const toId = request.toUserId._id.toString();
-  const sortedMembers = [fromId, toId].sort();
-  // Avoid findOneAndUpdate upsert: Mongo rejects $setOnInsert.members when the
-  // filter also matches on members ($all) — "path 'members' is matched twice".
-  let channel = await Channel.findOne({
-    type: CHANNEL_TYPES.DIRECT,
-    members: { $all: sortedMembers, $size: 2 },
-  });
-  if (!channel) {
-    try {
-      channel = await Channel.create({
+  // Atomic DM upsert via memberPairKey — findAndModify is the intentional
+  // failpoint edge for FR-REQ-05 (accepted request without conversation).
+  const { memberPairKey } = require('../../utils/memberPairKey');
+  const pairKey = memberPairKey([fromId, toId]);
+  const channel = await Channel.findOneAndUpdate(
+    { type: CHANNEL_TYPES.DIRECT, memberPairKey: pairKey },
+    {
+      $setOnInsert: {
         spaceId: null,
         type: CHANNEL_TYPES.DIRECT,
         members: [request.fromUserId._id, request.toUserId._id],
+        memberPairKey: pairKey,
         createdBy: req.user._id,
         name: null,
-      });
-    } catch (error) {
-      channel = await Channel.findOne({
-        type: CHANNEL_TYPES.DIRECT,
-        members: { $all: sortedMembers, $size: 2 },
-      });
-      if (!channel) throw error;
-    }
-  }
+        isArchived: false,
+      },
+    },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
 
   const populated = await Channel.findById(channel._id)
     .populate(
@@ -268,21 +269,23 @@ const acceptRequest = asyncHandler(async (req, res) => {
       : null,
   };
 
-  await sendNotification({
-    userId: fromId,
-    type: NOTIFICATION_TYPES.MESSAGE_REQUEST,
-    title: 'Request accepted',
-    body: `${req.user.name} accepted your message request`,
-    referenceId: request._id.toString(),
-    referenceType: 'MessageRequest',
-    metadata: {
-      messageRequestId: request._id.toString(),
-      toUserId: req.user._id.toString(),
-      accepted: true,
-      channelId: channel._id.toString(),
-    },
-    actor: req.user,
-  });
+  if (newlyAccepted) {
+    await sendNotification({
+      userId: fromId,
+      type: NOTIFICATION_TYPES.MESSAGE_REQUEST,
+      title: 'Request accepted',
+      body: `${req.user.name} accepted your message request`,
+      referenceId: request._id.toString(),
+      referenceType: 'MessageRequest',
+      metadata: {
+        messageRequestId: request._id.toString(),
+        toUserId: req.user._id.toString(),
+        accepted: true,
+        channelId: channel._id.toString(),
+      },
+      actor: req.user,
+    });
+  }
 
   return respond.ok(res, 'Request accepted', {
     request: serializeRequest(request, req.user._id),

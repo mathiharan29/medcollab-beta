@@ -11,6 +11,7 @@ class ChannelChatState extends Equatable {
     this.typingUserNames = const [],
     this.localMediaByMessageId = const {},
     this.pendingReply,
+    this.readOnlyReason,
   });
 
   final List<MessageModel> messages;
@@ -26,6 +27,8 @@ class ChannelChatState extends Equatable {
 
   /// WhatsApp-style quote target for the next send (null = no quote).
   final MessageModel? pendingReply;
+  final String? readOnlyReason;
+  bool get isReadOnly => readOnlyReason != null;
 
   String get typingLabel {
     final names = typingUserNames;
@@ -46,6 +49,7 @@ class ChannelChatState extends Equatable {
     Map<String, List<int>>? localMediaByMessageId,
     MessageModel? pendingReply,
     bool clearPendingReply = false,
+    String? readOnlyReason,
   }) {
     return ChannelChatState(
       messages: messages ?? this.messages,
@@ -59,6 +63,7 @@ class ChannelChatState extends Equatable {
           localMediaByMessageId ?? this.localMediaByMessageId,
       pendingReply:
           clearPendingReply ? null : (pendingReply ?? this.pendingReply),
+      readOnlyReason: readOnlyReason ?? this.readOnlyReason,
     );
   }
 
@@ -73,5 +78,6 @@ class ChannelChatState extends Equatable {
         typingUserNames,
         localMediaByMessageId,
         pendingReply,
+        readOnlyReason,
       ];
 }

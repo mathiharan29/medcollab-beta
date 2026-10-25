@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { runModule } from '../src/module-runner.mjs';
 import { connectSocket, waitFor } from '../src/socket.mjs';
-import { DecisionPending } from '../src/runner.mjs';
 
 const shiftDate = '2030-01-15T00:00:00.000Z';
 const attachment = { url: 'https://res.cloudinary.com/synthetic/image/upload/handoff.png', fileName: 'handoff.png', mimeType: 'image/png' };
@@ -175,7 +174,7 @@ const cases = [{
     const row = await stored(db, d._id);
     assert.equal(row.status, 'draft');
     assert.equal(row.patients[0].clinicalAlias, 'Synthetic alpha');
-    throw new DecisionPending(`Q3: draft audience policy pending; receiver search includes current draft ${Boolean(receiverSearch.data?.handoffs?.some((item) => item._id === d._id))}`, ['Owner draft detail and patient persisted', 'Receiver draft filter and detail excluded', 'Ordinary member detail/history excluded']);
+    assert.equal(receiverSearch.data?.handoffs?.some((item) => item._id === d._id), false);
   },
 }, {
   id: 'FR-HOF-08', module: 'HOF',
@@ -243,19 +242,19 @@ const cases = [{
       await request(`/api/handoffs/${d._id}/submit`, { method: 'POST', token: f.a.token });
       created.push(d._id);
     }
-    const dates = ['2030-01-19', '2030-01-16', '2030-01-18', '2030-01-17'];
+    const dates = ['2030-01-19', '2030-01-18', '2030-01-18', '2030-01-17'];
     await db(async (connection) => {
       for (let index = 0; index < created.length; index++) await connection.collection('handoffs').updateOne({ _id: new connection.base.Types.ObjectId(created[index]) }, { $set: { shiftDate: new Date(`${dates[index]}T00:00:00.000Z`) } });
       assert.equal(await connection.collection('handoffs').countDocuments({ spaceId: new connection.base.Types.ObjectId(f.spaceId) }), 4);
     });
-    const ordered = [created[0], created[2], created[3], created[1]];
+    const ordered = [created[0], created[2], created[1], created[3]];
     const first = (await request(`/api/spaces/${f.spaceId}/handoffs?limit=2`, { token: f.b.token })).data;
     assert.deepEqual(first.handoffs.map((item) => item._id), ordered.slice(0, 2));
     assert.equal(first.hasMore, true);
     const second = (await request(`/api/spaces/${f.spaceId}/handoffs?limit=2&before=${first.handoffs.at(-1)._id}`, { token: f.b.token })).data;
     const observed = [...first.handoffs, ...second.handoffs].map((item) => item._id);
-    assert.ok(observed.every((id) => created.includes(id)));
-    throw new DecisionPending(`Q4: shiftDate sort with ID cursor; expected ${JSON.stringify(ordered)}, observed ${JSON.stringify(observed)}`, ['Four source handoffs persisted', 'First page follows shiftDate descending', 'Second page response captured']);
+    assert.deepEqual(observed, ordered);
+    assert.equal(second.hasMore, false);
   },
 }, {
   id: 'FR-HOF-09', module: 'HOF', timeoutMs: 30000,

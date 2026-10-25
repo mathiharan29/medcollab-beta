@@ -35,7 +35,8 @@ class SpaceRepository extends BaseRepository {
         },
         parser: (json) {
           final space = parseNested(json, 'space', SpaceModel.fromJson);
-          final channels = parseNestedList(json, 'channels', ChannelModel.fromJson);
+          final channels =
+              parseNestedList(json, 'channels', ChannelModel.fromJson);
           return SpaceModel(
             id: space.id,
             name: space.name,
@@ -51,24 +52,60 @@ class SpaceRepository extends BaseRepository {
   }
 
   /// `POST /api/spaces/join`
-  Future<SpaceModel> joinSpace(String inviteCode) {
+  Future<JoinSpaceResult> joinSpace(String inviteCode) {
     return execute(
       () => apiClient.post(
         ApiEndpoints.joinSpace,
         data: {'inviteCode': inviteCode.trim().toUpperCase()},
         parser: (json) {
+          if (json['pending'] == true) {
+            return JoinSpaceResult.pending(
+              spaceId: json['spaceId']?.toString() ?? '',
+            );
+          }
           final space = parseNested(json, 'space', SpaceModel.fromJson);
-          final channels = parseNestedList(json, 'channels', ChannelModel.fromJson);
-          return SpaceModel(
-            id: space.id,
-            name: space.name,
-            type: space.type,
-            description: space.description,
-            inviteCode: space.inviteCode,
-            channels: channels,
-            myRole: space.myRole,
+          final channels =
+              parseNestedList(json, 'channels', ChannelModel.fromJson);
+          return JoinSpaceResult.joined(
+            SpaceModel(
+              id: space.id,
+              name: space.name,
+              type: space.type,
+              description: space.description,
+              inviteCode: space.inviteCode,
+              channels: channels,
+              myRole: space.myRole,
+            ),
           );
         },
+      ),
+    );
+  }
+
+  /// `GET /api/spaces/:id/pending`
+  Future<List<PendingJoinRequest>> getPendingJoins(String spaceId) {
+    return execute(
+      () => apiClient.get(
+        ApiEndpoints.spacePendingJoins(spaceId),
+        parser: (json) {
+          final raw = json['pending'];
+          if (raw is! List) return <PendingJoinRequest>[];
+          return raw
+              .map(asJsonMap)
+              .whereType<Map<String, dynamic>>()
+              .map(PendingJoinRequest.fromJson)
+              .toList();
+        },
+      ),
+    );
+  }
+
+  /// `POST /api/spaces/:id/pending/:userId/approve`
+  Future<SpaceModel> approvePendingJoin(String spaceId, String userId) {
+    return execute(
+      () => apiClient.post(
+        ApiEndpoints.approvePendingJoin(spaceId, userId),
+        parser: (json) => parseNested(json, 'space', SpaceModel.fromJson),
       ),
     );
   }
@@ -106,7 +143,8 @@ class SpaceRepository extends BaseRepository {
   }
 
   /// `POST /api/spaces/:id/invite` — regenerate invite code
-  Future<({String inviteCode, String joinUrl})> regenerateInvite(String spaceId) {
+  Future<({String inviteCode, String joinUrl})> regenerateInvite(
+      String spaceId) {
     return execute(
       () => apiClient.post(
         ApiEndpoints.spaceInvite(spaceId),
@@ -119,6 +157,24 @@ class SpaceRepository extends BaseRepository {
       ),
     );
   }
+}
+
+class JoinSpaceResult {
+  const JoinSpaceResult._({
+    required this.isPending,
+    this.space,
+    this.spaceId = '',
+  });
+
+  JoinSpaceResult.joined(SpaceModel space)
+      : this._(isPending: false, space: space, spaceId: space.id);
+
+  const JoinSpaceResult.pending({required String spaceId})
+      : this._(isPending: true, spaceId: spaceId);
+
+  final bool isPending;
+  final SpaceModel? space;
+  final String spaceId;
 }
 
 class SpaceInvitePreview {
@@ -151,4 +207,40 @@ class SpaceInvitePreview {
   final int memberCount;
   final bool alreadyMember;
   final String joinUrl;
+}
+
+class PendingJoinRequest {
+  const PendingJoinRequest({
+    required this.userId,
+    required this.displayName,
+    this.message = '',
+    this.requestedAt,
+  });
+
+  factory PendingJoinRequest.fromJson(Map<String, dynamic> json) {
+    final user = asJsonMap(json['user']);
+    final userId = json['userId']?.toString() ??
+        user?['_id']?.toString() ??
+        user?['id']?.toString() ??
+        '';
+    final name = user?['name']?.toString() ??
+        user?['displayTitle']?.toString() ??
+        'Pending member';
+    DateTime? requestedAt;
+    final rawDate = json['requestedAt'];
+    if (rawDate is String) {
+      requestedAt = DateTime.tryParse(rawDate);
+    }
+    return PendingJoinRequest(
+      userId: userId,
+      displayName: name,
+      message: json['message']?.toString() ?? '',
+      requestedAt: requestedAt,
+    );
+  }
+
+  final String userId;
+  final String displayName;
+  final String message;
+  final DateTime? requestedAt;
 }

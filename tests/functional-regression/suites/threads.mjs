@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import { runModule } from '../src/module-runner.mjs';
-import { DecisionPending } from '../src/runner.mjs';
 import { connectSocket, waitFor } from '../src/socket.mjs';
 
 async function spaceFixture(identity, request, name, labels = ['A', 'B']) {
@@ -124,17 +123,14 @@ const cases = [{
       assert.deepEqual(thread.data.replies, []);
       const needl = await request('/api/users/me/needl', { token: people.A.token });
       const entry = needl.data.threads.find((item) => item.rootMessageId === root._id);
+      assert.equal(rootAfterEdit.replyCount, 1);
+      assert.equal(thread.data.rootMessage.replyCount, rootAfterEdit.replyCount);
+      assert.equal(entry?.replyCount, rootAfterEdit.replyCount);
       await db(async (connection) => {
         const saved = await connection.collection('messages').findOne({ _id: new connection.base.Types.ObjectId(reply._id) });
         assert.equal(saved.isDeleted, true);
         assert.equal(saved.isEdited, true);
       });
-      throw new DecisionPending('Q1: expected thread aggregate correction after editing/deleting the latest reply needs product decision', [
-        `Reply ${reply._id} edit and soft deletion persisted; thread page excludes deleted reply`,
-        `Root after edit: ${JSON.stringify({ replyCount: rootAfterEdit.replyCount, lastReply: rootAfterEdit.lastReply })}`,
-        `Root after delete: ${JSON.stringify({ replyCount: thread.data.rootMessage.replyCount, lastReply: thread.data.rootMessage.lastReply })}`,
-        `Needl after delete: ${JSON.stringify(entry)}`,
-      ]);
     } finally { listener.disconnect(); }
   },
 }];

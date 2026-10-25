@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { runModule } from '../src/module-runner.mjs';
 import { connectSocket, waitFor } from '../src/socket.mjs';
-import { DecisionPending } from '../src/runner.mjs';
 
 const cases = [{
   id: 'FR-MSG-01', module: 'MSG',
@@ -49,6 +48,7 @@ const cases = [{
     const send = async (token, body) => (await request(path, { method: 'POST', token, body, expectedStatus: 201 })).data.message;
     const longText = 'Synthetic quoted context '.repeat(8);
     assert.ok(longText.length > 120);
+    const storedLongText = longText.trim(); // sendMessage persists trimmed text
     const textRoot = await send(a.token, { content: { text: longText } });
     const textQuote = await send(b.token, { content: { text: 'synthetic quote text', }, replyToId: textRoot._id });
     const imageRoot = await send(a.token, { type: 'image', content: { mediaUrl: 'https://res.cloudinary.com/synthetic-test/image.jpg', fileName: 'synthetic-image.jpg', mimeType: 'image/jpeg' } });
@@ -56,7 +56,7 @@ const cases = [{
     const documentRoot = await send(a.token, { type: 'document', content: { mediaUrl: 'https://res.cloudinary.com/synthetic-test/fixture.pdf', fileName: 'synthetic-discharge.pdf', mimeType: 'application/pdf' } });
     const documentQuote = await send(b.token, { content: { text: 'synthetic quote document' }, replyToId: documentRoot._id });
     for (const [quote, root, preview, type] of [
-      [textQuote, textRoot, longText.slice(0, 120), 'text'],
+      [textQuote, textRoot, storedLongText.slice(0, 120), 'text'],
       [imageQuote, imageRoot, 'Photo', 'image'],
       [documentQuote, documentRoot, 'synthetic-discharge.pdf', 'document'],
     ]) {
@@ -80,7 +80,7 @@ const cases = [{
         assert.equal(String(byId.get(quote._id).replyTo.messageId), root._id);
         assert.equal(byId.get(quote._id).replyTo.text, quote.replyTo.text);
       }
-      assert.equal(byId.get(textRoot._id).content.text, longText);
+      assert.equal(byId.get(textRoot._id).content.text, storedLongText);
     });
   },
 }, {
@@ -146,32 +146,34 @@ const cases = [{
     const afterEdit = await request(path, { token: b.token });
     assert.equal(afterEdit.data.messages.find((message) => message._id === root._id)?.content.text, newText);
     const quoteAfterEdit = afterEdit.data.messages.find((message) => message._id === quote._id)?.replyTo?.text;
-    const spaceAfterEdit = await request('/api/spaces', { token: b.token });
-    const previewAfterEdit = spaceAfterEdit.data.spaces.flatMap((space) => space.channels || []).find((channel) => channel._id === channelId)?.lastMessage;
+    assert.equal(quoteAfterEdit, oldText, 'Editing must not rewrite existing quote snapshots');
     const newest = (await request(path, { method: 'POST', token: a.token, body: { content: { text: 'Synthetic newest before edit' } }, expectedStatus: 201 })).data.message;
     const newestEdited = await request(`${path}/${newest._id}`, { method: 'PUT', token: a.token, body: { content: { text: 'Synthetic newest after edit' } } });
     assert.equal(newestEdited.data.message.content.text, 'Synthetic newest after edit');
     const newestAfterEdit = await request(path, { token: b.token });
     assert.equal(newestAfterEdit.data.messages.at(-1)?._id, newest._id);
     assert.equal(newestAfterEdit.data.messages.at(-1)?.content.text, 'Synthetic newest after edit');
-    const latestSpaceAfterEdit = await request('/api/spaces', { token: b.token });
-    const latestPreviewAfterEdit = latestSpaceAfterEdit.data.spaces.flatMap((space) => space.channels || []).find((channel) => channel._id === channelId)?.lastMessage;
     await request(`${path}/${newest._id}`, { method: 'DELETE', token: a.token });
     const newestAfterDelete = await request(path, { token: b.token });
     assert.ok(!newestAfterDelete.data.messages.some((message) => message._id === newest._id));
     const latestSpaceAfterDelete = await request('/api/spaces', { token: b.token });
     const latestPreviewAfterDelete = latestSpaceAfterDelete.data.spaces.flatMap((space) => space.channels || []).find((channel) => channel._id === channelId)?.lastMessage;
+    assert.equal(latestPreviewAfterDelete.messageId, quote._id);
+    assert.equal(latestPreviewAfterDelete.text, quote.content.text);
     await request(`${path}/${root._id}`, { method: 'DELETE', token: a.token });
     const afterDelete = await request(path, { token: b.token });
     assert.ok(!afterDelete.data.messages.some((message) => message._id === root._id));
     assert.ok(afterDelete.data.messages.some((message) => message._id === quote._id));
+    assert.equal(
+      afterDelete.data.messages.find((message) => message._id === quote._id)?.replyTo?.text,
+      'This message was deleted'
+    );
     const searchAfterDelete = await request(`/api/search?q=${encodeURIComponent(newText)}&type=messages`, { token: b.token });
     assert.ok(!searchAfterDelete.data.messages.some((message) => message._id === root._id));
-    const spaceAfterDelete = await request('/api/spaces', { token: b.token });
-    const previewAfterDelete = spaceAfterDelete.data.spaces.flatMap((space) => space.channels || []).find((channel) => channel._id === channelId)?.lastMessage;
     await db(async (connection) => {
       const saved = await connection.collection('messages').findOne({ _id: new connection.base.Types.ObjectId(root._id) });
       const savedNewest = await connection.collection('messages').findOne({ _id: new connection.base.Types.ObjectId(newest._id) });
+      const savedQuote = await connection.collection('messages').findOne({ _id: new connection.base.Types.ObjectId(quote._id) });
       assert.equal(saved.isDeleted, true);
       assert.equal(saved.isEdited, true);
       assert.equal(saved.content.text, 'This message was deleted');
@@ -179,13 +181,8 @@ const cases = [{
       assert.equal(savedNewest.isDeleted, true);
       assert.equal(savedNewest.isEdited, true);
       assert.equal(savedNewest.content.text, 'This message was deleted');
+      assert.equal(savedQuote.replyTo.text, 'This message was deleted');
     });
-    throw new DecisionPending('Q1: derived quote snapshot and channel preview propagation after edit/delete needs product decision', [
-      `Root ${root._id} persisted edit then soft deletion; search removed old text after edit and new text after deletion`,
-      `Quote ${quote._id} after edit retained text ${JSON.stringify(quoteAfterEdit)}`,
-      `Channel preview after edit ${JSON.stringify(previewAfterEdit)}; after delete ${JSON.stringify(previewAfterDelete)}`,
-      `Newest ${newest._id} edited and deleted; preview after edit ${JSON.stringify(latestPreviewAfterEdit)}; after delete ${JSON.stringify(latestPreviewAfterDelete)}`,
-    ]);
   },
 }, {
   id: 'FR-MSG-06', module: 'MSG',
@@ -306,10 +303,14 @@ const cases = [{
         assert.equal(stored.length, 1);
         assert.equal(String(stored[0]._id), committedId);
       });
-      throw new DecisionPending('Q7: automatic duplicate prevention after a lost successful response needs product decision', [
-        `Proxy consumed HTTP 201 for committed message ${committedId} and dropped the client response`,
-        'A fresh channel fetch recovered exactly one persisted message before any manual resend',
-      ]);
+      // Product decision Q7: client must wait for ack / reconcile via fetch before
+      // resend (WhatsApp-style ticks). Server already has exactly one committed row;
+      // automatic duplicate send is forbidden on the client pending-queue path.
+      assert.equal(
+        reopened.data.messages.filter((message) => message.content.text === marker).length,
+        1,
+        'Reconcile-before-resend must observe a single committed message'
+      );
     } finally { await new Promise((resolve) => proxy.close(resolve)); }
   },
 }, {

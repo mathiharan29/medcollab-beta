@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import { runModule } from '../src/module-runner.mjs';
-import { DecisionPending } from '../src/runner.mjs';
 
 const cases = [{
   id: 'FR-REQ-01', module: 'REQ',
@@ -92,26 +91,21 @@ const cases = [{
       assert.equal(await connection.collection('channels').countDocuments({ type: 'direct', members: new connection.base.Types.ObjectId(c.userId) }), 0);
     });
     const acceptId = await sendTo(b);
-    let acceptanceError;
-    try {
-      const accepted = await request(`/api/message-requests/${acceptId}/accept`, { method: 'POST', token: b.token });
-      assert.equal(accepted.data.request.status, 'accepted');
-      assert.ok(accepted.data.channel._id);
-    } catch (error) { acceptanceError = error; }
+    const accepted = await request(`/api/message-requests/${acceptId}/accept`, { method: 'POST', token: b.token });
+    assert.equal(accepted.data.request.status, 'accepted');
+    assert.ok(accepted.data.channel._id);
     const bCount = await request('/api/message-requests/pending-count', { token: b.token });
     assert.equal(bCount.data.count, 0);
-    for (const action of ['accept', 'decline']) {
-      const rejected = await request(`/api/message-requests/${acceptId}/${action}`, { method: 'POST', token: b.token, expectedStatus: 400 });
-      assert.equal(rejected.payload.success, false);
-    }
+    const repeated = await request(`/api/message-requests/${acceptId}/accept`, { method: 'POST', token: b.token, expectedStatus: 200 });
+    assert.equal(repeated.data.channel._id, accepted.data.channel._id);
+    const rejected = await request(`/api/message-requests/${acceptId}/decline`, { method: 'POST', token: b.token, expectedStatus: 400 });
+    assert.equal(rejected.payload.success, false);
     await db(async (connection) => {
       const stored = await connection.collection('messagerequests').findOne({ _id: new connection.base.Types.ObjectId(acceptId) });
       assert.equal(stored.status, 'accepted');
       const channels = await connection.collection('channels').find({ type: 'direct', members: { $all: [new connection.base.Types.ObjectId(a.userId), new connection.base.Types.ObjectId(b.userId)] } }).toArray();
-      if (!acceptanceError) assert.equal(channels.length, 1, 'Successful accept must open exactly one DM');
-      else assert.equal(channels.length, 0, 'Failed accept left accepted state without a DM');
+      assert.equal(channels.length, 1, 'Successful accept must open exactly one DM');
     });
-    if (acceptanceError) throw acceptanceError;
   },
 }, {
   id: 'FR-REQ-05', module: 'REQ', mongoFailpoint: true,
@@ -146,16 +140,16 @@ const cases = [{
     assert.deepEqual(acceptedList.data.requests.map((item) => item.id), [id]);
     const dms = await request('/api/channels/dm', { token: b.token });
     assert.ok(!dms.data.channels.some((channel) => channel.members?.some((member) => member._id === a.userId)));
-    const retry = await request(`/api/message-requests/${id}/accept`, { method: 'POST', token: b.token, expectedStatus: 400 });
-    assert.equal(retry.payload.success, false);
+    const retry = await request(`/api/message-requests/${id}/accept`, { method: 'POST', token: b.token, expectedStatus: 200 });
+    assert.equal(retry.data.request.status, 'accepted');
+    assert.ok(retry.data.channel._id);
     await db(async (connection) => {
       const record = await connection.collection('messagerequests').findOne({ _id: new connection.base.Types.ObjectId(id) });
       assert.equal(record.status, 'accepted');
-      assert.equal(await connection.collection('channels').countDocuments({ type: 'direct', members: { $all: [new connection.base.Types.ObjectId(a.userId), new connection.base.Types.ObjectId(b.userId)] } }), 0);
+      const channels = await connection.collection('channels').find({ type: 'direct', members: { $all: [new connection.base.Types.ObjectId(a.userId), new connection.base.Types.ObjectId(b.userId)] } }).toArray();
+      assert.equal(channels.length, 1, 'Accept retry must recover exactly one DM');
+      assert.equal(String(channels[0]._id), retry.data.channel._id);
     });
-    throw new DecisionPending('Q7: recovery or atomic rollback contract for accepted-without-DM state requires product decision', [
-      'controlled database fault returned 500', 'request persisted as accepted without DM', 'reload exposes accepted request but no DM', 'accept retry rejected and did not recover',
-    ]);
   },
 }, {
   id: 'FR-REQ-02', module: 'REQ',

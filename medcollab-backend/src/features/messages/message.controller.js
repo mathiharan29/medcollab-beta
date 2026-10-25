@@ -28,6 +28,20 @@ const { notifyNewMessage, notifyMention } = require('../../services/notification
 const { MESSAGE_TYPES, MESSAGE_PRIORITY, PAGINATION, CHANNEL_TYPES } = require('../../constants');
 const logger = require('../../utils/logger');
 
+const messagePreviewText = (message) =>
+  message.content?.text?.slice(0, 200) ||
+  (message.type === MESSAGE_TYPES.IMAGE || message.type === MESSAGE_TYPES.ECG
+    ? '📷 Photo'
+    : message.type === MESSAGE_TYPES.VIDEO
+      ? '🎥 Video'
+      : message.type === MESSAGE_TYPES.DOCUMENT
+        ? '📎 Document'
+        : message.type === MESSAGE_TYPES.HANDOFF
+          ? '🔄 Handoff'
+          : message.type === MESSAGE_TYPES.ALERT
+            ? '⚠️ Alert'
+            : null);
+
 /**
  * GET /api/channels/:channelId/messages
  * Cursor-based paginated message fetch — newest first, returned ascending
@@ -100,20 +114,39 @@ const sendMessage = asyncHandler(async (req, res) => {
       ? { ...rawContent, text: rawContent.text.trim() }
       : rawContent;
 
-  // Validate media URLs point to trusted domains only.
+  // Validate media URLs point to trusted domains or this server's uploads.
   if (content?.mediaUrl) {
     const allowedHosts = ['res.cloudinary.com', 'cloudinary.com'];
-    try {
-      const parsed = new URL(content.mediaUrl);
-      if (parsed.protocol !== 'https:') {
-        return respond.badRequest(res, 'Media URL must use HTTPS');
+    const rawMediaUrl = String(content.mediaUrl);
+    if (!rawMediaUrl.startsWith('/uploads/')) {
+      try {
+        const parsed = new URL(rawMediaUrl);
+        const host = parsed.hostname.toLowerCase();
+        const ownHosts = new Set(
+          [req.hostname, req.get('host')?.split(':')[0]]
+            .filter(Boolean)
+            .map((value) => value.toLowerCase())
+        );
+        if (process.env.API_BASE_URL) {
+          try {
+            ownHosts.add(new URL(process.env.API_BASE_URL).hostname.toLowerCase());
+          } catch {
+            // Invalid configuration is handled by startup validation.
+          }
+        }
+        const isCloudinary =
+          parsed.protocol === 'https:' &&
+          allowedHosts.some((allowed) => host === allowed || host.endsWith('.' + allowed));
+        const isLocalUpload =
+          (parsed.protocol === 'http:' || parsed.protocol === 'https:') &&
+          parsed.pathname.startsWith('/uploads/') &&
+          (host === 'localhost' || host === '127.0.0.1' || ownHosts.has(host));
+        if (!isCloudinary && !isLocalUpload) {
+          return respond.badRequest(res, 'Media URL must point to a trusted host');
+        }
+      } catch {
+        return respond.badRequest(res, 'Invalid media URL');
       }
-      const host = parsed.hostname;
-      if (!allowedHosts.some((h) => host === h || host.endsWith('.' + h))) {
-        return respond.badRequest(res, 'Media URL must point to a trusted host');
-      }
-    } catch {
-      return respond.badRequest(res, 'Invalid media URL');
     }
   }
 
@@ -189,19 +222,7 @@ const sendMessage = asyncHandler(async (req, res) => {
 
   // Sidebar preview must be ready before HTTP response so immediate list
   // reloads don't still show "No messages yet".
-  const lastMessageText =
-    content?.text?.slice(0, 200) ||
-    (type === MESSAGE_TYPES.IMAGE || type === MESSAGE_TYPES.ECG
-      ? '📷 Photo'
-      : type === MESSAGE_TYPES.VIDEO
-        ? '🎥 Video'
-        : type === MESSAGE_TYPES.DOCUMENT
-        ? '📎 Document'
-        : type === MESSAGE_TYPES.HANDOFF
-          ? '🔄 Handoff'
-          : type === MESSAGE_TYPES.ALERT
-            ? '⚠️ Alert'
-            : null);
+  const lastMessageText = messagePreviewText(message);
 
   await Channel.findByIdAndUpdate(channel._id, {
     lastMessage: {
@@ -370,6 +391,42 @@ const deleteMessage = asyncHandler(async (req, res) => {
 
   message.isDeleted = true; // Pre-save hook blanks content
   await message.save();
+
+  await Message.updateMany(
+    {
+      channelId: message.channelId,
+      'replyTo.messageId': message._id,
+    },
+    { $set: { 'replyTo.text': 'This message was deleted' } }
+  );
+
+  const channel = await Channel.findById(message.channelId).select('lastMessage');
+  if (channel?.lastMessage?.messageId?.toString() === message._id.toString()) {
+    const previous = await Message.findOne({
+      channelId: message.channelId,
+      isDeleted: { $ne: true },
+    })
+      .sort({ createdAt: -1, _id: -1 })
+      .populate('senderId', 'name')
+      .lean();
+
+    channel.lastMessage = previous
+      ? {
+          messageId: previous._id,
+          text: messagePreviewText(previous),
+          senderName: previous.senderId?.name || 'Doctor',
+          type: previous.type,
+          sentAt: previous.createdAt,
+        }
+      : {
+          messageId: message._id,
+          text: 'This message was deleted',
+          senderName: req.user.name,
+          type: message.type,
+          sentAt: message.createdAt,
+        };
+    await channel.save();
+  }
 
   emitMessageDeleted(req.params.channelId, message._id);
 

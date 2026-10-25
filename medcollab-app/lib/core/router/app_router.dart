@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:medcollab_app/core/config/env_config.dart';
+import 'package:medcollab_app/core/di/app_dependencies.dart';
 import 'package:medcollab_app/core/router/app_routes.dart';
 import 'package:medcollab_app/core/router/go_router_refresh_stream.dart';
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_bloc.dart';
@@ -57,6 +58,17 @@ class AppRouter {
       final host = uri.host.toLowerCase();
       final path = uri.path;
       final scheme = uri.scheme.toLowerCase();
+
+      // vocle://c/:channelId/m/:messageId
+      if (scheme == 'vocle' &&
+          host == 'c' &&
+          uri.pathSegments.length == 3 &&
+          uri.pathSegments[1] == 'm') {
+        final target =
+            '/links/c/${uri.pathSegments[0]}/m/${uri.pathSegments[2]}';
+        _pendingDeepLinkLocation = target;
+        return target;
+      }
 
       // medcollab://join/CODE  → path is /CODE, host is join
       if (host == 'join') {
@@ -240,6 +252,13 @@ class AppRouter {
         },
       ),
       GoRoute(
+        path: '/links/c/:channelId/m/:messageId',
+        builder: (context, state) => _DeepLinkedMessagePage(
+          channelId: state.pathParameters['channelId']!,
+          messageId: state.pathParameters['messageId']!,
+        ),
+      ),
+      GoRoute(
         path: AppRoutes.joinInvite,
         builder: (context, state) {
           final code = state.pathParameters['code']!;
@@ -341,9 +360,8 @@ class AppRouter {
   String? _redirect(BuildContext context, GoRouterState state) {
     final auth = _authBloc.state;
     // Prefer full path so deep links are not lost when matchedLocation is empty.
-    final location = state.uri.path.isNotEmpty
-        ? state.uri.path
-        : state.matchedLocation;
+    final location =
+        state.uri.path.isNotEmpty ? state.uri.path : state.matchedLocation;
 
     // Pending invite while not fully signed in — remember and resume after auth.
     if (location.startsWith('/join/')) {
@@ -365,8 +383,10 @@ class AppRouter {
         return AppRoutes.splash;
 
       case AuthStatus.unauthenticated:
-        if (location == AppRoutes.phoneEntry ||
-            _isPublicLegalRoute(location)) {
+        if (location.startsWith('/links/')) {
+          _pendingDeepLinkLocation = location;
+        }
+        if (location == AppRoutes.phoneEntry || _isPublicLegalRoute(location)) {
           return null;
         }
         return AppRoutes.phoneEntry;
@@ -380,6 +400,11 @@ class AppRouter {
         return AppRoutes.profileSetup;
 
       case AuthStatus.authenticated:
+        final pendingDeepLink = _pendingDeepLinkLocation;
+        if (pendingDeepLink != null) {
+          _pendingDeepLinkLocation = null;
+          if (location != pendingDeepLink) return pendingDeepLink;
+        }
         final pendingNotif = _pendingNotificationRoute;
         if (pendingNotif != null && pendingNotif.startsWith('/')) {
           _pendingNotificationRoute = null;
@@ -410,6 +435,7 @@ class AppRouter {
   }
 
   String? _pendingJoinLocation;
+  String? _pendingDeepLinkLocation;
   String? _pendingNotificationRoute;
 
   /// Cold-start notification taps arrive before auth/router are ready.
@@ -429,6 +455,7 @@ class AppRouter {
     if (AppRoutes.shellPaths.contains(location)) return true;
     if (location.startsWith('/spaces')) return true;
     if (location.startsWith('/dm')) return true;
+    if (location.startsWith('/links/')) return true;
     if (location.startsWith('/join')) return true;
     if (location.startsWith('/profile')) return true;
     if (location == AppRoutes.scanInviteQr) return true;
@@ -444,8 +471,7 @@ class AppRouter {
         location == AppRoutes.terms) {
       return true;
     }
-    if (location == AppRoutes.developerMode &&
-        EnvConfig.enableDeveloperTools) {
+    if (location == AppRoutes.developerMode && EnvConfig.enableDeveloperTools) {
       return true;
     }
     return false;
@@ -453,5 +479,44 @@ class AppRouter {
 
   void dispose() {
     _refreshListenable.dispose();
+  }
+}
+
+class _DeepLinkedMessagePage extends StatelessWidget {
+  const _DeepLinkedMessagePage({
+    required this.channelId,
+    required this.messageId,
+  });
+
+  final String channelId;
+  final String messageId;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder(
+      future:
+          AppDependencies.instance.channelRepository.getChannelById(channelId),
+      builder: (context, snapshot) {
+        final detail = snapshot.data;
+        if (detail == null && snapshot.hasError) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Open message')),
+            body: const Center(child: Text('This message is unavailable.')),
+          );
+        }
+        if (detail == null) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        final channel = detail.channel;
+        return ChannelChatPage(
+          channelId: channelId,
+          spaceId: channel.spaceId,
+          channel: channel,
+          initialMessageId: messageId,
+        );
+      },
+    );
   }
 }

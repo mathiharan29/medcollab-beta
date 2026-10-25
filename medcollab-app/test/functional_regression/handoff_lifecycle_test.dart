@@ -21,7 +21,7 @@ HandoffModel _handoff(String id, DateTime day, HandoffStatus status) =>
     );
 
 void main() {
-  testWidgets('FR-HOF-12: local-day labels preserve server status [NEEDS_DECISION Q12]',
+  testWidgets('FR-HOF-12: local-day labels preserve server status',
       (tester) async {
     final started = DateTime.now();
     final today = DateTime(started.year, started.month, started.day);

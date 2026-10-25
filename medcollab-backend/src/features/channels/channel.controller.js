@@ -284,30 +284,26 @@ const createOrGetDM = asyncHandler(async (req, res) => {
     );
   }
 
-  // Find-or-create (not upsert): Mongo rejects $setOnInsert.members when the
-  // filter also matches on members ($all) — "path 'members' is matched twice".
-  const sortedMembers = [req.user._id.toString(), targetUserId].sort();
-  let channel = await Channel.findOne({
-    type: CHANNEL_TYPES.DIRECT,
-    members: { $all: sortedMembers, $size: 2 },
-  });
-  if (!channel) {
-    try {
-      channel = await Channel.create({
+  // Atomic find-or-create via memberPairKey (unique). Uses findAndModify so
+  // disposable failpoints and concurrent pair opens converge on one DM.
+  const { memberPairKey } = require('../../utils/memberPairKey');
+  const pairKey = memberPairKey([req.user._id, targetUserId]);
+  const members = [req.user._id, targetUserId];
+  let channel = await Channel.findOneAndUpdate(
+    { type: CHANNEL_TYPES.DIRECT, memberPairKey: pairKey },
+    {
+      $setOnInsert: {
         spaceId: null,
         type: CHANNEL_TYPES.DIRECT,
-        members: [req.user._id, targetUserId],
+        members,
+        memberPairKey: pairKey,
         createdBy: req.user._id,
         name: null,
-      });
-    } catch (error) {
-      channel = await Channel.findOne({
-        type: CHANNEL_TYPES.DIRECT,
-        members: { $all: sortedMembers, $size: 2 },
-      });
-      if (!channel) throw error;
-    }
-  }
+        isArchived: false,
+      },
+    },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
 
   const populated = await Channel.findById(channel._id)
     .populate(
@@ -366,61 +362,44 @@ const createGroupDM = asyncHandler(async (req, res) => {
     }
   }
 
+  const { memberPairKey } = require('../../utils/memberPairKey');
   const memberIds = [req.user._id.toString(), ...uniqueOthers].sort();
   const objectIds = memberIds.map((id) => id);
-  const membershipFilter = {
-    type: CHANNEL_TYPES.DIRECT,
-    members: { $all: objectIds, $size: memberIds.length },
-    isArchived: false,
-  };
+  const pairKey = memberPairKey(memberIds);
 
-  let channel = await Channel.findOne(membershipFilter);
+  const users = await User.find({ _id: { $in: uniqueOthers } })
+    .select('name displayTitle')
+    .lean();
+  const defaultName =
+    users
+      .map(
+        (u) =>
+          [u.displayTitle, u.name].filter(Boolean).join(' ').trim() || u.name
+      )
+      .filter(Boolean)
+      .slice(0, 4)
+      .join(', ') || 'Needl';
 
-  if (!channel) {
-    const users = await User.find({ _id: { $in: uniqueOthers } })
-      .select('name displayTitle')
-      .lean();
-    const defaultName =
-      users
-        .map(
-          (u) =>
-            [u.displayTitle, u.name].filter(Boolean).join(' ').trim() || u.name
-        )
-        .filter(Boolean)
-        .slice(0, 4)
-        .join(', ') || 'Needl';
-
-    try {
-      channel = await Channel.create({
+  let channel = await Channel.findOneAndUpdate(
+    { type: CHANNEL_TYPES.DIRECT, memberPairKey: pairKey },
+    {
+      $setOnInsert: {
         spaceId: null,
         type: CHANNEL_TYPES.DIRECT,
         members: objectIds,
+        memberPairKey: pairKey,
         createdBy: req.user._id,
         name: defaultName,
-      });
-    } catch (error) {
-      // Concurrent creators of the same membership set — return the winner.
-      channel = await Channel.findOne(membershipFilter);
-      if (!channel) throw error;
-    }
-  } else {
-    const current = (channel.name || '').trim();
-    if (!current || current.toLowerCase() === 'direct message') {
-      const users = await User.find({ _id: { $in: uniqueOthers } })
-        .select('name displayTitle')
-        .lean();
-      channel.name =
-        users
-          .map(
-            (u) =>
-              [u.displayTitle, u.name].filter(Boolean).join(' ').trim() ||
-              u.name
-          )
-          .filter(Boolean)
-          .slice(0, 4)
-          .join(', ') || 'Needl';
-      await channel.save();
-    }
+        isArchived: false,
+      },
+    },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
+
+  const current = (channel.name || '').trim();
+  if (!current || current.toLowerCase() === 'direct message') {
+    channel.name = defaultName;
+    await channel.save();
   }
 
   const populated = await Channel.findById(channel._id)
@@ -493,9 +472,12 @@ const expandDM = asyncHandler(async (req, res) => {
     return respond.badRequest(res, 'Needls support up to 9 people');
   }
 
+  const { memberPairKey } = require('../../utils/memberPairKey');
+  const mongoose = require('mongoose');
+  const pairKey = memberPairKey(memberIds);
   let channel = await Channel.findOne({
     type: CHANNEL_TYPES.DIRECT,
-    members: { $all: memberIds, $size: memberIds.length },
+    memberPairKey: pairKey,
     isArchived: false,
   });
 
@@ -519,44 +501,93 @@ const expandDM = asyncHandler(async (req, res) => {
       spaceId: null,
       type: CHANNEL_TYPES.DIRECT,
       members: memberIds,
+      memberPairKey: pairKey,
       createdBy: req.user._id,
       name: needlTitle,
     });
 
     if (history !== 'none') {
-      const filter = {
-        channelId: source._id,
-        isDeleted: { $ne: true },
-      };
+      // Include soft-deleted rows so destination shows "This message was deleted".
+      const filter = { channelId: source._id };
       if (history === 'today') {
-        const start = new Date();
-        start.setHours(0, 0, 0, 0);
+        // Product Q2: "today" boundary is the caller's phone local midnight.
+        // Client sends todayStart (ISO). Copied timestamps stay the original
+        // server-stored createdAt values.
+        let start = null;
+        if (req.body.todayStart) {
+          const parsed = new Date(req.body.todayStart);
+          if (!Number.isNaN(parsed.getTime())) start = parsed;
+        } else if (Number.isFinite(Number(req.body.timezoneOffsetMinutes))) {
+          const offsetMin = Number(req.body.timezoneOffsetMinutes);
+          const now = new Date();
+          const local = new Date(now.getTime() - offsetMin * 60 * 1000);
+          start = new Date(Date.UTC(
+            local.getUTCFullYear(),
+            local.getUTCMonth(),
+            local.getUTCDate(),
+            0, 0, 0, 0
+          ));
+          start = new Date(start.getTime() + offsetMin * 60 * 1000);
+        }
+        if (!start) {
+          start = new Date();
+          start.setHours(0, 0, 0, 0);
+        }
         filter.createdAt = { $gte: start };
       }
-      const messages = await Message.find(filter)
-        .sort({ createdAt: 1 })
-        .limit(500)
-        .lean();
+
+      const messages = await Message.find(filter).sort({ createdAt: 1 }).lean();
 
       if (messages.length > 0) {
-        const copies = messages.map((m) => ({
-          channelId: channel._id,
-          spaceId: null,
-          senderId: m.senderId,
-          type: m.type,
-          content: m.content,
-          priority: m.priority,
-          mentions: m.mentions || [],
-          replyTo: m.replyTo || undefined,
-          createdAt: m.createdAt,
-          updatedAt: m.updatedAt,
-        }));
-        await Message.insertMany(copies);
+        const idMap = new Map();
+        for (const m of messages) {
+          idMap.set(String(m._id), new mongoose.Types.ObjectId());
+        }
+
+        const copies = messages.map((m) => {
+          const sourceId = String(m._id);
+          const mappedThread = m.threadId
+            ? idMap.get(String(m.threadId)) || null
+            : null;
+          let replyTo = undefined;
+          if (m.replyTo?.messageId) {
+            const mappedQuote = idMap.get(String(m.replyTo.messageId));
+            replyTo = {
+              ...m.replyTo,
+              // Remap when the quoted parent was copied; otherwise keep text snapshot.
+              messageId: mappedQuote || m.replyTo.messageId,
+            };
+          }
+          return {
+            _id: idMap.get(sourceId),
+            channelId: channel._id,
+            spaceId: null,
+            senderId: m.senderId,
+            type: m.type,
+            content: m.content,
+            priority: m.priority,
+            mentions: m.mentions || [],
+            replyTo,
+            threadId: mappedThread,
+            replyCount: m.replyCount || 0,
+            isDeleted: Boolean(m.isDeleted),
+            deletedAt: m.deletedAt || null,
+            createdAt: m.createdAt,
+            updatedAt: m.updatedAt,
+          };
+        });
+        await Message.insertMany(copies, { ordered: true });
+
+        // Preview points at the source message id (product Q2) so deep-links
+        // back to the origin conversation remain stable.
         const last = messages[messages.length - 1];
+        const previewText = last.isDeleted
+          ? 'This message was deleted'
+          : last.content?.text?.slice(0, 200) || null;
         await Channel.findByIdAndUpdate(channel._id, {
           lastMessage: {
             messageId: last._id,
-            text: last.content?.text?.slice(0, 200) || null,
+            text: previewText,
             senderName: null,
             type: last.type,
             sentAt: last.createdAt,

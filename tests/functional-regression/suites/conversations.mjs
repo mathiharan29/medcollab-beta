@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import { runModule } from '../src/module-runner.mjs';
-import { DecisionPending } from '../src/runner.mjs';
 
 const cases = [{
   id: 'FR-DM-01', module: 'DM',
@@ -132,7 +131,11 @@ const cases = [{
       await connection.collection('messages').insertMany(roots);
       return String(id);
     });
-    const expanded = await request(`/api/channels/${sourceId}/expand`, { method: 'POST', token: a.token, body: { userIds: [c.userId], history: 'today' } });
+    // Phone local midnight expressed as ISO (here: UTC midnight for the fixture).
+    const expanded = await request(`/api/channels/${sourceId}/expand`, {
+      method: 'POST', token: a.token,
+      body: { userIds: [c.userId], history: 'today', todayStart: new Date(midnight).toISOString() },
+    });
     const destinationId = expanded.data.channel._id;
     assert.notEqual(destinationId, sourceId);
     assert.deepEqual(new Set(expanded.data.channel.members.map((member) => member._id || member)), new Set([a.userId, b.userId, c.userId]));
@@ -141,12 +144,10 @@ const cases = [{
       const copies = await connection.collection('messages').find({ channelId: new connection.base.Types.ObjectId(destinationId) }).sort({ createdAt: 1 }).toArray();
       assert.deepEqual(source.map((item) => item.content.text), samples.map(([label]) => `synthetic today ${label}`));
       assert.deepEqual(copies.map((item) => item.content.text), ['synthetic today at', 'synthetic today after']);
+      // Copied timestamps remain the original server-stored createdAt values.
       assert.deepEqual(copies.map((item) => item.createdAt.getTime()), [midnight, midnight + 1]);
       assert.ok(copies.every((item) => !source.some((original) => original._id.equals(item._id))));
     });
-    throw new DecisionPending('Q2: intended client timezone for today expansion needs product decision', [
-      'server UTC midnight excluded prior-day root', 'at/after-midnight roots copied with new IDs', 'source records unchanged',
-    ]);
   },
 }, {
   id: 'FR-DM-06', module: 'DM', timeoutMs: 60000,
@@ -163,12 +164,18 @@ const cases = [{
       const start = Date.UTC(2026, 0, 1);
       const roots = Array.from({ length: 502 }, (_, index) => ({
         channelId: source.insertedId, spaceId: null, senderId: new connection.base.Types.ObjectId(a.userId), type: 'text',
-        content: { text: `synthetic cap ${String(index).padStart(3, '0')}` }, priority: 'normal',
+        content: {
+          text: index === 501 ? 'This message was deleted' : `synthetic cap ${String(index).padStart(3, '0')}`,
+        },
+        priority: 'normal',
         isDeleted: index === 501, deletedAt: index === 501 ? new Date(start + 501000) : null,
         createdAt: new Date(start + index * 1000), updatedAt: new Date(start + index * 1000),
       }));
       const inserted = await connection.collection('messages').insertMany(roots);
-      return { sourceId: String(source.insertedId), selectedPreviewSourceId: String(inserted.insertedIds[499]) };
+      return {
+        sourceId: String(source.insertedId),
+        lastSourceId: String(inserted.insertedIds[501]),
+      };
     });
     const expanded = await request(`/api/channels/${fixture.sourceId}/expand`, { method: 'POST', token: a.token, body: { userIds: [c.userId], history: 'all' } });
     const destinationId = expanded.data.channel._id;
@@ -178,19 +185,19 @@ const cases = [{
       const copies = await connection.collection('messages').find({ channelId: new connection.base.Types.ObjectId(destinationId) }).sort({ createdAt: 1 }).toArray();
       assert.equal(source.length, 502);
       assert.equal(source.filter((item) => item.isDeleted).length, 1);
-      assert.equal(copies.length, 500);
+      // No 500-cap: every source root (including deleted) is copyable/scrollable.
+      assert.equal(copies.length, 502);
       assert.equal(copies[0].content.text, 'synthetic cap 000');
-      assert.equal(copies.at(-1).content.text, 'synthetic cap 499');
-      assert.ok(!copies.some((item) => ['synthetic cap 500', 'synthetic cap 501'].includes(item.content.text)));
+      assert.equal(copies[500].content.text, 'synthetic cap 500');
+      assert.equal(copies[501].isDeleted, true);
+      assert.equal(copies[501].content.text, 'This message was deleted');
       assert.ok(copies.every((copy) => !source.some((original) => original._id.equals(copy._id))));
       const destination = await connection.collection('channels').findOne({ _id: new connection.base.Types.ObjectId(destinationId) });
-      assert.equal(String(destination.lastMessage.messageId), fixture.selectedPreviewSourceId);
+      assert.equal(String(destination.lastMessage.messageId), fixture.lastSourceId, 'Destination preview must point at the source message id');
+      assert.equal(destination.lastMessage.text, 'This message was deleted');
       assert.ok(!copies.some((copy) => String(copy._id) === String(destination.lastMessage.messageId)));
       assert.deepEqual(new Set(destination.members.map(String)), new Set([a.userId, b.userId, c.userId]));
     });
-    throw new DecisionPending('Q2: 500-item oldest-first cap and source-ID destination preview require product decision', [
-      '501 active source roots and one deleted root retained', 'oldest 500 active roots copied with new IDs', 'deleted and newest active roots excluded', 'destination preview points to source ID',
-    ]);
   },
 }, {
   id: 'FR-DM-07', module: 'DM',
@@ -224,20 +231,22 @@ const cases = [{
       const copiedQuote = byText(copies, 'synthetic graph quote');
       assert.ok(copiedRoot && copiedReply && copiedQuote);
       assert.ok(copies.every((item) => !source.some((original) => original._id.equals(item._id))));
-      assert.equal(copiedReply.threadId ?? null, null);
-      assert.equal(String(copiedQuote.replyTo.messageId), root._id);
-      return { copiedRootId: String(copiedRoot._id), copiedQuoteId: String(copiedQuote._id) };
+      // Thread/quote graph remapped onto destination ids so links keep working.
+      assert.equal(String(copiedReply.threadId), String(copiedRoot._id));
+      assert.equal(String(copiedQuote.replyTo.messageId), String(copiedRoot._id));
+      return {
+        copiedRootId: String(copiedRoot._id),
+        copiedReplyId: String(copiedReply._id),
+        copiedQuoteId: String(copiedQuote._id),
+      };
     });
     const copiedThread = await request(`/api/channels/${destinationId}/messages/${graph.copiedRootId}/thread`, { token: c.token });
-    assert.deepEqual(copiedThread.data.replies, []);
+    assert.deepEqual(copiedThread.data.replies.map((item) => item._id), [graph.copiedReplyId]);
     const copiedTimeline = await request(`/api/channels/${destinationId}/messages`, { token: c.token });
     const copiedQuote = copiedTimeline.data.messages.find((item) => item._id === graph.copiedQuoteId);
-    assert.equal(copiedQuote.replyTo.messageId, root._id);
+    assert.equal(copiedQuote.replyTo.messageId, graph.copiedRootId);
     const sourceTargetInDestination = await request(`/api/channels/${destinationId}/messages/${root._id}/thread`, { token: c.token, expectedStatus: 403 });
     assert.equal(sourceTargetInDestination.payload.success, false);
-    throw new DecisionPending('Q2: copied thread and quote graph remapping requires product decision', [
-      'source thread and quote references unchanged', 'three copies have new IDs', 'copied thread reply has no threadId', 'copied quote targets source root', 'destination thread and source-ID navigation cannot open the copied graph',
-    ]);
   },
 }, {
   id: 'FR-DM-08', module: 'DM',
@@ -296,8 +305,8 @@ const cases = [{
     }).toArray());
     if (groupErrors.length) throw groupErrors[0].reason;
     assert.equal(groupIds.length, 3);
-    assert.ok(groupRecords.length >= 1);
-    for (const id of groupIds) assert.ok(groupRecords.some((record) => String(record._id) === id));
+    assert.equal(groupRecords.length, 1, 'Concurrent group intent must create exactly one conversation');
+    assert.deepEqual(new Set(groupIds), new Set([String(groupRecords[0]._id)]));
     const pairAttempts = await Promise.allSettled([
       request('/api/channels/dm', { method: 'POST', token: a.token, body: { userId: b.userId } }),
       request('/api/channels/dm', { method: 'POST', token: b.token, body: { userId: a.userId } }),
@@ -314,9 +323,6 @@ const cases = [{
     }
     assert.equal(pairRecords.length, 1, 'Concurrent pair intent must create exactly one conversation');
     assert.deepEqual(new Set(pairIds), new Set([String(pairRecords[0]._id)]));
-    throw new DecisionPending(`Q7: concurrent group exact-membership guarantee unresolved; observed ${groupRecords.length} matching group record(s)`, [
-      `three group calls completed with ${groupRecords.length} persisted exact-membership record(s)`, 'two pair calls returned one pair ID',
-    ]);
   },
 }, {
   id: 'FR-DM-02', module: 'DM', timeoutMs: 60000,

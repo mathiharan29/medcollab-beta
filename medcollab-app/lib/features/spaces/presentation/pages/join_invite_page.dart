@@ -25,24 +25,24 @@ class JoinInvitePage extends StatefulWidget {
 class _JoinInvitePageState extends State<JoinInvitePage> {
   late Future<SpaceInvitePreview> _previewFuture;
   bool _joining = false;
+  bool _pendingApproval = false;
 
   @override
   void initState() {
     super.initState();
-    _previewFuture = AppDependencies.instance.spaceRepository
-        .previewInvite(widget.code);
+    _previewFuture =
+        AppDependencies.instance.spaceRepository.previewInvite(widget.code);
   }
 
   Future<void> _join(SpaceInvitePreview preview) async {
-    if (_joining) return;
+    if (_joining || _pendingApproval) return;
     setState(() => _joining = true);
     try {
       if (preview.alreadyMember) {
         final spaces =
             await AppDependencies.instance.spaceRepository.getMySpaces();
-        final match = spaces
-            .where((s) => s.inviteCode == preview.inviteCode)
-            .firstOrNull;
+        final match =
+            spaces.where((s) => s.inviteCode == preview.inviteCode).firstOrNull;
         if (match != null && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Opening ${preview.name}')),
@@ -52,8 +52,17 @@ class _JoinInvitePageState extends State<JoinInvitePage> {
         }
       }
 
-      final space = await AppDependencies.instance.spaceRepository
-          .joinSpace(widget.code);
+      final result =
+          await AppDependencies.instance.spaceRepository.joinSpace(widget.code);
+      if (result.isPending) {
+        if (!mounted) return;
+        setState(() {
+          _joining = false;
+          _pendingApproval = true;
+        });
+        return;
+      }
+      final space = result.space!;
       AppDependencies.instance.socketClient.syncSpaceRooms();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -152,6 +161,22 @@ class _JoinInvitePageState extends State<JoinInvitePage> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Text('Open space'),
+          ),
+        ),
+      );
+    }
+
+    if (_pendingApproval) {
+      return Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: AppEmptyState(
+          icon: Icons.hourglass_top_outlined,
+          title: 'Pending',
+          subtitle:
+              'Your request to join ${preview.name} is waiting for admin approval.',
+          action: FilledButton(
+            onPressed: () => context.go(AppRoutes.spacesList),
+            child: const Text('Back to spaces'),
           ),
         ),
       );

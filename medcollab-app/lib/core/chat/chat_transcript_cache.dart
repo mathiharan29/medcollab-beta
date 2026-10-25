@@ -24,4 +24,9 @@ class ChatTranscriptCache {
     _messages[channelId] = List<MessageModel>.from(messages);
     _hasMore[channelId] = hasMore;
   }
+
+  static void clearAll() {
+    _messages.clear();
+    _hasMore.clear();
+  }
 }

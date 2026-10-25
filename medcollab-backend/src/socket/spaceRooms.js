@@ -43,8 +43,10 @@ const joinUserToSpaceRoom = (userId, spaceId) => {
 
 /**
  * Remove all active sockets for [userId] from a space room (leave / kick).
+ * Awaits Socket.IO leave so room membership is settled before REST returns
+ * (FR-JRN-04 / FR-SPC-06 presence leak).
  */
-const leaveUserFromSpaceRoom = (userId, spaceId) => {
+const leaveUserFromSpaceRoom = async (userId, spaceId) => {
   if (!io) return;
 
   const uid = userId.toString();
@@ -52,16 +54,20 @@ const leaveUserFromSpaceRoom = (userId, spaceId) => {
   const room = `space:${sid}`;
   let left = 0;
 
-  io.sockets.sockets.forEach((socket) => {
-    if (socket.userId?.toString() !== uid) return;
+  const sockets = [...io.sockets.sockets.values()].filter(
+    (socket) => socket.userId?.toString() === uid
+  );
 
-    socket.leave(room);
-    if (Array.isArray(socket.spaceIds)) {
-      socket.spaceIds = socket.spaceIds.map(String).filter((id) => id !== sid);
-      socket.data.spaceIds = socket.spaceIds;
-    }
-    left += 1;
-  });
+  await Promise.all(
+    sockets.map(async (socket) => {
+      await socket.leave(room);
+      if (Array.isArray(socket.spaceIds)) {
+        socket.spaceIds = socket.spaceIds.map(String).filter((id) => id !== sid);
+        socket.data.spaceIds = socket.spaceIds;
+      }
+      left += 1;
+    })
+  );
 
   if (left > 0) {
     logger.socket(`User ${uid} left space room ${room} (${left} socket(s))`);
@@ -86,25 +92,25 @@ const syncSocketSpaceRooms = async (socket) => {
 
   for (const sid of previous) {
     if (!next.has(sid)) {
-      socket.leave(`space:${sid}`);
+      await socket.leave(`space:${sid}`);
     }
   }
 
   // Also drop any space:* rooms that drifted off socket.spaceIds.
-  for (const room of socket.rooms) {
+  for (const room of [...socket.rooms]) {
     if (!room.startsWith('space:')) continue;
     const sid = room.slice('space:'.length);
     if (!next.has(sid)) {
-      socket.leave(room);
+      await socket.leave(room);
     }
   }
 
   socket.spaceIds = spaceIds;
   socket.data.spaceIds = spaceIds;
 
-  spaceIds.forEach((spaceId) => {
-    socket.join(`space:${spaceId}`);
-  });
+  await Promise.all(
+    spaceIds.map((spaceId) => socket.join(`space:${spaceId}`))
+  );
 
   logger.socket(
     `${socket.userName} synced ${spaceIds.length} space room(s)`,

@@ -69,10 +69,16 @@ class AppDependencies {
     apiClient = ApiClient(storage: secureStorage);
     socketClient = SocketClient();
     TypingPresence.instance.attach(socketClient);
+    bookmarkService = BookmarkService();
+    recentItemsService = RecentItemsService();
+    draftMessageService = DraftMessageService();
     authRepository = AuthRepository(
       apiClient: apiClient,
       storage: secureStorage,
       socketClient: socketClient,
+      draftMessageService: draftMessageService,
+      bookmarkService: bookmarkService,
+      recentItemsService: recentItemsService,
     );
     userRepository = UserRepository(apiClient: apiClient);
     spaceRepository = SpaceRepository(apiClient: apiClient);
@@ -96,9 +102,6 @@ class AppDependencies {
       socketClient: socketClient,
     );
     searchRepository = SearchRepository(apiClient: apiClient);
-    bookmarkService = BookmarkService();
-    recentItemsService = RecentItemsService();
-    draftMessageService = DraftMessageService();
     presenceCubit = PresenceCubit(socketClient: socketClient);
     fcmService = FcmService(
       userRepository: userRepository,

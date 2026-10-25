@@ -66,18 +66,27 @@ class ChannelRepository extends BaseRepository {
   }
 
   /// `POST /api/channels/:id/expand`
+  ///
+  /// When [history] is `today`, sends the device's local midnight as
+  /// `todayStart` so the server filters in phone timezone (Q2).
   Future<ChannelModel> expandDm({
     required String channelId,
     required List<String> userIds,
     required String history, // all | today | none
   }) {
+    final payload = <String, dynamic>{
+      'userIds': userIds,
+      'history': history,
+    };
+    if (history == 'today') {
+      final now = DateTime.now();
+      final localMidnight = DateTime(now.year, now.month, now.day);
+      payload['todayStart'] = localMidnight.toUtc().toIso8601String();
+    }
     return execute(
       () => apiClient.post(
         ApiEndpoints.expandDm(channelId),
-        data: {
-          'userIds': userIds,
-          'history': history,
-        },
+        data: payload,
         parser: (json) => parseNested(json, 'channel', ChannelModel.fromJson),
       ),
     );

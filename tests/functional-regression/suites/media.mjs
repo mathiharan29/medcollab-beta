@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { runModule } from '../src/module-runner.mjs';
-import { DecisionPending } from '../src/runner.mjs';
 
 const png = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 0, 1, 2, 3]);
 const pdf = Buffer.from('%PDF-1.4\n% Synthetic document\n');
@@ -67,16 +66,13 @@ const cases = [{
   id: 'FR-MED-02', module: 'MED',
   run: async ({ identity, request, origin }) => {
     const a = await identity('A');
-    const observations = [];
     for (const [name, bytes, format] of [['synthetic-octet.pdf', pdf, 'pdf'], ['synthetic-octet.mp4', mp4, 'video']]) {
       const uploaded = (await upload(request, a.token, name, 'application/octet-stream', bytes)).data;
       assert.equal(uploaded.storage, 'local');
       assert.equal(uploaded.format, format);
       assert.equal(uploaded.mimeType, 'application/octet-stream');
       assert.deepEqual(await download(uploaded.url, origin, a.token), bytes);
-      observations.push(`${name}:${uploaded.format}/${uploaded.mimeType}`);
     }
-    throw new DecisionPending(`Q5: octet-stream upload format/MIME contract pending; ${observations.join(', ')}`, ['Extension fallback accepted PDF and MP4', 'Returned format and MIME captured', 'Local delivered bytes exact']);
   },
 }, {
   id: 'FR-MED-03', module: 'MED',
@@ -84,10 +80,12 @@ const cases = [{
     const f = await fixture(identity, request);
     const uploaded = (await upload(request, f.a.token, 'synthetic-message.png', 'image/png', png)).data;
     assert.deepEqual(await download(uploaded.url, origin, f.a.token), png);
-    const rejected = await request(`/api/channels/${f.channelId}/messages`, { method: 'POST', token: f.a.token, body: { type: 'image', content: { mediaUrl: uploaded.url, fileName: uploaded.fileName, mimeType: uploaded.mimeType, fileSize: uploaded.fileSize } }, expectedStatus: 400 });
-    assert.equal(rejected.payload.success, false);
-    await db(async (connection) => assert.equal(await connection.collection('messages').countDocuments({ channelId: new connection.base.Types.ObjectId(f.channelId) }), 0));
-    throw new DecisionPending('Q5: local upload URL is rejected by image-message policy; full upload→message pipeline has no successful local path', ['Upload bytes and metadata verified', 'Actual returned URL rejected by message route', 'No message persisted']);
+    const sent = (await request(`/api/channels/${f.channelId}/messages`, { method: 'POST', token: f.a.token, body: { type: 'image', content: { mediaUrl: uploaded.url, fileName: uploaded.fileName, mimeType: uploaded.mimeType, fileSize: uploaded.fileSize } }, expectedStatus: 201 })).data.message;
+    assert.equal(sent.content.mediaUrl, uploaded.url);
+    await db(async (connection) => {
+      const persisted = await connection.collection('messages').findOne({ _id: new connection.base.Types.ObjectId(sent._id) });
+      assert.equal(persisted.content.mediaUrl, uploaded.url);
+    });
   },
 }, {
   id: 'FR-MED-04', module: 'MED',
@@ -95,10 +93,14 @@ const cases = [{
     const f = await fixture(identity, request);
     const uploaded = (await upload(request, f.a.token, 'synthetic-video.mp4', 'video/mp4', mp4)).data;
     assert.equal(uploaded.format, 'video');
-    const rejected = await request(`/api/channels/${f.channelId}/messages`, { method: 'POST', token: f.a.token, body: { type: 'video', content: { mediaUrl: uploaded.url, fileName: uploaded.fileName, mimeType: uploaded.mimeType, fileSize: uploaded.fileSize } }, expectedStatus: 400 });
-    assert.equal(rejected.payload.success, false);
-    await db(async (connection) => assert.equal(await connection.collection('messages').countDocuments({ channelId: new connection.base.Types.ObjectId(f.channelId) }), 0));
-    throw new DecisionPending('Q5: video upload succeeds, but video message type is rejected by the pinned source', ['Video upload format verified', 'Actual send rejected', 'No message persisted']);
+    const sent = (await request(`/api/channels/${f.channelId}/messages`, { method: 'POST', token: f.a.token, body: { type: 'video', content: { mediaUrl: uploaded.url, fileName: uploaded.fileName, mimeType: uploaded.mimeType, fileSize: uploaded.fileSize } }, expectedStatus: 201 })).data.message;
+    assert.equal(sent.type, 'video');
+    assert.equal(sent.content.mediaUrl, uploaded.url);
+    await db(async (connection) => {
+      const persisted = await connection.collection('messages').findOne({ _id: new connection.base.Types.ObjectId(sent._id) });
+      assert.equal(persisted.type, 'video');
+      assert.equal(persisted.content.mediaUrl, uploaded.url);
+    });
   },
 }, {
   id: 'FR-MED-05', module: 'MED', fakeCloudinary: true,
@@ -147,12 +149,10 @@ const cases = [{
     await request('/api/users/me', { method: 'PUT', token: a.token, body: { avatarUrl: first.url } });
     const updated = await request('/api/users/me', { method: 'PUT', token: a.token, body: { avatarUrl: second.url } });
     assert.equal(updated.data.user.avatarUrl, second.url);
-    await request(`/api/media/${encodeURIComponent(first.publicId)}`, { method: 'DELETE', token: a.token });
     await download(first.url, origin, a.token, 404);
     assert.deepEqual(await download(second.url, origin, a.token), replacementBytes);
     const profile = (await request('/api/users/me', { token: a.token })).data.user;
     assert.equal(profile.avatarUrl, second.url);
-    throw new DecisionPending('Q6: profile points to replacement avatar; old file was deleted explicitly, automatic old-file lifecycle remains undecided', ['Profile references B after reload', 'A deletion and B bytes verified']);
   },
 }, {
   id: 'FR-MED-07', module: 'MED',
@@ -166,13 +166,13 @@ const cases = [{
     await request(`/api/media/${encodeURIComponent(video.publicId)}`, { method: 'DELETE', token: f.a.token });
     await download(image.url, origin, f.a.token, 404);
     await download(video.url, origin, f.a.token, 404);
-    await request(`/api/media/${encodeURIComponent(handoffFile.publicId)}`, { method: 'DELETE', token: f.a.token, expectedStatus: 403 });
-    assert.deepEqual(await download(handoffFile.url, origin, f.a.token), pdf);
+    await request(`/api/media/${encodeURIComponent(handoffFile.publicId)}`, { method: 'DELETE', token: f.a.token });
+    await download(handoffFile.url, origin, f.a.token, 404);
     const detail = (await request(`/api/handoffs/${handoff._id}`, { token: f.a.token })).data.handoff;
-    assert.deepEqual(detail.patients[0].attachments.map((item) => item.url), [image.url, handoffFile.url]);
+    assert.deepEqual(detail.patients[0].attachments.map((item) => item.url), [null, null]);
+    assert.deepEqual(detail.patients[0].attachments.map((item) => item.fileName), ['Image deleted', 'Message deleted']);
     const row = await db((connection) => connection.collection('handoffs').findOne({ _id: new connection.base.Types.ObjectId(handoff._id) }));
-    assert.equal(row.patients[0].attachments[0].url, image.url);
-    throw new DecisionPending('Q6: referenced local image/video bytes delete, handoff-context deletion is unsupported, and handoff attachment references remain', ['Supported local file bytes removed', 'Handoff-context delete refused', 'Consumer retains stale reference']);
+    assert.deepEqual(row.patients[0].attachments.map((item) => item.url), [null, null]);
   },
 }];
 

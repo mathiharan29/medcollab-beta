@@ -240,8 +240,9 @@ const shouldSendPush = (notificationType, prefs) => {
 };
 
 /**
- * Quiet hours check — local device timezone approximation using server local time.
+ * Quiet hours check — server timezone (product decision Q9).
  * Format: "HH:mm" (24h). Supports overnight ranges (e.g. 22:00 → 07:00).
+ * Harness injects a fake clock when VOCLE_FAKE_CLOCK is enabled.
  */
 const isInQuietHours = (start, end) => {
   if (!start || !end) return false;

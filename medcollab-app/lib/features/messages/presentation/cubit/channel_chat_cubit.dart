@@ -12,6 +12,7 @@ import 'package:medcollab_app/core/socket/socket_client.dart';
 import 'package:medcollab_app/core/utils/json_map_utils.dart';
 import 'package:medcollab_app/features/auth/data/models/user_model.dart';
 import 'package:medcollab_app/features/media/data/repositories/media_repository.dart';
+import 'package:medcollab_app/features/members/data/repositories/member_repository.dart';
 import 'package:medcollab_app/features/messages/data/models/message_delivery_state.dart';
 import 'package:medcollab_app/features/messages/data/models/message_model.dart';
 import 'package:medcollab_app/features/messages/data/models/message_reply_to.dart';
@@ -33,27 +34,30 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
     required SocketClient socketClient,
     required this.channelId,
     required this.currentUserId,
+    this.spaceId,
+    MemberRepository? memberRepository,
     NotificationRepository? notificationRepository,
     void Function(int unreadCount)? onChannelAlertsCleared,
     this.readReceiptsEnabled,
   })  : _messageRepository = messageRepository,
         _mediaRepository = mediaRepository,
         _socketClient = socketClient,
+        _memberRepository = memberRepository,
         _notificationRepository = notificationRepository,
         _onChannelAlertsCleared = onChannelAlertsCleared,
         super(
           ChannelChatState(
             messages: ChatTranscriptCache.messagesFor(channelId) ?? const [],
             hasMore: ChatTranscriptCache.hasMoreFor(channelId),
-            isLoading:
-                (ChatTranscriptCache.messagesFor(channelId) ?? const [])
-                    .isEmpty,
+            isLoading: (ChatTranscriptCache.messagesFor(channelId) ?? const [])
+                .isEmpty,
           ),
         ) {
     _listenForSocketMessages();
     _listenForSocketUpdates();
     _listenForTyping();
     _listenForInChatNotificationFallback();
+    _listenForMembershipRevocation();
     _connectionSub = _socketClient.connectionStream.listen((connected) {
       if (connected) {
         _socketClient.joinChannel(channelId);
@@ -66,15 +70,19 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
     ActiveChatTracker.instance.enter(channelId);
     loadMessages(silent: state.messages.isNotEmpty);
     _markChannelNotificationsRead();
+    unawaited(_checkSpaceMembership());
   }
 
   final MessageRepository _messageRepository;
   final MediaRepository _mediaRepository;
   final SocketClient _socketClient;
+  final MemberRepository? _memberRepository;
   final NotificationRepository? _notificationRepository;
   final void Function(int unreadCount)? _onChannelAlertsCleared;
   final String channelId;
   final String currentUserId;
+  final String? spaceId;
+
   /// When returns false, DM read receipts are neither written nor used by this cubit for mark-read.
   final bool Function()? readReceiptsEnabled;
 
@@ -84,9 +92,11 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
   StreamSubscription<Map<String, dynamic>>? _typingSub;
   StreamSubscription<Map<String, dynamic>>? _stoppedTypingSub;
   StreamSubscription<Map<String, dynamic>>? _notificationSub;
+  StreamSubscription<Map<String, dynamic>>? _memberLeftSub;
 
   final Map<String, String> _typingUsers = {};
   final Map<String, Timer> _typingExpiry = {};
+
   /// Overridable in unit tests so expiry can be asserted without long pumps.
   @visibleForTesting
   static Duration typingExpiryDuration = const Duration(seconds: 5);
@@ -124,15 +134,75 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
       unawaited(_markMessagesRead(page.messages));
       unawaited(_markChannelNotificationsRead());
     } on AppException catch (e) {
+      _markReadOnlyForAccessError(e);
       emit(state.copyWith(isLoading: false, error: e.message));
     }
+  }
+
+  Future<void> _checkSpaceMembership() async {
+    final sid = spaceId;
+    final repository = _memberRepository;
+    if (sid == null || sid.isEmpty || repository == null) return;
+    try {
+      final members = await repository.getSpaceMembers(sid);
+      if (!members.any((member) => member.user.id == currentUserId)) {
+        _markReadOnly('You have been removed from this space');
+      }
+    } on AppException catch (error) {
+      _markReadOnlyForAccessError(error);
+    }
+  }
+
+  void _listenForMembershipRevocation() {
+    final sid = spaceId;
+    if (sid == null || sid.isEmpty) return;
+    _memberLeftSub =
+        _socketClient.onMapEvent(SocketEvents.spaceMemberLeft).listen((data) {
+      final eventSpaceId = data['spaceId']?.toString() ?? '';
+      final eventUserId = data['userId']?.toString() ?? '';
+      if (eventSpaceId != sid || eventUserId != currentUserId) return;
+      final reason = data['reason']?.toString() ?? 'removed';
+      if (reason == 'left') {
+        _markReadOnly('You left this space');
+        return;
+      }
+      final byName = (data['byUserName']?.toString() ?? '').trim();
+      _markReadOnly(
+        byName.isEmpty
+            ? 'You have been removed from this space'
+            : 'Removed by $byName',
+      );
+    });
+  }
+
+  void _markReadOnlyForAccessError(AppException error) {
+    final message = error.message.toLowerCase();
+    if (message.contains('forbidden') ||
+        message.contains('not a member') ||
+        message.contains('no longer') ||
+        message.contains('removed') ||
+        message.contains('access denied') ||
+        message.contains('access to this')) {
+      _markReadOnly('You have been removed from this space');
+    }
+  }
+
+  void _markReadOnly(String reason) {
+    if (state.isReadOnly) return;
+    emit(state.copyWith(
+      readOnlyReason: reason,
+      isSending: false,
+      isUploading: false,
+      clearPendingReply: true,
+    ));
   }
 
   Future<void> _markMessagesRead(List<MessageModel> messages) async {
     final prefsEnabled = readReceiptsEnabled?.call() ?? true;
     if (!prefsEnabled) return;
     final ids = messages
-        .where((m) => !m.localOnly && !m.isDeleted && m.sender.id != currentUserId)
+        .where(
+            (m) => !m.localOnly && !m.isDeleted && m.sender.id != currentUserId)
         .map((m) => m.id)
         .where((id) => id.isNotEmpty)
         .toList();
@@ -149,22 +219,21 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
 
   /// If `new_message` is missed (room race), inbox events still refresh the open chat.
   void _listenForInChatNotificationFallback() {
-    _notificationSub = _socketClient
-        .onMapEvent(SocketEvents.newNotification)
-        .listen((data) {
+    _notificationSub =
+        _socketClient.onMapEvent(SocketEvents.newNotification).listen((data) {
       final meta = asJsonMap(data['metadata']);
-      final cid = meta?['channelId']?.toString() ??
-          data['channelId']?.toString() ??
-          '';
+      final cid =
+          meta?['channelId']?.toString() ?? data['channelId']?.toString() ?? '';
       if (cid.isEmpty || cid == 'null' || cid != channelId) return;
       unawaited(loadMessages(silent: true));
       unawaited(_markChannelNotificationsRead());
     });
   }
 
-  Future<void> sendMessage(String text, {List<String> mentions = const []}) async {
+  Future<void> sendMessage(String text,
+      {List<String> mentions = const []}) async {
     final trimmed = text.trim();
-    if (trimmed.isEmpty || state.isSending) return;
+    if (trimmed.isEmpty || state.isSending || state.isReadOnly) return;
 
     final replySource = state.pendingReply;
     final replyTo = replySource == null || replySource.localOnly
@@ -202,11 +271,26 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
       emit(state.copyWith(isSending: false));
     } on AppException catch (e) {
       _markFailed(tempId);
+      _markReadOnlyForAccessError(e);
       emit(state.copyWith(isSending: false, error: e.message));
     } catch (_) {
       _markFailed(tempId);
       emit(state.copyWith(isSending: false, error: 'Failed to send message'));
     }
+  }
+
+  Future<void> retryFailedMessage(String messageId) async {
+    if (state.isSending || state.isReadOnly) return;
+    final failed = state.messages
+        .where((message) =>
+            message.id == messageId &&
+            message.deliveryState == MessageDeliveryState.failed)
+        .firstOrNull;
+    if (failed == null || failed.type != MessageType.text) return;
+    final remaining =
+        state.messages.where((message) => message.id != messageId).toList();
+    emit(state.copyWith(messages: remaining, error: null));
+    await sendMessage(failed.content.text ?? '');
   }
 
   void setPendingReply(MessageModel message) {
@@ -225,7 +309,7 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
     required String mimeType,
     String? caption,
   }) async {
-    if (state.isSending) return;
+    if (state.isSending || state.isReadOnly) return;
     if (bytes.length > 50 * 1024 * 1024) {
       emit(state.copyWith(error: 'That file is over 50 MB'));
       return;
@@ -286,7 +370,9 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
       emit(state.copyWith(isSending: false, isUploading: false));
     } on AppException catch (e) {
       _markFailed(tempId);
-      emit(state.copyWith(isSending: false, isUploading: false, error: e.message));
+      _markReadOnlyForAccessError(e);
+      emit(state.copyWith(
+          isSending: false, isUploading: false, error: e.message));
     } catch (_) {
       _markFailed(tempId);
       emit(
@@ -350,9 +436,8 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
       emit(state.copyWith(typingUserNames: _typingUsers.values.toList()));
     });
 
-    _stoppedTypingSub = _socketClient
-        .onMapEvent(SocketEvents.userStoppedTyping)
-        .listen((data) {
+    _stoppedTypingSub =
+        _socketClient.onMapEvent(SocketEvents.userStoppedTyping).listen((data) {
       final msgChannelId = data['channelId']?.toString() ?? '';
       if (msgChannelId != channelId) return;
       final userId = data['userId']?.toString() ?? '';
@@ -432,7 +517,8 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
       deliveryState: MessageDeliveryState.failed,
       localOnly: true,
     );
-    emit(state.copyWith(messages: updated, isUploading: false, isSending: false));
+    emit(state.copyWith(
+        messages: updated, isUploading: false, isSending: false));
   }
 
   void _replaceLocalMessage(String tempId, MessageModel message) {
@@ -604,6 +690,7 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
     _typingSub?.cancel();
     _stoppedTypingSub?.cancel();
     _notificationSub?.cancel();
+    _memberLeftSub?.cancel();
     return super.close();
   }
 }

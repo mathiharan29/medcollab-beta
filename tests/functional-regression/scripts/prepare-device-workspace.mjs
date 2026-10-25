@@ -76,7 +76,18 @@ export async function prepareDeviceWorkspace(sha = command('git', ['rev-parse', 
   const pubspecPath = join(app, 'pubspec.yaml');
   const originalPubspec = await readFile(pubspecPath, 'utf8');
   if (!originalPubspec.includes('dev_dependencies:\n') && !originalPubspec.includes('dev_dependencies:\r\n')) throw new Error('Unexpected app pubspec');
-  const overlay = originalPubspec.replace(/dev_dependencies:\r?\n/, 'dev_dependencies:\n  integration_test:\n    sdk: flutter\n  firebase_core_platform_interface: any\n  firebase_messaging_platform_interface: any\n  image_picker_platform_interface: any\n  camera_platform_interface: any\n');
+  // Only inject SDK/plugin stubs that are missing — re-adding integration_test
+  // when the committed pubspec already declares it yields a YAML duplicate key.
+  const overlayLines = [
+    !/^ {2}integration_test:/m.test(originalPubspec) ? '  integration_test:\n    sdk: flutter\n' : '',
+    !/^ {2}firebase_core_platform_interface:/m.test(originalPubspec) ? '  firebase_core_platform_interface: any\n' : '',
+    !/^ {2}firebase_messaging_platform_interface:/m.test(originalPubspec) ? '  firebase_messaging_platform_interface: any\n' : '',
+    !/^ {2}image_picker_platform_interface:/m.test(originalPubspec) ? '  image_picker_platform_interface: any\n' : '',
+    !/^ {2}camera_platform_interface:/m.test(originalPubspec) ? '  camera_platform_interface: any\n' : '',
+  ].join('');
+  const overlay = overlayLines
+    ? originalPubspec.replace(/dev_dependencies:\r?\n/, `dev_dependencies:\n${overlayLines}`)
+    : originalPubspec;
   await writeFile(pubspecPath, overlay);
   const buildPath = join(app, 'android/app/build.gradle.kts');
   const originalBuild = await readFile(buildPath, 'utf8');

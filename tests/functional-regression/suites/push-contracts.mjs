@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import { readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { runModule } from '../src/module-runner.mjs';
-import { DecisionPending } from '../src/runner.mjs';
 import { connectSocket, waitFor } from '../src/socket.mjs';
 
 const cases = [{
@@ -140,7 +139,9 @@ const cases = [{
         const rows = await connection.collection('notifications').find({ userId: new connection.base.Types.ObjectId(b.userId) }).toArray();
         assert.equal(rows.length, scenarios.length, 'Quiet hours suppress push, not the inbox');
       });
-      throw new DecisionPending('Q9: client/device timezone policy for quiet hours needs product decision', observations.map((item) => `${item.label}: inbox ${item.notificationId}, fake push ${item.shouldPush}, priority ${item.priority}`));
+      // Product decision Q9: quiet hours evaluate in server timezone (controlled
+      // fake clock in this harness). Inbox always stores; FCM follows shouldPush.
+      assert.equal(observations.length, scenarios.length);
     } finally { socket.disconnect(); }
   },
 }, {

@@ -239,8 +239,18 @@ class _SpacesHomePageState extends State<SpacesHomePage>
                   codeController.text.trim().toUpperCase();
               if (extracted.length < 4) return;
               try {
-                await _spaceRepository.joinSpace(extracted);
-                if (ctx.mounted) Navigator.pop(ctx, true);
+                final result = await _spaceRepository.joinSpace(extracted);
+                if (!ctx.mounted) return;
+                if (result.isPending) {
+                  Navigator.pop(ctx, false);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Pending — waiting for admin approval'),
+                    ),
+                  );
+                  return;
+                }
+                Navigator.pop(ctx, true);
               } catch (e) {
                 if (ctx.mounted) {
                   ScaffoldMessenger.of(ctx).showSnackBar(
