@@ -1,0 +1,106 @@
+Running Gradle task 'assembleDebug'...                            118.9s
+√ Built build\app\outputs\flutter-apk\app-debug.apk
+Installing build\app\outputs\flutter-apk\app-debug.apk...           7.9s
+D/FLTFireContextHolder( 9516): received application context.
+D/CompatChangeReporter( 9516): Compat change id reported: 352594277; UID 10214; state: ENABLED
+I/ocle.regression( 9516): hiddenapi: Accessing hidden method Landroid/view/accessibility/AccessibilityNodeInfo;->getSourceNodeId()J (runtime_flags=0, domain=platform, api=unsupported,test-api) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app) using reflection: allowed
+I/ocle.regression( 9516): hiddenapi: Accessing hidden method Landroid/view/accessibility/AccessibilityRecord;->getSourceNodeId()J (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app) using reflection: allowed
+I/ocle.regression( 9516): hiddenapi: Accessing hidden field Landroid/view/accessibility/AccessibilityNodeInfo;->mChildNodeIds:Landroid/util/LongArray; (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app) using reflection: allowed
+I/ocle.regression( 9516): hiddenapi: Accessing hidden method Landroid/util/LongArray;->get(I)J (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app) using reflection: allowed
+D/CompatChangeReporter( 9516): Compat change id reported: 309578419; UID 10214; state: ENABLED
+D/CompatChangeReporter( 9516): Compat change id reported: 349153669; UID 10214; state: ENABLED
+W/HWUI    ( 9516): Unknown dataspace 0
+D/ProfileInstaller( 9516): Installing profile for com.vocle.regression
+W/ocle.regression( 9516): Verification of void androidx.concurrent.futures.AbstractResolvableFuture.<clinit>() took 193.295ms (589.77 bytecodes/s) (0B arena alloc)
+I/WindowExtensionsImpl( 9516): Initializing Window Extensions, vendor API level=9, activity embedding enabled=true
+W/HWUI    ( 9516): Failed to initialize 101010-2 format, error = EGL_SUCCESS
+E/libEGL  ( 9516): called unimplemented OpenGL ES API
+VMServiceFlutterDriver: Connecting to Flutter application at http://127.0.0.1:55208/[redacted-vm-service]/
+E/libEGL  ( 9516): called unimplemented OpenGL ES API
+VMServiceFlutterDriver: Isolate found with number: 3427873511875639
+VMServiceFlutterDriver: Isolate 3427873511875639 is runnable.
+VMServiceFlutterDriver: Isolate is paused at start.
+VMServiceFlutterDriver: Attempting to resume isolate
+I/ocle.regression( 9516): Compiler allocated 5106KB to compile void android.view.ViewRootImpl.performTraversals()
+I/ocle.regression( 9516): NativeAlloc concurrent mark compact GC freed 2111KB AllocSpace bytes, 4(120KB) LOS objects, 49% free, 2714KB/5429KB, paused 2.149ms,14.886ms total 322.230ms
+I/Choreographer( 9516): Skipped 264 frames!  The application may be doing too much work on its main thread.
+D/WindowLayoutComponentImpl( 9516): Register WindowLayoutInfoListener on Context=com.example.medcollab_app.MainActivity@3a34c8e, of which baseContext=android.app.ContextImpl@d705f66
+I/flutter ( 9516): 00:00 +0: FR-NAV-04: Android resume
+VMServiceFlutterDriver: Connected to Flutter application.
+E/libEGL  ( 9516): called unimplemented OpenGL ES API
+I/Choreographer( 9516): Skipped 112 frames!  The application may be doing too much work on its main thread.
+V/Configuration( 9516): Updating configuration, locales updated from [en_US] to [en]
+I/ocle.regression( 9516): AssetManager2(0x73d211c9f0f8) locale list changing from [] to [en]
+V/Configuration( 9516): Updating configuration, locales updated from [en] to [en_US]
+I/ocle.regression( 9516): AssetManager2(0x73d211c9bbd8) locale list changing from [] to [en-US]
+W/ocle.regression( 9516): Verification of com.google.crypto.tink.KeyTemplate com.google.crypto.tink.daead.AesSivKeyManager.createKeyTemplate(int, com.google.crypto.tink.KeyTemplate$OutputPrefixType) took 103.798ms (308.29 bytecodes/s) (0B arena alloc)
+W/ocle.regression( 9516): Verification of void com.google.crypto.tink.proto.RegistryConfig.ensureEntryIsMutable() took 367.592ms (43.53 bytecodes/s) (0B arena alloc)
+W/ocle.regression( 9516): Verification of com.google.crypto.tink.proto.AesSivKeyFormat com.google.crypto.tink.proto.AesSivKeyFormat.access$000() took 136.936ms (21.91 bytecodes/s) (0B arena alloc)
+W/ocle.regression( 9516): Verification of void com.google.crypto.tink.shaded.protobuf.MessageSchema.writeFieldsInDescendingOrder(java.lang.Object, com.google.crypto.tink.shaded.protobuf.Writer) took 106.516ms (15246.45 bytecodes/s) (0B arena alloc)
+W/ocle.regression( 9516): Verification of void com.google.crypto.tink.internal.MutableSerializationRegistry.<init>() took 373.053ms (53.61 bytecodes/s) (0B arena alloc)
+W/ocle.regression( 9516): Verification of void com.google.crypto.tink.aead.XChaCha20Poly1305KeyManager.<init>() took 180.657ms (105.17 bytecodes/s) (0B arena alloc)
+I/ocle.regression( 9516): Background concurrent mark compact GC freed 1525KB AllocSpace bytes, 24(960KB) LOS objects, 49% free, 3436KB/6873KB, paused 2.849ms,36.814ms total 189.689ms
+E/libEGL  ( 9516): called unimplemented OpenGL ES API
+E/libEGL  ( 9516): called unimplemented OpenGL ES API
+I/ocle.regression( 9516): Background concurrent mark compact GC freed 1640KB AllocSpace bytes, 65(2340KB) LOS objects, 49% free, 4004KB/8009KB, paused 1.599ms,5.415ms total 180.472ms
+E/libEGL  ( 9516): called unimplemented OpenGL ES API
+I/ocle.regression( 9516): AssetManager2(0x73d211ca35b8) locale list changing from [] to [en-US]
+W/WindowOnBackDispatcher( 9516): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher( 9516): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+E/libEGL  ( 9516): call to OpenGL ES API with no current context (logged once per thread)
+I/ocle.regression( 9516): Background concurrent mark compact GC freed 2001KB AllocSpace bytes, 72(2592KB) LOS objects, 49% free, 3348KB/6696KB, paused 1.576ms,4.082ms total 127.085ms
+E/libEGL  ( 9516): called unimplemented OpenGL ES API
+I/ImeTracker( 9516): com.vocle.regression:7f919a30: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+I/ImeTracker( 9516): com.vocle.regression:7f919a30: onFailed at PHASE_CLIENT_VIEW_SERVED
+W/InputMethodManager( 9516): Ignoring showSoftInput() as view=io.flutter.embedding.android.FlutterView{47ee24f VFE...... .F....ID 0,0-1080,1920 #1} is not served.
+I/ImeTracker( 9516): com.vocle.regression:1c7fe854: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+I/ImeTracker( 9516): com.vocle.regression:1c7fe854: onFailed at PHASE_CLIENT_VIEW_SERVED
+W/InputMethodManager( 9516): Ignoring showSoftInput() as view=io.flutter.embedding.android.FlutterView{47ee24f VFE...... .F....ID 0,0-1080,1920 #1} is not served.
+I/AssistStructure( 9516): Flattened final assist data: 512 bytes, containing 1 windows, 3 views
+I/ocle.regression( 9516): IncrementDisableThreadFlip blocked for 13.385ms
+I/ocle.regression( 9516): Background concurrent mark compact GC freed 1465KB AllocSpace bytes, 49(1764KB) LOS objects, 49% free, 3284KB/6568KB, paused 1.406ms,5.982ms total 108.188ms
+E/libEGL  ( 9516): called unimplemented OpenGL ES API
+I/ocle.regression( 9516): Background concurrent mark compact GC freed 1376KB AllocSpace bytes, 48(1760KB) LOS objects, 49% free, 3360KB/6720KB, paused 6.773ms,5.779ms total 69.347ms
+I/ocle.regression( 9516): IncrementDisableThreadFlip blocked for 23.075ms
+I/ocle.regression( 9516): Background concurrent mark compact GC freed 1624KB AllocSpace bytes, 58(2088KB) LOS objects, 49% free, 3712KB/7425KB, paused 2.738ms,5.433ms total 320.317ms
+D/VRI[MainActivity]( 9516): visibilityChanged oldVisibility=true newVisibility=false
+I/AutofillManager( 9516): onInvisibleForAutofill(): expiringResponse
+I/Choreographer( 9516): Skipped 98 frames!  The application may be doing too much work on its main thread.
+I/ocle.regression( 9516): Background concurrent mark compact GC freed 1952KB AllocSpace bytes, 70(2520KB) LOS objects, 49% free, 3377KB/6755KB, paused 2.638ms,3.978ms total 1.618s
+I/ocle.regression( 9516): Background concurrent mark compact GC freed 1445KB AllocSpace bytes, 55(1980KB) LOS objects, 49% free, 3505KB/7011KB, paused 1.963ms,10.818ms total 710.781ms
+D/VRI[MainActivity]( 9516): visibilityChanged oldVisibility=false newVisibility=true
+E/libEGL  ( 9516): called unimplemented OpenGL ES API
+I/AutofillManager( 9516): onInvisibleForAutofill(): expiringResponse
+I/ocle.regression( 9516): Background concurrent mark compact GC freed 1749KB AllocSpace bytes, 53(1908KB) LOS objects, 49% free, 3561KB/7123KB, paused 7.235ms,5.122ms total 235.375ms
+I/ocle.regression( 9516): Background concurrent mark compact GC freed 1596KB AllocSpace bytes, 57(2052KB) LOS objects, 49% free, 3317KB/6635KB, paused 1.422ms,3.204ms total 119.871ms
+I/ocle.regression( 9516): Background concurrent mark compact GC freed 1356KB AllocSpace bytes, 50(1800KB) LOS objects, 49% free, 3529KB/7059KB, paused 1.255ms,13.087ms total 95.410ms
+I/ocle.regression( 9516): Background concurrent mark compact GC freed 1636KB AllocSpace bytes, 63(2268KB) LOS objects, 49% free, 3361KB/6723KB, paused 24.702ms,3.292ms total 104.161ms
+I/ocle.regression( 9516): Background concurrent mark compact GC freed 1536KB AllocSpace bytes, 49(1764KB) LOS objects, 49% free, 3693KB/7387KB, paused 1.371ms,6.977ms total 138.961ms
+I/ocle.regression( 9516): Background concurrent mark compact GC freed 1633KB AllocSpace bytes, 62(2232KB) LOS objects, 49% free, 3349KB/6698KB, paused 1.453ms,7.095ms total 215.821ms
+I/ocle.regression( 9516): Background concurrent mark compact GC freed 1352KB AllocSpace bytes, 54(1944KB) LOS objects, 49% free, 3513KB/7027KB, paused 2.256ms,34.864ms total 269.671ms
+I/ocle.regression( 9516): Background concurrent mark compact GC freed 1604KB AllocSpace bytes, 60(2192KB) LOS objects, 49% free, 3277KB/6554KB, paused 1.517ms,20.741ms total 235.470ms
+I/ocle.regression( 9516): Background concurrent mark compact GC freed 1332KB AllocSpace bytes, 46(1656KB) LOS objects, 49% free, 4233KB/8467KB, paused 2.385ms,11.895ms total 363.074ms
+I/ocle.regression( 9516): Background concurrent mark compact GC freed 2093KB AllocSpace bytes, 82(2952KB) LOS objects, 49% free, 3325KB/6651KB, paused 26.932ms,7.160ms total 210.101ms
+I/ocle.regression( 9516): Background concurrent mark compact GC freed 1436KB AllocSpace bytes, 50(1800KB) LOS objects, 49% free, 3273KB/6546KB, paused 1.845ms,2.025ms total 225.714ms
+I/ocle.regression( 9516): Background concurrent mark compact GC freed 1564KB AllocSpace bytes, 51(1836KB) LOS objects, 49% free, 3669KB/7339KB, paused 42.044ms,12.016ms total 360.216ms
+I/ocle.regression( 9516): Background concurrent mark compact GC freed 1612KB AllocSpace bytes, 63(2268KB) LOS objects, 49% free, 3421KB/6843KB, paused 10.330ms,15.389ms total 177.164ms
+I/ocle.regression( 9516): Background concurrent mark compact GC freed 1348KB AllocSpace bytes, 52(1872KB) LOS objects, 49% free, 3673KB/7347KB, paused 6.596ms,11.978ms total 138.434ms
+W/ocle.regression( 9516): Suspending all threads took: 20.152ms
+I/ocle.regression( 9516): Background concurrent mark compact GC freed 1636KB AllocSpace bytes, 63(2268KB) LOS objects, 49% free, 3441KB/6883KB, paused 21.878ms,3.701ms total 158.238ms
+I/ocle.regression( 9516): Background concurrent mark compact GC freed 1580KB AllocSpace bytes, 53(1908KB) LOS objects, 49% free, 3449KB/6898KB, paused 18.405ms,2.782ms total 184.878ms
+I/ocle.regression( 9516): Background concurrent mark compact GC freed 1564KB AllocSpace bytes, 52(1872KB) LOS objects, 49% free, 3377KB/6755KB, paused 17.036ms,3.645ms total 112.990ms
+E/libEGL  ( 9516): called unimplemented OpenGL ES API
+I/ocle.regression( 9516): Background concurrent mark compact GC freed 1540KB AllocSpace bytes, 59(2124KB) LOS objects, 49% free, 3433KB/6867KB, paused 1.357ms,3.017ms total 372.550ms
+D/InsetsController( 9516): hide(ime(), fromIme=false)
+I/ImeTracker( 9516): com.vocle.regression:90884d67: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+E/libEGL  ( 9516): called unimplemented OpenGL ES API
+I/ImeTracker( 9516): com.vocle.regression:f0aa49f5: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+D/InsetsController( 9516): hide(ime(), fromIme=false)
+I/ImeTracker( 9516): com.vocle.regression:f0aa49f5: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+E/libEGL  ( 9516): called unimplemented OpenGL ES API
+I/flutter ( 9516): VOCLE_DEVICE_RECORD {"id":"FR-NAV-04","status":"PASS","executed":true,"phase":"resume","runId":"a71faf60-f84f-4103-94d0-5424332ff70a","processId":9516,"durationMs":56216,"evidence":["Observed native lifecycle: inactive, hidden, paused","Native paused/resumed; transport recovered; exact peer ID persisted and displayed; draft retained."]}
+I/ocle.regression( 9516): Background concurrent mark compact GC freed 1704KB AllocSpace bytes, 49(1764KB) LOS objects, 49% free, 3589KB/7178KB, paused 1.620ms,13.528ms total 391.946ms
+I/flutter ( 9516): 00:58 +1: (tearDownAll)
+I/flutter ( 9516): 00:58 +2: All tests passed!
+All tests passed.
+Leaving the application running.

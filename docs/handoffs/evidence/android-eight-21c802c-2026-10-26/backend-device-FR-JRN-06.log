@@ -1,0 +1,80 @@
+◇ injected env (0) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+[32m[2026-10-26T17:06:19.561Z] INFO: MongoDB connected: 127.0.0.1[0m 
+[33m[2026-10-26T17:06:19.563Z] WARN: Cloudinary not configured — media uploads will use local disk storage (uploads/)[0m 
+[33m[2026-10-26T17:06:19.563Z] WARN: Firebase credentials not set (need FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY). Push notifications disabled.[0m 
+[32m[2026-10-26T17:06:19.570Z] INFO: Socket.io initialised[0m 
+[32m[2026-10-26T17:06:19.597Z] INFO: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m 
+[32m[2026-10-26T17:06:19.598Z] INFO:   MedCollab API — TEST[0m 
+[32m[2026-10-26T17:06:19.598Z] INFO:   Listening on port 50944 (0.0.0.0)[0m 
+[32m[2026-10-26T17:06:19.598Z] INFO:   Health: /health[0m 
+[32m[2026-10-26T17:06:19.598Z] INFO:   API:    /api[0m 
+[32m[2026-10-26T17:06:19.598Z] INFO: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m 
+(node:17524) [MONGOOSE] Warning: mongoose: Duplicate schema index on {"inviteCode":1} for model "Space". This is often due to declaring an index using both "index: true" and "schema.index()". Please remove the duplicate index definition.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m[2026-10-26T17:06:20.093Z] INFO: OTP sent to +919990001001[0m 
+[32m[2026-10-26T17:06:20.095Z] INFO: [0mPOST /api/auth/request-otp [32m200[0m 355.123 ms - 126[0m[0m 
+[32m[2026-10-26T17:06:20.314Z] INFO: New user registered: +919990001001[0m 
+[32m[2026-10-26T17:06:20.325Z] INFO: [0mPOST /api/auth/verify-otp [32m200[0m 220.077 ms - 899[0m[0m 
+(node:17524) [MONGOOSE] Warning: mongoose: the `new` option for `findOneAndUpdate()` and `findOneAndReplace()` is deprecated. Use `returnDocument: 'after'` instead.
+[32m[2026-10-26T17:06:20.362Z] INFO: [0mPUT /api/users/me [32m200[0m 29.195 ms - 623[0m[0m 
+[32m[2026-10-26T17:06:20.506Z] INFO: OTP sent to +919990001002[0m 
+[32m[2026-10-26T17:06:20.507Z] INFO: [0mPOST /api/auth/request-otp [32m200[0m 134.597 ms - 126[0m[0m 
+[32m[2026-10-26T17:06:20.653Z] INFO: New user registered: +919990001002[0m 
+[32m[2026-10-26T17:06:20.659Z] INFO: [0mPOST /api/auth/verify-otp [32m200[0m 144.765 ms - 899[0m[0m 
+(node:17524) [MONGOOSE] Warning: mongoose: the `new` option for `findOneAndUpdate()` and `findOneAndReplace()` is deprecated. Use `returnDocument: 'after'` instead.
+[32m[2026-10-26T17:06:20.680Z] INFO: [0mPUT /api/users/me [32m200[0m 16.036 ms - 623[0m[0m 
+[32m[2026-10-26T17:06:20.812Z] INFO: OTP sent to +919990001003[0m 
+[32m[2026-10-26T17:06:20.813Z] INFO: [0mPOST /api/auth/request-otp [32m200[0m 125.033 ms - 126[0m[0m 
+[32m[2026-10-26T17:06:20.976Z] INFO: New user registered: +919990001003[0m 
+[32m[2026-10-26T17:06:20.983Z] INFO: [0mPOST /api/auth/verify-otp [32m200[0m 160.399 ms - 899[0m[0m 
+(node:17524) [MONGOOSE] Warning: mongoose: the `new` option for `findOneAndUpdate()` and `findOneAndReplace()` is deprecated. Use `returnDocument: 'after'` instead.
+[32m[2026-10-26T17:06:21.010Z] INFO: [0mPUT /api/users/me [32m200[0m 20.536 ms - 623[0m[0m 
+[32m[2026-10-26T17:06:21.068Z] INFO: [0mPOST /api/spaces [32m201[0m 47.963 ms - 1843[0m[0m 
+[32m[2026-10-26T17:06:21.109Z] INFO: [0mPOST /api/spaces/join [32m200[0m 30.528 ms - 1971[0m[0m 
+[32m[2026-10-26T17:06:21.140Z] INFO: [0mPOST /api/spaces/6adf888dea0d18847a49c984/channels [32m201[0m 25.175 ms - 481[0m[0m 
+[32m[2026-10-26T17:06:21.170Z] INFO: [0mPOST /api/handoffs [32m201[0m 23.246 ms - 784[0m[0m 
+(node:17524) [MONGOOSE] Warning: mongoose: the `new` option for `findOneAndUpdate()` and `findOneAndReplace()` is deprecated. Use `returnDocument: 'after'` instead.
+[32m[2026-10-26T17:06:21.195Z] INFO: [0mPOST /api/handoffs/6adf888dea0d18847a49c989/submit [32m200[0m 18.972 ms - 806[0m[0m 
+[34m[2026-10-26T17:06:21.348Z] SOCKET: Connected: Dr Synthetic Device A (SLT-1zKVDJ8CZQ-NAAAB)[0m 
+[34m[2026-10-26T17:06:21.353Z] SOCKET: Dr Synthetic Device A joined 1 space rooms[0m 
+[34m[2026-10-26T17:06:21.354Z] SOCKET: Presence: Dr Synthetic Device A connected (1 devices)[0m 
+[32m[2026-10-26T17:09:11.047Z] INFO: [0mPOST /api/auth/refresh [32m200[0m 89.274 ms - 246[0m[0m 
+[32m[2026-10-26T17:09:11.063Z] INFO: [0mPOST /api/auth/refresh [32m200[0m 6.608 ms - 246[0m[0m 
+[32m[2026-10-26T17:09:11.073Z] INFO: [0mPOST /api/auth/refresh [32m200[0m 5.689 ms - 246[0m[0m 
+[32m[2026-10-26T17:12:06.993Z] INFO: [0mPOST /api/auth/refresh [32m200[0m 79.230 ms - 246[0m[0m 
+[32m[2026-10-26T17:12:07.015Z] INFO: [0mPOST /api/auth/refresh [32m200[0m 5.643 ms - 246[0m[0m 
+[32m[2026-10-26T17:12:07.031Z] INFO: [0mPOST /api/auth/refresh [32m200[0m 7.803 ms - 246[0m[0m 
+[32m[2026-10-26T17:12:11.730Z] INFO: [0mGET /api/notifications/unread-count [33m401[0m 11.484 ms - 59[0m[0m 
+[32m[2026-10-26T17:12:17.158Z] INFO: [0mGET /api/notifications/unread-count [33m401[0m 1.059 ms - 59[0m[0m 
+[32m[2026-10-26T17:12:17.469Z] INFO: OTP sent to +919990001002[0m 
+[32m[2026-10-26T17:12:17.471Z] INFO: [0mPOST /api/auth/request-otp [32m200[0m 266.465 ms - 126[0m[0m 
+[32m[2026-10-26T17:12:19.659Z] INFO: User logged in: +919990001002 (Dr Synthetic Device B)[0m 
+[32m[2026-10-26T17:12:19.665Z] INFO: [0mPOST /api/auth/verify-otp [32m200[0m 169.630 ms - 1029[0m[0m 
+[34m[2026-10-26T17:12:22.136Z] SOCKET: Connected: Dr Synthetic Device B (KiuWsHGS5CGTZEgjAAAE)[0m 
+[34m[2026-10-26T17:12:22.143Z] SOCKET: Dr Synthetic Device B joined 1 space rooms[0m 
+[34m[2026-10-26T17:12:22.143Z] SOCKET: Presence: Dr Synthetic Device B connected (1 devices)[0m 
+[34m[2026-10-26T17:12:23.373Z] SOCKET: Dr Synthetic Device B synced 1 space room(s)[0m 
+[34m[2026-10-26T17:12:24.122Z] SOCKET: Dr Synthetic Device B synced 1 space room(s)[0m 
+[34m[2026-10-26T17:12:24.132Z] SOCKET: Dr Synthetic Device B synced 1 space room(s)[0m 
+[34m[2026-10-26T17:12:24.140Z] SOCKET: Dr Synthetic Device B synced 1 space room(s)[0m 
+[32m[2026-10-26T17:12:24.745Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 33.837 ms - 68[0m[0m 
+[32m[2026-10-26T17:12:24.944Z] INFO: [0mGET /api/handoffs/6adf888dea0d18847a49c989 [32m200[0m 29.646 ms - 1016[0m[0m 
+[32m[2026-10-26T17:12:25.718Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 9.812 ms - 68[0m[0m 
+[32m[2026-10-26T17:12:25.768Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 13.388 ms - 68[0m[0m 
+[32m[2026-10-26T17:12:25.770Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 10.784 ms - 68[0m[0m 
+[32m[2026-10-26T17:12:25.952Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 8.096 ms - 68[0m[0m 
+[32m[2026-10-26T17:12:26.077Z] INFO: [0mGET /api/spaces/6adf888dea0d18847a49c984/handoffs?limit=50 [32m200[0m 28.508 ms - 974[0m[0m 
+[34m[2026-10-26T17:12:26.211Z] SOCKET: Dr Synthetic Device B synced 1 space room(s)[0m 
+[32m[2026-10-26T17:12:26.403Z] INFO: [0mGET /api/notifications?limit=50 [32m200[0m 14.519 ms - 722[0m[0m 
+[32m[2026-10-26T17:12:26.515Z] INFO: [0mGET /api/handoffs/6adf888dea0d18847a49c989 [32m200[0m 13.871 ms - 1016[0m[0m 
+[32m[2026-10-26T17:12:27.000Z] INFO: [0mGET /api/notifications?limit=50 [32m200[0m 9.506 ms - 722[0m[0m 
+[32m[2026-10-26T17:12:27.020Z] INFO: [0mGET /api/notifications?limit=50 [32m200[0m 8.180 ms - 722[0m[0m 
+[32m[2026-10-26T17:12:27.528Z] INFO: [0mGET /api/handoffs?type=sent&spaceId=6adf888dea0d18847a49c984 [32m200[0m 11.169 ms - 68[0m[0m 
+[32m[2026-10-26T17:12:27.658Z] INFO: [0mGET /api/handoffs?type=all [32m200[0m 13.197 ms - 952[0m[0m 
+(node:17524) [MONGOOSE] Warning: mongoose: the `new` option for `findOneAndUpdate()` and `findOneAndReplace()` is deprecated. Use `returnDocument: 'after'` instead.
+[32m[2026-10-26T17:12:27.962Z] INFO: [0mPOST /api/handoffs/6adf888dea0d18847a49c989/acknowledge [32m200[0m 16.448 ms - 834[0m[0m 
+[32m[2026-10-26T17:12:28.137Z] INFO: [0mGET /api/handoffs?type=all [32m200[0m 10.864 ms - 977[0m[0m 
+[32m[2026-10-26T17:12:28.187Z] INFO: [0mGET /api/handoffs/6adf888dea0d18847a49c989 [32m200[0m 11.360 ms - 1041[0m[0m 
+[34m[2026-10-26T17:12:28.425Z] SOCKET: Presence: Dr Synthetic Device B went offline (reason: client namespace disconnect)[0m 
+[32m[2026-10-26T17:12:28.451Z] INFO: [0mGET /api/handoffs?type=all [32m200[0m 13.417 ms - 977[0m[0m 
+[34m[2026-10-26T17:12:35.466Z] SOCKET: Presence: Dr Synthetic Device A went offline (reason: client namespace disconnect)[0m 

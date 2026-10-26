@@ -1,0 +1,101 @@
+Running Gradle task 'assembleDebug'...                            117.6s
+√ Built build\app\outputs\flutter-apk\app-debug.apk
+Installing build\app\outputs\flutter-apk\app-debug.apk...           7.7s
+D/FLTFireContextHolder( 9184): received application context.
+D/CompatChangeReporter( 9184): Compat change id reported: 352594277; UID 10213; state: ENABLED
+I/ocle.regression( 9184): hiddenapi: Accessing hidden method Landroid/view/accessibility/AccessibilityNodeInfo;->getSourceNodeId()J (runtime_flags=0, domain=platform, api=unsupported,test-api) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app) using reflection: allowed
+I/ocle.regression( 9184): hiddenapi: Accessing hidden method Landroid/view/accessibility/AccessibilityRecord;->getSourceNodeId()J (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app) using reflection: allowed
+I/ocle.regression( 9184): hiddenapi: Accessing hidden field Landroid/view/accessibility/AccessibilityNodeInfo;->mChildNodeIds:Landroid/util/LongArray; (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app) using reflection: allowed
+I/ocle.regression( 9184): hiddenapi: Accessing hidden method Landroid/util/LongArray;->get(I)J (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app) using reflection: allowed
+D/CompatChangeReporter( 9184): Compat change id reported: 309578419; UID 10213; state: ENABLED
+D/CompatChangeReporter( 9184): Compat change id reported: 349153669; UID 10213; state: ENABLED
+W/HWUI    ( 9184): Unknown dataspace 0
+D/ProfileInstaller( 9184): Installing profile for com.vocle.regression
+I/WindowExtensionsImpl( 9184): Initializing Window Extensions, vendor API level=9, activity embedding enabled=true
+W/ocle.regression( 9184): Suspending all threads took: 61.591ms
+VMServiceFlutterDriver: Connecting to Flutter application at http://127.0.0.1:52945/[redacted-vm-service]/
+I/ocle.regression( 9184): Background concurrent mark compact GC freed 2043KB AllocSpace bytes, 4(120KB) LOS objects, 49% free, 2687KB/5374KB, paused 77.277ms,562.811ms total 3.681s
+W/HWUI    ( 9184): Failed to initialize 101010-2 format, error = EGL_SUCCESS
+VMServiceFlutterDriver: The root isolate is taking an unusually long time to start.
+VMServiceFlutterDriver: Isolate found with number: 592474605980763
+E/libEGL  ( 9184): called unimplemented OpenGL ES API
+E/libEGL  ( 9184): called unimplemented OpenGL ES API
+E/libEGL  ( 9184): called unimplemented OpenGL ES API
+E/libEGL  ( 9184): called unimplemented OpenGL ES API
+I/Choreographer( 9184): Skipped 754 frames!  The application may be doing too much work on its main thread.
+VMServiceFlutterDriver: Isolate 592474605980763 is runnable.
+VMServiceFlutterDriver: Isolate is paused at start.
+VMServiceFlutterDriver: Attempting to resume isolate
+I/Choreographer( 9184): Skipped 30 frames!  The application may be doing too much work on its main thread.
+D/WindowLayoutComponentImpl( 9184): Register WindowLayoutInfoListener on Context=com.example.medcollab_app.MainActivity@3a34c8e, of which baseContext=android.app.ContextImpl@615ebc1
+I/ocle.regression( 9184): Compiler allocated 5106KB to compile void android.view.ViewRootImpl.performTraversals()
+I/Choreographer( 9184): Skipped 99 frames!  The application may be doing too much work on its main thread.
+I/flutter ( 9184): 00:00 +0: FR-PUSH-06: Android notification-token
+VMServiceFlutterDriver: Connected to Flutter application.
+E/libEGL  ( 9184): called unimplemented OpenGL ES API
+I/Choreographer( 9184): Skipped 135 frames!  The application may be doing too much work on its main thread.
+V/Configuration( 9184): Updating configuration, locales updated from [en_US] to [en]
+I/ocle.regression( 9184): AssetManager2(0x73d211c9db18) locale list changing from [] to [en]
+V/Configuration( 9184): Updating configuration, locales updated from [en] to [en_US]
+I/ocle.regression( 9184): AssetManager2(0x73d211c97a38) locale list changing from [] to [en-US]
+I/ocle.regression( 9184): Background concurrent mark compact GC freed 1377KB AllocSpace bytes, 22(888KB) LOS objects, 49% free, 3140KB/6281KB, paused 9.301ms,10.096ms total 168.972ms
+I/ocle.regression( 9184): Background concurrent mark compact GC freed 1260KB AllocSpace bytes, 48(1824KB) LOS objects, 49% free, 3384KB/6768KB, paused 1.426ms,5.570ms total 71.416ms
+I/ocle.regression( 9184): Background concurrent mark compact GC freed 1380KB AllocSpace bytes, 57(2116KB) LOS objects, 49% free, 3272KB/6545KB, paused 2.057ms,5.203ms total 73.524ms
+I/ocle.regression( 9184): Background concurrent mark compact GC freed 1152KB AllocSpace bytes, 49(1956KB) LOS objects, 49% free, 3116KB/6232KB, paused 1.940ms,5.959ms total 130.487ms
+E/libEGL  ( 9184): called unimplemented OpenGL ES API
+E/libEGL  ( 9184): called unimplemented OpenGL ES API
+I/ocle.regression( 9184): Background concurrent mark compact GC freed 1804KB AllocSpace bytes, 59(2124KB) LOS objects, 49% free, 3428KB/6857KB, paused 1.769ms,3.107ms total 392.368ms
+I/ocle.regression( 9184): Background concurrent mark compact GC freed 1444KB AllocSpace bytes, 61(2196KB) LOS objects, 49% free, 3180KB/6360KB, paused 2.351ms,4.660ms total 108.480ms
+E/libEGL  ( 9184): called unimplemented OpenGL ES API
+I/ocle.regression( 9184): AssetManager2(0x73d211ca3bf8) locale list changing from [] to [en-US]
+W/WindowOnBackDispatcher( 9184): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher( 9184): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+I/flutter ( 9184): FCM: registerTokenWithBackend failed: PlatformException(permissionRequestInProgress, Another permission request is already in progress, null, null)
+I/flutter ( 9184): FCM: no device token yet
+I/ocle.regression( 9184): Background concurrent mark compact GC freed 1429KB AllocSpace bytes, 45(1620KB) LOS objects, 49% free, 3572KB/7145KB, paused 2.039ms,21.088ms total 411.035ms
+E/libEGL  ( 9184): called unimplemented OpenGL ES API
+I/ocle.regression( 9184): Background concurrent mark compact GC freed 1596KB AllocSpace bytes, 57(2052KB) LOS objects, 49% free, 4492KB/8985KB, paused 1.270ms,3.673ms total 218.473ms
+E/libEGL  ( 9184): call to OpenGL ES API with no current context (logged once per thread)
+I/ocle.regression( 9184): Background concurrent mark compact GC freed 1448KB AllocSpace bytes, 58(2120KB) LOS objects, 49% free, 3320KB/6641KB, paused 1.544ms,7.207ms total 65.439ms
+I/ocle.regression( 9184): Background concurrent mark compact GC freed 1612KB AllocSpace bytes, 58(2120KB) LOS objects, 49% free, 3436KB/6873KB, paused 1.912ms,3.152ms total 133.060ms
+I/flutter ( 9184): FCM: token registered with API
+I/ocle.regression( 9184): Background concurrent mark compact GC freed 1560KB AllocSpace bytes, 52(1872KB) LOS objects, 49% free, 3484KB/6969KB, paused 10.729ms,2.439ms total 65.544ms
+I/ocle.regression( 9184): Background concurrent mark compact GC freed 1548KB AllocSpace bytes, 53(1908KB) LOS objects, 49% free, 3336KB/6673KB, paused 2.088ms,6.094ms total 47.977ms
+I/ocle.regression( 9184): Background concurrent mark compact GC freed 1396KB AllocSpace bytes, 55(1980KB) LOS objects, 49% free, 3828KB/7657KB, paused 5.681ms,3.686ms total 82.120ms
+E/libEGL  ( 9184): called unimplemented OpenGL ES API
+I/ocle.regression( 9184): Background concurrent mark compact GC freed 1356KB AllocSpace bytes, 49(1764KB) LOS objects, 49% free, 3496KB/6993KB, paused 1.307ms,3.931ms total 143.729ms
+E/libEGL  ( 9184): called unimplemented OpenGL ES API
+I/ocle.regression( 9184): AssetManager2(0x73d211cb48b8) locale list changing from [] to [en-US]
+W/WindowOnBackDispatcher( 9184): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher( 9184): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+E/libEGL  ( 9184): called unimplemented OpenGL ES API
+E/libEGL  ( 9184): called unimplemented OpenGL ES API
+I/ocle.regression( 9184): AssetManager2(0x73d211c9f418) locale list changing from [] to [en-US]
+W/WindowOnBackDispatcher( 9184): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher( 9184): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+I/ImeTracker( 9184): com.vocle.regression:3a6cfe73: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+I/ImeTracker( 9184): com.vocle.regression:3a6cfe73: onFailed at PHASE_CLIENT_VIEW_SERVED
+W/InputMethodManager( 9184): Ignoring showSoftInput() as view=io.flutter.embedding.android.FlutterView{76c3a3c VFE...... .F....ID 0,0-1080,1920 #1} is not served.
+I/ImeTracker( 9184): com.vocle.regression:a766cd3e: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+I/ImeTracker( 9184): com.vocle.regression:a766cd3e: onFailed at PHASE_CLIENT_VIEW_SERVED
+W/InputMethodManager( 9184): Ignoring showSoftInput() as view=io.flutter.embedding.android.FlutterView{76c3a3c VFE...... .F....ID 0,0-1080,1920 #1} is not served.
+I/AssistStructure( 9184): Flattened final assist data: 636 bytes, containing 1 windows, 4 views
+I/ImeTracker( 9184): com.vocle.regression:62341c51: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+I/ImeTracker( 9184): com.vocle.regression:62341c51: onFailed at PHASE_CLIENT_VIEW_SERVED
+E/libEGL  ( 9184): called unimplemented OpenGL ES API
+I/ocle.regression( 9184): Background concurrent mark compact GC freed 1642KB AllocSpace bytes, 51(1836KB) LOS objects, 49% free, 3416KB/6832KB, paused 2.468ms,43.889ms total 628.248ms
+E/libEGL  ( 9184): called unimplemented OpenGL ES API
+I/ocle.regression( 9184): Background concurrent mark compact GC freed 1304KB AllocSpace bytes, 56(2144KB) LOS objects, 49% free, 3176KB/6352KB, paused 1.762ms,6.313ms total 61.266ms
+I/ocle.regression( 9184): AssetManager2(0x73d211cc42b8) locale list changing from [] to [en-US]
+W/WindowOnBackDispatcher( 9184): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher( 9184): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+I/ocle.regression( 9184): Background concurrent mark compact GC freed 1696KB AllocSpace bytes, 61(2196KB) LOS objects, 49% free, 3404KB/6809KB, paused 2.267ms,5.515ms total 42.876ms
+I/ocle.regression( 9184): Background concurrent mark compact GC freed 1452KB AllocSpace bytes, 49(1764KB) LOS objects, 49% free, 3412KB/6824KB, paused 6.498ms,13.960ms total 118.308ms
+I/flutter ( 9184): FCM: token registered with API
+I/ocle.regression( 9184): Background concurrent mark compact GC freed 1576KB AllocSpace bytes, 53(1908KB) LOS objects, 49% free, 3408KB/6817KB, paused 1.946ms,5.398ms total 57.104ms
+E/libEGL  ( 9184): called unimplemented OpenGL ES API
+I/flutter ( 9184): VOCLE_DEVICE_RECORD {"id":"FR-PUSH-06","status":"PASS","executed":true,"phase":"notification-token","runId":"a71faf60-f84f-4103-94d0-5424332ff70a","processId":9184,"durationMs":41116,"evidence":["Native permission deny/grant plus injected token inputs; denial remains usable; registration, refresh, logout removal and relogin verified in disposable DB."]}
+I/flutter ( 9184): 00:43 +1: (tearDownAll)
+I/flutter ( 9184): 00:43 +2: All tests passed!
+All tests passed.
+Leaving the application running.

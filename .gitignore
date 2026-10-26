@@ -50,3 +50,5 @@ __pycache__/
 
 # Local regression runs: one complete result folder per invocation
 /test-results/
+# Allow curated Vocle handoff evidence logs
+!docs/handoffs/evidence/**/*.log

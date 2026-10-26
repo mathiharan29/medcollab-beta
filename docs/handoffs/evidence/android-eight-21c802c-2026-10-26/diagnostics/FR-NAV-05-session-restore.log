@@ -1,0 +1,67 @@
+Running Gradle task 'assembleDebug'...                            112.4s
+√ Built build\app\outputs\flutter-apk\app-debug.apk
+Installing build\app\outputs\flutter-apk\app-debug.apk...           9.5s
+D/FLTFireContextHolder(10329): received application context.
+D/CompatChangeReporter(10329): Compat change id reported: 352594277; UID 10215; state: ENABLED
+I/ocle.regression(10329): hiddenapi: Accessing hidden method Landroid/view/accessibility/AccessibilityNodeInfo;->getSourceNodeId()J (runtime_flags=0, domain=platform, api=unsupported,test-api) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app) using reflection: allowed
+I/ocle.regression(10329): hiddenapi: Accessing hidden method Landroid/view/accessibility/AccessibilityRecord;->getSourceNodeId()J (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app) using reflection: allowed
+I/ocle.regression(10329): hiddenapi: Accessing hidden field Landroid/view/accessibility/AccessibilityNodeInfo;->mChildNodeIds:Landroid/util/LongArray; (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app) using reflection: allowed
+I/ocle.regression(10329): hiddenapi: Accessing hidden method Landroid/util/LongArray;->get(I)J (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app) using reflection: allowed
+D/CompatChangeReporter(10329): Compat change id reported: 309578419; UID 10215; state: ENABLED
+D/CompatChangeReporter(10329): Compat change id reported: 349153669; UID 10215; state: ENABLED
+W/HWUI    (10329): Unknown dataspace 0
+D/ProfileInstaller(10329): Installing profile for com.vocle.regression
+I/WindowExtensionsImpl(10329): Initializing Window Extensions, vendor API level=9, activity embedding enabled=true
+W/HWUI    (10329): Failed to initialize 101010-2 format, error = EGL_SUCCESS
+E/libEGL  (10329): called unimplemented OpenGL ES API
+VMServiceFlutterDriver: Connecting to Flutter application at http://127.0.0.1:64696/[redacted-vm-service]/
+E/libEGL  (10329): called unimplemented OpenGL ES API
+VMServiceFlutterDriver: Isolate found with number: 5802241087971007
+I/Choreographer(10329): Skipped 127 frames!  The application may be doing too much work on its main thread.
+D/WindowLayoutComponentImpl(10329): Register WindowLayoutInfoListener on Context=com.example.medcollab_app.MainActivity@1af0caf, of which baseContext=android.app.ContextImpl@615ebc1
+VMServiceFlutterDriver: Isolate 5802241087971007 is runnable.
+VMServiceFlutterDriver: Isolate is paused at start.
+VMServiceFlutterDriver: Attempting to resume isolate
+I/ocle.regression(10329): Compiler allocated 5106KB to compile void android.view.ViewRootImpl.performTraversals()
+I/Choreographer(10329): Skipped 52 frames!  The application may be doing too much work on its main thread.
+I/flutter (10329): 00:00 +0: Native session restore and failed API logout prerequisite
+VMServiceFlutterDriver: Connected to Flutter application.
+E/libEGL  (10329): called unimplemented OpenGL ES API
+I/Choreographer(10329): Skipped 59 frames!  The application may be doing too much work on its main thread.
+W/ocle.regression(10329): Verification of com.google.crypto.tink.config.internal.TinkFipsUtil$AlgorithmFipsCompatibility com.google.crypto.tink.internal.KeyTypeManager.fipsStatus() took 109.296ms (27.45 bytecodes/s) (0B arena alloc)
+D/InsetsController(10329): hide(ime(), fromIme=false)
+I/ImeTracker(10329): com.vocle.regression:c783e29: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+W/ocle.regression(10329): Verification of java.util.Iterator j$.util.DesugarCollections$UnmodifiableCollection.iterator() took 272.293ms (22.04 bytecodes/s) (0B arena alloc)
+W/ocle.regression(10329): Verification of byte[] com.google.crypto.tink.shaded.protobuf.Internal.toByteArray(java.lang.String) took 382.046ms (18.32 bytecodes/s) (0B arena alloc)
+W/ocle.regression(10329): Verification of com.google.crypto.tink.shaded.protobuf.CodedInputStream com.google.crypto.tink.shaded.protobuf.CodedInputStream.newInstance(java.lang.Iterable) took 105.724ms (208.09 bytecodes/s) (0B arena alloc)
+E/libEGL  (10329): called unimplemented OpenGL ES API
+I/ocle.regression(10329): Background concurrent mark compact GC freed 1684KB AllocSpace bytes, 65(2340KB) LOS objects, 49% free, 3324KB/6648KB, paused 8.245ms,2.409ms total 163.354ms
+E/libEGL  (10329): called unimplemented OpenGL ES API
+I/ocle.regression(10329): Background concurrent mark compact GC freed 1572KB AllocSpace bytes, 53(1908KB) LOS objects, 49% free, 3564KB/7128KB, paused 2.910ms,6.725ms total 405.275ms
+I/ocle.regression(10329): Background concurrent mark compact GC freed 1636KB AllocSpace bytes, 63(2268KB) LOS objects, 49% free, 3564KB/7128KB, paused 1.937ms,5.706ms total 180.620ms
+E/libEGL  (10329): called unimplemented OpenGL ES API
+W/WindowOnBackDispatcher(10329): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher(10329): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+E/libEGL  (10329): called unimplemented OpenGL ES API
+I/ocle.regression(10329): Background concurrent mark compact GC freed 2517KB AllocSpace bytes, 93(3348KB) LOS objects, 49% free, 3888KB/7777KB, paused 1.809ms,14.660ms total 998.529ms
+E/libEGL  (10329): called unimplemented OpenGL ES API
+I/ocle.regression(10329): Background concurrent mark compact GC freed 2225KB AllocSpace bytes, 88(3168KB) LOS objects, 49% free, 3312KB/6624KB, paused 6.306ms,6.555ms total 322.313ms
+E/libEGL  (10329): called unimplemented OpenGL ES API
+I/ocle.regression(10329): Background concurrent mark compact GC freed 1500KB AllocSpace bytes, 57(2052KB) LOS objects, 49% free, 3224KB/6448KB, paused 11.359ms,3.428ms total 93.266ms
+E/libEGL  (10329): called unimplemented OpenGL ES API
+E/libEGL  (10329): called unimplemented OpenGL ES API
+I/ocle.regression(10329): Background concurrent mark compact GC freed 1388KB AllocSpace bytes, 51(1836KB) LOS objects, 49% free, 3436KB/6872KB, paused 2.610ms,5.445ms total 91.439ms
+E/libEGL  (10329): called unimplemented OpenGL ES API
+I/ocle.regression(10329): Background concurrent mark compact GC freed 1564KB AllocSpace bytes, 56(2048KB) LOS objects, 49% free, 3752KB/7504KB, paused 7.171ms,2.662ms total 177.857ms
+I/ocle.regression(10329): Background concurrent mark compact GC freed 1756KB AllocSpace bytes, 73(2660KB) LOS objects, 49% free, 3296KB/6592KB, paused 2.277ms,5.513ms total 103.264ms
+E/libEGL  (10329): called unimplemented OpenGL ES API
+I/ocle.regression(10329): Background concurrent mark compact GC freed 1324KB AllocSpace bytes, 51(1900KB) LOS objects, 49% free, 3448KB/6896KB, paused 1.532ms,6.466ms total 96.259ms
+I/ocle.regression(10329): AssetManager2(0x73d211cbb618) locale list changing from [] to [en-US]
+W/WindowOnBackDispatcher(10329): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher(10329): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+E/libEGL  (10329): called unimplemented OpenGL ES API
+E/libEGL  (10329): call to OpenGL ES API with no current context (logged once per thread)
+I/flutter (10329): 00:22 +1: (tearDownAll)
+I/flutter (10329): 00:22 +2: All tests passed!
+All tests passed.
+Leaving the application running.

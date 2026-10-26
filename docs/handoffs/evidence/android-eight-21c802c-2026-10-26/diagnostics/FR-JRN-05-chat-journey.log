@@ -1,0 +1,172 @@
+Running Gradle task 'assembleDebug'...                            121.4s
+√ Built build\app\outputs\flutter-apk\app-debug.apk
+Installing build\app\outputs\flutter-apk\app-debug.apk...           8.6s
+D/FLTFireContextHolder(11271): received application context.
+D/CompatChangeReporter(11271): Compat change id reported: 352594277; UID 10217; state: ENABLED
+I/ocle.regression(11271): hiddenapi: Accessing hidden method Landroid/view/accessibility/AccessibilityNodeInfo;->getSourceNodeId()J (runtime_flags=0, domain=platform, api=unsupported,test-api) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app) using reflection: allowed
+I/ocle.regression(11271): hiddenapi: Accessing hidden method Landroid/view/accessibility/AccessibilityRecord;->getSourceNodeId()J (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app) using reflection: allowed
+I/ocle.regression(11271): hiddenapi: Accessing hidden field Landroid/view/accessibility/AccessibilityNodeInfo;->mChildNodeIds:Landroid/util/LongArray; (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app) using reflection: allowed
+I/ocle.regression(11271): hiddenapi: Accessing hidden method Landroid/util/LongArray;->get(I)J (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app) using reflection: allowed
+D/CompatChangeReporter(11271): Compat change id reported: 309578419; UID 10217; state: ENABLED
+D/CompatChangeReporter(11271): Compat change id reported: 349153669; UID 10217; state: ENABLED
+W/HWUI    (11271): Unknown dataspace 0
+D/ProfileInstaller(11271): Installing profile for com.vocle.regression
+W/ocle.regression(11271): Verification of java.lang.StringBuilder kotlin.text.StringsKt__StringBuilderJVMKt.appendln(java.lang.StringBuilder, java.lang.CharSequence) took 164.318ms (115.63 bytecodes/s) (0B arena alloc)
+I/WindowExtensionsImpl(11271): Initializing Window Extensions, vendor API level=9, activity embedding enabled=true
+W/HWUI    (11271): Failed to initialize 101010-2 format, error = EGL_SUCCESS
+E/libEGL  (11271): called unimplemented OpenGL ES API
+VMServiceFlutterDriver: Connecting to Flutter application at http://127.0.0.1:55661/[redacted-vm-service]/
+E/libEGL  (11271): called unimplemented OpenGL ES API
+E/libEGL  (11271): called unimplemented OpenGL ES API
+VMServiceFlutterDriver: Isolate found with number: 1664984956764467
+E/libEGL  (11271): called unimplemented OpenGL ES API
+E/libEGL  (11271): called unimplemented OpenGL ES API
+E/libEGL  (11271): called unimplemented OpenGL ES API
+E/libEGL  (11271): called unimplemented OpenGL ES API
+VMServiceFlutterDriver: The isolate 1664984956764467 is taking unusually long time to initialize. It still reports None as pause event which is incorrect.
+E/libEGL  (11271): called unimplemented OpenGL ES API
+VMServiceFlutterDriver: Isolate 1664984956764467 is runnable.
+VMServiceFlutterDriver: Isolate is paused at start.
+VMServiceFlutterDriver: Attempting to resume isolate
+W/ocle.regression(11271): Verification of java.lang.Object kotlin.coroutines.intrinsics.IntrinsicsKt__IntrinsicsKt.getCOROUTINE_SUSPENDED() took 125.743ms (23.86 bytecodes/s) (0B arena alloc)
+I/Choreographer(11271): Skipped 804 frames!  The application may be doing too much work on its main thread.
+I/flutter (11271): 00:00 +0: FR-JRN-05: Android chat-journey
+I/ocle.regression(11271): Compiler allocated 5106KB to compile void android.view.ViewRootImpl.performTraversals()
+VMServiceFlutterDriver: Connected to Flutter application.
+E/libEGL  (11271): called unimplemented OpenGL ES API
+D/WindowLayoutComponentImpl(11271): Register WindowLayoutInfoListener on Context=com.example.medcollab_app.MainActivity@1142390, of which baseContext=android.app.ContextImpl@f00d4a8
+I/Choreographer(11271): Skipped 198 frames!  The application may be doing too much work on its main thread.
+I/HWUI    (11271): Davey! duration=3981ms; Flags=1, FrameTimelineVsyncId=304762, IntendedVsync=2985388929140, Vsync=2988688929008, InputEventId=0, HandleInputStart=2988702706200, AnimationStart=2988702767400, PerformTraversalsStart=2988702855300, DrawStart=2988730530600, FrameDeadline=2985405595806, FrameStartTime=2988698736800, FrameInterval=16666666, WorkloadTarget=16666666, SyncQueued=2988743589500, SyncStart=2988746012900, IssueDrawCommandsStart=2988811765500, SwapBuffers=2989145615200, FrameCompleted=2989372436300, DequeueBufferDuration=9508800, QueueBufferDuration=7205400, GpuCompleted=2989362341700, SwapBuffersCompleted=2989372436300, DisplayPresentTime=0, CommandSubmissionCompleted=2989145615200, 
+W/ocle.regression(11271): Verification of java.security.spec.AlgorithmParameterSpec com.it_nomads.fluttersecurestorage.ciphers.RSACipher18Implementation.makeAlgorithmParameterSpecLegacy(android.content.Context, java.util.Calendar, java.util.Calendar) took 258.983ms (278.01 bytecodes/s) (0B arena alloc)
+D/InsetsController(11271): hide(ime(), fromIme=false)
+I/ImeTracker(11271): com.vocle.regression:a51db5be: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+V/Configuration(11271): Updating configuration, locales updated from [en_US] to [en]
+I/ocle.regression(11271): AssetManager2(0x73d211c986b8) locale list changing from [] to [en]
+I/ocle.regression(11271): Background concurrent mark compact GC freed 2371KB AllocSpace bytes, 4(120KB) LOS objects, 49% free, 2807KB/5614KB, paused 10.535ms,40.759ms total 2.909s
+V/Configuration(11271): Updating configuration, locales updated from [en] to [en_US]
+I/ocle.regression(11271): AssetManager2(0x73d211c986b8) locale list changing from [] to [en-US]
+I/ocle.regression(11271): Background concurrent mark compact GC freed 1292KB AllocSpace bytes, 33(1284KB) LOS objects, 49% free, 3452KB/6905KB, paused 1.820ms,2.713ms total 156.314ms
+I/ocle.regression(11271): Background concurrent mark compact GC freed 1352KB AllocSpace bytes, 54(2040KB) LOS objects, 49% free, 3348KB/6697KB, paused 1.955ms,7.506ms total 79.639ms
+W/ocle.regression(11271): Suspending all threads took: 13.280ms
+I/ocle.regression(11271): Background concurrent mark compact GC freed 1504KB AllocSpace bytes, 55(2076KB) LOS objects, 49% free, 3608KB/7217KB, paused 17.630ms,2.741ms total 255.721ms
+E/libEGL  (11271): called unimplemented OpenGL ES API
+I/ocle.regression(11271): Background concurrent mark compact GC freed 1428KB AllocSpace bytes, 63(2364KB) LOS objects, 49% free, 3320KB/6641KB, paused 1.743ms,25.743ms total 86.973ms
+I/ocle.regression(11271): Background concurrent mark compact GC freed 1564KB AllocSpace bytes, 53(1908KB) LOS objects, 49% free, 3296KB/6592KB, paused 1.408ms,5.858ms total 56.136ms
+E/libEGL  (11271): called unimplemented OpenGL ES API
+I/ocle.regression(11271): AssetManager2(0x73d211ca1fd8) locale list changing from [] to [en-US]
+W/WindowOnBackDispatcher(11271): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher(11271): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+E/libEGL  (11271): called unimplemented OpenGL ES API
+I/ImeTracker(11271): com.vocle.regression:5c6c27fa: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+D/InsetsController(11271): show(ime(), fromIme=false)
+D/InsetsController(11271): Setting requestedVisibleTypes to -1 (was -9)
+I/ImeTracker(11271): com.vocle.regression:c9379f54: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+D/InsetsController(11271): show(ime(), fromIme=false)
+I/ImeTracker(11271): com.vocle.regression:c9379f54: onCancelled at PHASE_CLIENT_REPORT_REQUESTED_VISIBLE_TYPES
+I/Choreographer(11271): Skipped 43 frames!  The application may be doing too much work on its main thread.
+I/HWUI    (11271): Davey! duration=755ms; Flags=0, FrameTimelineVsyncId=306754, IntendedVsync=3004105595058, Vsync=3004822261696, InputEventId=0, HandleInputStart=3004837852000, AnimationStart=3004837918600, PerformTraversalsStart=3004838008600, DrawStart=3004838225800, FrameDeadline=3004122261724, FrameStartTime=3004825359800, FrameInterval=16666666, WorkloadTarget=16666666, SyncQueued=3004838368900, SyncStart=3004838510600, IssueDrawCommandsStart=3004838696500, SwapBuffers=3004840206700, FrameCompleted=3004861673500, DequeueBufferDuration=6689700, QueueBufferDuration=3124000, GpuCompleted=3004854741600, SwapBuffersCompleted=3004861673500, DisplayPresentTime=0, CommandSubmissionCompleted=3004840206700, 
+E/libEGL  (11271): called unimplemented OpenGL ES API
+I/AssistStructure(11271): Flattened final assist data: 512 bytes, containing 1 windows, 3 views
+I/ocle.regression(11271): Background concurrent mark compact GC freed 1889KB AllocSpace bytes, 66(2408KB) LOS objects, 49% free, 3340KB/6681KB, paused 2.850ms,3.113ms total 576.047ms
+D/InputConnectionAdaptor(11271): The input method toggled cursor monitoring on
+W/ocle.regression(11271): Suspending all threads took: 24.558ms
+W/InteractionJankMonitor(11271): Initializing without READ_DEVICE_CONFIG permission. enabled=false, interval=1, missedFrameThreshold=3, frameTimeThreshold=64, package=com.vocle.regression
+I/ocle.regression(11271): Background concurrent mark compact GC freed 1441KB AllocSpace bytes, 48(1760KB) LOS objects, 49% free, 3460KB/6921KB, paused 29.492ms,14.558ms total 288.309ms
+I/ImeTracker(11271): com.vocle.regression:5c6c27fa: onShown
+W/ocle.regression(11271): Suspending all threads took: 98.414ms
+I/ocle.regression(11271): Background concurrent mark compact GC freed 1940KB AllocSpace bytes, 67(2412KB) LOS objects, 49% free, 3541KB/7083KB, paused 106.237ms,4.641ms total 2.141s
+I/AutofillManager(11271): onInvisibleForAutofill(): expiringResponse
+W/WindowOnBackDispatcher(11271): sendCancelIfRunning: isInProgress=false callback=android.view.ImeBackAnimationController@90c3be0
+E/libEGL  (11271): called unimplemented OpenGL ES API
+E/ImeBackDispatcher(11271): Ime callback not found. Ignoring unregisterReceivedCallback. callbackId: 81759097
+I/ocle.regression(11271): IncrementDisableThreadFlip blocked for 157.505ms
+I/ocle.regression(11271): Background concurrent mark compact GC freed 1805KB AllocSpace bytes, 56(2016KB) LOS objects, 49% free, 3561KB/7123KB, paused 33.982ms,60.195ms total 728.925ms
+E/libEGL  (11271): called unimplemented OpenGL ES API
+D/InsetsController(11271): hide(ime(), fromIme=false)
+D/InsetsController(11271): Setting requestedVisibleTypes to -9 (was -1)
+E/libEGL  (11271): called unimplemented OpenGL ES API
+W/WindowOnBackDispatcher(11271): sendCancelIfRunning: isInProgress=false callback=android.view.ImeBackAnimationController@90c3be0
+I/ocle.regression(11271): Background concurrent mark compact GC freed 1724KB AllocSpace bytes, 64(2336KB) LOS objects, 49% free, 3473KB/6947KB, paused 4.187ms,5.288ms total 183.737ms
+E/libEGL  (11271): called unimplemented OpenGL ES API
+I/ImeTracker(11271): com.vocle.regression:aa9c34cf: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+D/InsetsController(11271): hide(ime(), fromIme=false)
+I/ImeTracker(11271): com.vocle.regression:aa9c34cf: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+I/ocle.regression(11271): Background concurrent mark compact GC freed 1961KB AllocSpace bytes, 69(2484KB) LOS objects, 49% free, 3721KB/7443KB, paused 2.382ms,2.984ms total 956.361ms
+E/libEGL  (11271): called unimplemented OpenGL ES API
+I/ocle.regression(11271): Background concurrent mark compact GC freed 1673KB AllocSpace bytes, 66(2408KB) LOS objects, 49% free, 3849KB/7699KB, paused 1.552ms,3.138ms total 329.876ms
+E/libEGL  (11271): called unimplemented OpenGL ES API
+I/ocle.regression(11271): Background concurrent mark compact GC freed 1708KB AllocSpace bytes, 64(2304KB) LOS objects, 49% free, 3565KB/7131KB, paused 1.881ms,6.955ms total 83.295ms
+E/libEGL  (11271): called unimplemented OpenGL ES API
+I/ocle.regression(11271): Background concurrent mark compact GC freed 1380KB AllocSpace bytes, 58(2088KB) LOS objects, 49% free, 3701KB/7403KB, paused 1.415ms,4.756ms total 151.638ms
+E/libEGL  (11271): called unimplemented OpenGL ES API
+I/ocle.regression(11271): Background concurrent mark compact GC freed 1628KB AllocSpace bytes, 60(2160KB) LOS objects, 49% free, 3666KB/7332KB, paused 2.386ms,5.313ms total 199.468ms
+W/WindowOnBackDispatcher(11271): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher(11271): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+I/ocle.regression(11271): Background concurrent mark compact GC freed 1633KB AllocSpace bytes, 56(2016KB) LOS objects, 49% free, 3337KB/6675KB, paused 7.238ms,3.505ms total 47.615ms
+E/libEGL  (11271): called unimplemented OpenGL ES API
+I/ocle.regression(11271): AssetManager2(0x73d211cae7d8) locale list changing from [] to [en-US]
+W/WindowOnBackDispatcher(11271): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher(11271): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+I/ocle.regression(11271): Background concurrent mark compact GC freed 1473KB AllocSpace bytes, 56(2016KB) LOS objects, 49% free, 3473KB/6947KB, paused 2.914ms,14.292ms total 120.125ms
+E/libEGL  (11271): called unimplemented OpenGL ES API
+I/ocle.regression(11271): Background concurrent mark compact GC freed 1592KB AllocSpace bytes, 55(1980KB) LOS objects, 49% free, 3381KB/6763KB, paused 10.186ms,3.319ms total 97.403ms
+E/libEGL  (11271): called unimplemented OpenGL ES API
+E/libEGL  (11271): called unimplemented OpenGL ES API
+I/ocle.regression(11271): Background concurrent mark compact GC freed 1632KB AllocSpace bytes, 62(2232KB) LOS objects, 49% free, 3357KB/6715KB, paused 1.215ms,2.914ms total 201.254ms
+E/libEGL  (11271): called unimplemented OpenGL ES API
+I/ocle.regression(11271): Background concurrent mark compact GC freed 1620KB AllocSpace bytes, 61(2196KB) LOS objects, 49% free, 3830KB/7660KB, paused 1.641ms,3.075ms total 120.112ms
+E/libEGL  (11271): called unimplemented OpenGL ES API
+I/ocle.regression(11271): Background concurrent mark compact GC freed 1672KB AllocSpace bytes, 69(2484KB) LOS objects, 49% free, 3473KB/6947KB, paused 2.501ms,5.388ms total 122.884ms
+E/libEGL  (11271): called unimplemented OpenGL ES API
+I/ocle.regression(11271): Background concurrent mark compact GC freed 1344KB AllocSpace bytes, 55(1980KB) LOS objects, 49% free, 3457KB/6915KB, paused 4.899ms,3.904ms total 119.397ms
+E/libEGL  (11271): called unimplemented OpenGL ES API
+I/ocle.regression(11271): Background concurrent mark compact GC freed 1576KB AllocSpace bytes, 54(1944KB) LOS objects, 49% free, 3481KB/6963KB, paused 6.947ms,2.598ms total 59.863ms
+E/libEGL  (11271): called unimplemented OpenGL ES API
+I/ocle.regression(11271): Background concurrent mark compact GC freed 1600KB AllocSpace bytes, 56(2016KB) LOS objects, 49% free, 3490KB/6980KB, paused 1.249ms,7.927ms total 82.795ms
+E/libEGL  (11271): called unimplemented OpenGL ES API
+I/ocle.regression(11271): Background concurrent mark compact GC freed 1636KB AllocSpace bytes, 67(2412KB) LOS objects, 49% free, 3674KB/7348KB, paused 1.806ms,3.084ms total 108.117ms
+I/ocle.regression(11271): Background concurrent mark compact GC freed 1924KB AllocSpace bytes, 74(2664KB) LOS objects, 49% free, 3833KB/7667KB, paused 2.166ms,3.791ms total 167.231ms
+I/ocle.regression(11271): AssetManager2(0x73d211cc0118) locale list changing from [] to [en-US]
+W/WindowOnBackDispatcher(11271): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher(11271): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+I/ocle.regression(11271): Background concurrent mark compact GC freed 1608KB AllocSpace bytes, 60(2160KB) LOS objects, 49% free, 3373KB/6747KB, paused 7.917ms,3.003ms total 49.900ms
+I/ocle.regression(11271): Background concurrent mark compact GC freed 1624KB AllocSpace bytes, 62(2232KB) LOS objects, 49% free, 7282KB/14MB, paused 1.340ms,3.049ms total 269.419ms
+E/libEGL  (11271): called unimplemented OpenGL ES API
+E/libEGL  (11271): call to OpenGL ES API with no current context (logged once per thread)
+I/ocle.regression(11271): AssetManager2(0x73d211cccc38) locale list changing from [] to [en-US]
+W/WindowOnBackDispatcher(11271): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher(11271): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+I/ImeTracker(11271): com.vocle.regression:fdda093e: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+D/InsetsController(11271): show(ime(), fromIme=false)
+D/InsetsController(11271): Setting requestedVisibleTypes to -1 (was -9)
+I/ImeTracker(11271): com.vocle.regression:bbd8ec2f: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+D/InsetsController(11271): show(ime(), fromIme=false)
+I/ImeTracker(11271): com.vocle.regression:bbd8ec2f: onCancelled at PHASE_CLIENT_REPORT_REQUESTED_VISIBLE_TYPES
+I/AssistStructure(11271): Flattened final assist data: 636 bytes, containing 1 windows, 4 views
+D/InputConnectionAdaptor(11271): The input method toggled cursor monitoring on
+E/libEGL  (11271): called unimplemented OpenGL ES API
+I/ImeTracker(11271): com.vocle.regression:69c852e7: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+D/InsetsController(11271): hide(ime(), fromIme=false)
+W/WindowOnBackDispatcher(11271): sendCancelIfRunning: isInProgress=false callback=android.view.ImeBackAnimationController@90c3be0
+D/InsetsController(11271): Setting requestedVisibleTypes to -9 (was -1)
+I/ImeTracker(11271): com.vocle.regression:fdda093e: onCancelled at PHASE_CLIENT_ANIMATION_CANCEL
+D/InputConnectionAdaptor(11271): The input method toggled cursor monitoring off
+E/libEGL  (11271): called unimplemented OpenGL ES API
+I/ocle.regression(11271): Background concurrent mark compact GC freed 1626KB AllocSpace bytes, 46(1688KB) LOS objects, 49% free, 3509KB/7019KB, paused 6.339ms,3.660ms total 260.440ms
+E/libEGL  (11271): called unimplemented OpenGL ES API
+I/ocle.regression(11271): AssetManager2(0x73d211cd3cb8) locale list changing from [] to [en-US]
+W/WindowOnBackDispatcher(11271): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher(11271): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+I/ocle.regression(11271): Background concurrent mark compact GC freed 1957KB AllocSpace bytes, 69(2548KB) LOS objects, 49% free, 3981KB/7963KB, paused 1.723ms,4.580ms total 312.986ms
+I/ocle.regression(11271): IncrementDisableThreadFlip blocked for 11.265ms
+E/libEGL  (11271): called unimplemented OpenGL ES API
+I/ocle.regression(11271): Background concurrent mark compact GC freed 1913KB AllocSpace bytes, 75(2700KB) LOS objects, 49% free, 3489KB/6979KB, paused 1.877ms,17.144ms total 95.964ms
+I/ocle.regression(11271): Background concurrent mark compact GC freed 1640KB AllocSpace bytes, 65(2340KB) LOS objects, 49% free, 3525KB/7051KB, paused 1.465ms,5.323ms total 77.540ms
+I/ocle.regression(11271): Background concurrent mark compact GC freed 1645KB AllocSpace bytes, 61(2228KB) LOS objects, 49% free, 3621KB/7243KB, paused 1.323ms,6.557ms total 62.547ms
+E/libEGL  (11271): called unimplemented OpenGL ES API
+I/ocle.regression(11271): Background concurrent mark compact GC freed 1788KB AllocSpace bytes, 62(2232KB) LOS objects, 49% free, 3985KB/7971KB, paused 1.677ms,2.689ms total 130.769ms
+I/flutter (11271): VOCLE_DEVICE_RECORD {"id":"FR-JRN-05","status":"PASS","executed":true,"phase":"chat-journey","runId":"a71faf60-f84f-4103-94d0-5424332ff70a","processId":11271,"durationMs":57174,"evidence":["Native draft persistence, background transport outage, UI send, real peer Socket.IO reply, refetch and same-account relogin with one committed ID."]}
+I/flutter (11271): 01:00 +1: (tearDownAll)
+I/flutter (11271): 01:00 +2: All tests passed!
+All tests passed.
+Leaving the application running.

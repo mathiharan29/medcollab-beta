@@ -1,0 +1,140 @@
+◇ injected env (0) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+[32m[2026-10-26T16:26:36.321Z] INFO: MongoDB connected: 127.0.0.1[0m 
+[33m[2026-10-26T16:26:36.331Z] WARN: Cloudinary not configured — media uploads will use local disk storage (uploads/)[0m 
+[33m[2026-10-26T16:26:36.332Z] WARN: Firebase credentials not set (need FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY). Push notifications disabled.[0m 
+[32m[2026-10-26T16:26:36.344Z] INFO: Socket.io initialised[0m 
+[32m[2026-10-26T16:26:36.377Z] INFO: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m 
+[32m[2026-10-26T16:26:36.378Z] INFO:   MedCollab API — TEST[0m 
+[32m[2026-10-26T16:26:36.378Z] INFO:   Listening on port 56753 (0.0.0.0)[0m 
+[32m[2026-10-26T16:26:36.379Z] INFO:   Health: /health[0m 
+[32m[2026-10-26T16:26:36.380Z] INFO:   API:    /api[0m 
+[32m[2026-10-26T16:26:36.381Z] INFO: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m 
+(node:21932) [MONGOOSE] Warning: mongoose: Duplicate schema index on {"inviteCode":1} for model "Space". This is often due to declaring an index using both "index: true" and "schema.index()". Please remove the duplicate index definition.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m[2026-10-26T16:26:38.239Z] INFO: OTP sent to +919990001001[0m 
+[32m[2026-10-26T16:26:38.244Z] INFO: [0mPOST /api/auth/request-otp [32m200[0m 1478.175 ms - 126[0m[0m 
+[32m[2026-10-26T16:26:38.648Z] INFO: New user registered: +919990001001[0m 
+[32m[2026-10-26T16:26:38.681Z] INFO: [0mPOST /api/auth/verify-otp [32m200[0m 413.465 ms - 899[0m[0m 
+(node:21932) [MONGOOSE] Warning: mongoose: the `new` option for `findOneAndUpdate()` and `findOneAndReplace()` is deprecated. Use `returnDocument: 'after'` instead.
+[32m[2026-10-26T16:26:38.751Z] INFO: [0mPUT /api/users/me [32m200[0m 52.764 ms - 623[0m[0m 
+[32m[2026-10-26T16:26:39.122Z] INFO: OTP sent to +919990001002[0m 
+[32m[2026-10-26T16:26:39.124Z] INFO: [0mPOST /api/auth/request-otp [32m200[0m 359.101 ms - 126[0m[0m 
+[32m[2026-10-26T16:26:39.643Z] INFO: New user registered: +919990001002[0m 
+[32m[2026-10-26T16:26:39.652Z] INFO: [0mPOST /api/auth/verify-otp [32m200[0m 506.174 ms - 899[0m[0m 
+(node:21932) [MONGOOSE] Warning: mongoose: the `new` option for `findOneAndUpdate()` and `findOneAndReplace()` is deprecated. Use `returnDocument: 'after'` instead.
+[32m[2026-10-26T16:26:39.697Z] INFO: [0mPUT /api/users/me [32m200[0m 28.757 ms - 623[0m[0m 
+[32m[2026-10-26T16:26:40.336Z] INFO: OTP sent to +919990001003[0m 
+[32m[2026-10-26T16:26:40.339Z] INFO: [0mPOST /api/auth/request-otp [32m200[0m 624.747 ms - 126[0m[0m 
+[32m[2026-10-26T16:26:40.780Z] INFO: New user registered: +919990001003[0m 
+[32m[2026-10-26T16:26:40.789Z] INFO: [0mPOST /api/auth/verify-otp [32m200[0m 403.281 ms - 899[0m[0m 
+(node:21932) [MONGOOSE] Warning: mongoose: the `new` option for `findOneAndUpdate()` and `findOneAndReplace()` is deprecated. Use `returnDocument: 'after'` instead.
+[32m[2026-10-26T16:26:40.883Z] INFO: [0mPUT /api/users/me [32m200[0m 73.069 ms - 623[0m[0m 
+[32m[2026-10-26T16:26:41.045Z] INFO: [0mPOST /api/spaces [32m201[0m 81.819 ms - 1843[0m[0m 
+[32m[2026-10-26T16:26:41.146Z] INFO: [0mPOST /api/spaces/join [32m200[0m 54.824 ms - 1971[0m[0m 
+[32m[2026-10-26T16:26:41.243Z] INFO: [0mPOST /api/spaces/6adf7f40262ab76d04e5bb73/channels [32m201[0m 46.909 ms - 481[0m[0m 
+[32m[2026-10-26T16:34:25.542Z] INFO: [0mPOST /api/auth/refresh [32m200[0m 73.162 ms - 246[0m[0m 
+[32m[2026-10-26T16:34:25.559Z] INFO: [0mPOST /api/auth/refresh [32m200[0m 6.862 ms - 246[0m[0m 
+[32m[2026-10-26T16:34:25.573Z] INFO: [0mPOST /api/auth/refresh [32m200[0m 5.732 ms - 246[0m[0m 
+[32m[2026-10-26T16:34:28.137Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 46.486 ms - 68[0m[0m 
+[32m[2026-10-26T16:34:38.040Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 13.802 ms - 68[0m[0m 
+[32m[2026-10-26T16:34:39.611Z] INFO: [0mGET /api/users/me [32m200[0m 17.178 ms - 623[0m[0m 
+[32m[2026-10-26T16:34:44.877Z] INFO: [0mGET /api/notifications?limit=50 [32m200[0m 31.403 ms - 110[0m[0m 
+[34m[2026-10-26T16:34:45.116Z] SOCKET: Connected: Dr Synthetic Device A (rVxmAPlQ9aUgvvj5AAAB)[0m 
+[34m[2026-10-26T16:34:45.123Z] SOCKET: Dr Synthetic Device A joined 1 space rooms[0m 
+[34m[2026-10-26T16:34:45.125Z] SOCKET: Presence: Dr Synthetic Device A connected (1 devices)[0m 
+[32m[2026-10-26T16:34:45.142Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 12.284 ms - 68[0m[0m 
+[34m[2026-10-26T16:34:46.004Z] SOCKET: Dr Synthetic Device A synced 1 space room(s)[0m 
+[34m[2026-10-26T16:34:46.072Z] SOCKET: Dr Synthetic Device A synced 1 space room(s)[0m 
+[34m[2026-10-26T16:34:46.083Z] SOCKET: Dr Synthetic Device A joined room channel:6adf7f41262ab76d04e5bb74[0m 
+[34m[2026-10-26T16:34:46.087Z] SOCKET: Dr Synthetic Device A synced 1 space room(s)[0m 
+[34m[2026-10-26T16:34:46.089Z] SOCKET: Dr Synthetic Device A joined room channel:6adf7f41262ab76d04e5bb74[0m 
+[34m[2026-10-26T16:34:46.095Z] SOCKET: Dr Synthetic Device A joined room channel:6adf7f41262ab76d04e5bb74[0m 
+[32m[2026-10-26T16:34:47.974Z] INFO: [0mGET /api/spaces/6adf7f40262ab76d04e5bb73/members [32m200[0m 19.885 ms - 685[0m[0m 
+[32m[2026-10-26T16:34:49.046Z] INFO: [0mGET /api/channels/6adf7f41262ab76d04e5bb74 [32m200[0m 28.419 ms - 470[0m[0m 
+[32m[2026-10-26T16:34:50.443Z] INFO: [0mGET /api/channels/6adf7f41262ab76d04e5bb74/messages?limit=30 [32m200[0m 21.649 ms - 84[0m[0m 
+[32m[2026-10-26T16:34:50.746Z] INFO: [0mPUT /api/notifications/read-by-channel/6adf7f41262ab76d04e5bb74 [32m200[0m 20.837 ms - 108[0m[0m 
+[34m[2026-10-26T16:34:50.787Z] SOCKET: Dr Synthetic Device A joined room channel:6adf7f41262ab76d04e5bb74[0m 
+[32m[2026-10-26T16:34:51.917Z] INFO: [0mGET /api/spaces/6adf7f40262ab76d04e5bb73/members [32m200[0m 12.565 ms - 685[0m[0m 
+[32m[2026-10-26T16:34:52.286Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 8.076 ms - 68[0m[0m 
+[32m[2026-10-26T16:34:53.552Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 11.395 ms - 68[0m[0m 
+[32m[2026-10-26T16:34:54.286Z] INFO: [0mGET /api/channels/6adf7f41262ab76d04e5bb74/messages?limit=30 [32m200[0m 18.475 ms - 84[0m[0m 
+[34m[2026-10-26T16:34:54.390Z] SOCKET: Dr Synthetic Device A joined room channel:6adf7f41262ab76d04e5bb74[0m 
+[32m[2026-10-26T16:34:55.266Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 9.345 ms - 68[0m[0m 
+[32m[2026-10-26T16:34:56.197Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 9.587 ms - 68[0m[0m 
+[32m[2026-10-26T16:34:56.587Z] INFO: [0mGET /api/channels/6adf7f41262ab76d04e5bb74/messages?limit=30 [32m200[0m 23.104 ms - 84[0m[0m 
+[34m[2026-10-26T16:34:56.646Z] SOCKET: Dr Synthetic Device A joined room channel:6adf7f41262ab76d04e5bb74[0m 
+[32m[2026-10-26T16:34:57.019Z] INFO: [0mGET /api/handoffs?type=all [32m200[0m 13.689 ms - 68[0m[0m 
+[32m[2026-10-26T16:34:57.434Z] INFO: [0mGET /api/notifications?limit=50 [32m200[0m 11.262 ms - 110[0m[0m 
+[32m[2026-10-26T16:34:57.695Z] INFO: [0mGET /api/spaces [32m200[0m 16.903 ms - 2374[0m[0m 
+[32m[2026-10-26T16:34:58.070Z] INFO: [0mPUT /api/notifications/read-by-channel/6adf7f41262ab76d04e5bb74 [32m200[0m 13.440 ms - 108[0m[0m 
+[32m[2026-10-26T16:34:58.536Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 8.425 ms - 68[0m[0m 
+[32m[2026-10-26T16:34:59.025Z] INFO: [0mGET /api/notifications?limit=50 [32m200[0m 8.444 ms - 110[0m[0m 
+[32m[2026-10-26T16:34:59.979Z] INFO: [0mPUT /api/notifications/read-by-channel/6adf7f41262ab76d04e5bb74 [32m200[0m 8.305 ms - 108[0m[0m 
+[32m[2026-10-26T16:35:00.463Z] INFO: [0mGET /api/notifications?limit=50 [32m200[0m 9.770 ms - 110[0m[0m 
+[32m[2026-10-26T16:35:01.094Z] INFO: [0mPUT /api/notifications/read-by-channel/6adf7f41262ab76d04e5bb74 [32m200[0m 8.466 ms - 108[0m[0m 
+[32m[2026-10-26T16:35:02.092Z] INFO: [0mGET /api/handoffs?type=all [32m200[0m 9.698 ms - 68[0m[0m 
+[32m[2026-10-26T16:35:02.794Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 8.125 ms - 68[0m[0m 
+[32m[2026-10-26T16:35:03.762Z] INFO: [0mGET /api/notifications?limit=50 [32m200[0m 8.761 ms - 110[0m[0m 
+[32m[2026-10-26T16:35:04.598Z] INFO: [0mGET /api/handoffs?type=all [32m200[0m 9.986 ms - 68[0m[0m 
+[32m[2026-10-26T16:35:04.852Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 8.826 ms - 68[0m[0m 
+[32m[2026-10-26T16:35:19.998Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 55.733 ms - 68[0m[0m 
+[32m[2026-10-26T16:35:20.003Z] INFO: [0mGET /api/handoffs?type=all [32m200[0m 149.772 ms - 68[0m[0m 
+[32m[2026-10-26T16:35:20.153Z] INFO: [0mGET /api/notifications?limit=50 [32m200[0m 24.748 ms - 110[0m[0m 
+[32m[2026-10-26T16:35:20.631Z] INFO: [0mGET /api/handoffs?type=all [32m200[0m 21.390 ms - 68[0m[0m 
+[32m[2026-10-26T16:35:21.103Z] INFO: [0mGET /api/notifications?limit=50 [32m200[0m 18.424 ms - 110[0m[0m 
+[32m[2026-10-26T16:35:21.555Z] INFO: Local media saved: medcollab/messages/6adf7f3e262ab76d04e5bb6e/1793032521384-c93e2e290762.pdf[0m 
+[32m[2026-10-26T16:35:21.556Z] INFO: [0mPOST /api/media/upload [32m200[0m 225.906 ms - 411[0m[0m 
+[32m[2026-10-26T16:35:22.105Z] INFO: [0mGET /api/notifications?limit=50 [32m200[0m 14.674 ms - 110[0m[0m 
+[32m[2026-10-26T16:35:22.778Z] INFO: [0mGET /api/handoffs?type=all [32m200[0m 8.306 ms - 68[0m[0m 
+[32m[2026-10-26T16:35:23.717Z] INFO: [0mGET /api/handoffs?type=all [32m200[0m 13.286 ms - 68[0m[0m 
+[32m[2026-10-26T16:35:25.841Z] INFO: [0mPOST /api/channels/6adf7f41262ab76d04e5bb74/messages [32m201[0m 69.492 ms - 917[0m[0m 
+[32m[2026-10-26T16:35:27.516Z] INFO: [0mGET /api/handoffs?type=all [32m200[0m 7.617 ms - 68[0m[0m 
+[32m[2026-10-26T16:35:29.137Z] INFO: [0mPUT /api/notifications/read-by-channel/6adf7f41262ab76d04e5bb74 [32m200[0m 19.464 ms - 108[0m[0m 
+[32m[2026-10-26T16:35:30.028Z] INFO: Local media saved: medcollab/messages/6adf7f3e262ab76d04e5bb6e/1793032530027-eac9f9ee69c1.png[0m 
+[32m[2026-10-26T16:35:30.029Z] INFO: [0mPOST /api/media/upload [32m200[0m 8.061 ms - 509[0m[0m 
+[32m[2026-10-26T16:35:31.476Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 12.579 ms - 68[0m[0m 
+[32m[2026-10-26T16:35:33.779Z] INFO: [0mPOST /api/channels/6adf7f41262ab76d04e5bb74/messages [32m201[0m 34.226 ms - 1010[0m[0m 
+[32m[2026-10-26T16:35:35.030Z] INFO: [0mGET /uploads/medcollab/messages/6adf7f3e262ab76d04e5bb6e/1793032530027-eac9f9ee69c1.png [32m200[0m 19.257 ms - 70[0m[0m 
+[32m[2026-10-26T16:35:35.230Z] INFO: [0mGET /uploads/medcollab/messages/6adf7f3e262ab76d04e5bb6e/1793032530027-eac9f9ee69c1.png [32m200[0m 2.304 ms - 70[0m[0m 
+[32m[2026-10-26T16:35:35.888Z] INFO: [0mGET /api/notifications?limit=50 [32m200[0m 14.481 ms - 110[0m[0m 
+[32m[2026-10-26T16:35:36.883Z] INFO: [0mPUT /api/notifications/read-by-channel/6adf7f41262ab76d04e5bb74 [32m200[0m 12.819 ms - 108[0m[0m 
+[32m[2026-10-26T16:35:38.599Z] INFO: [0mGET /api/handoffs?type=all [32m200[0m 10.614 ms - 68[0m[0m 
+[32m[2026-10-26T16:35:39.921Z] INFO: Local media saved: medcollab/messages/6adf7f3e262ab76d04e5bb6e/1793032539916-bbce4cb837e2.mp4[0m 
+[32m[2026-10-26T16:35:39.922Z] INFO: [0mPOST /api/media/upload [32m200[0m 14.496 ms - 406[0m[0m 
+[32m[2026-10-26T16:35:40.853Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 9.883 ms - 68[0m[0m 
+[32m[2026-10-26T16:35:42.469Z] INFO: [0mPOST /api/channels/6adf7f41262ab76d04e5bb74/messages [32m201[0m 53.627 ms - 907[0m[0m 
+[32m[2026-10-26T16:35:43.797Z] INFO: [0mGET /api/notifications?limit=50 [32m200[0m 11.642 ms - 110[0m[0m 
+[32m[2026-10-26T16:35:44.641Z] INFO: [0mPUT /api/notifications/read-by-channel/6adf7f41262ab76d04e5bb74 [32m200[0m 12.103 ms - 108[0m[0m 
+[31m[2026-10-26T16:35:45.776Z] ERROR: Error: File type not allowed. Accepted: JPEG, PNG, WebP, HEIC, PDF, MP4, MOV[0m { path: '/api/media/upload', method: 'POST', stack: undefined }
+[32m[2026-10-26T16:35:45.779Z] INFO: [0mPOST /api/media/upload [33m400[0m 13.849 ms - 111[0m[0m 
+[32m[2026-10-26T16:35:47.517Z] INFO: [0mGET /api/handoffs?type=all [32m200[0m 8.012 ms - 68[0m[0m 
+[32m[2026-10-26T16:35:48.310Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 9.073 ms - 68[0m[0m 
+[32m[2026-10-26T16:35:49.332Z] INFO: [0mGET /api/notifications?limit=50 [32m200[0m 8.718 ms - 110[0m[0m 
+[32m[2026-10-26T16:35:49.911Z] INFO: [0mGET /api/handoffs?type=all [32m200[0m 7.608 ms - 68[0m[0m 
+[32m[2026-10-26T16:35:58.679Z] INFO: Local media saved: medcollab/messages/6adf7f3e262ab76d04e5bb6e/1793032558577-20eb0a0a3a59.png[0m 
+[32m[2026-10-26T16:35:58.681Z] INFO: [0mPOST /api/media/upload [32m200[0m 110.853 ms - 509[0m[0m 
+[32m[2026-10-26T16:35:59.536Z] INFO: Local media saved: medcollab/messages/6adf7f3e262ab76d04e5bb6e/1793032559533-9a160350f98e.pdf[0m 
+[32m[2026-10-26T16:35:59.537Z] INFO: [0mPOST /api/media/upload [32m200[0m 11.717 ms - 411[0m[0m 
+[32m[2026-10-26T16:35:59.693Z] INFO: [0mGET /uploads/medcollab/messages/6adf7f3e262ab76d04e5bb6e/1793032559533-9a160350f98e.pdf [32m200[0m 2.986 ms - 599[0m[0m 
+[32m[2026-10-26T16:35:59.894Z] INFO: [0mPOST /api/channels/6adf7f41262ab76d04e5bb74/messages [32m201[0m 33.090 ms - 1010[0m[0m 
+[32m[2026-10-26T16:36:00.457Z] INFO: [0mGET /uploads/medcollab/messages/6adf7f3e262ab76d04e5bb6e/1793032559533-9a160350f98e.pdf [32m200[0m 1.840 ms - 599[0m[0m 
+[32m[2026-10-26T16:36:02.877Z] INFO: [0mPUT /api/notifications/read-by-channel/6adf7f41262ab76d04e5bb74 [32m200[0m 16.618 ms - 108[0m[0m 
+[34m[2026-10-26T16:36:06.648Z] SOCKET: Presence: Dr Synthetic Device A went offline (reason: client namespace disconnect)[0m 
+[32m[2026-10-26T16:36:06.820Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 8.894 ms - 68[0m[0m 
+[34m[2026-10-26T16:36:07.364Z] SOCKET: Connected: Dr Synthetic Device A (O408pbCyUd7jDnrfAAAE)[0m 
+[34m[2026-10-26T16:36:07.367Z] SOCKET: Dr Synthetic Device A joined 1 space rooms[0m 
+[34m[2026-10-26T16:36:07.367Z] SOCKET: Presence: Dr Synthetic Device A connected (1 devices)[0m 
+[34m[2026-10-26T16:36:07.921Z] SOCKET: Dr Synthetic Device A synced 1 space room(s)[0m 
+[34m[2026-10-26T16:36:07.937Z] SOCKET: Dr Synthetic Device A synced 1 space room(s)[0m 
+[34m[2026-10-26T16:36:08.112Z] SOCKET: Dr Synthetic Device A synced 1 space room(s)[0m 
+[32m[2026-10-26T16:36:09.533Z] INFO: [0mGET /api/notifications?limit=50 [32m200[0m 10.703 ms - 110[0m[0m 
+[32m[2026-10-26T16:36:10.372Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 11.632 ms - 68[0m[0m 
+[32m[2026-10-26T16:36:13.234Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 11.926 ms - 68[0m[0m 
+[32m[2026-10-26T16:36:14.161Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 13.047 ms - 68[0m[0m 
+[32m[2026-10-26T16:36:14.999Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 11.056 ms - 68[0m[0m 
+[32m[2026-10-26T16:36:16.203Z] INFO: [0mGET /api/handoffs?type=all [32m200[0m 14.846 ms - 68[0m[0m 
+[32m[2026-10-26T16:36:16.945Z] INFO: [0mGET /api/notifications?limit=50 [32m200[0m 15.283 ms - 110[0m[0m 
+[32m[2026-10-26T16:36:18.251Z] INFO: [0mGET /api/notifications?limit=50 [32m200[0m 16.450 ms - 110[0m[0m 
+[32m[2026-10-26T16:36:19.098Z] INFO: [0mGET /api/handoffs?type=all [32m200[0m 9.902 ms - 68[0m[0m 
+[32m[2026-10-26T16:36:20.756Z] INFO: [0mGET /api/handoffs?type=all [32m200[0m 14.379 ms - 68[0m[0m 
+[34m[2026-10-26T16:36:20.762Z] SOCKET: Presence: Dr Synthetic Device A went offline (reason: transport close)[0m 

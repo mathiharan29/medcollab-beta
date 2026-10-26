@@ -1,0 +1,43 @@
+Running Gradle task 'assembleDebug'...                            124.4s
+√ Built build\app\outputs\flutter-apk\app-debug.apk
+Installing build\app\outputs\flutter-apk\app-debug.apk...           9.4s
+D/FLTFireContextHolder(11636): received application context.
+D/CompatChangeReporter(11636): Compat change id reported: 352594277; UID 10218; state: ENABLED
+I/ocle.regression(11636): hiddenapi: Accessing hidden method Landroid/view/accessibility/AccessibilityNodeInfo;->getSourceNodeId()J (runtime_flags=0, domain=platform, api=unsupported,test-api) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app) using reflection: allowed
+I/ocle.regression(11636): hiddenapi: Accessing hidden method Landroid/view/accessibility/AccessibilityRecord;->getSourceNodeId()J (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app) using reflection: allowed
+I/ocle.regression(11636): hiddenapi: Accessing hidden field Landroid/view/accessibility/AccessibilityNodeInfo;->mChildNodeIds:Landroid/util/LongArray; (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app) using reflection: allowed
+I/ocle.regression(11636): hiddenapi: Accessing hidden method Landroid/util/LongArray;->get(I)J (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app) using reflection: allowed
+D/CompatChangeReporter(11636): Compat change id reported: 309578419; UID 10218; state: ENABLED
+D/CompatChangeReporter(11636): Compat change id reported: 349153669; UID 10218; state: ENABLED
+W/HWUI    (11636): Unknown dataspace 0
+D/ProfileInstaller(11636): Installing profile for com.vocle.regression
+I/WindowExtensionsImpl(11636): Initializing Window Extensions, vendor API level=9, activity embedding enabled=true
+W/HWUI    (11636): Failed to initialize 101010-2 format, error = EGL_SUCCESS
+E/libEGL  (11636): called unimplemented OpenGL ES API
+I/ocle.regression(11636): Compiler allocated 5106KB to compile void android.view.ViewRootImpl.performTraversals()
+E/libEGL  (11636): called unimplemented OpenGL ES API
+I/Choreographer(11636): Skipped 106 frames!  The application may be doing too much work on its main thread.
+D/WindowLayoutComponentImpl(11636): Register WindowLayoutInfoListener on Context=com.example.medcollab_app.MainActivity@1142390, of which baseContext=android.app.ContextImpl@869c4cb
+VMServiceFlutterDriver: Connecting to Flutter application at http://127.0.0.1:57769/[redacted-vm-service]/
+VMServiceFlutterDriver: Isolate found with number: 1879843519471527
+VMServiceFlutterDriver: Isolate 1879843519471527 is runnable.
+VMServiceFlutterDriver: Isolate is paused at start.
+VMServiceFlutterDriver: Attempting to resume isolate
+I/Choreographer(11636): Skipped 49 frames!  The application may be doing too much work on its main thread.
+I/flutter (11636): 00:00 +0: Cold handoff prerequisite clears the native session
+VMServiceFlutterDriver: Connected to Flutter application.
+E/libEGL  (11636): called unimplemented OpenGL ES API
+I/Choreographer(11636): Skipped 87 frames!  The application may be doing too much work on its main thread.
+V/Configuration(11636): Updating configuration, locales updated from [en_US] to [en]
+I/ocle.regression(11636): AssetManager2(0x73d211c91318) locale list changing from [] to [en]
+V/Configuration(11636): Updating configuration, locales updated from [en] to [en_US]
+I/ocle.regression(11636): AssetManager2(0x73d211c9af58) locale list changing from [] to [en-US]
+D/InsetsController(11636): hide(ime(), fromIme=false)
+I/ImeTracker(11636): com.vocle.regression:db751560: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+W/ocle.regression(11636): Verification of void com.google.crypto.tink.shaded.protobuf.SchemaUtil.writeFixed32List(int, java.util.List, com.google.crypto.tink.shaded.protobuf.Writer, boolean) took 102.323ms (117.28 bytecodes/s) (0B arena alloc)
+I/ocle.regression(11636): Background concurrent mark compact GC freed 3568KB AllocSpace bytes, 32(1224KB) LOS objects, 49% free, 3336KB/6673KB, paused 2.824ms,4.355ms total 112.252ms
+E/libEGL  (11636): called unimplemented OpenGL ES API
+I/flutter (11636): 00:05 +1: (tearDownAll)
+I/flutter (11636): 00:05 +2: All tests passed!
+All tests passed.
+Leaving the application running.

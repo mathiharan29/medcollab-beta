@@ -1,0 +1,44 @@
+Running Gradle task 'assembleDebug'...                            108.1s
+√ Built build\app\outputs\flutter-apk\app-debug.apk
+Installing build\app\outputs\flutter-apk\app-debug.apk...           8.9s
+D/FLTFireContextHolder(10107): received application context.
+D/CompatChangeReporter(10107): Compat change id reported: 352594277; UID 10215; state: ENABLED
+I/ocle.regression(10107): hiddenapi: Accessing hidden method Landroid/view/accessibility/AccessibilityNodeInfo;->getSourceNodeId()J (runtime_flags=0, domain=platform, api=unsupported,test-api) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app) using reflection: allowed
+I/ocle.regression(10107): hiddenapi: Accessing hidden method Landroid/view/accessibility/AccessibilityRecord;->getSourceNodeId()J (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app) using reflection: allowed
+I/ocle.regression(10107): hiddenapi: Accessing hidden field Landroid/view/accessibility/AccessibilityNodeInfo;->mChildNodeIds:Landroid/util/LongArray; (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app) using reflection: allowed
+I/ocle.regression(10107): hiddenapi: Accessing hidden method Landroid/util/LongArray;->get(I)J (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app) using reflection: allowed
+D/CompatChangeReporter(10107): Compat change id reported: 309578419; UID 10215; state: ENABLED
+D/CompatChangeReporter(10107): Compat change id reported: 349153669; UID 10215; state: ENABLED
+W/HWUI    (10107): Unknown dataspace 0
+D/ProfileInstaller(10107): Installing profile for com.vocle.regression
+I/WindowExtensionsImpl(10107): Initializing Window Extensions, vendor API level=9, activity embedding enabled=true
+W/HWUI    (10107): Failed to initialize 101010-2 format, error = EGL_SUCCESS
+E/libEGL  (10107): called unimplemented OpenGL ES API
+I/ocle.regression(10107): Compiler allocated 5106KB to compile void android.view.ViewRootImpl.performTraversals()
+E/libEGL  (10107): called unimplemented OpenGL ES API
+VMServiceFlutterDriver: Connecting to Flutter application at http://127.0.0.1:56841/[redacted-vm-service]/
+I/Choreographer(10107): Skipped 112 frames!  The application may be doing too much work on its main thread.
+D/WindowLayoutComponentImpl(10107): Register WindowLayoutInfoListener on Context=com.example.medcollab_app.MainActivity@3a34c8e, of which baseContext=android.app.ContextImpl@615ebc1
+VMServiceFlutterDriver: Isolate found with number: 3585352175185339
+VMServiceFlutterDriver: Isolate 3585352175185339 is runnable.
+VMServiceFlutterDriver: Isolate is paused at start.
+VMServiceFlutterDriver: Attempting to resume isolate
+I/Choreographer(10107): Skipped 72 frames!  The application may be doing too much work on its main thread.
+I/flutter (10107): 00:00 +0: Native session seed prerequisite
+VMServiceFlutterDriver: Connected to Flutter application.
+E/libEGL  (10107): called unimplemented OpenGL ES API
+I/Choreographer(10107): Skipped 79 frames!  The application may be doing too much work on its main thread.
+V/Configuration(10107): Updating configuration, locales updated from [en_US] to [en]
+I/ocle.regression(10107): AssetManager2(0x73d211c91318) locale list changing from [] to [en]
+D/InsetsController(10107): hide(ime(), fromIme=false)
+I/ImeTracker(10107): com.vocle.regression:2a8ebca4: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+V/Configuration(10107): Updating configuration, locales updated from [en] to [en_US]
+I/ocle.regression(10107): AssetManager2(0x73d211c90058) locale list changing from [] to [en-US]
+W/ocle.regression(10107): Verification of java.lang.Object j$.util.DesugarCollections$UnmodifiableMap.getOrDefault(java.lang.Object, java.lang.Object) took 112.239ms (62.37 bytecodes/s) (0B arena alloc)
+W/ocle.regression(10107): Verification of int com.google.crypto.tink.shaded.protobuf.AbstractMessageLite.getSerializedSize(com.google.crypto.tink.shaded.protobuf.Schema) took 129.698ms (115.65 bytecodes/s) (0B arena alloc)
+W/ocle.regression(10107): Verification of com.google.crypto.tink.proto.AesGcmSivKey com.google.crypto.tink.aead.AesGcmSivKeyManager$2.deriveKey(com.google.crypto.tink.proto.AesGcmSivKeyFormat, java.io.InputStream) took 110.924ms (540.91 bytecodes/s) (0B arena alloc)
+E/libEGL  (10107): called unimplemented OpenGL ES API
+I/flutter (10107): 00:07 +1: (tearDownAll)
+All tests passed.
+I/flutter (10107): 00:07 +2: All tests passed!
+Leaving the application running.

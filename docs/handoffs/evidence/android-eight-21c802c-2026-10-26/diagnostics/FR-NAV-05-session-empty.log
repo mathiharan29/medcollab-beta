@@ -1,0 +1,48 @@
+Running Gradle task 'assembleDebug'...                            114.6s
+√ Built build\app\outputs\flutter-apk\app-debug.apk
+Installing build\app\outputs\flutter-apk\app-debug.apk...           7.2s
+D/FLTFireContextHolder(10510): received application context.
+D/CompatChangeReporter(10510): Compat change id reported: 352594277; UID 10215; state: ENABLED
+I/ocle.regression(10510): hiddenapi: Accessing hidden method Landroid/view/accessibility/AccessibilityNodeInfo;->getSourceNodeId()J (runtime_flags=0, domain=platform, api=unsupported,test-api) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app) using reflection: allowed
+I/ocle.regression(10510): hiddenapi: Accessing hidden method Landroid/view/accessibility/AccessibilityRecord;->getSourceNodeId()J (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app) using reflection: allowed
+I/ocle.regression(10510): hiddenapi: Accessing hidden field Landroid/view/accessibility/AccessibilityNodeInfo;->mChildNodeIds:Landroid/util/LongArray; (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app) using reflection: allowed
+I/ocle.regression(10510): hiddenapi: Accessing hidden method Landroid/util/LongArray;->get(I)J (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app) using reflection: allowed
+D/CompatChangeReporter(10510): Compat change id reported: 309578419; UID 10215; state: ENABLED
+D/CompatChangeReporter(10510): Compat change id reported: 349153669; UID 10215; state: ENABLED
+W/HWUI    (10510): Unknown dataspace 0
+D/ProfileInstaller(10510): Installing profile for com.vocle.regression
+I/WindowExtensionsImpl(10510): Initializing Window Extensions, vendor API level=9, activity embedding enabled=true
+W/HWUI    (10510): Failed to initialize 101010-2 format, error = EGL_SUCCESS
+E/libEGL  (10510): called unimplemented OpenGL ES API
+VMServiceFlutterDriver: Connecting to Flutter application at http://127.0.0.1:65354/[redacted-vm-service]/
+E/libEGL  (10510): called unimplemented OpenGL ES API
+VMServiceFlutterDriver: Isolate found with number: 2653526857133847
+E/libEGL  (10510): called unimplemented OpenGL ES API
+VMServiceFlutterDriver: Isolate 2653526857133847 is runnable.
+VMServiceFlutterDriver: Isolate is paused at start.
+VMServiceFlutterDriver: Attempting to resume isolate
+I/Choreographer(10510): Skipped 234 frames!  The application may be doing too much work on its main thread.
+I/flutter (10510): 00:00 +0: FR-NAV-05: Android session-empty
+VMServiceFlutterDriver: Connected to Flutter application.
+I/ocle.regression(10510): Compiler allocated 5106KB to compile void android.view.ViewRootImpl.performTraversals()
+E/libEGL  (10510): called unimplemented OpenGL ES API
+D/WindowLayoutComponentImpl(10510): Register WindowLayoutInfoListener on Context=com.example.medcollab_app.MainActivity@bbfe8bc, of which baseContext=android.app.ContextImpl@ae29354
+I/Choreographer(10510): Skipped 173 frames!  The application may be doing too much work on its main thread.
+I/HWUI    (10510): Davey! duration=3266ms; Flags=1, FrameTimelineVsyncId=289487, IntendedVsync=2541622280224, Vsync=2544505613442, InputEventId=0, HandleInputStart=2544517807400, AnimationStart=2544517877100, PerformTraversalsStart=2544517978900, DrawStart=2544525183200, FrameDeadline=2541638946890, FrameStartTime=2544516303600, FrameInterval=16666666, WorkloadTarget=16666666, SyncQueued=2544528047200, SyncStart=2544536260000, IssueDrawCommandsStart=2544604495500, SwapBuffers=2544645994800, FrameCompleted=2544897424900, DequeueBufferDuration=34915600, QueueBufferDuration=7626600, GpuCompleted=2544862207400, SwapBuffersCompleted=2544897424900, DisplayPresentTime=0, CommandSubmissionCompleted=2544645994800, 
+W/ocle.regression(10510): Verification of void com.it_nomads.fluttersecurestorage.ciphers.StorageCipherFactory.<clinit>() took 109.383ms (82.28 bytecodes/s) (0B arena alloc)
+D/InsetsController(10510): hide(ime(), fromIme=false)
+I/ImeTracker(10510): com.vocle.regression:88a6220b: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+W/ocle.regression(10510): Verification of java.security.spec.AlgorithmParameterSpec com.it_nomads.fluttersecurestorage.ciphers.RSACipher18Implementation.makeAlgorithmParameterSpecLegacy(android.content.Context, java.util.Calendar, java.util.Calendar) took 289.252ms (248.92 bytecodes/s) (0B arena alloc)
+I/ocle.regression(10510): Background concurrent mark compact GC freed 3648KB AllocSpace bytes, 39(1284KB) LOS objects, 49% free, 3392KB/6784KB, paused 5.829ms,2.217ms total 93.739ms
+E/libEGL  (10510): called unimplemented OpenGL ES API
+I/ocle.regression(10510): Background concurrent mark compact GC freed 1452KB AllocSpace bytes, 55(1980KB) LOS objects, 49% free, 3128KB/6256KB, paused 3.610ms,6.335ms total 111.969ms
+E/libEGL  (10510): called unimplemented OpenGL ES API
+I/ocle.regression(10510): AssetManager2(0x73d211c9de38) locale list changing from [] to [en-US]
+W/WindowOnBackDispatcher(10510): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher(10510): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+E/libEGL  (10510): call to OpenGL ES API with no current context (logged once per thread)
+I/flutter (10510): VOCLE_DEVICE_RECORD {"id":"FR-NAV-05","status":"PASS","executed":true,"phase":"session-empty","runId":"a71faf60-f84f-4103-94d0-5424332ff70a","processId":10510,"durationMs":9000,"evidence":["Two host force-stops; native encrypted session restored, cleared after API 503, and absent on next launch."]}
+I/flutter (10510): 00:10 +1: (tearDownAll)
+All tests passed.
+I/flutter (10510): 00:10 +2: All tests passed!
+Leaving the application running.

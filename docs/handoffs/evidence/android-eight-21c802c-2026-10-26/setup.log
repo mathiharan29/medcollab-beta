@@ -1,0 +1,217 @@
+{
+  "frameworkVersion": "3.29.3",
+  "channel": "stable",
+  "repositoryUrl": "https://github.com/flutter/flutter.git",
+  "frameworkRevision": "ea121f8859e4b13e47a8f845e4586164519588bc",
+  "frameworkCommitDate": "2025-04-11 19:10:07 +0000",
+  "engineRevision": "cf56914b326edb0ccb123ffdc60f00060bd513fa",
+  "dartSdkVersion": "3.7.2",
+  "devToolsVersion": "2.42.3",
+  "flutterVersion": "3.29.3",
+  "flutterRoot": "C:\\Flutter\\flutter-3.29.3\\flutter"
+}
+The Flutter CLI developer tool uses Google Analytics to report usage and diagnostic
+data along with package dependencies, and crash reporting to send basic crash
+reports. This data is used to help improve the Dart platform, Flutter framework,
+and related tools.
+
+Telemetry is not sent on the very first run. To disable reporting of telemetry,
+run this terminal command:
+
+    flutter --disable-analytics
+
+If you opt out of telemetry, an opt-out event will be sent, and then no further
+information will be sent. This data is collected in accordance with the Google
+Privacy Policy (https://policies.google.com/privacy).
+Certificate was added to keystore
+Certificate was added to keystore
+
+* daemon not running; starting now at tcp:5037
+* daemon started successfully
+List of devices attached
+Loading local repository...                                                     [=========                              ] 25% Loading local repository...       [=========                              ] 25% Fetch remote repository...        [=======================================] 100% Fetch remote repository...       
+Auto-selecting single ABI x86_64
+
+adb.exe: device 'emulator-5580' not found
+adb.exe: device 'emulator-5580' not found
+adb.exe: device 'emulator-5580' not found
+adb.exe: device 'emulator-5580' not found
+adb.exe: device 'emulator-5580' not found
+adb.exe: device 'emulator-5580' not found
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+adb.exe: device offline
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+adb.exe: device 'emulator-5580' not found
+
+
+
+
+
+
+
+
+
+
+
+
+1
+
+OK: killing emulator, bye bye
+OK
