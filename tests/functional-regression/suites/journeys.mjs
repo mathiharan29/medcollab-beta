@@ -159,7 +159,18 @@ const cases = [{
 }, {
   id: 'FR-JRN-04', module: 'JRN', timeoutMs: 30000,
   run: async ({ identity, request, db, origin }) => {
-    const f = await spaceFor(identity, request, 'Synthetic Leave Rejoin Journey');
+    // Dedicated labels: reused A/B from earlier journey cases still share other
+    // spaces, so presence probes would false-fail eviction for this space only.
+    const a = await identity('J4A');
+    const b = await identity('J4B');
+    const created = await request('/api/spaces', { method: 'POST', token: a.token, body: { name: 'Synthetic Leave Rejoin Journey', type: 'department' }, expectedStatus: 201 });
+    await request('/api/spaces/join', { method: 'POST', token: b.token, body: { inviteCode: created.data.space.inviteCode } });
+    const f = {
+      A: a,
+      B: b,
+      space: created.data.space,
+      channelId: created.data.channels.find((item) => item.name === 'general')._id,
+    };
     const root = (await request(`/api/channels/${f.channelId}/messages`, { method: 'POST', token: f.A.token, body: { content: { text: 'Synthetic journey search root' } }, expectedStatus: 201 })).data.message;
     const reply = (await request(`/api/channels/${f.channelId}/messages/${root._id}/reply`, { method: 'POST', token: f.B.token, body: { content: { text: 'Synthetic journey Needl reply' } }, expectedStatus: 201 })).data.message;
     const socketA = await connectSocket(null, origin, f.A.token);

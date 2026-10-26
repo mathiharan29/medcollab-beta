@@ -218,6 +218,18 @@ try {
       active = null;
       const row = results.find((item) => item.id === id);
       if (row && !row.cleanup) row.cleanup = caseCleanup;
+      // Checkpoint partial results after each case so a later OOM/kill still
+      // leaves a usable report for already-finished device IDs.
+      try {
+        const directory = workspace.runRoot;
+        const counts = Object.fromEntries(['PASS', 'FAIL', 'ERROR', 'BLOCKED', 'NEEDS_DECISION', 'SKIP'].map((status) =>
+          [status, results.filter((row) => row.status === status).length]));
+        await writeFile(join(directory, 'results.json'), JSON.stringify({
+          tier: 'D', platform: 'Android emulator', selected, partial: true,
+          completedIds: results.map((row) => row.id), counts, cases: results, phases,
+          generatedAt: new Date().toISOString(),
+        }, null, 2));
+      } catch { /* non-fatal checkpoint */ }
     }
   }
   provenance = await verifyDeviceSource(workspace);
