@@ -428,14 +428,22 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
     BuildContext context,
     Future<PickedAttachment?> Function() pick,
   ) async {
-    final picked = await pick();
-    if (picked == null || !context.mounted) return;
-    await context.read<ChannelChatCubit>().sendAttachment(
-          bytes: picked.bytes,
-          fileName: picked.fileName,
-          mimeType: picked.mimeType,
-        );
-    _scrollToBottom(force: true);
+    try {
+      final picked = await pick();
+      if (picked == null || !context.mounted) return;
+      await context.read<ChannelChatCubit>().sendAttachment(
+            bytes: picked.bytes,
+            fileName: picked.fileName,
+            mimeType: picked.mimeType,
+          );
+      _scrollToBottom(force: true);
+    } catch (_) {
+      // Picker/permission failures must leave the composer usable (FR-MED-08).
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not attach that file. Try again.')),
+      );
+    }
   }
 
   Future<void> _confirmDeleteMessage(

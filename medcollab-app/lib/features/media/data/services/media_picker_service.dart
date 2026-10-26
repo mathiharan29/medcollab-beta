@@ -1,5 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
 /// Picks images from gallery or camera, and documents (PDF etc.) for chat.
@@ -10,33 +11,43 @@ class MediaPickerService {
   final ImagePicker _imagePicker;
 
   Future<PickedAttachment?> pickFromGallery() async {
-    final file = await _imagePicker.pickMedia(
-      imageQuality: 85,
-    );
-    if (file == null) return null;
-    final bytes = await file.readAsBytes();
-    final mime = file.mimeType ?? _guessMediaMime(file.name);
-    return PickedAttachment(
-      bytes: bytes,
-      fileName: file.name,
-      mimeType: mime,
-    );
+    try {
+      final file = await _imagePicker.pickMedia(
+        imageQuality: 85,
+      );
+      if (file == null) return null;
+      final bytes = await file.readAsBytes();
+      final mime = file.mimeType ?? _guessMediaMime(file.name);
+      return PickedAttachment(
+        bytes: bytes,
+        fileName: file.name,
+        mimeType: mime,
+      );
+    } on PlatformException {
+      // Permission denial / cancel must leave the composer usable (FR-MED-08).
+      return null;
+    }
   }
 
   Future<PickedAttachment?> captureFromCamera() async {
     if (kIsWeb) return null;
-    final file = await _imagePicker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 85,
-      maxWidth: 2048,
-    );
-    if (file == null) return null;
-    final bytes = await file.readAsBytes();
-    return PickedAttachment(
-      bytes: bytes,
-      fileName: file.name,
-      mimeType: _guessImageMime(file.name),
-    );
+    try {
+      final file = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 85,
+        maxWidth: 2048,
+      );
+      if (file == null) return null;
+      final bytes = await file.readAsBytes();
+      return PickedAttachment(
+        bytes: bytes,
+        fileName: file.name,
+        mimeType: _guessImageMime(file.name),
+      );
+    } on PlatformException {
+      // Synthetic/device camera denial must not crash the chat (FR-MED-08).
+      return null;
+    }
   }
 
   Future<PickedAttachment?> pickDocument() async {
