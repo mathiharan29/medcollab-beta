@@ -119,3 +119,11 @@ Curated copy of pass run `2026-10-26T15-57-42Z-21c802ce`:
 - Per-case `*-events.json`, `backend-device-*.log`, `diagnostics/*`
 
 Raw launcher output remains under gitignored `test-results/android-eight/` on the builder machine.
+
+## 8. Release APK (builder machine, 2026-10-26)
+
+Built on this host after Android-eight green:
+
+- `Vocle-beta.apk` at repo root (`~63.9 MB`, `app-release.apk` copy)
+- API: `https://medcollab.up.railway.app`
+- Not committed (binary + local artifact). Distribute out-of-band with signing secrets kept private.
