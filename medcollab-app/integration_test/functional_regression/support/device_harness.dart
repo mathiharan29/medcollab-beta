@@ -227,6 +227,8 @@ Future<void> openChat(WidgetTester tester, String channelId) async {
 // A PASS is emitted only after the body and any pending framework exception are
 // checked. Setup/control failures remain ERROR; required business assertions FAIL.
 void deviceCase(String id, Future<void> Function(WidgetTester) body) {
+  // Media/journey device bodies routinely exceed the default 2m testWidgets
+  // timeout under a lean emulator (FR-MED-08 timed out mid-case with no catalog).
   testWidgets('$id: Android $devicePhase', (tester) async {
     final watch = Stopwatch()..start();
     observations.clear();
@@ -272,7 +274,7 @@ void deviceCase(String id, Future<void> Function(WidgetTester) body) {
     await control('result', record);
     if (failure != null && status != 'NEEDS_DECISION')
       Error.throwWithStackTrace(failure, stack!);
-  }, timeout: const Timeout(Duration(minutes: 2)));
+  }, timeout: const Timeout(Duration(minutes: 10)));
 }
 
 Future<void> checkpoint(String phase, Map<String, dynamic> evidence) async {
