@@ -99,13 +99,42 @@ function lockPackages(text) {
   return entries;
 }
 
+const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+async function requireEmulator(expectedSerial) {
+  const deadline = Date.now() + 15 * 60 * 1000;
+  let lastLog = 0;
+  while (Date.now() < deadline) {
+    const devices = command(adb, ['devices', '-l'], root).split(/\r?\n/).filter((line) => /^\S+\s+device\b/.test(line));
+    if (devices.length === 1) {
+      const online = devices[0].split(/\s+/)[0];
+      const serial = emulatorSerial(expectedSerial || online);
+      if (devices[0].startsWith(`${serial} `) || devices[0].startsWith(`${serial}\t`)) return serial;
+      throw new Error('Emulator does not match ADB inventory');
+    }
+    if (devices.length > 1) throw new Error('Exactly one Android emulator and no physical devices are required');
+    if (!expectedSerial) throw new Error('Exactly one Android emulator and no physical devices are required');
+    if (Date.now() - lastLog > 30000) {
+      console.log(`Waiting for deferred Android emulator ${expectedSerial}...`);
+      lastLog = Date.now();
+    }
+    await pause(2000);
+  }
+  throw new Error(`Timed out waiting for Android emulator ${expectedSerial}`);
+}
+
 try {
   const sdk = JSON.parse(command(flutter, ['--version', '--machine'], root, 60000));
   if (sdk.frameworkVersion !== deviceSdk) throw new Error(`Expected Flutter ${deviceSdk}; got ${sdk.frameworkVersion}`);
-  const devices = command(adb, ['devices', '-l'], root).split(/\r?\n/).filter((line) => /^\S+\s+device\b/.test(line));
-  if (devices.length !== 1) throw new Error('Exactly one Android emulator and no physical devices are required');
-  serial = emulatorSerial(option('emulator') || devices[0].split(/\s+/)[0]);
-  if (!devices[0].startsWith(`${serial} `) && !devices[0].startsWith(`${serial}\t`)) throw new Error('Emulator does not match ADB inventory');
+  const deferEmulator = process.env.VOCLE_DEFER_EMULATOR === '1';
+  const expectedSerial = option('emulator') ? emulatorSerial(option('emulator')) : null;
+  if (!deferEmulator) {
+    serial = await requireEmulator(expectedSerial);
+  } else if (!expectedSerial) {
+    throw new Error('Deferred emulator boot requires --emulator=serial');
+  } else {
+    serial = expectedSerial;
+    console.log(`Deferring emulator attach until after APK prewarm (${serial})`);
+  }
   // Existing user installs/data are never reused. Only our dedicated package
   // may be uninstalled or force-stopped by this runner.
   workspace = await prepareDeviceWorkspace(option('source-sha'), option('output'));
@@ -148,6 +177,11 @@ try {
     '--dart-define=ENABLE_API_LOGGING=false'], workspace.app,
     join(workspace.runRoot, 'diagnostics/prewarm-assemble.log'), 25 * 60 * 1000);
   if (prewarm.exitCode !== 0) throw new Error('Android debug prewarm assemble failed');
+  if (deferEmulator) {
+    await writeFile(join(workspace.runRoot, 'ready-for-emulator'), `${serial}\n`);
+    console.log('APK prewarm complete; waiting for deferred emulator boot...');
+    serial = await requireEmulator(expectedSerial);
+  }
   const { startDeviceServer } = await import('./device-server.mjs');
   for (const id of selected) {
     let caseCleanup = { status: 'ERROR' };

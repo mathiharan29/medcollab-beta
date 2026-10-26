@@ -55,17 +55,20 @@ def main() -> int:
     bootstrap = Bootstrap(scratch, output, env, state)
     print("Selecting Flutter...", flush=True)
     flutter = bootstrap.flutter(flutter_hint if Path(flutter_hint).is_file() else None)
-    print("Booting owned emulator...", flush=True)
-    bootstrap.android()
-    runtime = bootstrap.android_runtime
-    assert runtime and runtime.serial and runtime.adb
+    # On 8GB hosts, Gradle prewarm + qemu together thrash. Prepare host tools,
+    # run the device lane with deferred emulator attach, then boot qemu only
+    # after ready-for-emulator is written.
+    print("Preparing Android host toolchain (no emulator yet)...", flush=True)
+    from vocle_android import AndroidRuntime
+    bootstrap.details["android"] = {}
+    runtime = AndroidRuntime(scratch, output, env, bootstrap.command, bootstrap.details["android"])
+    bootstrap.android_runtime = runtime
+    runtime.prepare_host()
 
     device_out = output / "android"
     node = ROOT / "tests" / "functional-regression" / "scripts" / "run-device.mjs"
     cmd = [
-        sys.executable.replace("python.exe", "node.exe")
-        if False
-        else "node",
+        "node",
         str(node),
         f"--source-sha={commit}",
         f"--flutter-bin={flutter}",
@@ -74,21 +77,56 @@ def main() -> int:
         f"--cases={cases}",
         f"--output={device_out}",
     ]
-    # Prefer PATH node.
-    cmd[0] = "node"
 
     child_env = dict(runtime.env)
     child_env.update(
         {
             "VOCLE_ANDROID_SERIAL": runtime.serial,
             "VOCLE_ANDROID_AVD": getattr(runtime, "avd_name", "") or "",
+            "VOCLE_DEFER_EMULATOR": "1",
         }
     )
-    print("Running device lane:", " ".join(cmd), flush=True)
+    print("Running device lane (emulator deferred until APK prewarm):", " ".join(cmd), flush=True)
+    child = subprocess.Popen(cmd, cwd=ROOT, env=child_env)
+    code = 1
     try:
-        completed = subprocess.run(cmd, cwd=ROOT, env=child_env, check=False)
-        code = completed.returncode
+        ready = device_out / "ready-for-emulator"
+        deadline = time.monotonic() + 40 * 60
+        while time.monotonic() < deadline:
+            if child.poll() is not None:
+                code = child.returncode
+                break
+            if ready.is_file():
+                print("APK prewarm signaled ready; booting owned emulator...", flush=True)
+                try:
+                    runtime.start_emulator()
+                except Exception as boot_error:  # noqa: BLE001
+                    print(f"emulator boot failed: {boot_error}", flush=True)
+                    child.terminate()
+                    try:
+                        code = child.wait(timeout=60)
+                    except subprocess.TimeoutExpired:
+                        child.kill()
+                        code = child.wait(timeout=30)
+                    raise
+                code = child.wait()
+                break
+            time.sleep(2)
+        else:
+            print("Timed out waiting for APK prewarm before emulator boot", flush=True)
+            child.terminate()
+            try:
+                code = child.wait(timeout=60)
+            except subprocess.TimeoutExpired:
+                child.kill()
+                code = child.wait(timeout=30)
     finally:
+        if child.poll() is None:
+            child.terminate()
+            try:
+                child.wait(timeout=30)
+            except subprocess.TimeoutExpired:
+                child.kill()
         print("Stopping owned emulator...", flush=True)
         try:
             runtime.close()
@@ -117,7 +155,7 @@ def main() -> int:
     else:
         print("No results.json produced", flush=True)
     (output / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
-    return code
+    return code or 0
 
 
 if __name__ == "__main__":

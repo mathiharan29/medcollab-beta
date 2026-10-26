@@ -20,12 +20,17 @@ class AndroidRuntime:
         self.process = self.log = self.adb = self.serial = None
 
     def prepare(self):
+        self.prepare_host()
+        self.start_emulator()
+
+    def prepare_host(self):
+        """Gradle/JDK/adb only — no AVD. Lets APK prewarm finish before qemu RAM."""
         suffix = ".exe" if os.name == "nt" else ""
         sdk = Path(self.env.get("ANDROID_HOME") or self.env.get("ANDROID_SDK_ROOT") or "")
         self.adb = sdk / "platform-tools" / ("adb" + suffix)
-        emulator = sdk / "emulator" / ("emulator" + suffix)
-        managers = sorted((sdk / "cmdline-tools").glob("*/bin/avdmanager" + (".bat" if os.name == "nt" else "")))
-        if not sdk.is_absolute() or not self.adb.is_file() or not emulator.is_file() or not managers:
+        self.emulator_bin_path = sdk / "emulator" / ("emulator" + suffix)
+        self.avd_managers = sorted((sdk / "cmdline-tools").glob("*/bin/avdmanager" + (".bat" if os.name == "nt" else "")))
+        if not sdk.is_absolute() or not self.adb.is_file() or not self.emulator_bin_path.is_file() or not self.avd_managers:
             raise SetupRequired("Android tests need an Android SDK with platform-tools, emulator and command-line tools. Set ANDROID_HOME to its directory.")
         java = Path(self.env.get("JAVA_HOME") or "")
         if not (java / "bin" / ("java" + suffix)).is_file() and os.name == "nt":
@@ -68,20 +73,14 @@ class AndroidRuntime:
         if not images:
             raise SetupRequired("Install an x86_64 Android system image using Android Studio's SDK Manager before the Android lane.")
         image = images[0].parent
-        package = "system-images;" + ";".join(image.relative_to(sdk / "system-images").parts)
+        self.system_image_package = "system-images;" + ";".join(image.relative_to(sdk / "system-images").parts)
         home, avds = self.scratch / "android-home", self.scratch / "android-avd"
-        home.mkdir()
-        avds.mkdir()
+        home.mkdir(exist_ok=True)
+        avds.mkdir(exist_ok=True)
         self.env.update(ANDROID_USER_HOME=str(home), ANDROID_AVD_HOME=str(avds))
-        name = "VocleLocal" + uuid.uuid4().hex[:10]
-        directory = avds / (name + ".avd")
-        print("Creating a disposable Android emulator from installed image: " + package, flush=True)
-        self.command([managers[-1], "create", "avd", "--force", "--name", name, "--path", directory,
-                      "--package", package, "--device", "pixel"], timeout=120, input_text="no\n")
-        # Keep the disposable AVD lean on 8GB Windows hosts (WHPX + WSL Docker).
-        # 1024MB leaves headroom when Cursor/AV leave ~2GB free physical RAM.
-        with (directory / "config.ini").open("a", encoding="utf-8") as config:
-            config.write("\nhw.ramSize=1024\nhw.cpu.ncore=2\ndisk.dataPartition.size=4G\n")
+        self.java_home = java
+        self.sdk_root = sdk
+        # Reserve serial/port before qemu starts so the device lane can wait on it.
         port = None
         for candidate in range(5580, 5650, 2):
             with socket.socket() as console, socket.socket() as transport:
@@ -95,25 +94,39 @@ class AndroidRuntime:
         if port is None:
             raise SetupRequired("No free local port for the owned Android emulator")
         self.serial = "emulator-" + str(port)
-        self.avd_name = name
-        self.emulator_bin = str(emulator)
         self.emulator_port = port
-        self.env.update(VOCLE_ANDROID_SERIAL=self.serial, VOCLE_ANDROID_AVD=name)
+        self.avd_name = "VocleLocal" + uuid.uuid4().hex[:10]
+        self.env.update(VOCLE_ANDROID_SERIAL=self.serial, VOCLE_ANDROID_AVD=self.avd_name)
+        self.state.update(kind="disposable-emulator", serial=self.serial, systemImage=self.system_image_package,
+                          ramMb=1024, cpuCores=2,
+                          sdk=str(sdk), java=str(java), userAvdReused=False, cleanup="PENDING",
+                          deferredBoot=True)
+
+    def start_emulator(self):
+        """Create and boot the disposable AVD (call after APK prewarm on 8GB hosts)."""
+        if not self.serial or not self.avd_name:
+            raise SetupRequired("prepare_host() must run before start_emulator()")
+        directory = Path(self.env["ANDROID_AVD_HOME"]) / (self.avd_name + ".avd")
+        print("Creating a disposable Android emulator from installed image: " + self.system_image_package, flush=True)
+        self.command([self.avd_managers[-1], "create", "avd", "--force", "--name", self.avd_name, "--path", directory,
+                      "--package", self.system_image_package, "--device", "pixel"], timeout=120, input_text="no\n")
+        # Keep the disposable AVD lean on 8GB Windows hosts (WHPX + WSL Docker).
+        # 1024MB leaves headroom when Cursor/AV leave ~2GB free physical RAM.
+        with (directory / "config.ini").open("a", encoding="utf-8") as config:
+            config.write("\nhw.ramSize=1024\nhw.cpu.ncore=2\ndisk.dataPartition.size=4G\n")
         self.command([self.adb, "start-server"], check=False)
         self.log = (self.output / "android-emulator.log").open("wb")
         # Prefer DETACHED_PROCESS over CREATE_NO_WINDOW: the latter has been
         # observed to make qemu exit immediately (status 4294967295) on this host.
         win_flags = subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0
-        self.process = subprocess.Popen([str(emulator), "-avd", name, "-port", str(port), "-no-window", "-no-audio",
-                                         "-no-snapshot", "-no-boot-anim", "-gpu", "swiftshader_indirect"],
+        self.process = subprocess.Popen([str(self.emulator_bin_path), "-avd", self.avd_name, "-port", str(self.emulator_port),
+                                         "-no-window", "-no-audio", "-no-snapshot", "-no-boot-anim",
+                                         "-gpu", "swiftshader_indirect"],
                                         env=self.env, stdin=subprocess.DEVNULL, stdout=self.log,
                                         stderr=subprocess.STDOUT, creationflags=win_flags,
                                         close_fds=False)
-        self.state.update(kind="disposable-emulator", serial=self.serial, systemImage=package,
-                          ramMb=1024, cpuCores=2,
-                          sdk=str(sdk), java=str(java), userAvdReused=False, cleanup="PENDING")
-        # Cold boot of a Play Store image under WHPX + disposable WSL Docker often
-        # exceeds five minutes on first run; allow fifteen before failing.
+        self.state["deferredBoot"] = False
+        # Cold boot of a Play Store image under WHPX often exceeds five minutes.
         deadline = time.monotonic() + 900
         last_report = 0
         while time.monotonic() < deadline:
