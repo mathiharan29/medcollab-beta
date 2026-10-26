@@ -145,7 +145,8 @@ Future<void> launch(WidgetTester tester,
       () =>
           deps.authBloc.state.status != AuthStatus.unknown &&
           deps.authBloc.state.status != AuthStatus.loading,
-      'authentication settles');
+      'authentication settles',
+      limit: const Duration(seconds: 45));
 }
 
 Future<void> until(

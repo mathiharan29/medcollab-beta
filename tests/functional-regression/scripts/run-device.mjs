@@ -140,6 +140,14 @@ try {
   const mongoCache = join(hostCacheRoot, 'vocle-runtime-cache', 'mongo-binaries');
   await mkdir(mongoCache, { recursive: true });
   process.env.MONGOMS_DOWNLOAD_DIR = mongoCache;
+  // Cold Gradle on a disposable cache can take 15–25m — longer than access JWT
+  // TTL. Prewarm assemble before minting any case fixtures so the first drive
+  // is incremental and FR-MED-08 does not race token expiry.
+  console.log('Prewarming Android debug assemble...');
+  const prewarm = await runLogged(flutter, ['build', 'apk', '--debug', '--no-pub',
+    '--dart-define=ENABLE_API_LOGGING=false'], workspace.app,
+    join(workspace.runRoot, 'diagnostics/prewarm-assemble.log'), 25 * 60 * 1000);
+  if (prewarm.exitCode !== 0) throw new Error('Android debug prewarm assemble failed');
   const { startDeviceServer } = await import('./device-server.mjs');
   for (const id of selected) {
     let caseCleanup = { status: 'ERROR' };

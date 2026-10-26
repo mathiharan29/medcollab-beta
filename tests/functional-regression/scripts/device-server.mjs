@@ -225,7 +225,22 @@ export async function startDeviceServer({ adb, serial, caseId }) {
         const action = req.url.replace('/control/', '');
         let answer;
         switch (action) {
-          case 'fixture': answer = fixture; break;
+          case 'fixture': {
+            // Access JWTs are 15m; cold assembleDebug can exceed that before the
+            // app first reads fixtures. Refresh at fetch time so installSession
+            // always seeds a live access token (FR-MED-08).
+            for (const label of ['A', 'B', 'C']) {
+              const person = people[label];
+              const refreshed = await request('/api/auth/refresh', {
+                method: 'POST',
+                body: { refreshToken: person.refreshToken },
+              });
+              person.token = refreshed.data.accessToken;
+            }
+            fixture = { ...fixture, A: people.A, B: people.B, C: people.C };
+            answer = fixture;
+            break;
+          }
           case 'otp': assert.ok(people[input.label]); answer = { otp: await capturedOtp(inbox, people[input.label].phone) }; break;
           case 'result':
             assert.equal(input.id, caseId); assert.equal(input.runId, runId);

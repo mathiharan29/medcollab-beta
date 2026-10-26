@@ -228,22 +228,24 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
       final user = result.session.user;
       final needsProfile = result.isNewUser || !user.hasMinimumProfile;
-      final activeUser = needsProfile ? user : user;
 
-      emit(AuthState(
-        status:
-            needsProfile ? AuthStatus.needsProfile : AuthStatus.authenticated,
-        user: activeUser,
-        phoneE164: phone,
-      ));
-
-      if (!needsProfile) {
+      if (needsProfile) {
+        emit(AuthState(
+          status: AuthStatus.needsProfile,
+          user: user,
+          phoneE164: phone,
+        ));
+      } else {
+        // Await availability restore inside the handler — emitting from an
+        // unawaited future after the handler completes crashes the bloc
+        // (FR-PUSH-06 / FR-JRN-06 device OTP login).
+        final activeUser = await _ensureAvailableOnSessionStart(user);
+        emit(AuthState(
+          status: AuthStatus.authenticated,
+          user: activeUser,
+          phoneE164: phone,
+        ));
         _registerPush();
-        unawaited(_ensureAvailableOnSessionStart(user).then((updated) {
-          if (!isClosed && state.status == AuthStatus.authenticated) {
-            emit(state.copyWith(user: updated));
-          }
-        }));
       }
     } on AppException catch (e) {
       emit(AuthState(
@@ -318,13 +320,17 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthLogoutRequested event,
     Emitter<AuthState> emit,
   ) async {
-    emit(AuthState.loading(user: state.user));
-
     final fcmToken = await _fcmService?.prepareLogoutToken();
+    // Bound remote logout so flaky emulator networking cannot leave AuthBloc
+    // stuck in loading past the device harness wait (FR-NAV-05).
     try {
-      await _authRepository.logout(fcmToken: fcmToken);
+      await _authRepository
+          .logout(fcmToken: fcmToken)
+          .timeout(const Duration(seconds: 8));
     } catch (_) {
-      // Clear local session even if API call fails.
+      try {
+        await _authRepository.clearLocalSession();
+      } catch (_) {}
     }
     await _fcmService?.clearLocalToken();
 
