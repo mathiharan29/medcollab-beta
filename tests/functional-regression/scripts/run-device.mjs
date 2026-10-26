@@ -9,6 +9,16 @@ import { deviceCases, devicePackage, deviceSdk, emulatorSerial, selectedDeviceCa
 import { prepareDeviceWorkspace, verifyDeviceSource, verifyDeviceCleanupPath, command, hash } from './prepare-device-workspace.mjs';
 
 const root = resolve(import.meta.dirname, '../../..');
+// Lean WHPX emulators occasionally reset adb-reverse sockets; do not abort the
+// whole lane mid-case for a single ECONNRESET (seen during FR-NAV-04).
+process.on('uncaughtException', (error) => {
+  if (['ECONNRESET', 'EPIPE', 'ECONNABORTED'].includes(error?.code)) {
+    console.error(`Ignoring transient network error: ${error.code}`);
+    return;
+  }
+  console.error(error);
+  process.exit(1);
+});
 const option = (key) => process.argv.find((arg) => arg.startsWith(`--${key}=`))?.slice(key.length + 3);
 if (option('output') && existsSync(resolve(option('output')))) throw new Error('Native output must be a new directory; existing evidence cannot be overwritten');
 const selected = selectedDeviceCases(option('cases'));

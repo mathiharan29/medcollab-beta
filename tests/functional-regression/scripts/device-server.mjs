@@ -130,7 +130,15 @@ export async function startDeviceServer({ adb, serial, caseId }) {
       upstream.on('error', () => { if (!res.headersSent) res.writeHead(502); res.end(); });
       req.pipe(upstream);
     });
-    gateway.on('connection', (socket) => { sockets.add(socket); socket.once('close', () => sockets.delete(socket)); });
+    gateway.on('connection', (socket) => {
+      sockets.add(socket);
+      socket.on('error', () => { try { socket.destroy(); } catch { /* ignore */ } });
+      socket.once('close', () => sockets.delete(socket));
+    });
+    // Emulator adb-reverse flaps must not kill the Node lane mid-case (ECONNRESET).
+    gateway.on('clientError', (error, socket) => {
+      try { socket.destroy(); } catch { /* ignore */ }
+    });
     // Socket.IO websocket upgrade forwards only to the disposable backend.
     gateway.on('upgrade', (req, socket, head) => {
       if (outage) return socket.destroy();
