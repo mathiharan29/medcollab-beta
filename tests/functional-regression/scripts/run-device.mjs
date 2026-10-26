@@ -105,16 +105,27 @@ async function requireEmulator(expectedSerial) {
   let lastLog = 0;
   while (Date.now() < deadline) {
     const devices = command(adb, ['devices', '-l'], root).split(/\r?\n/).filter((line) => /^\S+\s+device\b/.test(line));
+    if (devices.length > 1) throw new Error('Exactly one Android emulator and no physical devices are required');
     if (devices.length === 1) {
       const online = devices[0].split(/\s+/)[0];
       const serial = emulatorSerial(expectedSerial || online);
-      if (devices[0].startsWith(`${serial} `) || devices[0].startsWith(`${serial}\t`)) return serial;
-      throw new Error('Emulator does not match ADB inventory');
+      if (!(devices[0].startsWith(`${serial} `) || devices[0].startsWith(`${serial}\t`))) {
+        throw new Error('Emulator does not match ADB inventory');
+      }
+      // adb can list "device" before package manager is up; pm must succeed or
+      // every case errors with "Can't find service: package".
+      try {
+        const boot = command(adb, ['-s', serial, 'shell', 'getprop', 'sys.boot_completed'], root).trim();
+        const pm = command(adb, ['-s', serial, 'shell', 'pm', 'path', 'android'], root);
+        if (boot.split(/\s+/)[0] === '1' && pm.includes('package:')) return serial;
+      } catch {
+        // Keep waiting through early boot races.
+      }
+    } else if (!expectedSerial) {
+      throw new Error('Exactly one Android emulator and no physical devices are required');
     }
-    if (devices.length > 1) throw new Error('Exactly one Android emulator and no physical devices are required');
-    if (!expectedSerial) throw new Error('Exactly one Android emulator and no physical devices are required');
     if (Date.now() - lastLog > 30000) {
-      console.log(`Waiting for deferred Android emulator ${expectedSerial}...`);
+      console.log(`Waiting for deferred Android emulator ${expectedSerial || ''}...`);
       lastLog = Date.now();
     }
     await pause(2000);
