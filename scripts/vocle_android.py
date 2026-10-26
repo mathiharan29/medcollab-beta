@@ -97,8 +97,10 @@ class AndroidRuntime:
         self.emulator_port = port
         self.avd_name = "VocleLocal" + uuid.uuid4().hex[:10]
         self.env.update(VOCLE_ANDROID_SERIAL=self.serial, VOCLE_ANDROID_AVD=self.avd_name)
+        # 1536MB after deferred prewarm: 1024MB Play Store images were killing
+        # package manager mid-install on this 8GB host ("Can't find service: package").
         self.state.update(kind="disposable-emulator", serial=self.serial, systemImage=self.system_image_package,
-                          ramMb=1024, cpuCores=2,
+                          ramMb=1536, cpuCores=2,
                           sdk=str(sdk), java=str(java), userAvdReused=False, cleanup="PENDING",
                           deferredBoot=True)
 
@@ -110,10 +112,10 @@ class AndroidRuntime:
         print("Creating a disposable Android emulator from installed image: " + self.system_image_package, flush=True)
         self.command([self.avd_managers[-1], "create", "avd", "--force", "--name", self.avd_name, "--path", directory,
                       "--package", self.system_image_package, "--device", "pixel"], timeout=120, input_text="no\n")
-        # Keep the disposable AVD lean on 8GB Windows hosts (WHPX + WSL Docker).
-        # 1024MB leaves headroom when Cursor/AV leave ~2GB free physical RAM.
+        # Deferred APK prewarm frees host RAM before qemu; 1536MB keeps Android 36
+        # package manager alive through debug APK installs on 8GB WHPX hosts.
         with (directory / "config.ini").open("a", encoding="utf-8") as config:
-            config.write("\nhw.ramSize=1024\nhw.cpu.ncore=2\ndisk.dataPartition.size=4G\n")
+            config.write("\nhw.ramSize=1536\nhw.cpu.ncore=2\ndisk.dataPartition.size=4G\n")
         self.command([self.adb, "start-server"], check=False)
         self.log = (self.output / "android-emulator.log").open("wb")
         # Prefer DETACHED_PROCESS over CREATE_NO_WINDOW: the latter has been

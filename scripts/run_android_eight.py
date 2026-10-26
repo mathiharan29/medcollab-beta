@@ -97,7 +97,17 @@ def main() -> int:
                 code = child.returncode
                 break
             if ready.is_file():
-                print("APK prewarm signaled ready; booting owned emulator...", flush=True)
+                print("APK prewarm signaled ready; releasing Gradle/Java before qemu...", flush=True)
+                # Prewarm children can linger and steal RAM from the AVD.
+                if os.name == "nt":
+                    for image in ("java.exe", "dart.exe"):
+                        subprocess.run(
+                            ["taskkill.exe", "/IM", image, "/F"],
+                            stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL,
+                            check=False,
+                        )
+                    time.sleep(3)
                 try:
                     runtime.start_emulator()
                 except Exception as boot_error:  # noqa: BLE001

@@ -117,7 +117,12 @@ async function requireEmulator(expectedSerial) {
       try {
         const boot = command(adb, ['-s', serial, 'shell', 'getprop', 'sys.boot_completed'], root).trim();
         const pm = command(adb, ['-s', serial, 'shell', 'pm', 'path', 'android'], root);
-        if (boot.split(/\s+/)[0] === '1' && pm.includes('package:')) return serial;
+        if (boot.split(/\s+/)[0] === '1' && pm.includes('package:')) {
+          // Let PackageManager / system_server finish settling before APK install.
+          await pause(20000);
+          const again = command(adb, ['-s', serial, 'shell', 'pm', 'path', 'android'], root);
+          if (again.includes('package:')) return serial;
+        }
       } catch {
         // Keep waiting through early boot races.
       }
@@ -131,6 +136,22 @@ async function requireEmulator(expectedSerial) {
     await pause(2000);
   }
   throw new Error(`Timed out waiting for Android emulator ${expectedSerial}`);
+}
+
+async function ensurePackageManager(serial) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const boot = command(adb, ['-s', serial, 'shell', 'getprop', 'sys.boot_completed'], root).trim();
+      const pm = command(adb, ['-s', serial, 'shell', 'pm', 'path', 'android'], root);
+      if (boot.split(/\s+/)[0] === '1' && pm.includes('package:')) return serial;
+    } catch { /* fall through to soft reboot */ }
+    if (attempt === 0) {
+      console.log(`Emulator package manager unhealthy; soft-rebooting ${serial}...`);
+      try { command(adb, ['-s', serial, 'reboot'], root); } catch { /* reboot best-effort */ }
+      return requireEmulator(serial);
+    }
+  }
+  throw new Error(`Package manager unavailable on ${serial}`);
 }
 
 try {
@@ -197,6 +218,7 @@ try {
   for (const id of selected) {
     let caseCleanup = { status: 'ERROR' };
     try {
+      serial = await ensurePackageManager(serial);
       const packages = command(adb, ['-s', serial, 'shell', 'pm', 'list', 'packages', devicePackage], root);
       if (packages.includes(`package:${devicePackage}`)) command(adb, ['-s', serial, 'uninstall', devicePackage], root);
       active = await startDeviceServer({ adb, serial, caseId: id });
