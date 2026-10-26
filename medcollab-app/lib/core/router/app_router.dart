@@ -364,7 +364,10 @@ class AppRouter {
         state.uri.path.isNotEmpty ? state.uri.path : state.matchedLocation;
 
     // Pending invite while not fully signed in — remember and resume after auth.
-    if (location.startsWith('/join/')) {
+    // Do not latch when already authenticated: successful join navigates to
+    // /spaces/... and must not be yanked back to /join/... (FR-LINK-04).
+    if (location.startsWith('/join/') &&
+        auth.status != AuthStatus.authenticated) {
       _pendingJoinLocation = location;
     }
 
@@ -400,6 +403,9 @@ class AppRouter {
         return AppRoutes.profileSetup;
 
       case AuthStatus.authenticated:
+        if (location.startsWith('/spaces/')) {
+          _pendingJoinLocation = null;
+        }
         final pendingDeepLink = _pendingDeepLinkLocation;
         if (pendingDeepLink != null) {
           _pendingDeepLinkLocation = null;

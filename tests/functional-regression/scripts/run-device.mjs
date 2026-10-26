@@ -216,8 +216,18 @@ try {
           `--dart-define=DEVICE_CONTROL_URL=${active.controlOrigin}`, `--dart-define=DEVICE_RUN_ID=${active.runId}`,
           `--dart-define=DEVICE_PHASE=${phase}`];
         // First assembleDebug on a cold disposable Gradle cache often exceeds 10m.
-        const phaseResult = await runLogged(flutter, args, workspace.app,
+        let phaseResult = await runLogged(flutter, args, workspace.app,
           join(workspace.runRoot, 'diagnostics', `${id}-${phase}.log`), 25 * 60 * 1000);
+        // One infra-only retry for driver attach flakes (RPCError / TimeoutException).
+        // Never retry assertion failures — those are product verdicts.
+        if (phaseResult.exitCode !== 0 && phaseResult.infrastructureFailure && !phaseResult.assertionFailure) {
+          console.log(`Infra retry once for ${id} native phase ${phase}`);
+          try { await active.forceStop(); } catch { /* force-stop best-effort */ }
+          await pause(2000);
+          await rm(driverResponse, { force: true });
+          phaseResult = await runLogged(flutter, args, workspace.app,
+            join(workspace.runRoot, 'diagnostics', `${id}-${phase}-retry.log`), 25 * 60 * 1000);
+        }
         // The control gateway can fail during result submission. The native
         // driver retains the original case outcome instead of overwriting it
         // with a reporting timeout or turning a business FAIL into ERROR.

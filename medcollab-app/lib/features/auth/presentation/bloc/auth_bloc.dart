@@ -320,19 +320,29 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthLogoutRequested event,
     Emitter<AuthState> emit,
   ) async {
-    final fcmToken = await _fcmService?.prepareLogoutToken();
-    // Bound remote logout so flaky emulator networking cannot leave AuthBloc
-    // stuck in loading past the device harness wait (FR-NAV-05).
+    // Every step is bounded — SharedPreferences/FCM hangs on a stressed
+    // emulator must not leave AuthBloc past the device harness wait
+    // (FR-NAV-05 / FR-JRN-05).
+    String? fcmToken;
+    try {
+      fcmToken = await _fcmService
+          ?.prepareLogoutToken()
+          .timeout(const Duration(seconds: 2));
+    } catch (_) {}
     try {
       await _authRepository
           .logout(fcmToken: fcmToken)
-          .timeout(const Duration(seconds: 8));
+          .timeout(const Duration(seconds: 5));
     } catch (_) {
       try {
-        await _authRepository.clearLocalSession();
+        await _authRepository
+            .clearLocalSession()
+            .timeout(const Duration(seconds: 3));
       } catch (_) {}
     }
-    await _fcmService?.clearLocalToken();
+    try {
+      await _fcmService?.clearLocalToken().timeout(const Duration(seconds: 2));
+    } catch (_) {}
 
     emit(const AuthState(status: AuthStatus.unauthenticated));
   }

@@ -113,11 +113,13 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
   }
 
   Future<void> loadMessages({bool silent = false}) async {
+    if (isClosed) return;
     if (!silent) {
       emit(state.copyWith(isLoading: true, error: null));
     }
     try {
       final page = await _messageRepository.getMessages(channelId);
+      if (isClosed) return;
       emit(
         state.copyWith(
           messages: page.messages,
@@ -134,6 +136,7 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
       unawaited(_markMessagesRead(page.messages));
       unawaited(_markChannelNotificationsRead());
     } on AppException catch (e) {
+      if (isClosed) return;
       _markReadOnlyForAccessError(e);
       emit(state.copyWith(isLoading: false, error: e.message));
     }

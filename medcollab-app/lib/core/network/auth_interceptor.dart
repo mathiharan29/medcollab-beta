@@ -57,6 +57,13 @@ class AuthInterceptor extends Interceptor {
       return handler.next(err);
     }
 
+    // Anonymous 401s (badge polls before login) must not fire session-expired
+    // and wipe an in-flight OTP flow (FR-JRN-06).
+    final existingRefresh = await _storage.getRefreshToken();
+    if (existingRefresh == null || existingRefresh.isEmpty) {
+      return handler.next(err);
+    }
+
     final newToken = await _refreshToken();
     if (newToken == null) {
       await _storage.clearSession();
