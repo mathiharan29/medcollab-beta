@@ -37,6 +37,12 @@ class _MedCollabAppState extends State<MedCollabApp> {
       // target until auth finishes, then opens that chat instead of Home.
       PushNotificationRouter.open(payload);
     });
+    // FCM initialize() may have already emitted getInitialMessage before this
+    // subscription existed — replay that buffered cold-start tap.
+    final pendingColdStart = deps.fcmService.takePendingColdStartTap();
+    if (pendingColdStart != null) {
+      PushNotificationRouter.open(pendingColdStart);
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       deps.navBadgesCubit.setUserId(deps.authBloc.state.user?.id);
     });

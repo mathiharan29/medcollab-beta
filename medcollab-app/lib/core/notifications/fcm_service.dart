@@ -118,9 +118,19 @@ class FcmService {
 
   bool _initialized = false;
   bool _firebaseReady = false;
+  /// Cold-start getInitialMessage can fire before MedCollabApp subscribes to
+  /// the broadcast tap stream (main.dart and device launch both init FCM first).
+  PushPayload? _pendingColdStartTap;
 
   /// Stream of notification taps (foreground local + background/terminated).
   Stream<PushPayload> get onNotificationTap => tapController.stream;
+
+  /// Drain a tap that arrived before any listener existed (FR-JRN-06).
+  PushPayload? takePendingColdStartTap() {
+    final pending = _pendingColdStartTap;
+    _pendingColdStartTap = null;
+    return pending;
+  }
 
   bool get isReady => _firebaseReady;
 
@@ -307,6 +317,10 @@ class FcmService {
     if (message.notification?.body != null) {
       data.putIfAbsent('body', () => message.notification!.body);
     }
-    tapController.add(PushPayload.fromMap(data));
+    final payload = PushPayload.fromMap(data);
+    if (!tapController.hasListener) {
+      _pendingColdStartTap = payload;
+    }
+    tapController.add(payload);
   }
 }

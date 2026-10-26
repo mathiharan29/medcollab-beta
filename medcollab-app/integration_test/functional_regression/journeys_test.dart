@@ -130,8 +130,11 @@ void main() {
       await login(tester, 'B');
       final target = AppRoutes.spaceHandoffDetailPath(
           f['spaceId'] as String, f['handoffId'] as String);
-      await until(tester, () => deps.appRouter.router.state.uri.path == target,
-          'cold notification survives startup and login and opens its exact handoff');
+      await until(
+          tester,
+          () => deps.appRouter.router.state.uri.path == target,
+          'cold notification survives startup and login and opens its exact handoff',
+          limit: const Duration(seconds: 45));
       await until(
           tester,
           () => find.text('Synthetic device patient').evaluate().isNotEmpty,

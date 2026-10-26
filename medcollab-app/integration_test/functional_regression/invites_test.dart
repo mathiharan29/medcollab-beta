@@ -137,14 +137,16 @@ void main() {
         'await-pending', {'spaceId': pending['spaceId'], 'label': 'C'});
     expect(state['member'], false);
     expect(state['pendingCount'], 1);
-    await tester.pump();
+    await until(
+        tester,
+        () => find.text('Pending').evaluate().isNotEmpty,
+        'Q14 pending approval presentation is shown');
+    expect(find.textContaining('waiting for admin approval'), findsOneWidget);
     expect(find.text('Joined ${pending['name']}'), findsNothing);
     observations.add(
         'Live/screenshot QR, raw code and full link decoded; cancel/preview do not join; native camera deny/grant controlled; accepted membership persisted.');
     observations.add(
-        'Approval request persisted once without membership; current mounted pending response recorded, Q14 unresolved.');
+        'Approval request persisted once without membership; Pending presentation shown per Q14.');
     await cleanupDevice(tester);
-    throw DeviceDecision(
-        'Q14: pending approval presentation remains unresolved; safe membership and request assertions verified.');
   });
 }

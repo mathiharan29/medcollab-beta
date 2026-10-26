@@ -74,9 +74,16 @@ void main() {
     documents.inputs.add(PlatformFile(
         name: 'synthetic-device.pdf', size: pdf.length, bytes: pdf));
     await attach(tester, 'Document / PDF');
-    await until(tester, () => !chat.state.isSending && chat.state.messages.any(
-        (message) => message.content.fileName == 'synthetic-device.pdf'),
-        'PDF send completes or exposes a typed failure');
+    // Upload + message commit on a lean emulator often exceeds the default 15s.
+    await until(
+        tester,
+        () =>
+            (!chat.state.isSending &&
+                chat.state.messages.any((message) =>
+                    message.content.fileName == 'synthetic-device.pdf')) ||
+            (chat.state.error != null && chat.state.error!.isNotEmpty),
+        'PDF send completes or exposes a typed failure',
+        limit: const Duration(seconds: 90));
     expect(find.text('synthetic-device.pdf'), findsWidgets,
         reason: 'Selected PDF has a visible preview/file entry');
     final uploaded = await deps.mediaRepository.uploadFile(

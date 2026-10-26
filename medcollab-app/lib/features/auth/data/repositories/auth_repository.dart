@@ -142,6 +142,9 @@ class AuthRepository extends BaseRepository {
 
   /// Drop socket + tokens without calling the logout API (expired refresh).
   Future<void> clearLocalSession() async {
+    // Tokens first so session checks pass even if draft/prefs wipe hangs
+    // under a stressed Android emulator (FR-JRN-05).
+    await _storage.clearSession();
     try {
       await _socketClient.disconnect();
     } catch (_) {}
@@ -155,7 +158,6 @@ class AuthRepository extends BaseRepository {
       _clearSharedAccountCaches(),
     ]);
     ChatTranscriptCache.clearAll();
-    await _storage.clearSession();
   }
 
   Future<void> _clearSharedAccountCaches() async {
