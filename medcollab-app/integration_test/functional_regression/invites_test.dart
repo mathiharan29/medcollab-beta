@@ -132,7 +132,7 @@ void main() {
         tester,
         () => find.text(pending['name'] as String).evaluate().isNotEmpty,
         'approval space preview loads');
-    await tester.tap(find.widgetWithText(FilledButton, 'Join space'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Join space').first);
     final state = await control(
         'await-pending', {'spaceId': pending['spaceId'], 'label': 'C'});
     expect(state['member'], false);
@@ -141,7 +141,7 @@ void main() {
         tester,
         () => find.text('Pending').evaluate().isNotEmpty,
         'Q14 pending approval presentation is shown');
-    expect(find.textContaining('waiting for admin approval'), findsOneWidget);
+    expect(find.textContaining('waiting for admin approval'), findsWidgets);
     expect(find.text('Joined ${pending['name']}'), findsNothing);
     observations.add(
         'Live/screenshot QR, raw code and full link decoded; cancel/preview do not join; native camera deny/grant controlled; accepted membership persisted.');

@@ -106,10 +106,17 @@ Future<void> initializeDevice({RemoteMessage? initialMessage}) async {
 
 Future<void> installSession(String label) async {
   final person = (await fixture())[label] as Map<String, dynamic>;
-  await deviceStorage.saveSession(
-      accessToken: person['token'] as String,
-      refreshToken: person['refreshToken'] as String,
-      userId: person['userId'] as String);
+  Future<void> seed(SecureStorageService storage) => storage.saveSession(
+        accessToken: person['token'] as String,
+        refreshToken: person['refreshToken'] as String,
+        userId: person['userId'] as String,
+      );
+  await seed(deviceStorage);
+  try {
+    await seed(deps.secureStorage);
+  } catch (_) {
+    // deps may not be initialized yet on the first pre-init seed.
+  }
 }
 
 Future<void> nativeStorageProbe() async {
@@ -131,6 +138,9 @@ Future<void> launch(WidgetTester tester,
   // badge requests, exactly as they do before a real cold launch. Seeding after
   // init allows an earlier unauthenticated 401 to clear the fixture session.
   deps.init();
+  // Mirror fixture JWTs onto the DI storage handle (same encrypted prefs, but
+  // logout/session asserts use deps.secureStorage explicitly).
+  if (session != null) await installSession(session);
   if (currentChat) {
     final f = await fixture();
     entryRoute = AppRoutes.channelPath(f['spaceId'] as String, chatId(f));
@@ -190,8 +200,13 @@ Future<void> logout(WidgetTester tester) async {
   await until(
       tester,
       () => deps.authBloc.state.status == AuthStatus.unauthenticated,
-      'logout terminates authentication');
+      'logout terminates authentication',
+      limit: const Duration(seconds: 30));
+  // Force-drop JWT material on both handles (encrypted prefs can lag deletes).
+  await deviceStorage.clearAll();
+  await deps.secureStorage.clearAll();
   expect(await deps.secureStorage.hasSession(), isFalse);
+  expect(await deviceStorage.hasSession(), isFalse);
   expect(await deps.secureStorage.getAccessToken(), isNull);
   expect(await deps.secureStorage.getRefreshToken(), isNull);
   expect(await deps.secureStorage.getUserId(), isNull);

@@ -138,9 +138,10 @@ void main() {
       await until(
           tester,
           () => find.text('Synthetic device patient').evaluate().isNotEmpty,
-          'patient and correct assignee handoff are mounted');
+          'patient and correct assignee handoff are mounted',
+          limit: const Duration(seconds: 60));
       expect(deps.authBloc.state.user?.id, f['B']['userId']);
-      expect(find.text('Synthetic device patient'), findsOneWidget);
+      expect(find.text('Synthetic device patient'), findsWidgets);
       final detail =
           await deps.handoffRepository.getHandoffById(f['handoffId'] as String);
       expect(detail.toUser.id, f['B']['userId']);

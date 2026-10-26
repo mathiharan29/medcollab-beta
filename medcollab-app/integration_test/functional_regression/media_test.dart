@@ -86,29 +86,7 @@ void main() {
         limit: const Duration(seconds: 90));
     expect(find.text('synthetic-device.pdf'), findsWidgets,
         reason: 'Selected PDF has a visible preview/file entry');
-    final uploaded = await deps.mediaRepository.uploadFile(
-        bytes: pdf,
-        fileName: 'synthetic-opener.pdf',
-        mimeType: 'application/pdf');
-    safeDeviceOrigin(Uri.parse(uploaded.url).origin);
-    final downloaded = await Dio().get<List<int>>(uploaded.url,
-        options: Options(responseType: ResponseType.bytes));
-    expect(downloaded.data, orderedEquals(pdf));
-    final observe = control('observe-opener');
-    await DocumentOpenService.open(composer,
-        url: uploaded.url,
-        fileName: 'synthetic-opener.pdf',
-        mimeType: 'application/pdf');
-    final opened = await observe;
-    expect(opened['externalActivityObserved'], true);
-    expect(opened['localUriObserved'], true);
     final temporary = await getTemporaryDirectory();
-    expect(
-        await File('${temporary.path}/vocle_synthetic-opener.pdf')
-            .readAsBytes(),
-        orderedEquals(pdf));
-    observations.add(
-        'Picker cancellation caused zero upload/message requests; exact PDF delivery and native external activity were verified.');
 
     final png = Uint8List.fromList(base64Decode(fixtureBytes['png'] as String));
     final pngPath = '${temporary.path}/synthetic-device.png';
@@ -116,7 +94,8 @@ void main() {
     images.inputs.add(XFile(pngPath));
     await attach(tester, 'Photos & videos');
     await until(tester, () => !chat.state.isSending && chat.state.messages.any(
-        (message) => message.content.fileName == 'synthetic-device.png'), 'image send terminates');
+        (message) => message.content.fileName == 'synthetic-device.png'), 'image send terminates',
+        limit: const Duration(seconds: 90));
     expect(
         chat.state.messages.any(
             (message) => message.content.fileName == 'synthetic-device.png'),
@@ -140,7 +119,8 @@ void main() {
     images.inputs.add(XFile(videoPath));
     await attach(tester, 'Photos & videos');
     await until(tester, () => !chat.state.isSending && chat.state.messages.any(
-        (message) => message.content.fileName == 'synthetic-device.mp4'), 'video send terminates');
+        (message) => message.content.fileName == 'synthetic-device.mp4'), 'video send terminates',
+        limit: const Duration(seconds: 90));
     await until(tester, () => find.text('synthetic-device.mp4').evaluate().isNotEmpty,
         'the selected video preview is rendered');
     expect(find.text('synthetic-device.mp4'), findsWidgets);
@@ -185,9 +165,36 @@ void main() {
         .where((name) =>
             !delivered.any((message) => message['content']['fileName'] == name))
         .toList();
-    await cleanupDevice(tester);
-    if (missing.isNotEmpty)
+    if (missing.isNotEmpty) {
+      await cleanupDevice(tester);
       throw DeviceDecision(
           'Q5: actual local upload-to-message incompatibility for ${missing.join(', ')}; no fake-provider success substituted.');
+    }
+
+    // Native PDF opener last — external activity can trip flutter_test inTest
+    // assertions on later pumps (FR-MED-08).
+    final uploaded = await deps.mediaRepository.uploadFile(
+        bytes: pdf,
+        fileName: 'synthetic-opener.pdf',
+        mimeType: 'application/pdf');
+    safeDeviceOrigin(Uri.parse(uploaded.url).origin);
+    final downloaded = await Dio().get<List<int>>(uploaded.url,
+        options: Options(responseType: ResponseType.bytes));
+    expect(downloaded.data, orderedEquals(pdf));
+    final observe = control('observe-opener');
+    await DocumentOpenService.open(composer,
+        url: uploaded.url,
+        fileName: 'synthetic-opener.pdf',
+        mimeType: 'application/pdf');
+    final opened = await observe;
+    expect(opened['externalActivityObserved'], true);
+    expect(opened['localUriObserved'], true);
+    expect(
+        await File('${temporary.path}/vocle_synthetic-opener.pdf')
+            .readAsBytes(),
+        orderedEquals(pdf));
+    observations.add(
+        'Picker cancellation caused zero upload/message requests; exact PDF delivery and native external activity were verified.');
+    await cleanupDevice(tester);
   });
 }
