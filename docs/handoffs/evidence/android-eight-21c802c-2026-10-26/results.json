@@ -1,0 +1,405 @@
+{
+  "context": {
+    "repository": null,
+    "kind": "branch",
+    "prNumber": null,
+    "branchRef": "refs/heads/master"
+  },
+  "execution": {
+    "id": "16cadd9e-525a-4cf7-b78c-d33847316b15",
+    "runId": null,
+    "attempt": null,
+    "mode": "LOCAL",
+    "completed": true,
+    "completedAt": "2026-10-26T17:12:45.857Z"
+  },
+  "executionMode": "LOCAL_ONLY",
+  "sourceKind": "committed-fork-archive",
+  "environmentContractVersion": 1,
+  "tier": "D",
+  "platform": "Android emulator",
+  "selected": [
+    "FR-MED-08",
+    "FR-PUSH-05",
+    "FR-PUSH-06",
+    "FR-NAV-04",
+    "FR-NAV-05",
+    "FR-LINK-04",
+    "FR-JRN-05",
+    "FR-JRN-06"
+  ],
+  "planned": 8,
+  "sourceSha": "21c802ceaf674acb9116b53d475b627ab15977ae",
+  "harnessSha": "21c802ceaf674acb9116b53d475b627ab15977ae",
+  "executed": 8,
+  "counts": {
+    "PASS": 8,
+    "FAIL": 0,
+    "ERROR": 0,
+    "BLOCKED": 0,
+    "NEEDS_DECISION": 0,
+    "SKIP": 0
+  },
+  "cases": [
+    {
+      "id": "FR-MED-08",
+      "status": "PASS",
+      "executed": true,
+      "phase": "media",
+      "runId": "a71faf60-f84f-4103-94d0-5424332ff70a",
+      "processId": 7249,
+      "durationMs": 109106,
+      "evidence": [
+        "Selected image/PDF/video entries and error recovery observed using real chat upload/send operations.",
+        "Picker cancellation caused zero upload/message requests; exact PDF delivery and native external activity were verified."
+      ],
+      "cleanup": {
+        "status": "PASS",
+        "backendStopped": true,
+        "mongoStopped": true,
+        "controlServerStopped": true,
+        "runtimeRemoved": true
+      }
+    },
+    {
+      "id": "FR-PUSH-05",
+      "status": "PASS",
+      "executed": true,
+      "phase": "notification-grouping",
+      "runId": "a71faf60-f84f-4103-94d0-5424332ff70a",
+      "processId": 8760,
+      "durationMs": 26044,
+      "evidence": [
+        "Native shade has one tag per channel; grouped lines persist; injected tap routes exactly; native-token reply stores one backend message."
+      ],
+      "cleanup": {
+        "status": "PASS",
+        "backendStopped": true,
+        "mongoStopped": true,
+        "controlServerStopped": true,
+        "runtimeRemoved": true
+      }
+    },
+    {
+      "id": "FR-PUSH-06",
+      "status": "PASS",
+      "executed": true,
+      "phase": "notification-token",
+      "runId": "a71faf60-f84f-4103-94d0-5424332ff70a",
+      "processId": 9184,
+      "durationMs": 41116,
+      "evidence": [
+        "Native permission deny/grant plus injected token inputs; denial remains usable; registration, refresh, logout removal and relogin verified in disposable DB."
+      ],
+      "cleanup": {
+        "status": "PASS",
+        "backendStopped": true,
+        "mongoStopped": true,
+        "controlServerStopped": true,
+        "runtimeRemoved": true
+      }
+    },
+    {
+      "id": "FR-NAV-04",
+      "status": "PASS",
+      "executed": true,
+      "phase": "resume",
+      "runId": "a71faf60-f84f-4103-94d0-5424332ff70a",
+      "processId": 9516,
+      "durationMs": 56216,
+      "evidence": [
+        "Observed native lifecycle: inactive, hidden, paused",
+        "Native paused/resumed; transport recovered; exact peer ID persisted and displayed; draft retained."
+      ],
+      "cleanup": {
+        "status": "PASS",
+        "backendStopped": true,
+        "mongoStopped": true,
+        "controlServerStopped": true,
+        "runtimeRemoved": true
+      }
+    },
+    {
+      "id": "FR-NAV-05",
+      "status": "PASS",
+      "executed": true,
+      "phase": "session-empty",
+      "runId": "a71faf60-f84f-4103-94d0-5424332ff70a",
+      "processId": 10510,
+      "durationMs": 9000,
+      "evidence": [
+        "Two host force-stops; native encrypted session restored, cleared after API 503, and absent on next launch."
+      ],
+      "cleanup": {
+        "status": "PASS",
+        "backendStopped": true,
+        "mongoStopped": true,
+        "controlServerStopped": true,
+        "runtimeRemoved": true
+      }
+    },
+    {
+      "id": "FR-LINK-04",
+      "status": "PASS",
+      "executed": true,
+      "phase": "invites",
+      "runId": "a71faf60-f84f-4103-94d0-5424332ff70a",
+      "processId": 10794,
+      "durationMs": 48488,
+      "evidence": [
+        "Live/screenshot QR, raw code and full link decoded; cancel/preview do not join; native camera deny/grant controlled; accepted membership persisted.",
+        "Approval request persisted once without membership; Pending presentation shown per Q14."
+      ],
+      "cleanup": {
+        "status": "PASS",
+        "backendStopped": true,
+        "mongoStopped": true,
+        "controlServerStopped": true,
+        "runtimeRemoved": true
+      }
+    },
+    {
+      "id": "FR-JRN-05",
+      "status": "PASS",
+      "executed": true,
+      "phase": "chat-journey",
+      "runId": "a71faf60-f84f-4103-94d0-5424332ff70a",
+      "processId": 11271,
+      "durationMs": 57174,
+      "evidence": [
+        "Native draft persistence, background transport outage, UI send, real peer Socket.IO reply, refetch and same-account relogin with one committed ID."
+      ],
+      "cleanup": {
+        "status": "PASS",
+        "backendStopped": true,
+        "mongoStopped": true,
+        "controlServerStopped": true,
+        "runtimeRemoved": true
+      }
+    },
+    {
+      "id": "FR-JRN-06",
+      "status": "PASS",
+      "executed": true,
+      "phase": "handoff-cold",
+      "runId": "a71faf60-f84f-4103-94d0-5424332ff70a",
+      "processId": 11842,
+      "durationMs": 22111,
+      "evidence": [
+        "Host force-stop, injected cold notification, required login, exact patient/assignee, UI acknowledgement, sender event and persisted receipt."
+      ],
+      "cleanup": {
+        "status": "PASS",
+        "backendStopped": true,
+        "mongoStopped": true,
+        "controlServerStopped": true,
+        "runtimeRemoved": true
+      }
+    }
+  ],
+  "phases": [
+    {
+      "id": "FR-MED-08",
+      "phase": "media",
+      "exitCode": 0,
+      "signal": null,
+      "log": "diagnostics\\FR-MED-08-media.log",
+      "completed": true,
+      "toolProcessId": 23216,
+      "ownedResourceCleanup": {
+        "status": "PASS",
+        "captured": 5,
+        "logcatReaders": 1
+      },
+      "infrastructureFailure": false,
+      "assertionFailure": false,
+      "androidApkSha256": "03412e65fa9181d60da6f305c46715cf4b75e84db3347108f42bd822375f0ecb"
+    },
+    {
+      "id": "FR-PUSH-05",
+      "phase": "notification-grouping",
+      "exitCode": 0,
+      "signal": null,
+      "log": "diagnostics\\FR-PUSH-05-notification-grouping.log",
+      "completed": true,
+      "toolProcessId": 23488,
+      "ownedResourceCleanup": {
+        "status": "PASS",
+        "captured": 5,
+        "logcatReaders": 1
+      },
+      "infrastructureFailure": false,
+      "assertionFailure": false,
+      "androidApkSha256": "7bb51a86b8a86ec57d9b5409894c91c1b902397fb4e3e4c850bd8d2dcab32a31"
+    },
+    {
+      "id": "FR-PUSH-06",
+      "phase": "notification-token",
+      "exitCode": 0,
+      "signal": null,
+      "log": "diagnostics\\FR-PUSH-06-notification-token.log",
+      "completed": true,
+      "toolProcessId": 24840,
+      "ownedResourceCleanup": {
+        "status": "PASS",
+        "captured": 5,
+        "logcatReaders": 1
+      },
+      "infrastructureFailure": false,
+      "assertionFailure": false,
+      "androidApkSha256": "1405e36852503274e6ab703b25dd3d6a58d02212953f77cf1275a167b6ad5870"
+    },
+    {
+      "id": "FR-NAV-04",
+      "phase": "resume",
+      "exitCode": 0,
+      "signal": null,
+      "log": "diagnostics\\FR-NAV-04-resume.log",
+      "completed": true,
+      "toolProcessId": 20744,
+      "ownedResourceCleanup": {
+        "status": "PASS",
+        "captured": 5,
+        "logcatReaders": 1
+      },
+      "infrastructureFailure": false,
+      "assertionFailure": false,
+      "androidApkSha256": "45bbc87384ce243e29f75de7998c654198c94586e47018c21f8ff12af515c8b6"
+    },
+    {
+      "id": "FR-NAV-05",
+      "phase": "session-seed",
+      "exitCode": 0,
+      "signal": null,
+      "log": "diagnostics\\FR-NAV-05-session-seed.log",
+      "completed": true,
+      "toolProcessId": 9760,
+      "ownedResourceCleanup": {
+        "status": "PASS",
+        "captured": 5,
+        "logcatReaders": 1
+      },
+      "infrastructureFailure": false,
+      "assertionFailure": false,
+      "androidApkSha256": "47d6f9bd666359836425ab70218da1ccb20e336ba1a40638f78da8aff95bdb37"
+    },
+    {
+      "id": "FR-NAV-05",
+      "phase": "session-restore",
+      "exitCode": 0,
+      "signal": null,
+      "log": "diagnostics\\FR-NAV-05-session-restore.log",
+      "completed": true,
+      "toolProcessId": 21476,
+      "ownedResourceCleanup": {
+        "status": "PASS",
+        "captured": 5,
+        "logcatReaders": 1
+      },
+      "infrastructureFailure": false,
+      "assertionFailure": false,
+      "androidApkSha256": "992b852c9b4a2e72141a47a8ae2914f7d5345fa7e5b28e1cb214ea39f678ecda"
+    },
+    {
+      "id": "FR-NAV-05",
+      "phase": "session-empty",
+      "exitCode": 0,
+      "signal": null,
+      "log": "diagnostics\\FR-NAV-05-session-empty.log",
+      "completed": true,
+      "toolProcessId": 15788,
+      "ownedResourceCleanup": {
+        "status": "PASS",
+        "captured": 5,
+        "logcatReaders": 1
+      },
+      "infrastructureFailure": false,
+      "assertionFailure": false,
+      "androidApkSha256": "63d8dc8b3391168120e41be57355cef6a890d9119a58e569a5f55088f4aed606"
+    },
+    {
+      "id": "FR-LINK-04",
+      "phase": "invites",
+      "exitCode": 0,
+      "signal": null,
+      "log": "diagnostics\\FR-LINK-04-invites.log",
+      "completed": true,
+      "toolProcessId": 25784,
+      "ownedResourceCleanup": {
+        "status": "PASS",
+        "captured": 5,
+        "logcatReaders": 1
+      },
+      "infrastructureFailure": false,
+      "assertionFailure": false,
+      "androidApkSha256": "ca7f8ce4c0f4a8a667683d222810fd7c4a31559d3093a937777dad8679c414da"
+    },
+    {
+      "id": "FR-JRN-05",
+      "phase": "chat-journey",
+      "exitCode": 0,
+      "signal": null,
+      "log": "diagnostics\\FR-JRN-05-chat-journey.log",
+      "completed": true,
+      "toolProcessId": 23132,
+      "ownedResourceCleanup": {
+        "status": "PASS",
+        "captured": 5,
+        "logcatReaders": 1
+      },
+      "infrastructureFailure": false,
+      "assertionFailure": false,
+      "androidApkSha256": "f36235b61a728a714e617a666dd39f8af710638cd47fe56e7afef5194bae7d32"
+    },
+    {
+      "id": "FR-JRN-06",
+      "phase": "handoff-seed",
+      "exitCode": 0,
+      "signal": null,
+      "log": "diagnostics\\FR-JRN-06-handoff-seed.log",
+      "completed": true,
+      "toolProcessId": 1572,
+      "ownedResourceCleanup": {
+        "status": "PASS",
+        "captured": 5,
+        "logcatReaders": 1
+      },
+      "infrastructureFailure": false,
+      "assertionFailure": false,
+      "androidApkSha256": "6bd64161c81b08b5f29b83c559893a7f79a91a308751acc7f8d1fc922f47fbd0"
+    },
+    {
+      "id": "FR-JRN-06",
+      "phase": "handoff-cold",
+      "exitCode": 0,
+      "signal": null,
+      "log": "diagnostics\\FR-JRN-06-handoff-cold.log",
+      "completed": true,
+      "toolProcessId": 3156,
+      "ownedResourceCleanup": {
+        "status": "PASS",
+        "captured": 5,
+        "logcatReaders": 1
+      },
+      "infrastructureFailure": false,
+      "assertionFailure": false,
+      "androidApkSha256": "0a653f6d8dc6b4e927b87cf92b6686362f9a3763252b40ae7ea0a5589abf7acd"
+    }
+  ],
+  "provenance": {
+    "status": "PASS",
+    "sourceSha": "21c802ceaf674acb9116b53d475b627ab15977ae",
+    "checkedFiles": 261
+  },
+  "cleanup": {
+    "status": "PASS",
+    "dedicatedTestAppRemoved": true,
+    "isolatedTargetRemoved": true
+  },
+  "infrastructureErrors": [],
+  "fullSuccess": true,
+  "providerDeliveryProven": false,
+  "iosImplemented": false,
+  "transportOutage": "test-owned local gateway; no claim of carrier/radio delivery",
+  "generatedAt": "2026-10-26T17:12:45.857Z"
+}

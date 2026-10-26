@@ -1,0 +1,203 @@
+{
+  "checkpoints": [],
+  "controlActions": [
+    {
+      "action": "camera-permission",
+      "at": "2026-10-26T17:00:48.836Z"
+    },
+    {
+      "action": "fixture",
+      "at": "2026-10-26T17:00:49.670Z"
+    },
+    {
+      "action": "camera-permission-state",
+      "at": "2026-10-26T17:00:57.182Z"
+    },
+    {
+      "action": "membership",
+      "at": "2026-10-26T17:00:58.751Z"
+    },
+    {
+      "action": "camera-permission",
+      "at": "2026-10-26T17:00:59.842Z"
+    },
+    {
+      "action": "membership",
+      "at": "2026-10-26T17:01:03.317Z"
+    },
+    {
+      "action": "membership",
+      "at": "2026-10-26T17:01:04.693Z"
+    },
+    {
+      "action": "membership",
+      "at": "2026-10-26T17:01:09.296Z"
+    },
+    {
+      "action": "membership",
+      "at": "2026-10-26T17:01:11.490Z"
+    },
+    {
+      "action": "membership",
+      "at": "2026-10-26T17:01:16.788Z"
+    },
+    {
+      "action": "membership",
+      "at": "2026-10-26T17:01:19.191Z"
+    },
+    {
+      "action": "membership",
+      "at": "2026-10-26T17:01:21.980Z"
+    },
+    {
+      "action": "membership",
+      "at": "2026-10-26T17:01:23.032Z"
+    },
+    {
+      "action": "await-pending",
+      "at": "2026-10-26T17:01:24.654Z"
+    },
+    {
+      "action": "result",
+      "at": "2026-10-26T17:01:25.345Z"
+    }
+  ],
+  "backendRequests": [
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/users/me"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/handoffs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/handoffs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/handoffs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/handoffs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/spaces/invite/JW62DS"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/spaces/join"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/spaces/6adf869b287ed4d867bba002"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/spaces/6adf869b287ed4d867bba002/members"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/spaces/invite/ZTXUCQ"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/spaces/join"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/spaces/6adf869b287ed4d867bba006"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/spaces/6adf869b287ed4d867bba006/members"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/spaces/invite/8LGGQG"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/spaces/join"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/spaces/6adf869b287ed4d867bba00a"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/spaces/6adf869b287ed4d867bba00a/members"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/spaces/invite/FPPY4R"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/spaces/join"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/spaces/6adf869b287ed4d867bba00e"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/spaces/6adf869b287ed4d867bba00e/members"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/spaces/invite/592AL9"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/spaces/join"
+    }
+  ]
+}

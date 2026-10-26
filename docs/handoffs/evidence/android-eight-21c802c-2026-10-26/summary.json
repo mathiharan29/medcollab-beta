@@ -1,0 +1,15 @@
+{
+  "commit": "21c802ceaf674acb9116b53d475b627ab15977ae",
+  "exitCode": 0,
+  "output": "D:\\MedCollab\\test-results\\android-eight\\2026-10-26T15-57-42Z-21c802ce",
+  "deviceOut": "D:\\MedCollab\\test-results\\android-eight\\2026-10-26T15-57-42Z-21c802ce\\android",
+  "counts": {
+    "PASS": 8,
+    "FAIL": 0,
+    "ERROR": 0,
+    "BLOCKED": 0,
+    "NEEDS_DECISION": 0,
+    "SKIP": 0
+  },
+  "fullSuccess": true
+}

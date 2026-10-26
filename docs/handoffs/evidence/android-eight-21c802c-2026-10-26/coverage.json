@@ -1,0 +1,23 @@
+{
+  "planned": 8,
+  "selected": [
+    "FR-MED-08",
+    "FR-PUSH-05",
+    "FR-PUSH-06",
+    "FR-NAV-04",
+    "FR-NAV-05",
+    "FR-LINK-04",
+    "FR-JRN-05",
+    "FR-JRN-06"
+  ],
+  "executed": 8,
+  "counts": {
+    "PASS": 8,
+    "FAIL": 0,
+    "ERROR": 0,
+    "BLOCKED": 0,
+    "NEEDS_DECISION": 0,
+    "SKIP": 0
+  },
+  "fullSuccess": true
+}
