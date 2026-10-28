@@ -7,6 +7,7 @@ import { assertValidatedConfig } from './config.mjs';
 import { assertTargetAuthorization } from './target.mjs';
 
 const journals = new WeakMap();
+const maxRecordBytes = 8192; // Above the strict resource schema's worst-case escaped record.
 function owned(resource, authorization) {
   assertSchema(resource, resourceSchema);
   requireContract(resource.runId === authorization.runId && resource.environmentId === authorization.environmentId && resource.ownerIdentity === authorization.ownerIdentity && authorization.namespaces.includes(resource.namespace), 'RESOURCE_OWNERSHIP_MISMATCH');
@@ -86,20 +87,25 @@ function replay(state, event) {
   if (event.kind === 'intent') {
     owned(event.resource, state.authorization);
     requireContract(!state.resources.has(event.resourceKey), 'DUPLICATE_RESOURCE_INTENT');
-    state.resources.set(event.resourceKey, { resourceKey: event.resourceKey, resource: event.resource, state: 'INTENT', failures: [], retryCount: 0 });
+    state.resources.set(event.resourceKey, { resourceKey: event.resourceKey, resource: event.resource, state: 'INTENT', failures: [], retryCount: 0, remainingRecords: 2 + 2 * state.config.journalLimits.cleanupAttempts });
   } else if (event.kind === 'cleanupIntent') {
     const current = state.resources.get(event.resourceKey);
     requireContract(current, 'UNKNOWN_CLEANUP_RESOURCE');
+    requireContract(current.remainingRecords > 0, 'JOURNAL_RESERVATION_EXHAUSTED');
+    current.remainingRecords -= 1;
     current.retryCount += 1;
   } else if (event.kind === 'transition') {
     const current = state.resources.get(event.resourceKey);
     requireContract(current && ['CREATED', 'AMBIGUOUS', 'NOT_CREATED', 'CLEANUP_COMPLETE', 'CLEANUP_FAILED'].includes(event.state), 'INVALID_RESOURCE_TRANSITION');
+    requireContract(current.remainingRecords > 0, 'JOURNAL_RESERVATION_EXHAUSTED');
+    current.remainingRecords -= 1;
     if (event.resource) {
       owned(event.resource, state.authorization);
       requireContract(event.resource.intentId === current.resource.intentId && event.resource.type === current.resource.type && event.resource.namespace === current.resource.namespace, 'RESOURCE_ACK_MISMATCH');
       current.resource = event.resource;
     }
     current.state = event.state;
+    if (['CLEANUP_COMPLETE', 'NOT_CREATED'].includes(event.state)) current.remainingRecords = 0;
     if (event.errorClass) current.failures.push(event.errorClass);
   } else requireContract(event.kind === 'header' && event.sequence === 0, 'UNKNOWN_JOURNAL_EVENT');
   state.events.push(event);
@@ -111,6 +117,7 @@ function append(state, fields) {
   const body = { schemaVersion: 1, journalId: state.journalId, sequence: state.events.length, previousHash: state.previousHash, ...fields };
   const event = immutable({ ...body, hash: digest(body) });
   const text = canonical(event) + '\n';
+  requireContract(Buffer.byteLength(text) <= maxRecordBytes, 'JOURNAL_RECORD_LIMIT');
   requireContract(state.events.length < state.config.journalLimits.maxEntries && state.bytes + Buffer.byteLength(text) <= state.config.journalLimits.maxBytes, 'JOURNAL_LIMIT');
   requireContract(fstatSync(state.fd).size === state.bytes, 'JOURNAL_CONCURRENT_WRITER');
   try { writeAll(state.fd, text); replay(state, event); }
@@ -129,6 +136,9 @@ export function registerOwnedResource(journal, resource) {
   requireContract(copy.leaseId === state.authorization.leaseId, 'RESOURCE_LEASE_MISMATCH');
   const resourceKey = digest({ runId: copy.runId, type: copy.type, intentId: copy.intentId });
   requireContract(!state.resources.has(resourceKey), 'DUPLICATE_RESOURCE_INTENT');
+  const pendingRecords = [...state.resources.values()].reduce((sum, item) => sum + item.remainingRecords, 0);
+  const newRecords = 1 + 2 + 2 * state.config.journalLimits.cleanupAttempts;
+  requireContract(state.events.length + pendingRecords + newRecords <= state.config.journalLimits.maxEntries && state.bytes + (pendingRecords + newRecords) * maxRecordBytes <= state.config.journalLimits.maxBytes, 'JOURNAL_CLEANUP_CAPACITY_REQUIRED');
   append(state, { kind: 'intent', resourceKey, resource: copy }); // fsync before caller creates anything.
   return immutable({ journalId: state.journalId, resourceKey, runId: copy.runId });
 }
@@ -137,6 +147,7 @@ export function recordResourceOutcome(journal, reference, outcome, acknowledgedR
   const current = state.resources.get(reference.resourceKey);
   requireContract(reference.journalId === state.journalId && current && ['INTENT', 'AMBIGUOUS'].includes(current.state) && ['CREATED', 'AMBIGUOUS', 'NOT_CREATED'].includes(outcome), 'INVALID_RESOURCE_ACK');
   requireContract(reference.runId === state.config.runId, 'RESOURCE_REFERENCE_RUN_MISMATCH');
+  requireContract(!(current.state === 'AMBIGUOUS' && outcome === 'AMBIGUOUS'), 'DUPLICATE_AMBIGUOUS_OUTCOME');
   if (acknowledgedResource) {
     owned(acknowledgedResource, state.authorization);
     requireContract(acknowledgedResource.intentId === current.resource.intentId && acknowledgedResource.type === current.resource.type && acknowledgedResource.namespace === current.resource.namespace && acknowledgedResource.leaseId === current.resource.leaseId && (current.resource.id === null || current.resource.id === acknowledgedResource.id), 'RESOURCE_ACK_MISMATCH');
