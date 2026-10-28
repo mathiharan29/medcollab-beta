@@ -189,6 +189,9 @@ for (const filename of readdirSync(path.join(root, docs), { recursive: true }).f
 // Phase 00 must not modify any pre-existing application, assertion or workflow.
 const protectedChanges = git('diff', '--name-only', base, '--', '.', ':!docs/performance', ':!tests/performance');
 assert.equal(protectedChanges, '', `Changes outside Phase 00: ${protectedChanges}`);
-assert.deepEqual(sorted(readdirSync(path.join(root, 'tests/performance'))), ['catalog.json', 'validate-foundation.mjs']);
+// Phase 01 adds shared contracts only. Preserve the original case/status/source
+// assertions above; explicitly enumerate additions instead of allowing scenarios.
+assert.deepEqual(sorted(readdirSync(path.join(root, 'tests/performance')).filter((name) => !['.npm-cache', '.npm-logs', 'node_modules', 'artifacts'].includes(name))),
+  sorted(['.gitignore', '.npmrc', 'catalog.json', 'config', 'lib', 'package-lock.json', 'package.json', 'reporting', 'schemas', 'validate-foundation.mjs', 'validate-harness.mjs']));
 console.log('STATICALLY VALIDATED: 32 frozen plan files / 23 phases; 45 uniquely owned cases; 87 feature routes; 124 operation mappings; source hashes; local links; unchanged application/assertions/workflows.');
 console.log('Scenario implementation: NOT_IMPLEMENTED. Execution: NOT_EXECUTED. Thresholds: BASELINE_REQUIRED / PRODUCT_DECISION_REQUIRED.');

@@ -22,3 +22,11 @@ Phase 00 revalidated the following conflicts at source `4c01dc24247aa95a73e286a2
 Source paths/lines and hashes are in [source-map.json](source-map.json) and [source-snapshot.json](source-snapshot.json). No unresolved decision blocks freezing metadata or starting independent Phase 01 development after user approval. Exact Artillery version/compatibility review belongs to Phase 01; no dependency installation is authorized by this handoff.
 
 No additional case IDs are proposed. Genuine future gaps must be recorded with evidence, owner and approval state before changing the original denominator. All 45 original scenarios remain planned under their original owners.
+
+## Phase 01 technical elaborations
+
+No product policy above was resolved. The [implemented contracts](PHASE-01-CONTRACTS.md) use a reviewed allowlist and public-key-verified orchestrator evidence; the shipped key/target sets are empty. Real topology, grants, provider access, measurement calibration and application instrumentation remain future execution prerequisites. This fail-closed default does not block developing the interfaces.
+
+Artillery 2.0.34 and socket.io-client 4.8.3 were selected and integrity-locked using registry metadata only ([review](DEPENDENCY-REVIEW.md)); compatibility and lifecycle/native/browser setup were not executed. The schema-shaped template is deliberately denied. Existing empty catalog variant slots will hold `{id,requiredMetrics}` when later owners implement cases; no original IDs or statuses changed. Named accounting functions can be run-bound ledger methods or stateless wrappers carrying an explicit ledger handle; no global accounting singleton or signature replacement was introduced.
+
+Cooperative cancellation cannot establish that a remote mutation stopped. Deadline/abort ambiguity is quarantined before independent cleanup, unknown resource IDs never become prefix deletion, and external worker quiescence/fault restoration remain with later orchestration. Runtime filesystem/fsync/lock semantics, cancellation, actual schema-validator behavior and install compatibility remain explicitly unvalidated. These are execution limitations, not omitted Phase 01 development deliverables.

@@ -1,6 +1,6 @@
 # Implementation progress
 
-Live tracker for the upstream performance branch. The supplied [historical tracker](plan/IMPLEMENTATION-PROGRESS.md) is preserved unchanged with the original documentation package. Only Phase 00 is implemented; every original case remains PLANNED / NOT_IMPLEMENTED / NOT_EXECUTED. Review below means implementing-agent source/diff review, not external approval or runtime validation.
+Live tracker for the upstream performance branch. The supplied [historical tracker](plan/IMPLEMENTATION-PROGRESS.md) is preserved unchanged with the original documentation package. Phases 00 and 01 are implemented; every original case remains PLANNED / NOT_IMPLEMENTED / NOT_EXECUTED. Review below means implementing-agent source/diff review, not external approval or runtime validation.
 
 Repository: `https://github.com/mathiharan29/medcollab-beta.git`
 Branch: `testing/vocle-performance-scale`
@@ -10,7 +10,7 @@ Date: 2026-10-28 (Asia/Calcutta)
 | Phase | Cases | Implementation | Review | Execution | Threshold validation |
 |---|---|---|---|---|---|
 | [00](plan/PHASE-00-FOUNDATION.md) | Shared contracts/integration | IMPLEMENTED | REVIEWED | NOT_EXECUTED | BASELINE_REQUIRED / PRODUCT_DECISION_REQUIRED |
-| [01](plan/PHASE-01-HARNESS-CONTRACTS.md) | Shared contracts/integration | NOT_IMPLEMENTED | NOT_REVIEWED | NOT_EXECUTED | BASELINE_REQUIRED / PRODUCT_DECISION_REQUIRED |
+| [01](plan/PHASE-01-HARNESS-CONTRACTS.md) | Shared contracts/integration | IMPLEMENTED | REVIEWED | NOT_EXECUTED | BASELINE_REQUIRED / PRODUCT_DECISION_REQUIRED |
 | [02](plan/PHASE-02-HTTP-AUTHENTICATION.md) | PERF-API-001, PERF-AUTH-001, PERF-AUTH-002, PERF-AUTH-003 | NOT_IMPLEMENTED | NOT_REVIEWED | NOT_EXECUTED | BASELINE_REQUIRED / PRODUCT_DECISION_REQUIRED |
 | [03](plan/PHASE-03-SOCKET-COHORTS.md) | SCALE-RT-001, SCALE-RT-002 | NOT_IMPLEMENTED | NOT_REVIEWED | NOT_EXECUTED | BASELINE_REQUIRED / PRODUCT_DECISION_REQUIRED |
 | [04](plan/PHASE-04-NOTIFICATIONS.md) | PERF-NOT-001, PERF-NOT-002 | NOT_IMPLEMENTED | NOT_REVIEWED | NOT_EXECUTED | BASELINE_REQUIRED / PRODUCT_DECISION_REQUIRED |
@@ -65,8 +65,33 @@ Date: 2026-10-28 (Asia/Calcutta)
 - [ ] Separate execution authorization and runtime evidence (intentionally not requested or performed).
 - [ ] Baseline/product objective decisions (pending future evidence/approval).
 
-## Next session: Phase 01 only after explicit instruction
+## Phase 00 next-session handoff (historical)
 
 Use [PHASE-01-HARNESS-CONTRACTS.md](plan/PHASE-01-HARNESS-CONTRACTS.md). Recheck upstream/branch/source drift, then develop schemas, immutable provenance, finite-budget configuration, isolated-target checks, deterministic actors, owned-resource journal, action ledger and result/report envelope. Reuse the catalog and stable operation map. Exact future interfaces are listed in [architecture](architecture.md) and their signatures in [shared contracts](plan/ARCHITECTURE-AND-CONVENTIONS.md#exact-shared-utility-ownership).
 
 Phase 01 chooses exact dependency locks (Artillery review and planned socket.io-client 4.8.3); installation/runtime activity needs its own authorization. No blocking Phase 00 interface ambiguity remains. Later product decisions gate only dependent assertions/execution. Phase 01 has not started.
+
+## Phase 01 completion record
+
+- Date: 2026-10-28 (Asia/Calcutta). Repository: mathiharan29/medcollab-beta; branch: testing/vocle-performance-scale.
+- Actual starting HEAD and fetched remote HEAD: `7b065078d93045ff8a1a01801ce2258236411a85`; clean and synchronized before implementation. Master/source snapshot remains `4c01dc24247aa95a73e286a2b42c7f2f81257c7a`. No source drift; Phase 00 implementation/handoff history preserved.
+- Implementation: IMPLEMENTED; implementing-agent contract/source/diff review: REVIEWED; static status: STATICALLY VALIDATED; runtime: NOT_EXECUTED; thresholds: NOT_EVALUATED / BASELINE_REQUIRED / PRODUCT_DECISION_REQUIRED. External reviewer approval and runtime correctness are not implied.
+- Implemented cases: none, as assigned. All 45 case records, statuses, priorities, dependencies and owners remain unchanged. No concrete scenarios, provider doubles, HTTP adapters, Socket.IO cohorts, mixed-load profiles, workflows or mobile work were added.
+- Shared interfaces: validateRunConfig, assertIsolatedTarget, captureProvenance, allocateActors, registerOwnedResource, recordStage, recordOutcome, finalizeRun, cleanupOwnedResources and defineScenario. Exact signatures and supporting helpers are documented in [contracts](PHASE-01-CONTRACTS.md); recordStage/recordOutcome are available as run-bound methods and stateless named exports.
+- Configuration/safety: versioned strict schemas, finite traffic/resource/cost/deadline/provider limits, E1 caps, immutable configuration, default-denied public-key-verified target identity/address/ownership grants, explicit admission/concurrency/resource guards and destination checks. No environment credential inheritance or target-validation bypass.
+- Reproducibility: actual runtime/OS/timezone capture, separate source/harness and lock/config/data/index/provider/instrumentation hashes, deterministic disjoint synthetic actor/device manifests and bounded seeded streams. No accounts, databases, real identities or patient data created.
+- Ownership/lifecycle: durable hash-chained intent/outcome/cleanup journal; exact IDs/namespace/owner checks; independent cleanup verification, bounded retry, quarantine of unknown/truncated/timeout state and separate primary/cleanup errors. No cleanup adapters executed or supplied.
+- Correctness/reporting: bounded action/stage/delivery-copy ledger, explicit clocks/attempts, independent reconciliation requirement, schema-compatible histograms/unavailable metrics, immutable result/report envelope, artifact/policy/baseline evidence and terminal exit codes. No latency/SLO/capacity values or PASS results fabricated.
+- Dependencies: Artillery 2.0.34 and socket.io-client 4.8.3 pinned in package.json and a full npm v3 lock (468 dependency entries). Registry metadata resolution only with --package-lock-only --ignore-scripts; no node_modules, dependency code, lifecycle, browser/native build or test suite executed. See [dependency review](DEPENDENCY-REVIEW.md).
+- Files added under tests/performance: package.json, package-lock.json, .npmrc, .gitignore; config/{contract.json,target-policy.json,run-template.json}; lib/{core,config,target,provenance,actors,journal,ledger,metrics,scenario,result,index}.mjs; schemas/{run-config,resource,provenance,stage-context,actor-profile,target-policy,identity-evidence,ledger-snapshot,metrics-snapshot}.schema.json; reporting/schema.json; validate-harness.mjs.
+- Files modified: tests/performance/validate-foundation.mjs (retain all case/source assertions; enumerate the Phase 01-only additions and ignore tooling/artifact directories); docs/performance/{README.md,architecture.md,decisions.md,IMPLEMENTATION-PROGRESS.md}. Docs added: PHASE-01-CONTRACTS.md, PHASE-01-VALIDATION.md, DEPENDENCY-REVIEW.md. No application, backend/client dependency, existing regression/security assertion, workflow, original catalog, source snapshot/map or frozen plan file changed.
+- Static evidence: [Phase 01 validation](PHASE-01-VALIDATION.md). No new harness module was imported or invoked, and no runtime tests were performed.
+- Known limitations/open decisions: existing product conflicts remain unresolved; policy targets/keys intentionally empty; catalog runtime variants/adapters belong to later phases; installation/compatibility, cancellation/filesystem/crash semantics, cleanup callbacks and instrumentation require authorized runtime validation. Independent worker quiescence/fault recovery and provider sandbox grants remain future orchestration work. No development requirement is blocked by these execution prerequisites.
+- Phase 01 acceptance: all applicable shared-contract development gates satisfied, with explicit exclusions honored and runtime validation pending. Generic scenario-specific template tasks apply to zero assigned cases.
+- Implementation commit SHA: recorded in the subsequent handoff update after the implementation commit exists. Publication uses normal push to origin/testing/vocle-performance-scale only.
+
+## Next session: Phase 02 only after explicit instruction
+
+Read [PHASE-02-HTTP-AUTHENTICATION.md](plan/PHASE-02-HTTP-AUTHENTICATION.md), the [shared contracts](PHASE-01-CONTRACTS.md), [decisions](decisions.md) and current progress. Implement only PERF-API-001 and PERF-AUTH-001/002/003 using the shared APIs. Register exact case-owned variants and required metric names without changing ownership. Retain real auth/bcrypt/persistence and separate deployment limiter policy from controlled ceiling measurements. Do not duplicate target, journal, clock, HTTP or identity utilities. Phase 03 retains receiver cohorts/readiness/delivery-observer ownership.
+
+Phase 02 development can begin after instruction; actual installation, service/provider access, provisioning, instrumentation and test/workflow execution still require separate authorization. Phase 02 has not started.
