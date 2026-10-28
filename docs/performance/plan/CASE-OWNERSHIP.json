@@ -1,0 +1,459 @@
+{
+  "PERF-API-001": {
+    "phase": "PHASE-02-HTTP-AUTHENTICATION.md",
+    "title": "Route-family baseline",
+    "priority": "P0",
+    "dependencies": [],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "PERF-AUTH-001": {
+    "phase": "PHASE-02-HTTP-AUTHENTICATION.md",
+    "title": "Login computation and account races",
+    "priority": "P0",
+    "dependencies": [
+      "PERF-API-001"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "PERF-AUTH-002": {
+    "phase": "PHASE-02-HTTP-AUTHENTICATION.md",
+    "title": "Session expiry and multi-device contention",
+    "priority": "P0",
+    "dependencies": [
+      "PERF-API-001",
+      "SCALE-RT-001"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "PERF-AUTH-003": {
+    "phase": "PHASE-02-HTTP-AUTHENTICATION.md",
+    "title": "Limiter-constrained capacity",
+    "priority": "P0",
+    "dependencies": [
+      "PERF-AUTH-001",
+      "PERF-AUTH-002"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "PERF-MSG-001": {
+    "phase": "PHASE-05-MESSAGING.md",
+    "title": "Send throughput and hot-channel contention",
+    "priority": "P0",
+    "dependencies": [
+      "PERF-API-001",
+      "SCALE-RT-002",
+      "PERF-NOT-001"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "PERF-MSG-002": {
+    "phase": "PHASE-05-MESSAGING.md",
+    "title": "Hot threads and reply aggregation",
+    "priority": "P0",
+    "dependencies": [
+      "PERF-MSG-001"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "PERF-MSG-003": {
+    "phase": "PHASE-05-MESSAGING.md",
+    "title": "Lost response, duplicate events, and retry ambiguity",
+    "priority": "P0",
+    "dependencies": [
+      "PERF-MSG-001",
+      "SCALE-RT-002"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "PERF-MSG-004": {
+    "phase": "PHASE-05-MESSAGING.md",
+    "title": "Reactions, edits, deletes, and read receipts",
+    "priority": "P0",
+    "dependencies": [
+      "PERF-MSG-001",
+      "PERF-MSG-002"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "SCALE-RT-001": {
+    "phase": "PHASE-03-SOCKET-COHORTS.md",
+    "title": "Connection establishment and persistent capacity",
+    "priority": "P0",
+    "dependencies": [
+      "PERF-AUTH-001"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "SCALE-RT-002": {
+    "phase": "PHASE-03-SOCKET-COHORTS.md",
+    "title": "Audience fan-out and delivery accounting",
+    "priority": "P0",
+    "dependencies": [
+      "SCALE-RT-001"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "SCALE-RT-003": {
+    "phase": "PHASE-06-PRESENCE-RECOVERY.md",
+    "title": "Presence and room synchronization amplification",
+    "priority": "P1",
+    "dependencies": [
+      "SCALE-RT-001",
+      "PERF-AUTH-002"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "SCALE-RT-004": {
+    "phase": "PHASE-06-PRESENCE-RECOVERY.md",
+    "title": "Typing cache and distinct-channel churn",
+    "priority": "P1",
+    "dependencies": [
+      "SCALE-RT-001",
+      "SCALE-RT-003"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "SCALE-RT-005": {
+    "phase": "PHASE-06-PRESENCE-RECOVERY.md",
+    "title": "Recovery window, token expiry, and revocation",
+    "priority": "P0",
+    "dependencies": [
+      "SCALE-RT-002",
+      "SCALE-RT-003",
+      "PERF-AUTH-002"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "SCALE-RT-006": {
+    "phase": "PHASE-08-MEMBERSHIP-EVICTION.md",
+    "title": "Membership and archive changes during traffic",
+    "priority": "P0",
+    "dependencies": [
+      "SCALE-RT-002",
+      "SCALE-RT-003",
+      "SCALE-RT-005",
+      "PERF-SOC-004"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "SCALE-RT-007": {
+    "phase": "PHASE-15-NETWORK-SLOW-CONSUMERS.md",
+    "title": "Slow consumers and outbound pressure",
+    "priority": "P0",
+    "dependencies": [
+      "SCALE-RT-002"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "PERF-SOC-001": {
+    "phase": "PHASE-07A-REQUESTS-CONVERSATIONS.md",
+    "title": "Message-request creation and acceptance",
+    "priority": "P0",
+    "dependencies": [
+      "PERF-API-001",
+      "PERF-NOT-001"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "PERF-SOC-002": {
+    "phase": "PHASE-07A-REQUESTS-CONVERSATIONS.md",
+    "title": "DM/group/self-note creation races",
+    "priority": "P0",
+    "dependencies": [
+      "PERF-SOC-001"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "PERF-SOC-003": {
+    "phase": "PHASE-07B-HISTORY-EXPANSION.md",
+    "title": "Conversation expansion and history-copy failure",
+    "priority": "P0",
+    "dependencies": [
+      "PERF-SOC-002",
+      "PERF-DATA-001"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "PERF-SOC-004": {
+    "phase": "PHASE-07C-SPACES-PINS.md",
+    "title": "Spaces, approvals, invites, and channel mutation",
+    "priority": "P0",
+    "dependencies": [
+      "PERF-API-001",
+      "SCALE-RT-003"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "PERF-SOC-005": {
+    "phase": "PHASE-07C-SPACES-PINS.md",
+    "title": "Pin cap and concurrent pin/unpin",
+    "priority": "P1",
+    "dependencies": [
+      "PERF-API-001"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "PERF-HAND-001": {
+    "phase": "PHASE-09-HANDOFFS.md",
+    "title": "Shift-change handoff workload",
+    "priority": "P0",
+    "dependencies": [
+      "PERF-API-001",
+      "PERF-NOT-001",
+      "SCALE-RT-002"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "PERF-HAND-002": {
+    "phase": "PHASE-09-HANDOFFS.md",
+    "title": "Competing handoff transitions",
+    "priority": "P0",
+    "dependencies": [
+      "PERF-HAND-001"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "PERF-DATA-001": {
+    "phase": "PHASE-10-DATABASE-GROWTH.md",
+    "title": "Query plans and collection growth",
+    "priority": "P0",
+    "dependencies": [
+      "PERF-API-001"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "PERF-DATA-002": {
+    "phase": "PHASE-10-DATABASE-GROWTH.md",
+    "title": "Pool competition and hidden writes",
+    "priority": "P0",
+    "dependencies": [
+      "PERF-MSG-001",
+      "PERF-NOT-001",
+      "PERF-DATA-001"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "PERF-DATA-003": {
+    "phase": "PHASE-10-DATABASE-GROWTH.md",
+    "title": "Retention, TTL, and storage growth",
+    "priority": "P1",
+    "dependencies": [
+      "PERF-DATA-001",
+      "PERF-NOT-002",
+      "PERF-MED-002"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "RES-DATA-001": {
+    "phase": "PHASE-14-RESILIENCE.md",
+    "title": "Database interruption and recovery",
+    "priority": "P0",
+    "dependencies": [
+      "PERF-DATA-002",
+      "PERF-MSG-001"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "PERF-SEARCH-001": {
+    "phase": "PHASE-11-DISCOVERY-OPERATIONS.md",
+    "title": "Search and discovery selectivity",
+    "priority": "P1",
+    "dependencies": [
+      "PERF-DATA-001"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "PERF-SEARCH-002": {
+    "phase": "PHASE-11-DISCOVERY-OPERATIONS.md",
+    "title": "Dashboard, Needl, and unpaginated lists",
+    "priority": "P1",
+    "dependencies": [
+      "PERF-DATA-001",
+      "SCALE-RT-003"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "PERF-NOT-001": {
+    "phase": "PHASE-04-NOTIFICATIONS.md",
+    "title": "Notification and push amplification",
+    "priority": "P0",
+    "dependencies": [
+      "SCALE-RT-002"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "PERF-NOT-002": {
+    "phase": "PHASE-04-NOTIFICATIONS.md",
+    "title": "Inbox reads and concurrent clearing",
+    "priority": "P1",
+    "dependencies": [
+      "PERF-NOT-001",
+      "PERF-DATA-001"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "PERF-MED-001": {
+    "phase": "PHASE-12-MEDIA.md",
+    "title": "Upload buffering and downstream stalls",
+    "priority": "P0",
+    "dependencies": [
+      "PERF-API-001",
+      "PERF-MSG-001"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "PERF-MED-002": {
+    "phase": "PHASE-12-MEDIA.md",
+    "title": "Fetch, deletion, avatar replacement, and references",
+    "priority": "P1",
+    "dependencies": [
+      "PERF-MED-001",
+      "PERF-DATA-001"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "PERF-OPS-001": {
+    "phase": "PHASE-11-DISCOVERY-OPERATIONS.md",
+    "title": "Admin analytics and support interference",
+    "priority": "P1",
+    "dependencies": [
+      "PERF-DATA-001",
+      "PERF-MSG-001"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "PERF-MIX-001": {
+    "phase": "PHASE-13-MIXED-LOAD.md",
+    "title": "Multi-user clinical communication journeys",
+    "priority": "P0",
+    "dependencies": [
+      "PERF-MSG-001",
+      "PERF-MSG-002",
+      "PERF-SOC-001",
+      "PERF-SOC-002",
+      "PERF-SOC-004",
+      "PERF-HAND-001",
+      "PERF-NOT-001",
+      "PERF-NOT-002",
+      "PERF-MED-001",
+      "PERF-SEARCH-001",
+      "PERF-SEARCH-002",
+      "SCALE-RT-005"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "LOAD-SYS-001": {
+    "phase": "PHASE-13-MIXED-LOAD.md",
+    "title": "Sustained normal-load stability",
+    "priority": "P0",
+    "dependencies": [
+      "PERF-MIX-001"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "STRESS-SYS-001": {
+    "phase": "PHASE-16-STRESS-SPIKE-SOAK.md",
+    "title": "Saturation and failure thresholds",
+    "priority": "P1",
+    "dependencies": [
+      "LOAD-SYS-001"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "SPIKE-SYS-001": {
+    "phase": "PHASE-16-STRESS-SPIKE-SOAK.md",
+    "title": "Shift-change demand spikes",
+    "priority": "P0",
+    "dependencies": [
+      "PERF-AUTH-003",
+      "SCALE-RT-003",
+      "LOAD-SYS-001"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "SOAK-SYS-001": {
+    "phase": "PHASE-16-STRESS-SPIKE-SOAK.md",
+    "title": "Long-running resource stability",
+    "priority": "P1",
+    "dependencies": [
+      "LOAD-SYS-001",
+      "SCALE-RT-004",
+      "PERF-DATA-003"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "SCALE-SYS-001": {
+    "phase": "PHASE-19-ADVANCED-SCALING.md",
+    "title": "Vertical scalability",
+    "priority": "P1",
+    "dependencies": [
+      "STRESS-SYS-001"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "SCALE-SYS-002": {
+    "phase": "PHASE-19-ADVANCED-SCALING.md",
+    "title": "Horizontal correctness and scalability",
+    "priority": "P0",
+    "dependencies": [
+      "SCALE-RT-005",
+      "SCALE-RT-006",
+      "PERF-MSG-001"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "RES-SYS-001": {
+    "phase": "PHASE-14-RESILIENCE.md",
+    "title": "Backend restart and shutdown",
+    "priority": "P0",
+    "dependencies": [
+      "PERF-MSG-003",
+      "PERF-SOC-003"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "RES-SYS-002": {
+    "phase": "PHASE-14-RESILIENCE.md",
+    "title": "Provider degradation",
+    "priority": "P0",
+    "dependencies": [
+      "PERF-AUTH-001",
+      "PERF-NOT-001",
+      "PERF-MED-001"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "NET-SYS-001": {
+    "phase": "PHASE-15-NETWORK-SLOW-CONSUMERS.md",
+    "title": "Network impairment",
+    "priority": "P1",
+    "dependencies": [
+      "SCALE-RT-005",
+      "PERF-MSG-003"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "MOBILE-SYS-001": {
+    "phase": "PHASE-20-MOBILE-PERFORMANCE.md",
+    "title": "Client performance and lifecycle",
+    "priority": "P1",
+    "dependencies": [
+      "NET-SYS-001",
+      "PERF-SEARCH-002",
+      "PERF-MED-002"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  },
+  "REG-SYS-001": {
+    "phase": "PHASE-17-REPORTING-REGRESSION.md",
+    "title": "Performance regression comparison",
+    "priority": "P0",
+    "dependencies": [
+      "PERF-API-001",
+      "PERF-MSG-001",
+      "SCALE-RT-002",
+      "LOAD-SYS-001"
+    ],
+    "status": "PLANNED / NOT IMPLEMENTED / NOT EXECUTED"
+  }
+}
