@@ -41,13 +41,14 @@ Date: 2026-10-28 (Asia/Calcutta)
 - Shared utilities introduced: one standalone static-only foundation checker using Node built-ins. No runtime harness utilities, adapters, provider doubles, scenario hooks, oracles or metrics implementations.
 - Source comparison: fresh clean upstream clone, latest `master` matches investigation exactly; remote testing branch absent before local creation. Push dry-run confirmed upstream write access. No old-fork access or fallback.
 - Architecture/case ownership: 45 unique original IDs; 87 feature registrations including both group-DM aliases; 124 total operation entries including platform/realtime/background. Developer fixture routes explicitly excluded from representative load.
-- Static validation: see [validation evidence](STATIC-VALIDATION.md); checked separately from scenario status.
+- Static validation: STATICALLY VALIDATED. Node syntax, 32 plan byte hashes, 45-case ownership/specification/dependency reconciliation, 87 feature routes, 124 operation mappings, 62 source hashes, local links/anchors and authored-file staged/unstaged whitespace checks succeeded. All 32 Git index plan blobs also matched the supplied bytes. See [validation evidence](STATIC-VALIDATION.md); this is separate from scenario status.
 - Execution: NOT_EXECUTED. No tests, services, dependencies, infrastructure, provider requests or workflows executed. No test-target traffic or real patient/user data used.
 - Threshold validation: NOT_EVALUATED; BASELINE_REQUIRED and PRODUCT_DECISION_REQUIRED remain explicit. No capacity/SLO/baseline claims.
 - Review: source and metadata consistency plus Phase 00 acceptance/diff review by implementing agent; downstream external review remains available.
 - Known limitations/unresolved decisions: existing draft/admin visibility, media limits, send idempotency, room eviction, conflict/revocation policy, instrumentation, infra/provider budgets, artifact retention and all production objectives remain visible in [decisions](decisions.md). None blocks the metadata foundation. Runtime indexes/topology/provider/device behavior remain unverified.
 - Scope interpretation: generic scenario/oracle/metrics/journal template instructions are not Phase 00 deliverables because this phase explicitly assigns no cases and excludes scenarios/frameworks/workflows/execution. API-001's route-wide instruction retains all registrations for traceability while respecting the explicit developer-route workload exclusion.
-- Commit SHA: recorded after the implementation commit in the handoff update below. No uncommitted state is required for continuation.
+- Implementation commit SHA: `094412227dc76692be194a73139a80e389b91ad7` (`test(performance): implement phase 00 foundation`). This follow-up documentation commit records its actual SHA; resolve the enclosing handoff revision with `git log -1 -- docs/performance/IMPLEMENTATION-PROGRESS.md`. No uncommitted state is required for continuation.
+- Publication destination: `origin/testing/vocle-performance-scale` on `mathiharan29/medcollab-beta`; normal push only. Verify the remote HEAD with `git ls-remote --heads origin testing/vocle-performance-scale`; the completion report supplies the observed final pushed revision. Never push or merge to master.
 
 ## Phase 00 acceptance review
 
