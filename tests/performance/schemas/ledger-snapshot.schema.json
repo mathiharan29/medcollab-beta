@@ -1,0 +1,324 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "runId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+    },
+    "clockDomainId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+    },
+    "stages": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "bytes": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "actionId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "caseId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "variant": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "operationId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "expectedAudience": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+                },
+                "maxItems": 10000000
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "stages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "sequence": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "stage": {
+                  "enum": [
+                    "scheduled",
+                    "started",
+                    "response",
+                    "accepted",
+                    "persisted",
+                    "emitted",
+                    "received",
+                    "inbox",
+                    "providerAttempt",
+                    "providerComplete",
+                    "rendered",
+                    "reconciled",
+                    "transportReady",
+                    "applicationReady",
+                    "channelReady",
+                    "recovered"
+                  ]
+                },
+                "monotonicTime": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "context": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "$id": "urn:vocle:performance:schemas/stage-context.schema.json",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "clockDomainId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128,
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+                    },
+                    "attemptId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128,
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+                    },
+                    "actorDeviceId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128,
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+                    },
+                    "messageId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128,
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+                    },
+                    "eventCopyId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128,
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+                    },
+                    "statusClass": {
+                      "enum": [
+                        "1xx",
+                        "2xx",
+                        "3xx",
+                        "4xx",
+                        "5xx",
+                        "timeout",
+                        "network-error"
+                      ]
+                    },
+                    "result": {
+                      "enum": [
+                        "PASSED",
+                        "FAILED",
+                        "UNAVAILABLE"
+                      ]
+                    },
+                    "errorClass": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 128,
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+                    }
+                  },
+                  "required": []
+                }
+              },
+              "required": [
+                "sequence",
+                "stage",
+                "monotonicTime",
+                "context"
+              ]
+            },
+            "maxItems": 10000000
+          },
+          "outcome": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "state": {
+                "enum": [
+                  "success",
+                  "failure",
+                  "ambiguous",
+                  "censored",
+                  "unfinished"
+                ]
+              },
+              "errorClass": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "delivery": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "persistedIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+                },
+                "maxItems": 10000000
+              },
+              "copies": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "uniqueReceipts": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "missingDevices": {
+                "anyOf": [
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+                    },
+                    "maxItems": 10000000
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "unexpectedDevices": {
+                "anyOf": [
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$"
+                    },
+                    "maxItems": 10000000
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "uncorrelatedCopies": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "persistedIds",
+              "copies",
+              "uniqueReceipts",
+              "missingDevices",
+              "unexpectedDevices",
+              "uncorrelatedCopies"
+            ]
+          }
+        },
+        "required": [
+          "actionId",
+          "caseId",
+          "variant",
+          "operationId",
+          "expectedAudience",
+          "stages",
+          "outcome",
+          "delivery"
+        ]
+      },
+      "maxItems": 1000000
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "success": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "failure": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "ambiguous": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "censored": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "unfinished": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "required": [
+        "success",
+        "failure",
+        "ambiguous",
+        "censored",
+        "unfinished"
+      ]
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "runId",
+    "clockDomainId",
+    "stages",
+    "bytes",
+    "actions",
+    "counts"
+  ]
+}

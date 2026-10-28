@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "repository": "mathiharan29/medcollab-beta",
+  "investigationSha": "4c01dc24247aa95a73e286a2b42c7f2f81257c7a",
+  "sourceSha": "4c01dc24247aa95a73e286a2b42c7f2f81257c7a",
+  "files": [
+    {
+      "path": "ARCHITECTURE-AND-CONVENTIONS.md",
+      "sha256": "963e44968517280eb857eb48a00d7eadfbc28cd5612e0a50725a1666aa92985b"
+    },
+    {
+      "path": "CASE-OWNERSHIP.json",
+      "sha256": "c88a7d093513be3a1a584717578f9324710963e3c7f8424d532f9b0417f5f003"
+    },
+    {
+      "path": "DECISIONS-AND-ASSUMPTIONS.md",
+      "sha256": "63372733b07510f9b130b603a6a3ceaef3eb996a4b8d7932d83196f85e3f2579"
+    },
+    {
+      "path": "DOCUMENTATION-VALIDATION.md",
+      "sha256": "f50e07e8d3de4ba121c8a7445a4c6841dba46be0178f75cb556ff5260abf879c"
+    },
+    {
+      "path": "IMPLEMENTATION-PROGRESS.md",
+      "sha256": "e26af93a938eaa975210d39640993bfbaca2a7c9abea683d82c1ca6c36f04436"
+    },
+    {
+      "path": "ORIGINAL-MASTER-REPORT.md",
+      "sha256": "1184d6f001a224e75f8313793e484e435950252ee00b53c822ddb3d8c7b91f9d"
+    },
+    {
+      "path": "PHASE-00-FOUNDATION.md",
+      "sha256": "9bc4747409f746cacaf787b0dc33b6b0991e782263911c86f6b64828ce37fb68"
+    },
+    {
+      "path": "PHASE-01-HARNESS-CONTRACTS.md",
+      "sha256": "36a8ecfe1720d481a63930ce0b786282531a221a84893ba2a22966bbab117119"
+    },
+    {
+      "path": "PHASE-02-HTTP-AUTHENTICATION.md",
+      "sha256": "443174462a133585707cbe89936402e8cde6dc8bf7958274e57a59f13aaac340"
+    },
+    {
+      "path": "PHASE-03-SOCKET-COHORTS.md",
+      "sha256": "b3483d8f5719a5a3df7ba6be2be19745b930b57b2931d7b1546470c4f3fecad3"
+    },
+    {
+      "path": "PHASE-04-NOTIFICATIONS.md",
+      "sha256": "82f8618bc9df9ed5c32459b955d907c13a294fbe94d6ee87ba7073e83953cc29"
+    },
+    {
+      "path": "PHASE-05-MESSAGING.md",
+      "sha256": "19f08d520a6cde38e563d46eed93672dd57a7adaa37575ac63c4fe229d820c88"
+    },
+    {
+      "path": "PHASE-06-PRESENCE-RECOVERY.md",
+      "sha256": "58d6415c0461b1818e7f430281777c7f47f23f9470bfcad18dd0721d0bf08aef"
+    },
+    {
+      "path": "PHASE-07A-REQUESTS-CONVERSATIONS.md",
+      "sha256": "36f20a63deadc63dd770fd64196bee6293a68a30349fe8509a635b0c057ac9fd"
+    },
+    {
+      "path": "PHASE-07B-HISTORY-EXPANSION.md",
+      "sha256": "efbd04eb42a773047c5914d2a804a8c9d6cd1bcc726feee74549608eb9309533"
+    },
+    {
+      "path": "PHASE-07C-SPACES-PINS.md",
+      "sha256": "d83d450b879380d7a9c88dbfa19c297b4f43b9c42c4f8f5338e3dbf8bd871720"
+    },
+    {
+      "path": "PHASE-08-MEMBERSHIP-EVICTION.md",
+      "sha256": "94df554d9a9ed961b9a314907c504a51d5659a2866922ee858732500243c72dc"
+    },
+    {
+      "path": "PHASE-09-HANDOFFS.md",
+      "sha256": "3b7cb34e73ce3f6bf88ffa8eb0a2ef472a90820192bddb645610fa3a99243ff6"
+    },
+    {
+      "path": "PHASE-10-DATABASE-GROWTH.md",
+      "sha256": "9dd688033ec8461d70a3e8f71a98a25fdf7c6b174d3726b61ab11fdc38d027fa"
+    },
+    {
+      "path": "PHASE-11-DISCOVERY-OPERATIONS.md",
+      "sha256": "785f6c7d5ebde62e06286bcf910f9d7736f786c291814fc14a4e56d328be3474"
+    },
+    {
+      "path": "PHASE-12-MEDIA.md",
+      "sha256": "e492042becb036850ba7b08c5a90b46b530278996417b664acec1c25e2027488"
+    },
+    {
+      "path": "PHASE-13-MIXED-LOAD.md",
+      "sha256": "ec529629f8407b0043cb5ef0b0358d42dd1085f4489b3ce7fd7032aff399a2dd"
+    },
+    {
+      "path": "PHASE-14-RESILIENCE.md",
+      "sha256": "062329cc4a915166f8f3c363bde6791ed107f2bb8119867182fa74aa7ccbcec5"
+    },
+    {
+      "path": "PHASE-15-NETWORK-SLOW-CONSUMERS.md",
+      "sha256": "2bc7156addb4484e4245f6660fa27382a09cdb99347d1265b835c226db454496"
+    },
+    {
+      "path": "PHASE-16-STRESS-SPIKE-SOAK.md",
+      "sha256": "688fa4346ee81e048c00da30cdb9e98d235400446ca94af75bdb09d7501c19a2"
+    },
+    {
+      "path": "PHASE-17-REPORTING-REGRESSION.md",
+      "sha256": "c816204528a6e44443772199d9b4cba6e013c5c49e77f259ceb69a464fc7cdd0"
+    },
+    {
+      "path": "PHASE-18-GITHUB-ACTIONS.md",
+      "sha256": "40e40544675a19fdfa5c00848152767da0e997b7ce0751c9a41e5373678105ba"
+    },
+    {
+      "path": "PHASE-19-ADVANCED-SCALING.md",
+      "sha256": "ffb56b4cde39bb1f4af026706739955a7583fe3e877ecab0c9220916b7272769"
+    },
+    {
+      "path": "PHASE-20-MOBILE-PERFORMANCE.md",
+      "sha256": "a1071f4a0f3e9d06d37785085c70cea1405edbc4cde7f59770d8cbd1526f6deb"
+    },
+    {
+      "path": "PLAN-SPECIFICATION.json",
+      "sha256": "91efdfd1197a9c09acf67eaa7d72385e25b4b8b623e49db4f2665d521e4699ed"
+    },
+    {
+      "path": "README.md",
+      "sha256": "4385ff90ecce334a7cd23322faec5e770a800ecf57cfa63a8281e3faf5889cd9"
+    },
+    {
+      "path": "TEST-CASE-MATRIX.md",
+      "sha256": "567eb53fbe2104594537886bec56a03f85f170949a5a41fbd29ceae4280e6e25"
+    }
+  ]
+}
