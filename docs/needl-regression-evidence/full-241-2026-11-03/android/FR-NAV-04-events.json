@@ -1,0 +1,251 @@
+{
+  "checkpoints": [],
+  "controlActions": [
+    {
+      "action": "fixture",
+      "at": "2026-11-03T15:17:45.137Z"
+    },
+    {
+      "action": "outage",
+      "at": "2026-11-03T15:17:48.176Z"
+    },
+    {
+      "action": "background-resume",
+      "at": "2026-11-03T15:17:51.230Z"
+    },
+    {
+      "action": "peer-message",
+      "at": "2026-11-03T15:17:51.633Z"
+    },
+    {
+      "action": "messages",
+      "at": "2026-11-03T15:17:52.076Z"
+    },
+    {
+      "action": "result",
+      "at": "2026-11-03T15:17:52.300Z"
+    }
+  ],
+  "backendRequests": [
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/users/me"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/spaces/6ae9fae4e89de723689acf69/members"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/channels/6ae9fae4e89de723689acf6a"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/channels/6ae9fae4e89de723689acf6a/messages"
+    },
+    {
+      "method": "PUT",
+      "pathname": "/api/notifications/read-by-channel/6ae9fae4e89de723689acf6a"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/spaces/6ae9fae4e89de723689acf69/members"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/handoffs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/channels/6ae9fae4e89de723689acf6a/messages"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/channels/6ae9fae4e89de723689acf6a/messages"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/spaces"
+    },
+    {
+      "method": "PUT",
+      "pathname": "/api/notifications/read-by-channel/6ae9fae4e89de723689acf6a"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/channels/6ae9fae4e89de723689acf6a/messages"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/channels/6ae9fae4e89de723689acf6a/messages"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/channels/6ae9fae4e89de723689acf6a/messages/read"
+    },
+    {
+      "method": "PUT",
+      "pathname": "/api/notifications/read-by-channel/6ae9fae4e89de723689acf6a"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/auth/refresh"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/handoffs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/handoffs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/handoffs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/handoffs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/handoffs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/handoffs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/handoffs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications"
+    }
+  ]
+}

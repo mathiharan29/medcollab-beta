@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites><testsuite name="Vocle.developer" tests="54" failures="6" errors="0" skipped="0">
+<testcase classname="NDL" name="FR-NDL-01" time="1.529"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-02" time="0.978"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-03" time="0.512"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-04" time="0.452"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-05" time="0.549"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-06" time="0.59"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-07" time="0.56"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-08" time="0.557"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-09" time="0.527"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-10" time="0.594"><properties><property name="vocle.status" value="NEEDS_DECISION"/><property name="vocle.attempted" value="true"/></properties><failure message="NEEDS_DECISION">NDL-D1: archived Needl expansion policy requires product decision; observed HTTP 200</failure></testcase>
+<testcase classname="NDL" name="FR-NDL-11" time="0.615"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-12" time="0.538"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-13" time="0.545"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-14" time="0.559"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-15" time="0.7"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-16" time="0.562"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-17" time="1.239"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-18" time="0.611"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-19" time="0.579"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-20" time="0.619"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-21" time="0.589"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-22" time="0.625"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-23" time="0.681"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-24" time="0.67"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-25" time="0.617"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-26" time="0.606"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-27" time="1.64"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-28" time="0.567"><properties><property name="vocle.status" value="FAIL"/><property name="vocle.attempted" value="true"/></properties><failure message="FAIL">Every concurrent expansion must return a usable existing/new destination</failure></testcase>
+<testcase classname="NDL" name="FR-NDL-29" time="0.635"><properties><property name="vocle.status" value="FAIL"/><property name="vocle.attempted" value="true"/></properties><failure message="FAIL">Retry must recover intended history after the database fault is removed
+
+0 !== 1
+</failure></testcase>
+<testcase classname="NDL" name="FR-NDL-30" time="0.544"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-31" time="0.03"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-32" time="0.01"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-33" time="0.021"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-34" time="0.019"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-35" time="0.016"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-36" time="0.873"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-37" time="0.73"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-38" time="0.128"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-39" time="0.489"><properties><property name="vocle.status" value="FAIL"/><property name="vocle.attempted" value="true"/></properties><failure message="FAIL">══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TextWidgetFinder:&lt;Found 0 widgets with text &quot;Doctor Z&quot;: []&gt;
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.&lt;anonymous closure&gt; (file:///C:/Users/delll/AndroidStudioProjects/Vocle/vocle-needl-regression/medcollab-app/test/functional_regression/needl_test.dart:479:5)
+&lt;asynchronous suspension&gt;
+#5      testWidgets.&lt;anonymous closure&gt;.&lt;anonymous closure&gt; (package:flutter_test/src/widget_tester.dart:193:15)
+&lt;asynchronous suspension&gt;
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1064:5)
+&lt;asynchronous suspension&gt;
+&lt;asynchronous suspension&gt;
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///C:/Users/delll/AndroidStudioProjects/Vocle/vocle-needl-regression/medcollab-app/test/functional_regression/needl_test.dart line 479
+The test description was:
+  FR-NDL-39 Start DM debounce and stale response ordering
+════════════════════════════════════════════════════════════════════════════════════════════════════
+Test failed. See exception logs above.
+The test description was: FR-NDL-39 Start DM debounce and stale response ordering</failure></testcase>
+<testcase classname="NDL" name="FR-NDL-40" time="0.258"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-41" time="0.71"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-42" time="0.437"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-43" time="0.466"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-44" time="0.172"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-45" time="0.236"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-46" time="0.234"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-47" time="0.219"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-48" time="0.222"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-49" time="0.169"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-50" time="0.406"><properties><property name="vocle.status" value="FAIL"/><property name="vocle.attempted" value="true"/></properties><failure message="FAIL">══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following GoError was thrown running a test:
+There is no GoRouterState above the current context. This method should only be called under the sub
+tree of a RouteBase.builder.
+
+When the exception was thrown, this was the stack:
+#0      GoRouterState.of (package:go_router/src/state.dart:124:9)
+#1      openDmChat (package:medcollab_app/core/router/dm_navigation.dart:17:33)
+#2      showAddNeedlPeopleSheet.&lt;anonymous closure&gt;.&lt;anonymous closure&gt;.submit (package:medcollab_app/features/messages/presentation/widgets/needl_manage_sheets.dart:208:15)
+&lt;asynchronous suspension&gt;
+
+The test description was:
+  FR-NDL-50 expansion pending duplicate taps failure and retry
+════════════════════════════════════════════════════════════════════════════════════════════════════
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test (but after the test had completed):
+Expected: exactly one matching candidate
+  Actual: _TextWidgetFinder:&lt;Found 0 widgets with text &quot;Opened created&quot;: []&gt;
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#0      fail (package:matcher/src/expect/expect.dart:149:31)
+#1      _expect (package:matcher/src/expect/expect.dart:144:3)
+#2      expect (package:matcher/src/expect/expect.dart:56:3)
+#3      expect (package:flutter_test/src/widget_tester.dart:474:18)
+#4      main.&lt;anonymous closure&gt; (file:///C:/Users/delll/AndroidStudioProjects/Vocle/vocle-needl-regression/medcollab-app/test/functional_regression/needl_test.dart:737:5)
+&lt;asynchronous suspension&gt;
+#5      testWidgets.&lt;anonymous closure&gt;.&lt;anonymous closure&gt; (package:flutter_test/src/widget_tester.dart:193:15)
+&lt;asynchronous suspension&gt;
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1064:5)
+&lt;asynchronous suspension&gt;
+&lt;asynchronous suspension&gt;
+(elided one frame from package:stack_trace)
+════════════════════════════════════════════════════════════════════════════════════════════════════
+Test failed. See exception logs above.
+The test description was: FR-NDL-50 expansion pending duplicate taps failure and retry
+Test failed. See exception logs above.
+The test description was: FR-NDL-50 expansion pending duplicate taps failure and retry</failure></testcase>
+<testcase classname="NDL" name="FR-NDL-51" time="0.244"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-52" time="0.115"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-53" time="0.121"><properties><property name="vocle.status" value="FAIL"/><property name="vocle.attempted" value="true"/></properties><failure message="FAIL">══╡ EXCEPTION CAUGHT BY RENDERING LIBRARY ╞═════════════════════════════════════════════════════════
+The following assertion was thrown during layout:
+A RenderFlex overflowed by 91 pixels on the bottom.
+
+The relevant error-causing widget was:
+  Column
+  Column:file:///C:/Users/delll/AndroidStudioProjects/Vocle/vocle-needl-regression/medcollab-app/lib/features/messages/presentation/widgets/needl_manage_sheets.dart:428:18
+
+The overflowing RenderFlex has an orientation of Axis.vertical.
+The edge of the RenderFlex that is overflowing has been marked in the rendering with a yellow and
+black striped pattern. This is usually caused by the contents being too big for the RenderFlex.
+Consider applying a flex factor (e.g. using an Expanded widget) to force the children of the
+RenderFlex to fit within the available space instead of being sized to their natural size.
+This is considered an error condition because it indicates that there is content that cannot be
+seen. If the content is legitimately bigger than the available space, consider clipping it with a
+ClipRect widget before putting it in the flex, or using a scrollable container rather than a Flex,
+like a ListView.
+The specific RenderFlex in question is: RenderFlex#94442 relayoutBoundary=up11 OVERFLOWING:
+  needs compositing
+  creator: Column ← Padding ← MediaQuery ← Padding ← SafeArea ← Padding ← Stack ←
+    NotificationListener&lt;DraggableScrollableNotification&gt; ← DefaultTextStyle ←
+    AnimatedDefaultTextStyle ← _InkFeatures-[GlobalKey#f0f1a ink renderer] ←
+    NotificationListener&lt;LayoutChangedNotification&gt; ← ⋯
+  parentData: offset=Offset(8.0, 0.0) (can use size)
+  constraints: BoxConstraints(0.0&lt;=w&lt;=624.0, 0.0&lt;=h&lt;=948.5)
+  size: Size(624.0, 948.5)
+  direction: vertical
+  mainAxisAlignment: start
+  mainAxisSize: min
+  crossAxisAlignment: stretch
+  verticalDirection: down
+  spacing: 0.0
+◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤
+════════════════════════════════════════════════════════════════════════════════════════════════════
+Test failed. See exception logs above.
+The test description was: FR-NDL-53 self-first members count roles and presence</failure></testcase>
+<testcase classname="NDL" name="FR-NDL-54" time="0.323"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+</testsuite><testsuite name="Vocle.infrastructure" tests="0" errors="0"></testsuite><testsuite name="Vocle.application-prerequisites" tests="0" failures="0"></testsuite></testsuites>

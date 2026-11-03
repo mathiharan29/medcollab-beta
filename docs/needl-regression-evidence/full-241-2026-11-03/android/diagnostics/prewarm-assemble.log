@@ -1,0 +1,41 @@
+Downloading android-arm-profile/windows-x64 tools...               736ms
+Downloading android-arm-release/windows-x64 tools...             2,610ms
+Downloading android-arm64-profile/windows-x64 tools...             356ms
+Downloading android-arm64-release/windows-x64 tools...           2,902ms
+Downloading android-x64-profile/windows-x64 tools...               353ms
+Downloading android-x64-release/windows-x64 tools...             2,997ms
+
+Support for Android x86 targets will be removed in the next stable release after 3.27. See https://github.com/flutter/flutter/issues/[SIX-DIGIT CODE REDACTED] for details.
+Running Gradle task 'assembleDebug'...                          
+Warning: The plugin file_picker requires Android SDK version 36 or higher.
+For more information about build configuration, see https://flutter.dev/to/review-gradle-config.
+Your project is configured to compile against Android SDK 35, but the following plugin(s) require to be compiled against a higher Android SDK version:
+- file_picker compiles against Android SDK 36
+Fix this issue by compiling against the highest Android SDK version (they are backward compatible).
+Add the following to C:\Users\delll\AppData\Local\Temp\vocle-device-sjUCDD\medcollab-app\android\app\build.gradle.kts:
+
+    android {
+        compileSdk = 36
+        ...
+    }
+
+warning: [options] source value 8 is obsolete and will be removed in a future release
+warning: [options] target value 8 is obsolete and will be removed in a future release
+warning: [options] To suppress warnings about obsolete options, use -Xlint:-options.
+3 warnings
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+warning: [options] source value 8 is obsolete and will be removed in a future release
+warning: [options] target value 8 is obsolete and will be removed in a future release
+warning: [options] To suppress warnings about obsolete options, use -Xlint:-options.
+3 warnings
+warning: [options] source value 8 is obsolete and will be removed in a future release
+warning: [options] target value 8 is obsolete and will be removed in a future release
+warning: [options] To suppress warnings about obsolete options, use -Xlint:-options.
+3 warnings
+warning: [options] source value 8 is obsolete and will be removed in a future release
+warning: [options] target value 8 is obsolete and will be removed in a future release
+warning: [options] To suppress warnings about obsolete options, use -Xlint:-options.
+3 warnings
+Running Gradle task 'assembleDebug'...                             71.8s
+√ Built build\app\outputs\flutter-apk\app-debug.apk

@@ -1,0 +1,35 @@
+{
+  "baselineApplicationSha": "4c01dc24247aa95a73e286a2b42c7f2f81257c7a",
+  "testedCommit": "4765df8b89912dcb48f377fc184f83041f0decc0",
+  "flutterSdk": "3.29.3",
+  "flutterSdkCommit": "ea121f8859e4b13e47a8f845e4586164519588bc",
+  "mongoVersion": "7.0.14",
+  "newNeedlCases": 54,
+  "fullCatalog": 241,
+  "fullCatalogExecuted": false,
+  "backendCleanupReports": 30,
+  "allBackendCleanupPassed": true,
+  "relatedBackendCases": 13,
+  "sourceTrees": {
+    "medcollab-backend/src": {
+      "baselineObject": "17942cdc2bec18f843b5e33e90f1577f45cef417",
+      "testedObject": "17942cdc2bec18f843b5e33e90f1577f45cef417",
+      "unchanged": true
+    },
+    "medcollab-app/lib": {
+      "baselineObject": "54dae957d74a6f6c830036438f6e039132d2976b",
+      "testedObject": "54dae957d74a6f6c830036438f6e039132d2976b",
+      "unchanged": true
+    },
+    "medcollab-backend/package-lock.json": {
+      "baselineObject": "ac0b5538ebf3d382d6f89ce9ecd331df293aca4f",
+      "testedObject": "ac0b5538ebf3d382d6f89ce9ecd331df293aca4f",
+      "unchanged": true
+    },
+    "medcollab-app/pubspec.lock": {
+      "baselineObject": "3bbcaffa1686a705b3f5e95c4cae4870c7a556ff",
+      "testedObject": "3bbcaffa1686a705b3f5e95c4cae4870c7a556ff",
+      "unchanged": true
+    }
+  }
+}

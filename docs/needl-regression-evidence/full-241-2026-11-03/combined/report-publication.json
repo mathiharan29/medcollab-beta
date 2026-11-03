@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "sanitizedTextCopy": true,
+  "excluded": [
+    "runtime",
+    "target",
+    "node_modules",
+    "mongo-binaries",
+    "symlinks",
+    "binary files"
+  ],
+  "files": [
+    "local-execution-provenance.json",
+    "vocle-regression-dashboard.html",
+    "vocle-regression-detailed-report.md",
+    "vocle-regression-junit.xml",
+    "vocle-regression-results.json",
+    "vocle-regression-summary.md"
+  ]
+}

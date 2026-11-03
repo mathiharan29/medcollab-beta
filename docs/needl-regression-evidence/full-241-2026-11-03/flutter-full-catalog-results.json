@@ -1,0 +1,555 @@
+{
+  "context": {
+    "repository": "Sriram4747/medcollab-beta-workflows",
+    "kind": "branch",
+    "prNumber": null,
+    "branchRef": "refs/heads/temp/needl-functional-regression-20261103"
+  },
+  "execution": {
+    "id": "8e499f10-38cd-467e-ad0e-7365d79ff649",
+    "runId": null,
+    "attempt": null,
+    "mode": "LOCAL",
+    "completed": true,
+    "completedAt": "2026-11-03T15:15:54.422Z"
+  },
+  "sourceKind": "commit",
+  "source": {
+    "sha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "kind": "commit",
+    "verified": true
+  },
+  "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+  "inputSha256": "1771ef44d8797d2974139f0b3efb4cd54249ce6c2fbef464355f3f1e4524d7d1",
+  "schemaVersion": 1,
+  "tier": "F",
+  "input": "catalog.ndjson",
+  "planned": 56,
+  "implementedAndExecuted": 56,
+  "notImplemented": 0,
+  "complete": true,
+  "fullSuccess": false,
+  "flutterReporterSuccess": false,
+  "counts": {
+    "PASS": 53,
+    "FAIL": 3,
+    "ERROR": 0,
+    "BLOCKED": 0,
+    "NEEDS_DECISION": 0,
+    "SKIP": 0
+  },
+  "cases": [
+    {
+      "id": "FR-HOF-11",
+      "status": "PASS",
+      "title": "FR-HOF-11: failed submit retains the draft and retries its ID",
+      "priority": "P0",
+      "questionIds": [],
+      "durationMs": 43,
+      "evidence": ""
+    },
+    {
+      "id": "FR-HOF-12",
+      "status": "PASS",
+      "title": "FR-HOF-12: local-day labels preserve server status",
+      "priority": "P1",
+      "questionIds": [
+        "Q12"
+      ],
+      "durationMs": 649,
+      "evidence": ""
+    },
+    {
+      "id": "FR-HOF-13",
+      "status": "PASS",
+      "title": "FR-HOF-13: patient editor validates, cancels and saves selected patient",
+      "priority": "P1",
+      "questionIds": [],
+      "durationMs": 1733,
+      "evidence": ""
+    },
+    {
+      "id": "FR-HOME-01",
+      "status": "PASS",
+      "title": "FR-HOME-01 widget order and visibility survive reload, merge and reset",
+      "priority": "P1",
+      "questionIds": [],
+      "durationMs": 29,
+      "evidence": ""
+    },
+    {
+      "id": "FR-HOME-02",
+      "status": "PASS",
+      "title": "FR-HOME-02: assigned, shift and task cards follow refreshed handoffs",
+      "priority": "P0",
+      "questionIds": [],
+      "durationMs": 730,
+      "evidence": ""
+    },
+    {
+      "id": "FR-HOME-03",
+      "status": "PASS",
+      "title": "FR-HOME-03: announcements, emergency, partial failure and retry",
+      "priority": "P1",
+      "questionIds": [],
+      "durationMs": 657,
+      "evidence": ""
+    },
+    {
+      "id": "FR-LINK-01",
+      "status": "PASS",
+      "title": "FR-LINK-01: forwarding retains payload and sheet on failure",
+      "priority": "P1",
+      "questionIds": [],
+      "durationMs": 1080,
+      "evidence": ""
+    },
+    {
+      "id": "FR-LINK-02",
+      "status": "PASS",
+      "title": "FR-LINK-02: copy exact message link and resolve route",
+      "priority": "P2",
+      "questionIds": [
+        "Q13"
+      ],
+      "durationMs": 165,
+      "evidence": ""
+    },
+    {
+      "id": "FR-LINK-03",
+      "status": "PASS",
+      "title": "FR-LINK-03: push routes debounce, queue through auth and recover missing target",
+      "priority": "P0",
+      "questionIds": [],
+      "durationMs": 1886,
+      "evidence": ""
+    },
+    {
+      "id": "FR-NAV-01",
+      "status": "PASS",
+      "title": "FR-NAV-01: launch routes from stored session and profile",
+      "priority": "P0",
+      "questionIds": [],
+      "durationMs": 1780,
+      "evidence": ""
+    },
+    {
+      "id": "FR-NAV-02",
+      "status": "PASS",
+      "title": "FR-NAV-02: concurrent 401 refresh and recoverable retry",
+      "priority": "P0",
+      "questionIds": [
+        "Q7"
+      ],
+      "durationMs": 121,
+      "evidence": ""
+    },
+    {
+      "id": "FR-NAV-03",
+      "status": "PASS",
+      "title": "FR-NAV-03: nested detail pops before tab visit history",
+      "priority": "P1",
+      "questionIds": [],
+      "durationMs": 1212,
+      "evidence": ""
+    },
+    {
+      "id": "FR-NDL-31",
+      "status": "PASS",
+      "title": "FR-NDL-31 classify and label actual Needl models",
+      "priority": "P1",
+      "questionIds": [],
+      "durationMs": 38,
+      "evidence": ""
+    },
+    {
+      "id": "FR-NDL-32",
+      "status": "PASS",
+      "title": "FR-NDL-32 create group repository contract",
+      "priority": "P1",
+      "questionIds": [],
+      "durationMs": 15,
+      "evidence": ""
+    },
+    {
+      "id": "FR-NDL-33",
+      "status": "PASS",
+      "title": "FR-NDL-33 alias only on 404, no retry for other failures",
+      "priority": "P1",
+      "questionIds": [],
+      "durationMs": 29,
+      "evidence": ""
+    },
+    {
+      "id": "FR-NDL-34",
+      "status": "PASS",
+      "title": "FR-NDL-34 serialize history and phone midnight",
+      "priority": "P1",
+      "questionIds": [],
+      "durationMs": 30,
+      "evidence": ""
+    },
+    {
+      "id": "FR-NDL-35",
+      "status": "PASS",
+      "title": "FR-NDL-35 list detail members rename and malformed response",
+      "priority": "P1",
+      "questionIds": [],
+      "durationMs": 19,
+      "evidence": ""
+    },
+    {
+      "id": "FR-NDL-36",
+      "status": "PASS",
+      "title": "FR-NDL-36 Needl tab excludes pair notes and space channels",
+      "priority": "P0",
+      "questionIds": [],
+      "durationMs": 1183,
+      "evidence": ""
+    },
+    {
+      "id": "FR-NDL-37",
+      "status": "PASS",
+      "title": "FR-NDL-37 empty Needl create and failed load recovery",
+      "priority": "P0",
+      "questionIds": [],
+      "durationMs": 1054,
+      "evidence": ""
+    },
+    {
+      "id": "FR-NDL-38",
+      "status": "PASS",
+      "title": "FR-NDL-38 colleague preload excludes self and duplicates",
+      "priority": "P1",
+      "questionIds": [],
+      "durationMs": 225,
+      "evidence": ""
+    },
+    {
+      "id": "FR-NDL-39",
+      "status": "FAIL",
+      "title": "FR-NDL-39 Start DM debounce and stale response ordering",
+      "priority": "P1",
+      "questionIds": [],
+      "durationMs": 836,
+      "evidence": "══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════\nThe following TestFailure was thrown running a test:\nExpected: exactly one matching candidate\n  Actual: _TextWidgetFinder:<Found 0 widgets with text \"Doctor Z\": []>\n   Which: means none were found but one was expected\n\nWhen the exception was thrown, this was the stack:\n#4      main.<anonymous closure> (file:///C:/Users/delll/AndroidStudioProjects/Vocle/vocle-needl-regression/medcollab-app/test/functional_regression/needl_test.dart:479:5)\n<asynchronous suspension>\n#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:193:15)\n<asynchronous suspension>\n#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1064:5)\n<asynchronous suspension>\n<asynchronous suspension>\n(elided one frame from package:stack_trace)\n\nThis was caught by the test expectation on the following line:\n  file:///C:/Users/delll/AndroidStudioProjects/Vocle/vocle-needl-regression/medcollab-app/test/functional_regression/needl_test.dart line 479\nThe test description was:\n  FR-NDL-39 Start DM debounce and stale response ordering\n════════════════════════════════════════════════════════════════════════════════════════════════════\nTest failed. See exception logs above.\nThe test description was: FR-NDL-39 Start DM debounce and stale response ordering"
+    },
+    {
+      "id": "FR-NDL-40",
+      "status": "PASS",
+      "title": "FR-NDL-40 name search error and clear restore colleagues",
+      "priority": "P1",
+      "questionIds": [],
+      "durationMs": 363,
+      "evidence": ""
+    },
+    {
+      "id": "FR-NDL-41",
+      "status": "PASS",
+      "title": "FR-NDL-41 exact selection and stale pair navigation guard",
+      "priority": "P0",
+      "questionIds": [],
+      "durationMs": 746,
+      "evidence": ""
+    },
+    {
+      "id": "FR-NDL-42",
+      "status": "PASS",
+      "title": "FR-NDL-42 create failure retains selection then retry once",
+      "priority": "P0",
+      "questionIds": [],
+      "durationMs": 555,
+      "evidence": ""
+    },
+    {
+      "id": "FR-NDL-43",
+      "status": "PASS",
+      "title": "FR-NDL-43 second creation has fresh selection",
+      "priority": "P0",
+      "questionIds": [],
+      "durationMs": 727,
+      "evidence": ""
+    },
+    {
+      "id": "FR-NDL-44",
+      "status": "PASS",
+      "title": "FR-NDL-44 add people preload sorted distinct eligible only",
+      "priority": "P1",
+      "questionIds": [],
+      "durationMs": 276,
+      "evidence": ""
+    },
+    {
+      "id": "FR-NDL-45",
+      "status": "PASS",
+      "title": "FR-NDL-45 add people one-character debounce and latest search",
+      "priority": "P1",
+      "questionIds": [],
+      "durationMs": 318,
+      "evidence": ""
+    },
+    {
+      "id": "FR-NDL-46",
+      "status": "PASS",
+      "title": "FR-NDL-46 add people phone normalization and existing exclusion",
+      "priority": "P1",
+      "questionIds": [],
+      "durationMs": 309,
+      "evidence": ""
+    },
+    {
+      "id": "FR-NDL-47",
+      "status": "PASS",
+      "title": "FR-NDL-47 add people search failure is not empty success",
+      "priority": "P1",
+      "questionIds": [],
+      "durationMs": 277,
+      "evidence": ""
+    },
+    {
+      "id": "FR-NDL-48",
+      "status": "PASS",
+      "title": "FR-NDL-48 selected chips persist and delete disables submit",
+      "priority": "P1",
+      "questionIds": [],
+      "durationMs": 298,
+      "evidence": ""
+    },
+    {
+      "id": "FR-NDL-49",
+      "status": "PASS",
+      "title": "FR-NDL-49 history selection and cancellation never submit",
+      "priority": "P1",
+      "questionIds": [],
+      "durationMs": 232,
+      "evidence": ""
+    },
+    {
+      "id": "FR-NDL-50",
+      "status": "FAIL",
+      "title": "FR-NDL-50 expansion pending duplicate taps failure and retry",
+      "priority": "P0",
+      "questionIds": [],
+      "durationMs": 533,
+      "evidence": "══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════\nThe following GoError was thrown running a test:\nThere is no GoRouterState above the current context. This method should only be called under the sub\ntree of a RouteBase.builder.\n\nWhen the exception was thrown, this was the stack:\n#0      GoRouterState.of (package:go_router/src/state.dart:124:9)\n#1      openDmChat (package:medcollab_app/core/router/dm_navigation.dart:17:33)\n#2      showAddNeedlPeopleSheet.<anonymous closure>.<anonymous closure>.submit (package:medcollab_app/features/messages/presentation/widgets/needl_manage_sheets.dart:208:15)\n<asynchronous suspension>\n\nThe test description was:\n  FR-NDL-50 expansion pending duplicate taps failure and retry\n════════════════════════════════════════════════════════════════════════════════════════════════════\n══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════\nThe following TestFailure was thrown running a test (but after the test had completed):\nExpected: exactly one matching candidate\n  Actual: _TextWidgetFinder:<Found 0 widgets with text \"Opened created\": []>\n   Which: means none were found but one was expected\n\nWhen the exception was thrown, this was the stack:\n#0      fail (package:matcher/src/expect/expect.dart:149:31)\n#1      _expect (package:matcher/src/expect/expect.dart:144:3)\n#2      expect (package:matcher/src/expect/expect.dart:56:3)\n#3      expect (package:flutter_test/src/widget_tester.dart:474:18)\n#4      main.<anonymous closure> (file:///C:/Users/delll/AndroidStudioProjects/Vocle/vocle-needl-regression/medcollab-app/test/functional_regression/needl_test.dart:737:5)\n<asynchronous suspension>\n#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:193:15)\n<asynchronous suspension>\n#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1064:5)\n<asynchronous suspension>\n<asynchronous suspension>\n(elided one frame from package:stack_trace)\n════════════════════════════════════════════════════════════════════════════════════════════════════\nTest failed. See exception logs above.\nThe test description was: FR-NDL-50 expansion pending duplicate taps failure and retry\nTest failed. See exception logs above.\nThe test description was: FR-NDL-50 expansion pending duplicate taps failure and retry"
+    },
+    {
+      "id": "FR-NDL-51",
+      "status": "PASS",
+      "title": "FR-NDL-51 rename cancel trimming and 80 character bound",
+      "priority": "P1",
+      "questionIds": [],
+      "durationMs": 348,
+      "evidence": ""
+    },
+    {
+      "id": "FR-NDL-52",
+      "status": "PASS",
+      "title": "FR-NDL-52 rename error never shows success",
+      "priority": "P1",
+      "questionIds": [],
+      "durationMs": 153,
+      "evidence": ""
+    },
+    {
+      "id": "FR-NDL-53",
+      "status": "FAIL",
+      "title": "FR-NDL-53 self-first members count roles and presence",
+      "priority": "P1",
+      "questionIds": [],
+      "durationMs": 143,
+      "evidence": "══╡ EXCEPTION CAUGHT BY RENDERING LIBRARY ╞═════════════════════════════════════════════════════════\nThe following assertion was thrown during layout:\nA RenderFlex overflowed by 91 pixels on the bottom.\n\nThe relevant error-causing widget was:\n  Column\n  Column:file:///C:/Users/delll/AndroidStudioProjects/Vocle/vocle-needl-regression/medcollab-app/lib/features/messages/presentation/widgets/needl_manage_sheets.dart:428:18\n\nThe overflowing RenderFlex has an orientation of Axis.vertical.\nThe edge of the RenderFlex that is overflowing has been marked in the rendering with a yellow and\nblack striped pattern. This is usually caused by the contents being too big for the RenderFlex.\nConsider applying a flex factor (e.g. using an Expanded widget) to force the children of the\nRenderFlex to fit within the available space instead of being sized to their natural size.\nThis is considered an error condition because it indicates that there is content that cannot be\nseen. If the content is legitimately bigger than the available space, consider clipping it with a\nClipRect widget before putting it in the flex, or using a scrollable container rather than a Flex,\nlike a ListView.\nThe specific RenderFlex in question is: RenderFlex#af459 relayoutBoundary=up11 OVERFLOWING:\n  needs compositing\n  creator: Column ← Padding ← MediaQuery ← Padding ← SafeArea ← Padding ← Stack ←\n    NotificationListener<DraggableScrollableNotification> ← DefaultTextStyle ←\n    AnimatedDefaultTextStyle ← _InkFeatures-[GlobalKey#70032 ink renderer] ←\n    NotificationListener<LayoutChangedNotification> ← ⋯\n  parentData: offset=Offset(8.0, 0.0) (can use size)\n  constraints: BoxConstraints(0.0<=w<=624.0, 0.0<=h<=948.5)\n  size: Size(624.0, 948.5)\n  direction: vertical\n  mainAxisAlignment: start\n  mainAxisSize: min\n  crossAxisAlignment: stretch\n  verticalDirection: down\n  spacing: 0.0\n◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤\n════════════════════════════════════════════════════════════════════════════════════════════════════\nTest failed. See exception logs above.\nThe test description was: FR-NDL-53 self-first members count roles and presence"
+    },
+    {
+      "id": "FR-NDL-54",
+      "status": "PASS",
+      "title": "FR-NDL-54 chat retains group identity and Needl menu",
+      "priority": "P0",
+      "questionIds": [],
+      "durationMs": 398,
+      "evidence": ""
+    },
+    {
+      "id": "FR-NOT-06",
+      "status": "PASS",
+      "title": "FR-NOT-06: socket/HTTP dedupe and badge mutations recover from errors",
+      "priority": "P0",
+      "questionIds": [],
+      "durationMs": 63,
+      "evidence": ""
+    },
+    {
+      "id": "FR-OFF-01",
+      "status": "PASS",
+      "title": "FR-OFF-01 optimistic text reconciles to one server ID with quote",
+      "priority": "P0",
+      "questionIds": [],
+      "durationMs": 60,
+      "evidence": ""
+    },
+    {
+      "id": "FR-OFF-02",
+      "status": "PASS",
+      "title": "FR-OFF-02 failed send remains visible and composer can send again",
+      "priority": "P0",
+      "questionIds": [],
+      "durationMs": 8,
+      "evidence": ""
+    },
+    {
+      "id": "FR-OFF-03",
+      "status": "PASS",
+      "title": "FR-OFF-03 root and thread drafts restore independently",
+      "priority": "P1",
+      "questionIds": [],
+      "durationMs": 39,
+      "evidence": ""
+    },
+    {
+      "id": "FR-OFF-04",
+      "status": "PASS",
+      "title": "FR-OFF-04 cached transcript survives offline load and refreshes on recovery",
+      "priority": "P1",
+      "questionIds": [],
+      "durationMs": 8,
+      "evidence": ""
+    },
+    {
+      "id": "FR-OFF-05",
+      "status": "PASS",
+      "title": "FR-OFF-05 failed upload creates no message and blocks duplicate busy send",
+      "priority": "P1",
+      "questionIds": [],
+      "durationMs": 12,
+      "evidence": ""
+    },
+    {
+      "id": "FR-OFF-06",
+      "status": "PASS",
+      "title": "FR-OFF-06: account switch clears local account data",
+      "priority": "P0",
+      "questionIds": [
+        "Q11"
+      ],
+      "durationMs": 59,
+      "evidence": ""
+    },
+    {
+      "id": "FR-PRO-05",
+      "status": "PASS",
+      "title": "FR-PRO-05: cancel, failed save, retry and reload profile",
+      "priority": "P1",
+      "questionIds": [],
+      "durationMs": 2583,
+      "evidence": ""
+    },
+    {
+      "id": "FR-REQ-06",
+      "status": "PASS",
+      "title": "FR-REQ-06: lookup request states, retry and accepted chat route",
+      "priority": "P1",
+      "questionIds": [],
+      "durationMs": 1690,
+      "evidence": ""
+    },
+    {
+      "id": "FR-RT-04",
+      "status": "PASS",
+      "title": "FR-RT-04 typing state handles peers, self, duplicate, expiry and disposal",
+      "priority": "P1",
+      "questionIds": [],
+      "durationMs": 76,
+      "evidence": ""
+    },
+    {
+      "id": "FR-RT-05",
+      "status": "PASS",
+      "title": "FR-RT-05 reconnect fetches persisted messages and socket duplicates stay one row",
+      "priority": "P0",
+      "questionIds": [],
+      "durationMs": 8,
+      "evidence": ""
+    },
+    {
+      "id": "FR-RT-06",
+      "status": "PASS",
+      "title": "FR-RT-06: resume refresh reconnects or recovers session",
+      "priority": "P0",
+      "questionIds": [],
+      "durationMs": 629,
+      "evidence": ""
+    },
+    {
+      "id": "FR-RUN-03",
+      "status": "PASS",
+      "title": "FR-RUN-03: list and detail recover after timeout, 5xx and malformed data",
+      "priority": "P1",
+      "questionIds": [],
+      "durationMs": 970,
+      "evidence": ""
+    },
+    {
+      "id": "FR-SAVE-01",
+      "status": "PASS",
+      "title": "FR-SAVE-01 bookmarks dedupe, order, route IDs and persist removal",
+      "priority": "P1",
+      "questionIds": [],
+      "durationMs": 32,
+      "evidence": ""
+    },
+    {
+      "id": "FR-SAVE-02",
+      "status": "PASS",
+      "title": "FR-SAVE-02: corrupt bookmarks recover and missing target is actionable",
+      "priority": "P2",
+      "questionIds": [],
+      "durationMs": 1232,
+      "evidence": ""
+    },
+    {
+      "id": "FR-SAVE-03",
+      "status": "PASS",
+      "title": "FR-SAVE-03 recent channels and pins enforce independent caps",
+      "priority": "P2",
+      "questionIds": [],
+      "durationMs": 28,
+      "evidence": ""
+    },
+    {
+      "id": "FR-SOC-06",
+      "status": "PASS",
+      "title": "FR-SOC-06 pending, failed, sent and read states respect receipt preference",
+      "priority": "P1",
+      "questionIds": [],
+      "durationMs": 687,
+      "evidence": ""
+    },
+    {
+      "id": "FR-SRCH-04",
+      "status": "PASS",
+      "title": "FR-SRCH-04: newest query owns results and failures recover",
+      "priority": "P1",
+      "questionIds": [],
+      "durationMs": 1552,
+      "evidence": ""
+    },
+    {
+      "id": "FR-SUP-04",
+      "status": "PASS",
+      "title": "FR-SUP-04: support failure/retry, help/legal and contact intent",
+      "priority": "P2",
+      "questionIds": [],
+      "durationMs": 3539,
+      "evidence": ""
+    },
+    {
+      "id": "FR-THR-05",
+      "status": "PASS",
+      "title": "FR-THR-05 duplicate reply event increments once and HTTP refresh converges",
+      "priority": "P0",
+      "questionIds": [],
+      "durationMs": 21,
+      "evidence": ""
+    }
+  ]
+}

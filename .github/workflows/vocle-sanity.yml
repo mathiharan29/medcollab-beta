@@ -1,6 +1,7 @@
 name: Vocle Functional Sanity
 
 on:
+  workflow_dispatch:
   workflow_call:
 
 permissions:
@@ -19,19 +20,27 @@ jobs:
       upstream_sha: ${{ steps.target.outputs.targetSha }}
       suite_fingerprint: ${{ steps.fingerprint.outputs.value }}
     steps:
-      - name: Validate supported PR context
+      - name: Validate supported PR or manual context
         working-directory: ${{ github.workspace }}
         shell: bash
         env:
           QA_REPOSITORY: ${{ github.repository }}
           QA_EVENT: ${{ github.event_name }}
+          QA_REF: ${{ github.ref }}
+          QA_SHA: ${{ github.sha }}
           QA_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
           QA_BASE_REF: ${{ github.event.pull_request.base.ref }}
         run: |
+          set -euo pipefail
           test "$QA_REPOSITORY" = mathiharan29/medcollab-beta
-          test "$QA_EVENT" = pull_request
-          test "$QA_HEAD_REPOSITORY" = mathiharan29/medcollab-beta
-          test "$QA_BASE_REF" = master
+          if [ "$QA_EVENT" = pull_request ]; then
+            test "$QA_HEAD_REPOSITORY" = mathiharan29/medcollab-beta
+            test "$QA_BASE_REF" = master
+          else
+            test "$QA_EVENT" = workflow_dispatch
+            [[ "$QA_REF" == refs/heads/?* ]]
+            [[ "$QA_SHA" =~ ^[0-9a-f]{40}$ ]]
+          fi
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -57,19 +66,27 @@ jobs:
     outputs:
       report_ready: ${{ steps.report.outputs.ready }}
     steps:
-      - name: Validate supported PR context
+      - name: Validate supported PR or manual context
         working-directory: ${{ github.workspace }}
         shell: bash
         env:
           QA_REPOSITORY: ${{ github.repository }}
           QA_EVENT: ${{ github.event_name }}
+          QA_REF: ${{ github.ref }}
+          QA_SHA: ${{ github.sha }}
           QA_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
           QA_BASE_REF: ${{ github.event.pull_request.base.ref }}
         run: |
+          set -euo pipefail
           test "$QA_REPOSITORY" = mathiharan29/medcollab-beta
-          test "$QA_EVENT" = pull_request
-          test "$QA_HEAD_REPOSITORY" = mathiharan29/medcollab-beta
-          test "$QA_BASE_REF" = master
+          if [ "$QA_EVENT" = pull_request ]; then
+            test "$QA_HEAD_REPOSITORY" = mathiharan29/medcollab-beta
+            test "$QA_BASE_REF" = master
+          else
+            test "$QA_EVENT" = workflow_dispatch
+            [[ "$QA_REF" == refs/heads/?* ]]
+            [[ "$QA_SHA" =~ ^[0-9a-f]{40}$ ]]
+          fi
       - name: Check out PR harness
         uses: actions/checkout@v4
         with:
@@ -194,7 +211,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           VOCLE_TARGET_SHA: ${{ needs.detect.outputs.upstream_sha }}
-          VOCLE_TARGET_KIND: pr-head
+          VOCLE_TARGET_KIND: ${{ github.event_name == 'pull_request' && 'pr-head' || 'commit' }}
           VOCLE_HARNESS_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: >-
           node harness/tests/reporting/report.mjs
@@ -242,19 +259,27 @@ jobs:
     needs: [detect, sanity]
     runs-on: ubuntu-24.04
     steps:
-      - name: Validate supported PR context
+      - name: Validate supported PR or manual context
         working-directory: ${{ github.workspace }}
         shell: bash
         env:
           QA_REPOSITORY: ${{ github.repository }}
           QA_EVENT: ${{ github.event_name }}
+          QA_REF: ${{ github.ref }}
+          QA_SHA: ${{ github.sha }}
           QA_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
           QA_BASE_REF: ${{ github.event.pull_request.base.ref }}
         run: |
+          set -euo pipefail
           test "$QA_REPOSITORY" = mathiharan29/medcollab-beta
-          test "$QA_EVENT" = pull_request
-          test "$QA_HEAD_REPOSITORY" = mathiharan29/medcollab-beta
-          test "$QA_BASE_REF" = master
+          if [ "$QA_EVENT" = pull_request ]; then
+            test "$QA_HEAD_REPOSITORY" = mathiharan29/medcollab-beta
+            test "$QA_BASE_REF" = master
+          else
+            test "$QA_EVENT" = workflow_dispatch
+            [[ "$QA_REF" == refs/heads/?* ]]
+            [[ "$QA_SHA" =~ ^[0-9a-f]{40}$ ]]
+          fi
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}

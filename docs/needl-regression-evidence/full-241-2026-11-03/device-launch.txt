@@ -1,0 +1,21 @@
+Deferring emulator attach until after APK prewarm (emulator-5580)
+{"deviceWorkspace":"C:\\Users\\delll\\AndroidStudioProjects\\Vocle\\vocle-needl-regression\\test-results\\full-241-host\\device","selected":["FR-MED-08","FR-PUSH-05","FR-PUSH-06","FR-NAV-04","FR-NAV-05","FR-LINK-04","FR-JRN-05","FR-JRN-06"],"sourceSha":"26118b40f388769eca30c9cb23f590379d8adf41"}
+Prewarming Android debug assemble...
+APK prewarm complete; waiting for deferred emulator boot...
+Waiting for deferred Android emulator emulator-5580...
+Owned emulator launched: emulator-5580
+Waiting for deferred Android emulator emulator-5580...
+Waiting for deferred Android emulator emulator-5580...
+Executing FR-MED-08 native phase media
+Executing FR-PUSH-05 native phase notification-grouping
+Executing FR-PUSH-06 native phase notification-token
+Executing FR-NAV-04 native phase resume
+Executing FR-NAV-05 native phase session-seed
+Executing FR-NAV-05 native phase session-restore
+Infra retry once for FR-NAV-05 native phase session-restore
+Executing FR-NAV-05 native phase session-empty
+Executing FR-LINK-04 native phase invites
+Executing FR-JRN-05 native phase chat-journey
+Executing FR-JRN-06 native phase handoff-seed
+Executing FR-JRN-06 native phase handoff-cold
+{"reportDirectory":"C:\\Users\\delll\\AndroidStudioProjects\\Vocle\\vocle-needl-regression\\test-results\\full-241-host\\device","counts":{"PASS":8,"FAIL":0,"ERROR":0,"BLOCKED":0,"NEEDS_DECISION":0,"SKIP":0},"executed":8,"fullSuccess":true}

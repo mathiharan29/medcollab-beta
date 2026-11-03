@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites><testsuite name="Vocle.developer" tests="241" failures="6" errors="0" skipped="0">
+<testcase classname="AUTH" name="FR-AUTH-01" time="0.785"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="AUTH" name="FR-AUTH-02" time="0.334"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="AUTH" name="FR-AUTH-03" time="0.272"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="AUTH" name="FR-AUTH-04" time="0.76"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="AUTH" name="FR-AUTH-05" time="0.504"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="AUTH" name="FR-AUTH-06" time="0.127"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="AUTH" name="FR-AUTH-07" time="0.368"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="CH" name="FR-CH-01" time="0.785"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="CH" name="FR-CH-02" time="0.26"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="CH" name="FR-CH-04" time="0.109"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="CH" name="FR-CH-05" time="0.173"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="CH" name="FR-CH-03" time="0.093"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="DM" name="FR-DM-01" time="1.194"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="DM" name="FR-DM-02" time="1.331"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="DM" name="FR-DM-03" time="0.553"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="DM" name="FR-DM-04" time="0.523"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="DM" name="FR-DM-05" time="0.507"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="DM" name="FR-DM-06" time="0.597"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="DM" name="FR-DM-07" time="0.529"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="DM" name="FR-DM-08" time="0.493"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="DM" name="FR-DM-09" time="0.555"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="DISC" name="FR-DISC-01" time="1.018"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="DISC" name="FR-DISC-03" time="0.099"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="DISC" name="FR-DISC-04" time="0.041"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="DISC" name="FR-DISC-02" time="0.036"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="HOF" name="FR-HOF-01" time="0.769"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="HOF" name="FR-HOF-02" time="0.139"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="HOF" name="FR-HOF-03" time="0.12"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="HOF" name="FR-HOF-04" time="0.1"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="HOF" name="FR-HOF-05" time="0.062"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="HOF" name="FR-HOF-06" time="0.125"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="HOF" name="FR-HOF-07" time="0.109"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="HOF" name="FR-HOF-08" time="0.085"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="HOF" name="FR-HOF-09" time="0.12"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="HOF" name="FR-HOF-10" time="0.206"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="JRN" name="FR-JRN-01" time="0.896"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="JRN" name="FR-JRN-02" time="0.228"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="JRN" name="FR-JRN-03" time="0.197"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="JRN" name="FR-JRN-04" time="3.419"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="MED" name="FR-MED-01" time="0.372"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="MED" name="FR-MED-02" time="0.012"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="MED" name="FR-MED-03" time="0.477"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="MED" name="FR-MED-04" time="0.047"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="MED" name="FR-MED-05" time="0.047"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="MED" name="FR-MED-06" time="0.034"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="MED" name="FR-MED-07" time="0.073"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="MSG" name="FR-MSG-01" time="0.663"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="MSG" name="FR-MSG-02" time="0.369"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="MSG" name="FR-MSG-03" time="0.495"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="MSG" name="FR-MSG-04" time="0.523"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="MSG" name="FR-MSG-05" time="0.574"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="MSG" name="FR-MSG-06" time="0.49"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="MSG" name="FR-MSG-07" time="0.446"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="MSG" name="FR-MSG-08" time="0.247"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-01" time="0.834"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-02" time="0.679"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-03" time="0.508"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-04" time="0.427"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-05" time="0.509"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-06" time="0.541"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-07" time="0.537"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-08" time="0.523"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-09" time="0.495"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-10" time="0.618"><properties><property name="vocle.status" value="NEEDS_DECISION"/><property name="vocle.attempted" value="true"/></properties><failure message="NEEDS_DECISION">NDL-D1: archived Needl expansion policy requires product decision; observed HTTP 200</failure></testcase>
+<testcase classname="NDL" name="FR-NDL-11" time="0.583"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-12" time="0.542"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-13" time="0.526"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-14" time="0.553"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-15" time="0.697"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-16" time="0.554"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-17" time="1.19"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-18" time="0.588"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-19" time="0.556"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-20" time="0.605"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-21" time="0.542"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-22" time="0.608"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-23" time="0.673"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-24" time="0.617"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-25" time="0.622"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-26" time="0.574"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-27" time="1.598"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-28" time="0.522"><properties><property name="vocle.status" value="FAIL"/><property name="vocle.attempted" value="true"/></properties><failure message="FAIL">Every concurrent expansion must return a usable existing/new destination</failure></testcase>
+<testcase classname="NDL" name="FR-NDL-29" time="0.57"><properties><property name="vocle.status" value="FAIL"/><property name="vocle.attempted" value="true"/></properties><failure message="FAIL">Retry must recover intended history after the database fault is removed
+
+0 !== 1
+</failure></testcase>
+<testcase classname="NDL" name="FR-NDL-30" time="0.523"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NOT" name="FR-NOT-01" time="0.717"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NOT" name="FR-NOT-02" time="0.355"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NOT" name="FR-NOT-03" time="0.218"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NOT" name="FR-NOT-04" time="0.214"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NOT" name="FR-NOT-05" time="0.415"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="PRO" name="FR-PRO-01" time="0.781"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="PRO" name="FR-PRO-02" time="0.282"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="PRO" name="FR-PRO-04" time="0.202"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="PRO" name="FR-PRO-03" time="0.047"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="PUSH" name="FR-PUSH-01" time="0.725"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="PUSH" name="FR-PUSH-02" time="0.65"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="PUSH" name="FR-PUSH-03" time="1.037"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="PUSH" name="FR-PUSH-04" time="0.459"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="RT" name="FR-RT-01" time="0.811"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="RT" name="FR-RT-02" time="0.343"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="RT" name="FR-RT-03" time="0.36"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="RT" name="FR-RT-07" time="1.799"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="REQ" name="FR-REQ-01" time="1.192"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="REQ" name="FR-REQ-02" time="0.506"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="REQ" name="FR-REQ-03" time="0.852"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="REQ" name="FR-REQ-04" time="0.555"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="REQ" name="FR-REQ-05" time="0.414"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="RUN" name="FR-RUN-01" time="1.812"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="RUN" name="FR-RUN-02" time="11.493"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="AUTH" name="authentication-and-profiles-01" time="0.322"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="AUTH" name="authentication-and-profiles-02" time="0.208"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="AUTH" name="authentication-and-profiles-03" time="0.364"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="AUTH" name="authentication-and-profiles-04" time="0.008"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="PRO" name="authentication-and-profiles-05" time="0.038"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="AUTH" name="authentication-and-profiles-06" time="0.027"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="AUTH" name="authentication-and-profiles-07" time="0.077"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="SPC" name="spaces-and-invitations-01" time="0.039"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="SPC" name="spaces-and-invitations-02" time="0.093"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="SPC" name="spaces-and-invitations-03" time="0.026"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="SPC" name="spaces-and-invitations-04" time="0.041"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="SPC" name="spaces-and-invitations-05" time="0.078"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="CH" name="channels-01" time="0.063"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="CH" name="channels-02" time="0.04"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="CH" name="channels-03" time="0.111"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="MSG" name="messaging-and-needl-01" time="0.076"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="MSG" name="messaging-and-needl-02" time="0.122"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="MSG" name="messaging-and-needl-03" time="0.033"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="THR" name="messaging-and-needl-04" time="0.124"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="MSG" name="messaging-and-needl-05" time="0.093"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="SOC" name="messaging-and-needl-06" time="0.109"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="MSG" name="messaging-and-needl-07" time="0.038"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="REQ" name="message-requests-01" time="0.1"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="REQ" name="message-requests-02" time="0.032"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="REQ" name="message-requests-03" time="0.047"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="DM" name="direct-and-group-conversations-01" time="0.02"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="DM" name="direct-and-group-conversations-02" time="0.049"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="DM" name="direct-and-group-conversations-03" time="0.065"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="DM" name="direct-and-group-conversations-04" time="0.1"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="DM" name="direct-and-group-conversations-05" time="0.097"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="HOF" name="handoffs-01" time="0.036"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="HOF" name="handoffs-02" time="0.023"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="HOF" name="handoffs-03" time="0.057"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="HOF" name="handoffs-04" time="0.122"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="HOF" name="handoffs-05" time="0.055"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="MED" name="media-01" time="0.038"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="MED" name="media-02" time="0.034"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="MED" name="media-03" time="0.079"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NOT" name="notifications-01" time="0.037"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NOT" name="notifications-02" time="0.056"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NOT" name="notifications-03" time="0.061"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="RT" name="realtime-and-availability-01" time="0.06"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="RT" name="realtime-and-availability-02" time="0.001"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="RT" name="realtime-and-availability-03" time="0.043"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="SRCH" name="search-01" time="0.022"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="SRCH" name="search-02" time="0.054"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="SUP" name="support-01" time="0.042"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="RUN" name="startup-01" time="0"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="SRCH" name="FR-SRCH-01" time="0.728"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="SRCH" name="FR-SRCH-02" time="0.291"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="SRCH" name="FR-SRCH-03" time="0.369"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="SOC" name="FR-SOC-01" time="0.905"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="SOC" name="FR-SOC-02" time="0.382"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="SOC" name="FR-SOC-03" time="0.49"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="SOC" name="FR-SOC-04" time="0.335"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="SOC" name="FR-SOC-05" time="0.601"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="SPC" name="FR-SPC-01" time="0.553"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="SPC" name="FR-SPC-02" time="0.569"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="SPC" name="FR-SPC-03" time="0.446"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="SPC" name="FR-SPC-04" time="0.508"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="SPC" name="FR-SPC-05" time="1.05"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="SPC" name="FR-SPC-06" time="5.212"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="SUP" name="FR-SUP-01" time="0.503"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="SUP" name="FR-SUP-02" time="0.03"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="SUP" name="FR-SUP-03" time="1.109"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="THR" name="FR-THR-01" time="0.831"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="THR" name="FR-THR-02" time="0.431"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="THR" name="FR-THR-03" time="0.259"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="THR" name="FR-THR-04" time="0.462"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="HOF" name="FR-HOF-11" time="0.043"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="HOF" name="FR-HOF-12" time="0.649"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="HOF" name="FR-HOF-13" time="1.733"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="HOME" name="FR-HOME-01" time="0.029"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="HOME" name="FR-HOME-02" time="0.73"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="HOME" name="FR-HOME-03" time="0.657"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="LINK" name="FR-LINK-01" time="1.08"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="LINK" name="FR-LINK-02" time="0.165"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="LINK" name="FR-LINK-03" time="1.886"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NAV" name="FR-NAV-01" time="1.78"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NAV" name="FR-NAV-02" time="0.121"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NAV" name="FR-NAV-03" time="1.212"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-31" time="0.038"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-32" time="0.015"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-33" time="0.029"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-34" time="0.03"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-35" time="0.019"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-36" time="1.183"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-37" time="1.054"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-38" time="0.225"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-39" time="0.836"><properties><property name="vocle.status" value="FAIL"/><property name="vocle.attempted" value="true"/></properties><failure message="FAIL">══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TextWidgetFinder:&lt;Found 0 widgets with text &quot;Doctor Z&quot;: []&gt;
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.&lt;anonymous closure&gt; (file:///C:/Users/delll/AndroidStudioProjects/Vocle/vocle-needl-regression/medcollab-app/test/functional_regression/needl_test.dart:479:5)
+&lt;asynchronous suspension&gt;
+#5      testWidgets.&lt;anonymous closure&gt;.&lt;anonymous closure&gt; (package:flutter_test/src/widget_tester.dart:193:15)
+&lt;asynchronous suspension&gt;
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1064:5)
+&lt;asynchronous suspension&gt;
+&lt;asynchronous suspension&gt;
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///C:/Users/delll/AndroidStudioProjects/Vocle/vocle-needl-regression/medcollab-app/test/functional_regression/needl_test.dart line 479
+The test description was:
+  FR-NDL-39 Start DM debounce and stale response ordering
+════════════════════════════════════════════════════════════════════════════════════════════════════
+Test failed. See exception logs above.
+The test description was: FR-NDL-39 Start DM debounce and stale response ordering</failure></testcase>
+<testcase classname="NDL" name="FR-NDL-40" time="0.363"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-41" time="0.746"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-42" time="0.555"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-43" time="0.727"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-44" time="0.276"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-45" time="0.318"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-46" time="0.309"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-47" time="0.277"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-48" time="0.298"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-49" time="0.232"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-50" time="0.533"><properties><property name="vocle.status" value="FAIL"/><property name="vocle.attempted" value="true"/></properties><failure message="FAIL">══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following GoError was thrown running a test:
+There is no GoRouterState above the current context. This method should only be called under the sub
+tree of a RouteBase.builder.
+
+When the exception was thrown, this was the stack:
+#0      GoRouterState.of (package:go_router/src/state.dart:124:9)
+#1      openDmChat (package:medcollab_app/core/router/dm_navigation.dart:17:33)
+#2      showAddNeedlPeopleSheet.&lt;anonymous closure&gt;.&lt;anonymous closure&gt;.submit (package:medcollab_app/features/messages/presentation/widgets/needl_manage_sheets.dart:208:15)
+&lt;asynchronous suspension&gt;
+
+The test description was:
+  FR-NDL-50 expansion pending duplicate taps failure and retry
+════════════════════════════════════════════════════════════════════════════════════════════════════
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test (but after the test had completed):
+Expected: exactly one matching candidate
+  Actual: _TextWidgetFinder:&lt;Found 0 widgets with text &quot;Opened created&quot;: []&gt;
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#0      fail (package:matcher/src/expect/expect.dart:149:31)
+#1      _expect (package:matcher/src/expect/expect.dart:144:3)
+#2      expect (package:matcher/src/expect/expect.dart:56:3)
+#3      expect (package:flutter_test/src/widget_tester.dart:474:18)
+#4      main.&lt;anonymous closure&gt; (file:///C:/Users/delll/AndroidStudioProjects/Vocle/vocle-needl-regression/medcollab-app/test/functional_regression/needl_test.dart:737:5)
+&lt;asynchronous suspension&gt;
+#5      testWidgets.&lt;anonymous closure&gt;.&lt;anonymous closure&gt; (package:flutter_test/src/widget_tester.dart:193:15)
+&lt;asynchronous suspension&gt;
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1064:5)
+&lt;asynchronous suspension&gt;
+&lt;asynchronous suspension&gt;
+(elided one frame from package:stack_trace)
+════════════════════════════════════════════════════════════════════════════════════════════════════
+Test failed. See exception logs above.
+The test description was: FR-NDL-50 expansion pending duplicate taps failure and retry
+Test failed. See exception logs above.
+The test description was: FR-NDL-50 expansion pending duplicate taps failure and retry</failure></testcase>
+<testcase classname="NDL" name="FR-NDL-51" time="0.348"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-52" time="0.153"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NDL" name="FR-NDL-53" time="0.143"><properties><property name="vocle.status" value="FAIL"/><property name="vocle.attempted" value="true"/></properties><failure message="FAIL">══╡ EXCEPTION CAUGHT BY RENDERING LIBRARY ╞═════════════════════════════════════════════════════════
+The following assertion was thrown during layout:
+A RenderFlex overflowed by 91 pixels on the bottom.
+
+The relevant error-causing widget was:
+  Column
+  Column:file:///C:/Users/delll/AndroidStudioProjects/Vocle/vocle-needl-regression/medcollab-app/lib/features/messages/presentation/widgets/needl_manage_sheets.dart:428:18
+
+The overflowing RenderFlex has an orientation of Axis.vertical.
+The edge of the RenderFlex that is overflowing has been marked in the rendering with a yellow and
+black striped pattern. This is usually caused by the contents being too big for the RenderFlex.
+Consider applying a flex factor (e.g. using an Expanded widget) to force the children of the
+RenderFlex to fit within the available space instead of being sized to their natural size.
+This is considered an error condition because it indicates that there is content that cannot be
+seen. If the content is legitimately bigger than the available space, consider clipping it with a
+ClipRect widget before putting it in the flex, or using a scrollable container rather than a Flex,
+like a ListView.
+The specific RenderFlex in question is: RenderFlex#af459 relayoutBoundary=up11 OVERFLOWING:
+  needs compositing
+  creator: Column ← Padding ← MediaQuery ← Padding ← SafeArea ← Padding ← Stack ←
+    NotificationListener&lt;DraggableScrollableNotification&gt; ← DefaultTextStyle ←
+    AnimatedDefaultTextStyle ← _InkFeatures-[GlobalKey#70032 ink renderer] ←
+    NotificationListener&lt;LayoutChangedNotification&gt; ← ⋯
+  parentData: offset=Offset(8.0, 0.0) (can use size)
+  constraints: BoxConstraints(0.0&lt;=w&lt;=624.0, 0.0&lt;=h&lt;=948.5)
+  size: Size(624.0, 948.5)
+  direction: vertical
+  mainAxisAlignment: start
+  mainAxisSize: min
+  crossAxisAlignment: stretch
+  verticalDirection: down
+  spacing: 0.0
+◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤◢◤
+════════════════════════════════════════════════════════════════════════════════════════════════════
+Test failed. See exception logs above.
+The test description was: FR-NDL-53 self-first members count roles and presence</failure></testcase>
+<testcase classname="NDL" name="FR-NDL-54" time="0.398"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NOT" name="FR-NOT-06" time="0.063"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="OFF" name="FR-OFF-01" time="0.06"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="OFF" name="FR-OFF-02" time="0.008"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="OFF" name="FR-OFF-03" time="0.039"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="OFF" name="FR-OFF-04" time="0.008"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="OFF" name="FR-OFF-05" time="0.012"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="OFF" name="FR-OFF-06" time="0.059"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="PRO" name="FR-PRO-05" time="2.583"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="REQ" name="FR-REQ-06" time="1.69"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="RT" name="FR-RT-04" time="0.076"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="RT" name="FR-RT-05" time="0.008"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="RT" name="FR-RT-06" time="0.629"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="RUN" name="FR-RUN-03" time="0.97"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="SAVE" name="FR-SAVE-01" time="0.032"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="SAVE" name="FR-SAVE-02" time="1.232"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="SAVE" name="FR-SAVE-03" time="0.028"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="SOC" name="FR-SOC-06" time="0.687"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="SRCH" name="FR-SRCH-04" time="1.552"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="SUP" name="FR-SUP-04" time="3.539"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="THR" name="FR-THR-05" time="0.021"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="MED" name="FR-MED-08" time="31.183"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="PUSH" name="FR-PUSH-05" time="13.284"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="PUSH" name="FR-PUSH-06" time="10.047"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NAV" name="FR-NAV-04" time="8.41"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="NAV" name="FR-NAV-05" time="16.078"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="LINK" name="FR-LINK-04" time="25.084"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="JRN" name="FR-JRN-05" time="45.165"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+<testcase classname="JRN" name="FR-JRN-06" time="9.832"><properties><property name="vocle.status" value="PASS"/><property name="vocle.attempted" value="true"/></properties></testcase>
+</testsuite><testsuite name="Vocle.infrastructure" tests="0" errors="0"></testsuite><testsuite name="Vocle.application-prerequisites" tests="0" failures="0"></testsuite></testsuites>

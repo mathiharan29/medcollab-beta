@@ -1,0 +1,23 @@
+{
+  "status": "PASS",
+  "jsonAndXmlValid": true,
+  "exactCatalogRows": 241,
+  "original187AllPass": true,
+  "counts": {
+    "PASS": 235,
+    "FAIL": 5,
+    "ERROR": 0,
+    "BLOCKED": 0,
+    "NEEDS_DECISION": 1,
+    "SKIP": 0
+  },
+  "originalGate": "FAIL",
+  "sensitivePatternCounts": {
+    "jwt": 0,
+    "githubToken": 0,
+    "privateKey": 0,
+    "signedQuery": 0
+  },
+  "applicationSourceUnchanged": true,
+  "hostedSuccessClaimed": false
+}

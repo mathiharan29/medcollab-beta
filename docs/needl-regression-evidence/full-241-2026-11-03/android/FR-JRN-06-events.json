@@ -1,0 +1,163 @@
+{
+  "checkpoints": [
+    {
+      "phase": "handoff-seed",
+      "runId": "3422fdcc-66dc-48ca-8e6a-a1a6626350e5",
+      "processId": 10216,
+      "status": "PASS",
+      "evidence": {
+        "loggedOut": true,
+        "handoffId": "6ae9fef3a5eb0aa2bc889699"
+      }
+    },
+    {
+      "phase": "handoff-cold",
+      "runId": "3422fdcc-66dc-48ca-8e6a-a1a6626350e5",
+      "processId": 10398,
+      "status": "PASS",
+      "evidence": {
+        "correctHandoffAcknowledged": true
+      }
+    }
+  ],
+  "controlActions": [
+    {
+      "action": "fixture",
+      "at": "2026-11-03T15:35:04.242Z"
+    },
+    {
+      "action": "handoff-state",
+      "at": "2026-11-03T15:35:04.361Z"
+    },
+    {
+      "action": "checkpoint",
+      "at": "2026-11-03T15:35:04.396Z"
+    },
+    {
+      "action": "fixture",
+      "at": "2026-11-03T15:36:03.825Z"
+    },
+    {
+      "action": "checkpoints",
+      "at": "2026-11-03T15:36:03.924Z"
+    },
+    {
+      "action": "notification-permission",
+      "at": "2026-11-03T15:36:05.108Z"
+    },
+    {
+      "action": "otp",
+      "at": "2026-11-03T15:36:08.767Z"
+    },
+    {
+      "action": "listen-ack",
+      "at": "2026-11-03T15:36:12.206Z"
+    },
+    {
+      "action": "await-ack",
+      "at": "2026-11-03T15:36:13.145Z"
+    },
+    {
+      "action": "sender-handoff",
+      "at": "2026-11-03T15:36:13.207Z"
+    },
+    {
+      "action": "checkpoint",
+      "at": "2026-11-03T15:36:13.240Z"
+    },
+    {
+      "action": "result",
+      "at": "2026-11-03T15:36:13.428Z"
+    }
+  ],
+  "backendRequests": [
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/auth/request-otp"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/auth/verify-otp"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/handoffs/6ae9fef3a5eb0aa2bc889699"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/spaces/6ae9fef2a5eb0aa2bc889694/handoffs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/spaces/6ae9fef2a5eb0aa2bc889694/handoffs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/handoffs/6ae9fef3a5eb0aa2bc889699"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/handoffs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/handoffs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/handoffs"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/handoffs/6ae9fef3a5eb0aa2bc889699/acknowledge"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/handoffs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/handoffs"
+    }
+  ]
+}

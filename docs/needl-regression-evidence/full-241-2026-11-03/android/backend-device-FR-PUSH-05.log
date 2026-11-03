@@ -1,0 +1,96 @@
+◇ injected env (0) from .env // tip: ⌘ suppress logs { quiet: true }
+[32m[2026-11-03T15:14:20.222Z] INFO: MongoDB connected: 127.0.0.1[0m 
+[33m[2026-11-03T15:14:20.222Z] WARN: Cloudinary not configured — media uploads will use local disk storage (uploads/)[0m 
+[33m[2026-11-03T15:14:20.222Z] WARN: Firebase credentials not set (need FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY). Push notifications disabled.[0m 
+[32m[2026-11-03T15:14:20.224Z] INFO: Socket.io initialised[0m 
+[32m[2026-11-03T15:14:20.230Z] INFO: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m 
+[32m[2026-11-03T15:14:20.230Z] INFO:   MedCollab API — TEST[0m 
+[32m[2026-11-03T15:14:20.230Z] INFO:   Listening on port 29680 (0.0.0.0)[0m 
+[32m[2026-11-03T15:14:20.230Z] INFO:   Health: /health[0m 
+[32m[2026-11-03T15:14:20.230Z] INFO:   API:    /api[0m 
+[32m[2026-11-03T15:14:20.230Z] INFO: ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m 
+(node:27944) [MONGOOSE] Warning: mongoose: Duplicate schema index on {"inviteCode":[REDACTED]} for model "Space". This is often due to declaring an index using both "index: true" and "schema.index()". Please remove the duplicate index definition.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[32m[2026-11-03T15:14:20.498Z] INFO: OTP sent to +919990001001[0m 
+[32m[2026-11-03T15:14:20.499Z] INFO: [0mPOST /api/auth/request-otp [32m200[0m 88.852 ms - 126[0m[0m 
+[32m[2026-11-03T15:14:20.569Z] INFO: New user registered: +919990001001[0m 
+[32m[2026-11-03T15:14:20.572Z] INFO: [0mPOST /api/auth/verify-otp [32m200[0m 68.978 ms - 899[0m[0m 
+(node:27944) [MONGOOSE] Warning: mongoose: the `new` option for `findOneAndUpdate()` and `findOneAndReplace()` is deprecated. Use `returnDocument: 'after'` instead.
+[32m[2026-11-03T15:14:20.585Z] INFO: [0mPUT /api/users/me [32m200[0m 11.790 ms - 623[0m[0m 
+[32m[2026-11-03T15:14:20.642Z] INFO: OTP sent to +919990001002[0m 
+[32m[2026-11-03T15:14:20.643Z] INFO: [0mPOST /api/auth/request-otp [32m200[0m 55.153 ms - 126[0m[0m 
+[32m[2026-11-03T15:14:20.707Z] INFO: New user registered: +919990001002[0m 
+[32m[2026-11-03T15:14:20.708Z] INFO: [0mPOST /api/auth/verify-otp [32m200[0m 61.329 ms - 899[0m[0m 
+(node:27944) [MONGOOSE] Warning: mongoose: the `new` option for `findOneAndUpdate()` and `findOneAndReplace()` is deprecated. Use `returnDocument: 'after'` instead.
+[32m[2026-11-03T15:14:20.717Z] INFO: [0mPUT /api/users/me [32m200[0m 6.454 ms - 623[0m[0m 
+[32m[2026-11-03T15:14:20.773Z] INFO: OTP sent to +919990001003[0m 
+[32m[2026-11-03T15:14:20.774Z] INFO: [0mPOST /api/auth/request-otp [32m200[0m 55.551 ms - 126[0m[0m 
+[32m[2026-11-03T15:14:20.838Z] INFO: New user registered: +919990001003[0m 
+[32m[2026-11-03T15:14:20.839Z] INFO: [0mPOST /api/auth/verify-otp [32m200[0m 60.947 ms - 899[0m[0m 
+(node:27944) [MONGOOSE] Warning: mongoose: the `new` option for `findOneAndUpdate()` and `findOneAndReplace()` is deprecated. Use `returnDocument: 'after'` instead.
+[32m[2026-11-03T15:14:20.850Z] INFO: [0mPUT /api/users/me [32m200[0m 8.128 ms - 623[0m[0m 
+[32m[2026-11-03T15:14:20.867Z] INFO: [0mPOST /api/spaces [32m201[0m 15.155 ms - 1843[0m[0m 
+[32m[2026-11-03T15:14:20.882Z] INFO: [0mPOST /api/spaces/join [32m200[0m 12.903 ms - 1971[0m[0m 
+[32m[2026-11-03T15:14:20.894Z] INFO: [0mPOST /api/spaces/6ae9fa4c5348a7b4889d04bc/channels [32m201[0m 10.162 ms - 481[0m[0m 
+[32m[2026-11-03T15:15:24.623Z] INFO: [0mPOST /api/auth/refresh [32m200[0m 5.238 ms - 246[0m[0m 
+[32m[2026-11-03T15:15:24.629Z] INFO: [0mPOST /api/auth/refresh [32m200[0m 3.265 ms - 246[0m[0m 
+[32m[2026-11-03T15:15:24.635Z] INFO: [0mPOST /api/auth/refresh [32m200[0m 2.939 ms - 246[0m[0m 
+[32m[2026-11-03T15:15:25.180Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 6.735 ms - 68[0m[0m 
+[32m[2026-11-03T15:15:26.939Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 5.357 ms - 68[0m[0m 
+[32m[2026-11-03T15:15:27.287Z] INFO: [0mGET /api/users/me [32m200[0m 5.910 ms - 623[0m[0m 
+[32m[2026-11-03T15:15:28.693Z] INFO: [0mGET /api/notifications?limit=50 [32m200[0m 9.884 ms - 110[0m[0m 
+[34m[2026-11-03T15:15:28.827Z] SOCKET: Connected: Dr Synthetic Device A (LkFpCfikoqnkZfPwAAAB)[0m 
+[34m[2026-11-03T15:15:28.829Z] SOCKET: Dr Synthetic Device A joined 1 space rooms[0m 
+[34m[2026-11-03T15:15:28.830Z] SOCKET: Presence: Dr Synthetic Device A connected (1 devices)[0m 
+[34m[2026-11-03T15:15:28.860Z] SOCKET: Dr Synthetic Device A synced 1 space room(s)[0m 
+[34m[2026-11-03T15:15:28.862Z] SOCKET: Dr Synthetic Device A synced 1 space room(s)[0m 
+[34m[2026-11-03T15:15:28.864Z] SOCKET: Dr Synthetic Device A joined room channel:6ae9fa4c5348a7b4889d04bd[0m 
+[34m[2026-11-03T15:15:28.914Z] SOCKET: Dr Synthetic Device A synced 1 space room(s)[0m 
+[34m[2026-11-03T15:15:28.916Z] SOCKET: Dr Synthetic Device A joined room channel:6ae9fa4c5348a7b4889d04bd[0m 
+[34m[2026-11-03T15:15:28.917Z] SOCKET: Dr Synthetic Device A joined room channel:6ae9fa4c5348a7b4889d04bd[0m 
+[32m[2026-11-03T15:15:29.263Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 5.470 ms - 68[0m[0m 
+[32m[2026-11-03T15:15:29.300Z] INFO: [0mGET /api/spaces/6ae9fa4c5348a7b4889d04bc/members [32m200[0m 8.373 ms - 685[0m[0m 
+[32m[2026-11-03T15:15:30.254Z] INFO: [0mGET /api/channels/6ae9fa4c5348a7b4889d04bd [32m200[0m 13.991 ms - 470[0m[0m 
+[32m[2026-11-03T15:15:30.267Z] INFO: [0mGET /api/channels/6ae9fa4c5348a7b4889d04bd/messages?limit=30 [32m200[0m 11.810 ms - 84[0m[0m 
+[32m[2026-11-03T15:15:30.287Z] INFO: [0mPUT /api/notifications/read-by-channel/6ae9fa4c5348a7b4889d04bd [32m200[0m 13.281 ms - 108[0m[0m 
+[32m[2026-11-03T15:15:30.288Z] INFO: [0mGET /api/spaces/6ae9fa4c5348a7b4889d04bc/members [32m200[0m 11.422 ms - 685[0m[0m 
+[34m[2026-11-03T15:15:30.358Z] SOCKET: Dr Synthetic Device A joined room channel:6ae9fa4c5348a7b4889d04bd[0m 
+[32m[2026-11-03T15:15:30.412Z] INFO: [0mGET /api/handoffs?type=all [32m200[0m 6.605 ms - 68[0m[0m 
+[32m[2026-11-03T15:15:30.697Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 5.311 ms - 68[0m[0m 
+[32m[2026-11-03T15:15:30.822Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 4.761 ms - 68[0m[0m 
+[32m[2026-11-03T15:15:30.948Z] INFO: [0mGET /api/channels/6ae9fa4c5348a7b4889d04bd/messages?limit=30 [32m200[0m 13.220 ms - 84[0m[0m 
+[34m[2026-11-03T15:15:30.964Z] SOCKET: Dr Synthetic Device A joined room channel:6ae9fa4c5348a7b4889d04bd[0m 
+[32m[2026-11-03T15:15:31.070Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 5.706 ms - 68[0m[0m 
+[32m[2026-11-03T15:15:31.148Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 5.061 ms - 68[0m[0m 
+[32m[2026-11-03T15:15:31.293Z] INFO: [0mGET /api/channels/6ae9fa4c5348a7b4889d04bd/messages?limit=30 [32m200[0m 10.249 ms - 84[0m[0m 
+[34m[2026-11-03T15:15:31.308Z] SOCKET: Dr Synthetic Device A joined room channel:6ae9fa4c5348a7b4889d04bd[0m 
+[32m[2026-11-03T15:15:31.436Z] INFO: [0mGET /api/notifications?limit=50 [32m200[0m 6.750 ms - 110[0m[0m 
+[32m[2026-11-03T15:15:31.579Z] INFO: [0mGET /api/channels/6ae9fa4c5348a7b4889d04bd/messages?limit=30 [32m200[0m 9.221 ms - 84[0m[0m 
+[32m[2026-11-03T15:15:31.915Z] INFO: [0mPOST /api/channels/6ae9fa4c5348a7b4889d04bd/messages [32m201[0m 21.522 ms - 819[0m[0m 
+[32m[2026-11-03T15:15:32.472Z] INFO: [0mGET /api/spaces [32m200[0m 8.830 ms - 2567[0m[0m 
+[32m[2026-11-03T15:15:32.839Z] INFO: [0mPUT /api/notifications/read-by-channel/6ae9fa4c5348a7b4889d04bd [32m200[0m 7.784 ms - 108[0m[0m 
+[32m[2026-11-03T15:15:33.312Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 4.685 ms - 68[0m[0m 
+[32m[2026-11-03T15:15:33.457Z] INFO: [0mGET /api/notifications?limit=50 [32m200[0m 6.693 ms - 110[0m[0m 
+[32m[2026-11-03T15:15:33.523Z] INFO: [0mPUT /api/notifications/read-by-channel/6ae9fa4c5348a7b4889d04bd [32m200[0m 6.621 ms - 108[0m[0m 
+[32m[2026-11-03T15:15:33.598Z] INFO: [0mGET /api/notifications?limit=50 [32m200[0m 6.377 ms - 110[0m[0m 
+[32m[2026-11-03T15:15:33.702Z] INFO: [0mPUT /api/notifications/read-by-channel/6ae9fa4c5348a7b4889d04bd [32m200[0m 5.802 ms - 108[0m[0m 
+[32m[2026-11-03T15:15:34.143Z] INFO: [0mGET /api/handoffs?type=all [32m200[0m 7.259 ms - 68[0m[0m 
+[32m[2026-11-03T15:15:34.376Z] INFO: [0mPUT /api/notifications/read-by-channel/6ae9fa4c5348a7b4889d04bd [32m200[0m 8.336 ms - 108[0m[0m 
+[32m[2026-11-03T15:15:34.578Z] INFO: [0mGET /api/channels/6ae9fa4c5348a7b4889d04bd/messages?limit=30 [32m200[0m 18.106 ms - 842[0m[0m 
+[34m[2026-11-03T15:15:35.068Z] SOCKET: Presence: Dr Synthetic Device A went offline (reason: client namespace disconnect)[0m 
+[32m[2026-11-03T15:15:35.128Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 7.256 ms - 68[0m[0m 
+[32m[2026-11-03T15:15:35.532Z] INFO: [0mGET /api/notifications?limit=50 [32m200[0m 9.066 ms - 110[0m[0m 
+[32m[2026-11-03T15:15:35.764Z] INFO: [0mGET /api/handoffs?type=all [32m200[0m 6.955 ms - 68[0m[0m 
+[32m[2026-11-03T15:15:35.886Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 7.029 ms - 68[0m[0m 
+[32m[2026-11-03T15:15:36.043Z] INFO: [0mGET /api/handoffs?type=all [32m200[0m 6.832 ms - 68[0m[0m 
+[32m[2026-11-03T15:15:36.157Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 6.459 ms - 68[0m[0m 
+[32m[2026-11-03T15:15:36.300Z] INFO: [0mGET /api/notifications/unread-count [32m200[0m 5.420 ms - 68[0m[0m 
+[32m[2026-11-03T15:15:36.403Z] INFO: [0mGET /api/notifications?limit=50 [32m200[0m 7.934 ms - 110[0m[0m 
+[32m[2026-11-03T15:15:36.460Z] INFO: [0mGET /api/handoffs?type=all [32m200[0m 5.826 ms - 68[0m[0m 
+[32m[2026-11-03T15:15:36.616Z] INFO: [0mGET /api/notifications?limit=50 [32m200[0m 9.571 ms - 110[0m[0m 
+[32m[2026-11-03T15:15:36.781Z] INFO: [0mGET /api/notifications?limit=50 [32m200[0m 7.258 ms - 110[0m[0m 
+[32m[2026-11-03T15:15:36.977Z] INFO: [0mGET /api/notifications?limit=50 [32m200[0m 8.761 ms - 110[0m[0m 
+[32m[2026-11-03T15:15:37.235Z] INFO: [0mGET /api/handoffs?type=all [32m200[0m 5.636 ms - 68[0m[0m 
+[32m[2026-11-03T15:15:37.353Z] INFO: [0mGET /api/handoffs?type=all [32m200[0m 4.555 ms - 68[0m[0m 
+[32m[2026-11-03T15:15:37.405Z] INFO: [0mGET /api/handoffs?type=all [32m200[0m 5.223 ms - 68[0m[0m 
+[32m[2026-11-03T15:15:37.523Z] INFO: [0mGET /api/handoffs?type=all [32m200[0m 5.792 ms - 68[0m[0m 

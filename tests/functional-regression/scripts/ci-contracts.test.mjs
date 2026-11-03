@@ -9,7 +9,7 @@ const targetSha = 'a'.repeat(40), harnessSha = 'b'.repeat(40), fingerprint = 'c'
 const cases = await catalogCases();
 const selected = selectBackend(cases, 'backend-all');
 const expectedIds = selected.map((item) => item.id);
-const tally = Object.fromEntries(statuses.map((status) => [status, status === 'PASS' ? 147 : 0]));
+const tally = Object.fromEntries(statuses.map((status) => [status, status === 'PASS' ? 177 : 0]));
 const cleanup = { status: 'PASS' };
 const provenance = { status: 'PASS', targetSha, harnessSha };
 const reportArtifact = { digest: `sha256:${'d'.repeat(64)}`, expired: false };
@@ -17,17 +17,17 @@ const evidence = { schemaVersion: 1, environmentContractVersion, targetRepositor
   sourceKind: 'upstream-read-only', scope: 'backend-all', targetSha, harnessSha, fingerprint, result: 'PASS', verifiedBackendAll: true,
   provenance, cleanup, reportArtifactDigest: reportArtifact.digest, selectedIds: expectedIds, tally, resultsSha256: 'e'.repeat(64) };
 
-test('catalog selection keeps all 147 backend IDs and retained 48', () => {
-  assert.equal(selected.length, 147);
+test('catalog selection keeps all 177 backend IDs and retained 48', () => {
+  assert.equal(selected.length, 177);
   const subset = selectBackend(cases, 'backend-p0');
-  assert(subset.length >= 48 && subset.length < 147);
+  assert(subset.length >= 48 && subset.length < 177);
   assert.equal(subset.filter((item) => item.coverage === 'EXISTING').length, 48);
 });
 
 test('fork changes select mapped modules; unknown shared changes select all', () => {
   assert.deepEqual(affectedModules(['medcollab-backend/src/features/handoffs/handoff.controller.js']), ['NOT', 'SRCH', 'HOF', 'JRN']);
-  assert.equal(affectedModules(['medcollab-backend/src/middleware/auth.js']).length, 19);
-  assert.equal(affectedModules(['tests/functional-regression/suites/handoffs.mjs']).length, 19);
+  assert.equal(affectedModules(['medcollab-backend/src/middleware/auth.js']).length, 20);
+  assert.equal(affectedModules(['tests/functional-regression/suites/handoffs.mjs']).length, 20);
 });
 
 test('Flutter lane runs for client and reporter changes, and unknown diffs', () => {
@@ -41,7 +41,7 @@ test('Flutter lane runs for client and reporter changes, and unknown diffs', () 
 
 test('full success requires exact IDs, status, source and cleanup', () => {
   const results = selected.map((item) => ({ id: item.id, status: 'PASS' }));
-  assert.equal(validateResultSet({ selected, results, targetSha, harnessSha, sourceKind: 'upstream-read-only', cleanup, provenance }).PASS, 147);
+  assert.equal(validateResultSet({ selected, results, targetSha, harnessSha, sourceKind: 'upstream-read-only', cleanup, provenance }).PASS, 177);
   assert(completeBackendSuccess({ scope: 'backend-all', selected, tally, cleanup, provenance }));
   assert(!completeBackendSuccess({ scope: 'backend-p0', selected, tally, cleanup, provenance }));
   assert.throws(() => validateResultSet({ selected, results: results.slice(1), targetSha, harnessSha, sourceKind: 'upstream-read-only', cleanup, provenance }), /Missing/);
@@ -56,5 +56,10 @@ test('PR target pins the exact head and full scope; unsupported contexts fail', 
   const run = overrides => spawnSync(process.execPath, [script], { env: { ...env, ...overrides }, encoding: 'utf8', windowsHide: true });
   const good = run({});assert.equal(good.status, 0, good.stderr);
   assert.deepEqual(JSON.parse(good.stdout), { targetKind: 'pr-head', targetSha, scope: 'backend-all', targetRepository: upstreamRepository });
-  for (const overrides of [{ VOCLE_PR_HEAD_SHA: 'invalid' }, { VOCLE_PR_HEAD_REPOSITORY: 'other/repo' }, { GITHUB_EVENT_NAME: 'push' }, { GITHUB_EVENT_NAME: 'workflow_dispatch' }, { GITHUB_REPOSITORY: 'other/repo' }]) assert.notEqual(run(overrides).status, 0);
+  for (const overrides of [{ VOCLE_PR_HEAD_SHA: 'invalid' }, { VOCLE_PR_HEAD_REPOSITORY: 'other/repo' }, { GITHUB_EVENT_NAME: 'push' }, { GITHUB_REPOSITORY: 'other/repo' }]) assert.notEqual(run(overrides).status, 0);
+  const manual = { GITHUB_EVENT_NAME: 'workflow_dispatch', GITHUB_REF: 'refs/heads/testing/manual', GITHUB_SHA: harnessSha };
+  const dispatched = run(manual);
+  assert.equal(dispatched.status, 0, dispatched.stderr);
+  assert.deepEqual(JSON.parse(dispatched.stdout), { targetKind: 'commit', targetSha: harnessSha, scope: 'backend-all', targetRepository: upstreamRepository });
+  for (const overrides of [{ GITHUB_REF: 'refs/tags/release' }, { GITHUB_REF: 'refs/heads/' }, { GITHUB_REF: '' }, { GITHUB_SHA: '' }, { GITHUB_SHA: 'invalid' }, { GITHUB_REPOSITORY: 'other/repo' }]) assert.notEqual(run({ ...manual, ...overrides }).status, 0);
 });

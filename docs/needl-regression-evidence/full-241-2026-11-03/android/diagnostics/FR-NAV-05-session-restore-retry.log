@@ -1,0 +1,91 @@
+Running Gradle task 'assembleDebug'...                          
+Warning: The plugin file_picker requires Android SDK version 36 or higher.
+For more information about build configuration, see https://flutter.dev/to/review-gradle-config.
+Your project is configured to compile against Android SDK 35, but the following plugin(s) require to be compiled against a higher Android SDK version:
+- file_picker compiles against Android SDK 36
+Fix this issue by compiling against the highest Android SDK version (they are backward compatible).
+Add the following to C:\Users\delll\AppData\Local\Temp\vocle-device-sjUCDD\medcollab-app\android\app\build.gradle.kts:
+
+    android {
+        compileSdk = 36
+        ...
+    }
+
+Running Gradle task 'assembleDebug'...                             26.4s
+√ Built build\app\outputs\flutter-apk\app-debug.apk
+Installing build\app\outputs\flutter-apk\app-debug.apk...           5.6s
+D/FLTFireContextHolder( 7618): received application context.
+I/ocle.regression( 7618): hiddenapi: Accessing hidden method Landroid/view/accessibility/AccessibilityNodeInfo;->getSourceNodeId()J (runtime_flags=0, domain=platform, api=unsupported,test-api) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=35) using reflection: allowed
+I/ocle.regression( 7618): hiddenapi: Accessing hidden method Landroid/view/accessibility/AccessibilityRecord;->getSourceNodeId()J (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=35) using reflection: allowed
+I/ocle.regression( 7618): hiddenapi: Accessing hidden field Landroid/view/accessibility/AccessibilityNodeInfo;->mChildNodeIds:Landroid/util/LongArray; (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=35) using reflection: allowed
+I/ocle.regression( 7618): hiddenapi: Accessing hidden method Landroid/util/LongArray;->get(I)J (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=35) using reflection: allowed
+D/CompatChangeReporter( 7618): Compat change id reported: 309578419; UID 10231; state: ENABLED
+D/CompatChangeReporter( 7618): Compat change id reported: 349153669; UID 10231; state: ENABLED
+W/HWUI    ( 7618): Unknown dataspace 0
+D/ProfileInstaller( 7618): Installing profile for com.vocle.regression
+I/WindowExtensionsImpl( 7618): Initializing Window Extensions, vendor API level=9, activity embedding enabled=true
+VMServiceFlutterDriver: Connecting to Flutter application at http://127.0.0.1:8812/[redacted-vm-service]/
+VMServiceFlutterDriver: Isolate found with number: 6497979672748131
+D/VRI[MainActivity]( 7618): WindowInsets changed: 1080x1920 statusBars:[0,63,0,0] navigationBars:[0,0,0,63] mandatorySystemGestures:[0,63,0,84] 
+D/WindowOnBackDispatcher( 7618): setTopOnBackInvokedCallback (unwrapped): android.view.ViewRootImpl$$ExternalSyntheticLambda12@889ae3f
+VMServiceFlutterDriver: Isolate 6497979672748131 is runnable.
+VMServiceFlutterDriver: Isolate is paused at start.
+VMServiceFlutterDriver: Attempting to resume isolate
+E/libEGL  ( 7618): called unimplemented OpenGL ES API
+E/libEGL  ( 7618): called unimplemented OpenGL ES API
+I/flutter ( 7618): 00:00 +0: Native session restore and failed API logout prerequisite
+VMServiceFlutterDriver: Connected to Flutter application.
+E/libEGL  ( 7618): called unimplemented OpenGL ES API
+I/HWUI    ( 7618): Using FreeType backend (prop=Auto)
+I/Choreographer( 7618): Skipped 325 frames!  The application may be doing too much work on its main thread.
+D/WindowLayoutComponentImpl( 7618): Register WindowLayoutInfoListener on Context=com.example.medcollab_app.MainActivity@970930c, of which baseContext=android.app.ContextImpl@7a62b28
+I/HWUI    ( 7618): Davey! duration=5663ms; Flags=1, FrameTimelineVsyncId=[SIX-DIGIT CODE REDACTED], IntendedVsync=823266066558, Vsync=828682733008, InputEventId=0, HandleInputStart=828687494400, AnimationStart=828699147400, PerformTraversalsStart=828699809700, DrawStart=828719164000, FrameDeadline=823282733224, FrameStartTime=828686304300, FrameInterval=16666666, WorkloadTarget=16666666, SyncQueued=828726637600, SyncStart=828727029500, IssueDrawCommandsStart=828727325600, SwapBuffers=828787168800, FrameCompleted=828929898400, DequeueBufferDuration=2926500, QueueBufferDuration=1568300, GpuCompleted=828926872400, SwapBuffersCompleted=828929898400, DisplayPresentTime=139558977512037, CommandSubmissionCompleted=828787168800, 
+W/ocle.regression( 7618): Verification of void com.it_nomads.fluttersecurestorage.ciphers.StorageCipherAlgorithm.<clinit>() took 106.345ms (366.73 bytecodes/s) (0B arena alloc)
+D/InsetsController( 7618): hide(ime())
+I/ImeTracker( 7618): com.vocle.regression:795e68c6: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+W/ocle.regression( 7618): userfaultfd: MOVE ioctl seems unsupported: Connection timed out
+I/ocle.regression( 7618): Background concurrent mark compact GC freed 2651KB AllocSpace bytes, 9(236KB) LOS objects, 49% free, 3365KB/6731KB, paused 5.766ms,8.283ms total 297.594ms
+I/ocle.regression( 7618): Compiler allocated 5087KB to compile void android.view.ViewRootImpl.performTraversals()
+W/ocle.regression( 7618): Suspending all threads took: 70.077ms
+I/ocle.regression( 7618): Background young concurrent mark compact GC freed 1748KB AllocSpace bytes, 47(1692KB) LOS objects, 46% free, 3575KB/6731KB, paused 75.726ms,11.090ms total 678.776ms
+E/libEGL  ( 7618): called unimplemented OpenGL ES API
+E/libEGL  ( 7618): called unimplemented OpenGL ES API
+E/libEGL  ( 7618): called unimplemented OpenGL ES API
+I/ocle.regression( 7618): Background concurrent mark compact GC freed 1532KB AllocSpace bytes, 54(1944KB) LOS objects, 49% free, 3843KB/7686KB, paused 33.010ms,3.414ms total 512.322ms
+E/libEGL  ( 7618): called unimplemented OpenGL ES API
+W/ocle.regression( 7618): Suspending all threads took: 7.031ms
+I/ocle.regression( 7618): Background young concurrent mark compact GC freed 1356KB AllocSpace bytes, 48(1728KB) LOS objects, 47% free, 4063KB/7686KB, paused 17.997ms,5.469ms total 145.113ms
+E/libEGL  ( 7618): called unimplemented OpenGL ES API
+W/WindowOnBackDispatcher( 7618): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher( 7618): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+E/libEGL  ( 7618): called unimplemented OpenGL ES API
+E/libEGL  ( 7618): call to OpenGL ES API with no current context (logged once per thread)
+I/ocle.regression( 7618): IncrementDisableThreadFlip blocked for 45.366ms
+I/ocle.regression( 7618): Background concurrent mark compact GC freed 1641KB AllocSpace bytes, 63(2268KB) LOS objects, 49% free, 3739KB/7478KB, paused 1.684ms,50.269ms total 398.900ms
+E/libEGL  ( 7618): called unimplemented OpenGL ES API
+I/ocle.regression( 7618): Background young concurrent mark compact GC freed 1596KB AllocSpace bytes, 54(1944KB) LOS objects, 47% free, 3923KB/7478KB, paused 7.531ms,4.932ms total 101.767ms
+E/libEGL  ( 7618): called unimplemented OpenGL ES API
+W/ocle.regression( 7618): Suspending all threads took: 19.043ms
+I/ocle.regression( 7618): Background concurrent mark compact GC freed 2280KB AllocSpace bytes, 94(3384KB) LOS objects, 49% free, 4579KB/9158KB, paused 98.382ms,70.850ms total 946.072ms
+E/libEGL  ( 7618): called unimplemented OpenGL ES API
+I/ocle.regression( 7618): Background young concurrent mark compact GC freed 1496KB AllocSpace bytes, 52(1872KB) LOS objects, 58% free, 3831KB/9158KB, paused 15.510ms,2.351ms total 132.040ms
+E/libEGL  ( 7618): called unimplemented OpenGL ES API
+E/libEGL  ( 7618): called unimplemented OpenGL ES API
+I/ocle.regression( 7618): Background concurrent mark compact GC freed 2201KB AllocSpace bytes, 87(3132KB) LOS objects, 49% free, 3715KB/7430KB, paused 1.893ms,2.940ms total 136.216ms
+E/libEGL  ( 7618): called unimplemented OpenGL ES API
+I/ocle.regression( 7618): Background young concurrent mark compact GC freed 1600KB AllocSpace bytes, 52(1872KB) LOS objects, 48% free, 3859KB/7430KB, paused 1.532ms,13.736ms total 85.464ms
+E/libEGL  ( 7618): called unimplemented OpenGL ES API
+I/ocle.regression( 7618): Background concurrent mark compact GC freed 1872KB AllocSpace bytes, 77(2772KB) LOS objects, 49% free, 4183KB/8366KB, paused 17.806ms,2.624ms total 267.842ms
+E/libEGL  ( 7618): called unimplemented OpenGL ES API
+W/WindowOnBackDispatcher( 7618): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher( 7618): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+W/ocle.regression( 7618): Suspending all threads took: 14.397ms
+I/ocle.regression( 7618): Background concurrent mark compact GC freed 2065KB AllocSpace bytes, 90(3304KB) LOS objects, 49% free, 3747KB/7494KB, paused 17.598ms,3.473ms total 425.146ms
+I/ocle.regression( 7618): Background young concurrent mark compact GC freed 1524KB AllocSpace bytes, 56(2016KB) LOS objects, 41% free, 4359KB/7494KB, paused 3.864ms,18.400ms total 231.127ms
+I/ocle.regression( 7618): Background concurrent mark compact GC freed 1200KB AllocSpace bytes, 38(1400KB) LOS objects, 49% free, 4019KB/8038KB, paused 2.221ms,9.578ms total 147.123ms
+I/ocle.regression( 7618): Background young concurrent mark compact GC freed 1864KB AllocSpace bytes, 60(2160KB) LOS objects, 50% free, 4003KB/8038KB, paused 10.793ms,3.042ms total 123.201ms
+E/libEGL  ( 7618): called unimplemented OpenGL ES API
+I/flutter ( 7618): 00:34 +1: (tearDownAll)
+All tests passed.
+I/flutter ( 7618): 00:34 +2: All tests passed!
+Leaving the application running.

@@ -1,0 +1,90 @@
+Running Gradle task 'assembleDebug'...                          
+Warning: The plugin file_picker requires Android SDK version 36 or higher.
+For more information about build configuration, see https://flutter.dev/to/review-gradle-config.
+Your project is configured to compile against Android SDK 35, but the following plugin(s) require to be compiled against a higher Android SDK version:
+- file_picker compiles against Android SDK 36
+Fix this issue by compiling against the highest Android SDK version (they are backward compatible).
+Add the following to C:\Users\delll\AppData\Local\Temp\vocle-device-sjUCDD\medcollab-app\android\app\build.gradle.kts:
+
+    android {
+        compileSdk = 36
+        ...
+    }
+
+Running Gradle task 'assembleDebug'...                             42.4s
+√ Built build\app\outputs\flutter-apk\app-debug.apk
+Installing build\app\outputs\flutter-apk\app-debug.apk...        2,256ms
+I/flutter ( 6045): The Dart VM service is listening on http://127.0.0.1:35441/[redacted-vm-service]/
+I/ocle.regression( 6045): hiddenapi: Accessing hidden method Landroid/view/accessibility/AccessibilityNodeInfo;->getSourceNodeId()J (runtime_flags=0, domain=platform, api=unsupported,test-api) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=35) using reflection: allowed
+I/ocle.regression( 6045): hiddenapi: Accessing hidden method Landroid/view/accessibility/AccessibilityRecord;->getSourceNodeId()J (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=35) using reflection: allowed
+I/ocle.regression( 6045): hiddenapi: Accessing hidden field Landroid/view/accessibility/AccessibilityNodeInfo;->mChildNodeIds:Landroid/util/LongArray; (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=35) using reflection: allowed
+I/ocle.regression( 6045): hiddenapi: Accessing hidden method Landroid/util/LongArray;->get(I)J (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=35) using reflection: allowed
+D/CompatChangeReporter( 6045): Compat change id reported: 309578419; UID 10229; state: ENABLED
+D/CompatChangeReporter( 6045): Compat change id reported: 349153669; UID 10229; state: ENABLED
+W/HWUI    ( 6045): Unknown dataspace 0
+I/WindowExtensionsImpl( 6045): Initializing Window Extensions, vendor API level=9, activity embedding enabled=true
+D/VRI[MainActivity]( 6045): WindowInsets changed: 1080x1920 statusBars:[0,63,0,0] navigationBars:[0,0,0,63] mandatorySystemGestures:[0,63,0,84] 
+D/WindowOnBackDispatcher( 6045): setTopOnBackInvokedCallback (unwrapped): android.view.ViewRootImpl$$ExternalSyntheticLambda12@8418974
+E/libEGL  ( 6045): called unimplemented OpenGL ES API
+I/ocle.regression( 6045): Compiler allocated 5087KB to compile void android.view.ViewRootImpl.performTraversals()
+VMServiceFlutterDriver: Connecting to Flutter application at http://127.0.0.1:30639/[redacted-vm-service]/
+D/WindowLayoutComponentImpl( 6045): Register WindowLayoutInfoListener on Context=com.example.medcollab_app.MainActivity@f810e9d, of which baseContext=android.app.ContextImpl@1159e6a
+VMServiceFlutterDriver: Isolate found with number: 4760003929834351
+I/HWUI    ( 6045): Using FreeType backend (prop=Auto)
+VMServiceFlutterDriver: Isolate 4760003929834351 is runnable.
+VMServiceFlutterDriver: Isolate is paused at start.
+VMServiceFlutterDriver: Attempting to resume isolate
+I/flutter ( 6045): 00:00 +0: FR-PUSH-06: Android notification-token
+VMServiceFlutterDriver: Connected to Flutter application.
+E/libEGL  ( 6045): called unimplemented OpenGL ES API
+V/Configuration( 6045): Updating configuration, locales updated from [en_US] to [en]
+D/InsetsController( 6045): hide(ime())
+I/ImeTracker( 6045): com.vocle.regression:6f230ae5: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+V/Configuration( 6045): Updating configuration, locales updated from [en] to [en_US]
+D/ProfileInstaller( 6045): Installing profile for com.vocle.regression
+V/Activity( 6045): No requestable permission in the request.
+E/libEGL  ( 6045): called unimplemented OpenGL ES API
+V/Activity( 6045): No requestable permission in the request.
+I/flutter ( 6045): FCM: no device token yet
+W/WindowOnBackDispatcher( 6045): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher( 6045): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+V/Activity( 6045): No requestable permission in the request.
+I/flutter ( 6045): FCM: no device token yet
+E/libEGL  ( 6045): called unimplemented OpenGL ES API
+W/ocle.regression( 6045): userfaultfd: MOVE ioctl seems unsupported: Connection timed out
+I/ocle.regression( 6045): Background concurrent mark compact GC freed 15MB AllocSpace bytes, 530(18MB) LOS objects, 49% free, 4719KB/9438KB, paused 1.049ms,2.696ms total 131.409ms
+I/flutter ( 6045): FCM: token registered with API
+E/libEGL  ( 6045): called unimplemented OpenGL ES API
+W/WindowOnBackDispatcher( 6045): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher( 6045): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+W/WindowOnBackDispatcher( 6045): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher( 6045): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+I/ImeTracker( 6045): com.vocle.regression:8afae65f: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+D/InsetsController( 6045): show(ime())
+D/InsetsController( 6045): Setting requestedVisibleTypes to 511 (was 503)
+I/ImeTracker( 6045): com.vocle.regression:bee82f82: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+D/InsetsController( 6045): show(ime())
+I/ImeTracker( 6045): com.vocle.regression:bee82f82: onCancelled at PHASE_CLIENT_REPORT_REQUESTED_VISIBLE_TYPES
+D/InputConnectionAdaptor( 6045): The input method toggled cursor monitoring on
+I/AssistStructure( 6045): Flattened final assist data: 636 bytes, containing 1 windows, 4 views
+E/libEGL  ( 6045): called unimplemented OpenGL ES API
+D/WindowOnBackDispatcher( 6045): setTopOnBackInvokedCallback (unwrapped): android.view.ImeBackAnimationController@b6f9319
+I/ImeTracker( 6045): com.vocle.regression:bf74455: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+D/InsetsController( 6045): hide(ime())
+D/WindowOnBackDispatcher( 6045): setTopOnBackInvokedCallback (unwrapped): android.view.ViewRootImpl$$ExternalSyntheticLambda12@8418974
+D/InsetsController( 6045): Setting requestedVisibleTypes to 503 (was 511)
+I/ocle.regression( 6045): Background concurrent mark compact GC freed 1626KB AllocSpace bytes, 59(2124KB) LOS objects, 49% free, 3683KB/7366KB, paused 1.312ms,27.390ms total 541.833ms
+E/libEGL  ( 6045): call to OpenGL ES API with no current context (logged once per thread)
+I/ImeTracker( 6045): system_server:f1ba98d0: onCancelled at PHASE_CLIENT_ON_CONTROLS_CHANGED
+E/libEGL  ( 6045): called unimplemented OpenGL ES API
+W/WindowOnBackDispatcher( 6045): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher( 6045): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+I/ocle.regression( 6045): Background young concurrent mark compact GC freed 1477KB AllocSpace bytes, 56(2144KB) LOS objects, 49% free, 3687KB/7366KB, paused 9.313ms,1.944ms total 56.885ms
+I/flutter ( 6045): FCM: token registered with API
+E/libEGL  ( 6045): called unimplemented OpenGL ES API
+I/flutter ( 6045): VOCLE_DEVICE_RECORD {"id":"FR-PUSH-06","status":"PASS","executed":true,"phase":"notification-token","runId":"3422fdcc-66dc-48ca-8e6a-a1a6626350e5","processId":6045,"durationMs":10047,"evidence":["Native permission deny/grant plus injected token inputs; denial remains usable; registration, refresh, logout removal and relogin verified in disposable DB."]}
+I/flutter ( 6045): 00:10 +1: (tearDownAll)
+All tests passed.
+I/flutter ( 6045): 00:10 +2: All tests passed!
+Leaving the application running.
+I/ocle.regression( 6045): Background young concurrent mark compact GC freed 1929KB AllocSpace bytes, 70(2552KB) LOS objects, 47% free, 4071KB/7710KB, paused 1.429ms,6.193ms total 64.841ms

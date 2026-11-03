@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { backendRoot, harnessRoot, outputRoot, runId, targetRoot, validateConfig } from './config.mjs';
 import { startMongo, databaseUri, inspectDatabase } from './db.mjs';
 import { createHttp, HttpContractError } from './http.mjs';
-import { createIdentity } from './fixtures.mjs';
+import { createIdentity, FixtureError } from './fixtures.mjs';
 import { writeReports } from './reporting.mjs';
 
 export class InfrastructureError extends Error { constructor(message) { super(message); this.name = 'InfrastructureError'; } }
@@ -30,7 +30,7 @@ export async function executeCases(cases, context, timeoutMs = 10000) {
     else {
       try { await withDeadline(() => item.run(context), item.timeoutMs || timeoutMs); }
       catch (error) {
-        result.status = error instanceof InfrastructureError ? 'ERROR' : error instanceof DecisionPending ? 'NEEDS_DECISION' : error instanceof SkipCase ? 'SKIP' : 'FAIL';
+        result.status = error instanceof InfrastructureError || error instanceof FixtureError ? 'ERROR' : error instanceof DecisionPending ? 'NEEDS_DECISION' : error instanceof SkipCase ? 'SKIP' : 'FAIL';
         result.errorCategory = error.name || 'ASSERTION';
         result.error = error.message;
         if (error instanceof DecisionPending) result.verifiedSubassertions = error.verifiedSubassertions;

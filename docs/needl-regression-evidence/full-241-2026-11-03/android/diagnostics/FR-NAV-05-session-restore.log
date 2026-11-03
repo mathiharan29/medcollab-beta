@@ -1,0 +1,44 @@
+Running Gradle task 'assembleDebug'...                          
+Warning: The plugin file_picker requires Android SDK version 36 or higher.
+For more information about build configuration, see https://flutter.dev/to/review-gradle-config.
+Your project is configured to compile against Android SDK 35, but the following plugin(s) require to be compiled against a higher Android SDK version:
+- file_picker compiles against Android SDK 36
+Fix this issue by compiling against the highest Android SDK version (they are backward compatible).
+Add the following to C:\Users\delll\AppData\Local\Temp\vocle-device-sjUCDD\medcollab-app\android\app\build.gradle.kts:
+
+    android {
+        compileSdk = 36
+        ...
+    }
+
+Running Gradle task 'assembleDebug'...                             40.8s
+√ Built build\app\outputs\flutter-apk\app-debug.apk
+Installing build\app\outputs\flutter-apk\app-debug.apk...        2,474ms
+D/FLTFireContextHolder( 7185): received application context.
+VMServiceFlutterDriver: Connecting to Flutter application at http://127.0.0.1:44068/[redacted-vm-service]/
+VMServiceFlutterDriver: Isolate found with number: 6347190796997359
+VMServiceFlutterDriver: Waiting for isolate 6347190796997359 to be runnable.
+I/ocle.regression( 7185): hiddenapi: Accessing hidden method Landroid/view/accessibility/AccessibilityNodeInfo;->getSourceNodeId()J (runtime_flags=0, domain=platform, api=unsupported,test-api) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=35) using reflection: allowed
+I/ocle.regression( 7185): hiddenapi: Accessing hidden method Landroid/view/accessibility/AccessibilityRecord;->getSourceNodeId()J (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=35) using reflection: allowed
+I/ocle.regression( 7185): hiddenapi: Accessing hidden field Landroid/view/accessibility/AccessibilityNodeInfo;->mChildNodeIds:Landroid/util/LongArray; (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=35) using reflection: allowed
+I/ocle.regression( 7185): hiddenapi: Accessing hidden method Landroid/util/LongArray;->get(I)J (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=35) using reflection: allowed
+VMServiceFlutterDriver: Waiting for isolate 6347190796997359 to be runnable.
+D/CompatChangeReporter( 7185): Compat change id reported: 309578419; UID 10231; state: ENABLED
+D/CompatChangeReporter( 7185): Compat change id reported: 349153669; UID 10231; state: ENABLED
+W/HWUI    ( 7185): Unknown dataspace 0
+VMServiceFlutterDriver: Isolate 6347190796997359 is runnable.
+VMServiceFlutterDriver: Isolate is paused at start.
+VMServiceFlutterDriver: Attempting to resume isolate
+D/ProfileInstaller( 7185): Installing profile for com.vocle.regression
+I/WindowExtensionsImpl( 7185): Initializing Window Extensions, vendor API level=9, activity embedding enabled=true
+D/VRI[MainActivity]( 7185): WindowInsets changed: 1080x1920 statusBars:[0,63,0,0] navigationBars:[0,0,0,63] mandatorySystemGestures:[0,63,0,84] 
+D/WindowOnBackDispatcher( 7185): setTopOnBackInvokedCallback (unwrapped): android.view.ViewRootImpl$$ExternalSyntheticLambda12@1e4f799
+E/libEGL  ( 7185): called unimplemented OpenGL ES API
+I/ocle.regression( 7185): Compiler allocated 5087KB to compile void android.view.ViewRootImpl.performTraversals()
+I/Choreographer( 7185): Skipped 44 frames!  The application may be doing too much work on its main thread.
+D/WindowLayoutComponentImpl( 7185): Register WindowLayoutInfoListener on Context=com.example.medcollab_app.MainActivity@b443a5e, of which baseContext=android.app.ContextImpl@a1437a4
+I/HWUI    ( 7185): Using FreeType backend (prop=Auto)
+VMServiceFlutterDriver: Flutter Driver extension is taking a long time to become available. Ensure your test app (often "lib/main.dart") imports "package:flutter_driver/driver_extension.dart" and calls enableFlutterDriverExtension() as the first call in main().
+W/ocle.regression( 7185): userfaultfd: MOVE ioctl seems unsupported: Connection timed out
+DeviceInfrastructureError: driver setup/request failed (TimeoutException)
+Leaving the application running.

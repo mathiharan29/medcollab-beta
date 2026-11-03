@@ -1,0 +1,530 @@
+[
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-conversations-01",
+    "targetSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+    "harnessSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+    "selectedIds": [
+      "FR-DM-01"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-DM-01",
+        "module": "DM",
+        "status": "PASS",
+        "durationMs": 797,
+        "prerequisiteSeed": "Accepted A/B request inserted directly for pair-delegation branch; no accept endpoint behavior credited",
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+      "harnessSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-conversations-02",
+    "targetSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+    "harnessSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+    "selectedIds": [
+      "FR-DM-02"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-DM-02",
+        "module": "DM",
+        "status": "PASS",
+        "durationMs": 1248,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+      "harnessSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-conversations-03",
+    "targetSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+    "harnessSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+    "selectedIds": [
+      "FR-DM-03"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-DM-03",
+        "module": "DM",
+        "status": "PASS",
+        "durationMs": 537,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+      "harnessSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-conversations-04",
+    "targetSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+    "harnessSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+    "selectedIds": [
+      "FR-DM-04"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-DM-04",
+        "module": "DM",
+        "status": "PASS",
+        "durationMs": 492,
+        "prerequisiteSeed": "Two direct channels inserted as existing conversation fixtures because live pair creation returns 500 on pinned upstream; list ordering and peer projection are tested independently",
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+      "harnessSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-conversations-05",
+    "targetSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+    "harnessSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+    "selectedIds": [
+      "FR-DM-05"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-DM-05",
+        "module": "DM",
+        "status": "PASS",
+        "durationMs": 454,
+        "prerequisiteSeed": "Existing A/B direct channel and three timestamped synthetic roots inserted directly; live pair creation is a separate failing contract",
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+      "harnessSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-conversations-06",
+    "targetSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+    "harnessSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+    "selectedIds": [
+      "FR-DM-06"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-DM-06",
+        "module": "DM",
+        "status": "PASS",
+        "durationMs": 591,
+        "prerequisiteSeed": "Existing A/B direct channel and 502 synthetic roots inserted directly to isolate all-history copy behavior",
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+      "harnessSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-conversations-07",
+    "targetSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+    "harnessSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+    "selectedIds": [
+      "FR-DM-07"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-DM-07",
+        "module": "DM",
+        "status": "PASS",
+        "durationMs": 508,
+        "prerequisiteSeed": "Existing A/B direct channel inserted directly; root, thread reply and quote then created through live message APIs",
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+      "harnessSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-conversations-08",
+    "targetSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+    "harnessSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+    "selectedIds": [
+      "FR-DM-08"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-DM-08",
+        "module": "DM",
+        "status": "PASS",
+        "durationMs": 485,
+        "prerequisiteSeed": "Existing A/B direct channel inserted directly; history messages sent through live API before and after first expansion",
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+      "harnessSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-conversations-09",
+    "targetSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+    "harnessSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+    "selectedIds": [
+      "FR-DM-09"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-DM-09",
+        "module": "DM",
+        "status": "PASS",
+        "durationMs": 488,
+        "prerequisiteSeed": "Accepted A/B request inserted directly before concurrent pair intents because live acceptance is a separate failing contract",
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+      "harnessSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-threads-01",
+    "targetSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+    "harnessSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+    "selectedIds": [
+      "FR-THR-01"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-THR-01",
+        "module": "THR",
+        "status": "PASS",
+        "durationMs": 746,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+      "harnessSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-threads-02",
+    "targetSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+    "harnessSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+    "selectedIds": [
+      "FR-THR-02"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-THR-02",
+        "module": "THR",
+        "status": "PASS",
+        "durationMs": 366,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+      "harnessSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-threads-03",
+    "targetSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+    "harnessSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+    "selectedIds": [
+      "FR-THR-03"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-THR-03",
+        "module": "THR",
+        "status": "PASS",
+        "durationMs": 232,
+        "prerequisiteSeed": "41 active thread roots and one archived-channel root inserted directly with distinct updatedAt values to isolate Needl selection",
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+      "harnessSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-threads-04",
+    "targetSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+    "harnessSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+    "selectedIds": [
+      "FR-THR-04"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-THR-04",
+        "module": "THR",
+        "status": "PASS",
+        "durationMs": 376,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20",
+      "harnessSha": "cb8c5fc31bbdb6ad51bc337eaae3c3053e24fa20"
+    }
+  }
+]

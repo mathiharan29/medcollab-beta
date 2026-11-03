@@ -2,26 +2,29 @@
 
 Routine Actions entry points run on pull requests targeting `master`, for opened,
 reopened, ready_for_review and synchronize events. They test the exact PR head.
-Only same-repository PRs are supported; unsupported contexts fail explicitly.
-There are no automatic push, schedule, path-selection or routine manual triggers.
-Concurrency is scoped to workflow and PR and does not cancel cleanup.
+Standalone suites also support manual execution from a branch in the Vocle repo
+repository and pin its GitHub event SHA. Same-repository PR checks remain in place;
+fork contexts, tags and unsupported events fail explicitly. There are no automatic
+push, schedule or path-selection triggers. Concurrency is scoped to workflow and
+PR or selected branch and does not cancel cleanup. See
+[Vocle manual workflow restoration](VOCLE_MANUAL_WORKFLOW_RESTORATION.md).
 
 | Suite | Execution owner | Coverage |
 | --- | --- | --- |
-| Backend functional, including retained sanity | Functional Regression PR | All 147 cases every run; 48 sanity cases are included |
-| Flutter catalog and retained tests | Functional Regression PR | All 32 catalog cases plus existing top-level Flutter tests |
-| Discovery, fixtures and auth smoke | Backend Environment PR | Frozen discovery inventory and synthetic authentication checks |
-| Offline media security | Media Security PR | Dedicated frozen manifest and isolation guards |
-| MongoDB data security | Data Security PR | Dedicated frozen manifest and disposable database |
-| Launcher, reporting contracts and platform smoke | Developer QA PR | Windows/Ubuntu contracts, tooling and Linux backend smoke |
+| Backend functional, including retained sanity | Functional Regression PR/manual | All 177 cases every run; 48 sanity cases are included |
+| Flutter catalog and retained tests | Functional Regression PR/manual | All 56 catalog cases plus existing top-level Flutter tests |
+| Discovery, fixtures and auth smoke | Backend Environment PR/manual | Frozen discovery inventory and synthetic authentication checks |
+| Offline media security | Media Security PR/manual | Dedicated frozen manifest and isolation guards |
+| MongoDB data security | Data Security PR/manual | Dedicated frozen manifest and disposable database |
+| Launcher, reporting contracts and platform smoke | Developer QA PR/manual | Windows/Ubuntu contracts, tooling and Linux backend smoke |
 | Python/Docker prerequisite smoke | Security Environment reusable workflow | Called once by Developer QA |
-| Secret scanning | Secret Scan PR | Proposed content and relevant Git history |
-| Standalone sanity | Sanity reusable workflow | Explicit reuse only; no extra routine run |
+| Secret scanning | Secret Scan PR/manual | Proposed content and relevant Git history |
+| Standalone sanity | Sanity reusable/manual workflow | Explicit reuse or manual run; no extra automatic PR run |
 | Android emulator | Developer-local launcher | Eight cases, `LOCAL_ONLY` in PR coverage |
 | Live Cloudinary | Exceptional manual workflow | Separate authorization, trusted master and approved test cloud |
 | Shared dashboards | Reporting reusable workflow | Called by the owning workflows |
 
-Functional catalog: **187 total / 179 hosted / 8 local-only**. Planned coverage
+Functional catalog: **241 total / 233 hosted / 8 local-only**. Planned coverage
 and actual execution are separate. PR dashboards list every Android ID as
 `executionMode: LOCAL_ONLY`, `executed: false`, underlying `status: SKIP`.
 They display LOCAL_ONLY and exclude these rows from hosted executed/PASS totals.

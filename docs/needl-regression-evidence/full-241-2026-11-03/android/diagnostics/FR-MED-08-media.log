@@ -1,0 +1,124 @@
+Running Gradle task 'assembleDebug'...                          
+Warning: The plugin file_picker requires Android SDK version 36 or higher.
+For more information about build configuration, see https://flutter.dev/to/review-gradle-config.
+Your project is configured to compile against Android SDK 35, but the following plugin(s) require to be compiled against a higher Android SDK version:
+- file_picker compiles against Android SDK 36
+Fix this issue by compiling against the highest Android SDK version (they are backward compatible).
+Add the following to C:\Users\delll\AppData\Local\Temp\vocle-device-sjUCDD\medcollab-app\android\app\build.gradle.kts:
+
+    android {
+        compileSdk = 36
+        ...
+    }
+
+Running Gradle task 'assembleDebug'...                             51.5s
+√ Built build\app\outputs\flutter-apk\app-debug.apk
+Installing build\app\outputs\flutter-apk\app-debug.apk...           7.5s
+D/FLTFireContextHolder( 4253): received application context.
+I/ocle.regression( 4253): hiddenapi: Accessing hidden method Landroid/view/accessibility/AccessibilityNodeInfo;->getSourceNodeId()J (runtime_flags=0, domain=platform, api=unsupported,test-api) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=35) using reflection: allowed
+I/ocle.regression( 4253): hiddenapi: Accessing hidden method Landroid/view/accessibility/AccessibilityRecord;->getSourceNodeId()J (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=35) using reflection: allowed
+I/ocle.regression( 4253): hiddenapi: Accessing hidden field Landroid/view/accessibility/AccessibilityNodeInfo;->mChildNodeIds:Landroid/util/LongArray; (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=35) using reflection: allowed
+I/ocle.regression( 4253): hiddenapi: Accessing hidden method Landroid/util/LongArray;->get(I)J (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=35) using reflection: allowed
+D/CompatChangeReporter( 4253): Compat change id reported: 309578419; UID 10227; state: ENABLED
+D/CompatChangeReporter( 4253): Compat change id reported: 349153669; UID 10227; state: ENABLED
+W/HWUI    ( 4253): Unknown dataspace 0
+I/WindowExtensionsImpl( 4253): Initializing Window Extensions, vendor API level=9, activity embedding enabled=true
+D/VRI[MainActivity]( 4253): WindowInsets changed: 1080x1920 statusBars:[0,63,0,0] navigationBars:[0,0,0,63] mandatorySystemGestures:[0,63,0,84] 
+D/WindowOnBackDispatcher( 4253): setTopOnBackInvokedCallback (unwrapped): android.view.ViewRootImpl$$ExternalSyntheticLambda12@6d53f12
+E/libEGL  ( 4253): called unimplemented OpenGL ES API
+VMServiceFlutterDriver: Connecting to Flutter application at http://127.0.0.1:29514/[redacted-vm-service]/
+VMServiceFlutterDriver: Isolate found with number: 174070474487743
+VMServiceFlutterDriver: Isolate 174070474487743 is runnable.
+VMServiceFlutterDriver: Isolate is paused at start.
+VMServiceFlutterDriver: Attempting to resume isolate
+I/Choreographer( 4253): Skipped 87 frames!  The application may be doing too much work on its main thread.
+I/flutter ( 4253): 00:00 +0: FR-MED-08: Android media
+VMServiceFlutterDriver: Connected to Flutter application.
+E/libEGL  ( 4253): called unimplemented OpenGL ES API
+D/WindowLayoutComponentImpl( 4253): Register WindowLayoutInfoListener on Context=com.example.medcollab_app.MainActivity@bef86e3, of which baseContext=android.app.ContextImpl@56500d1
+I/Choreographer( 4253): Skipped 57 frames!  The application may be doing too much work on its main thread.
+D/ProfileInstaller( 4253): Installing profile for com.vocle.regression
+I/HWUI    ( 4253): Davey! duration=1055ms; Flags=1, FrameTimelineVsyncId=20909, IntendedVsync=155566093266, Vsync=156516093228, InputEventId=0, HandleInputStart=156525523700, AnimationStart=156525612000, PerformTraversalsStart=156526314700, DrawStart=156529903000, FrameDeadline=155582759932, FrameStartTime=156524967000, FrameInterval=16666666, WorkloadTarget=16666666, SyncQueued=156530845200, SyncStart=156531219900, IssueDrawCommandsStart=156531368300, SwapBuffers=156547314400, FrameCompleted=156621945300, DequeueBufferDuration=1248600, QueueBufferDuration=4779300, GpuCompleted=156620615900, SwapBuffersCompleted=156621945300, DisplayPresentTime=0, CommandSubmissionCompleted=156547314400, 
+V/Configuration( 4253): Updating configuration, locales updated from [en_US] to [en]
+V/Configuration( 4253): Updating configuration, locales updated from [en] to [en_US]
+D/InsetsController( 4253): hide(ime())
+I/ImeTracker( 4253): com.vocle.regression:d80e1040: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+I/ocle.regression( 4253): Compiler allocated 5087KB to compile void android.view.ViewRootImpl.performTraversals()
+W/ocle.regression( 4253): userfaultfd: MOVE ioctl seems unsupported: Connection timed out
+I/ocle.regression( 4253): Background concurrent mark compact GC freed 3768KB AllocSpace bytes, 44(1656KB) LOS objects, 49% free, 3806KB/7613KB, paused 1.641ms,3.327ms total 116.088ms
+I/ocle.regression( 4253): Background concurrent mark compact GC freed 1656KB AllocSpace bytes, 75(2796KB) LOS objects, 49% free, 3106KB/6213KB, paused 3.878ms,10.567ms total 235.804ms
+E/libEGL  ( 4253): called unimplemented OpenGL ES API
+E/libEGL  ( 4253): called unimplemented OpenGL ES API
+W/ocle.regression( 4253): Suspending all threads took: 18.773ms
+I/ocle.regression( 4253): Background young concurrent mark compact GC freed 1388KB AllocSpace bytes, 47(1692KB) LOS objects, 46% free, 3338KB/6213KB, paused 50.306ms,48.137ms total 202.833ms
+I/HWUI    ( 4253): Using FreeType backend (prop=Auto)
+W/ocle.regression( 4253): Suspending all threads took: 15.160ms
+I/ocle.regression( 4253): Background concurrent mark compact GC freed 1244KB AllocSpace bytes, 38(1368KB) LOS objects, 49% free, 3735KB/7470KB, paused 16.190ms,21.355ms total 166.646ms
+E/libEGL  ( 4253): called unimplemented OpenGL ES API
+W/WindowOnBackDispatcher( 4253): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher( 4253): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+I/ocle.regression( 4253): Background young concurrent mark compact GC freed 1977KB AllocSpace bytes, 72(2592KB) LOS objects, 44% free, 4127KB/7470KB, paused 857us,1.712ms total 137.987ms
+I/ocle.regression( 4253): Background concurrent mark compact GC freed 984KB AllocSpace bytes, 37(1332KB) LOS objects, 49% free, 3891KB/7782KB, paused 2.236ms,2.272ms total 147.278ms
+E/libEGL  ( 4253): called unimplemented OpenGL ES API
+I/ocle.regression( 4253): Background young concurrent mark compact GC freed 2196KB AllocSpace bytes, 84(3024KB) LOS objects, 46% free, 4159KB/7782KB, paused 25.236ms,2.440ms total 234.527ms
+I/ocle.regression( 4253): Background concurrent mark compact GC freed 709KB AllocSpace bytes, 27(972KB) LOS objects, 49% free, 3703KB/7406KB, paused 4.396ms,3.600ms total 241.352ms
+W/WindowOnBackDispatcher( 4253): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher( 4253): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+E/libEGL  ( 4253): called unimplemented OpenGL ES API
+I/ocle.regression( 4253): Background young concurrent mark compact GC freed 1592KB AllocSpace bytes, 60(2160KB) LOS objects, 48% free, 3799KB/7406KB, paused 998us,12.119ms total 97.993ms
+W/WindowOnBackDispatcher( 4253): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher( 4253): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+E/libEGL  ( 4253): called unimplemented OpenGL ES API
+I/ocle.regression( 4253): IncrementDisableThreadFlip blocked for 9.124ms
+I/ocle.regression( 4253): Background concurrent mark compact GC freed 1637KB AllocSpace bytes, 60(2160KB) LOS objects, 49% free, 4243KB/8487KB, paused 1.060ms,10.063ms total 361.675ms
+E/libEGL  ( 4253): called unimplemented OpenGL ES API
+W/WindowOnBackDispatcher( 4253): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher( 4253): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+I/ocle.regression( 4253): Background young concurrent mark compact GC freed 1893KB AllocSpace bytes, 68(2480KB) LOS objects, 38% free, 5247KB/8487KB, paused 1.580ms,11.318ms total 263.004ms
+E/libEGL  ( 4253): called unimplemented OpenGL ES API
+I/ocle.regression( 4253): Background concurrent mark compact GC freed 1068KB AllocSpace bytes, 42(1512KB) LOS objects, 49% free, 4171KB/8342KB, paused 1.843ms,13.567ms total 460.698ms
+I/ocle.regression( 4253): Background young concurrent mark compact GC freed 1889KB AllocSpace bytes, 70(2520KB) LOS objects, 53% free, 3859KB/8342KB, paused 21.627ms,2.440ms total 197.426ms
+I/ocle.regression( 4253): Background concurrent mark compact GC freed 1877KB AllocSpace bytes, 71(2556KB) LOS objects, 49% free, 4027KB/8054KB, paused 5.168ms,19.216ms total 138.653ms
+I/ocle.regression( 4253): Background concurrent mark compact GC freed 1881KB AllocSpace bytes, 71(2556KB) LOS objects, 49% free, 3847KB/7694KB, paused 854us,7.747ms total 56.254ms
+I/ocle.regression( 4253): Background young concurrent mark compact GC freed 1632KB AllocSpace bytes, 62(2232KB) LOS objects, 48% free, 3927KB/7694KB, paused 5.966ms,10.358ms total 74.477ms
+E/libEGL  ( 4253): called unimplemented OpenGL ES API
+W/WindowOnBackDispatcher( 4253): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher( 4253): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+E/libEGL  ( 4253): called unimplemented OpenGL ES API
+I/ocle.regression( 4253): Background young concurrent mark compact GC freed 1857KB AllocSpace bytes, 64(2304KB) LOS objects, 47% free, 4247KB/8046KB, paused 951us,5.201ms total 72.902ms
+W/WindowOnBackDispatcher( 4253): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher( 4253): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+E/libEGL  ( 4253): called unimplemented OpenGL ES API
+I/ocle.regression( 4253): Background concurrent mark compact GC freed 1437KB AllocSpace bytes, 64(2304KB) LOS objects, 49% free, 3923KB/7846KB, paused 886us,4.725ms total 141.497ms
+I/ocle.regression( 4253): Background young concurrent mark compact GC freed 1860KB AllocSpace bytes, 66(2376KB) LOS objects, 45% free, 4287KB/7846KB, paused 1.122ms,5.350ms total 104.856ms
+E/libEGL  ( 4253): called unimplemented OpenGL ES API
+I/ocle.regression( 4253): Background concurrent mark compact GC freed 1264KB AllocSpace bytes, 45(1620KB) LOS objects, 49% free, 3803KB/7606KB, paused 2.275ms,18.870ms total 285.602ms
+W/WindowOnBackDispatcher( 4253): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher( 4253): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+E/libEGL  ( 4253): called unimplemented OpenGL ES API
+E/libEGL  ( 4253): called unimplemented OpenGL ES API
+I/ocle.regression( 4253): Background concurrent mark compact GC freed 1588KB AllocSpace bytes, 63(2268KB) LOS objects, 49% free, 3803KB/7606KB, paused 1.399ms,6.290ms total 83.824ms
+W/WindowOnBackDispatcher( 4253): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher( 4253): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+E/libEGL  ( 4253): called unimplemented OpenGL ES API
+I/ocle.regression( 4253): Background young concurrent mark compact GC freed 1925KB AllocSpace bytes, 74(2664KB) LOS objects, 35% free, 4943KB/7606KB, paused 1.428ms,15.340ms total 220.245ms
+E/libEGL  ( 4253): called unimplemented OpenGL ES API
+I/ocle.regression( 4253): Background concurrent mark compact GC freed 960KB AllocSpace bytes, 30(1080KB) LOS objects, 49% free, 3767KB/7534KB, paused 903us,6.661ms total 333.980ms
+E/libEGL  ( 4253): called unimplemented OpenGL ES API
+W/WindowOnBackDispatcher( 4253): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher( 4253): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+E/libEGL  ( 4253): called unimplemented OpenGL ES API
+W/WindowOnBackDispatcher( 4253): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher( 4253): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+I/ocle.regression( 4253): Background young concurrent mark compact GC freed 1401KB AllocSpace bytes, 56(2016KB) LOS objects, 45% free, 4079KB/7534KB, paused 2.599ms,7.161ms total 84.848ms
+D/CompatChangeReporter( 4253): Compat change id reported: 312399441; UID 10227; state: ENABLED
+E/libEGL  ( 4253): called unimplemented OpenGL ES API
+I/flutter ( 4253): VOCLE_DEVICE_RECORD {"id":"FR-MED-08","status":"PASS","executed":true,"phase":"media","runId":"3422fdcc-66dc-48ca-8e6a-a1a6626350e5","processId":4253,"durationMs":31183,"evidence":["Selected image/PDF/video entries and error recovery observed using real chat upload/send operations.","Picker cancellation caused zero upload/message requests; exact PDF delivery and native external activity were verified."]}
+D/InsetsController( 4253): hide(ime())
+I/ImeTracker( 4253): com.vocle.regression:b9a31aff: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+D/InsetsController( 4253): hide(ime())
+I/ImeTracker( 4253): com.vocle.regression:e42b20b4: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+I/flutter ( 4253): 00:32 +1: (tearDownAll)
+I/flutter ( 4253): 00:32 +2: All tests passed!
+All tests passed.
+Leaving the application running.

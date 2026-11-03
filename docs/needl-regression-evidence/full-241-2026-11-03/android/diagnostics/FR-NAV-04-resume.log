@@ -1,0 +1,83 @@
+Running Gradle task 'assembleDebug'...                          
+Warning: The plugin file_picker requires Android SDK version 36 or higher.
+For more information about build configuration, see https://flutter.dev/to/review-gradle-config.
+Your project is configured to compile against Android SDK 35, but the following plugin(s) require to be compiled against a higher Android SDK version:
+- file_picker compiles against Android SDK 36
+Fix this issue by compiling against the highest Android SDK version (they are backward compatible).
+Add the following to C:\Users\delll\AppData\Local\Temp\vocle-device-sjUCDD\medcollab-app\android\app\build.gradle.kts:
+
+    android {
+        compileSdk = 36
+        ...
+    }
+
+Running Gradle task 'assembleDebug'...                             40.3s
+√ Built build\app\outputs\flutter-apk\app-debug.apk
+Installing build\app\outputs\flutter-apk\app-debug.apk...        1,758ms
+I/ocle.regression( 6706): hiddenapi: Accessing hidden method Landroid/view/accessibility/AccessibilityNodeInfo;->getSourceNodeId()J (runtime_flags=0, domain=platform, api=unsupported,test-api) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=35) using reflection: allowed
+I/ocle.regression( 6706): hiddenapi: Accessing hidden method Landroid/view/accessibility/AccessibilityRecord;->getSourceNodeId()J (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=35) using reflection: allowed
+I/ocle.regression( 6706): hiddenapi: Accessing hidden field Landroid/view/accessibility/AccessibilityNodeInfo;->mChildNodeIds:Landroid/util/LongArray; (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=35) using reflection: allowed
+I/ocle.regression( 6706): hiddenapi: Accessing hidden method Landroid/util/LongArray;->get(I)J (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=35) using reflection: allowed
+D/CompatChangeReporter( 6706): Compat change id reported: 309578419; UID 10230; state: ENABLED
+D/CompatChangeReporter( 6706): Compat change id reported: 349153669; UID 10230; state: ENABLED
+W/HWUI    ( 6706): Unknown dataspace 0
+I/WindowExtensionsImpl( 6706): Initializing Window Extensions, vendor API level=9, activity embedding enabled=true
+D/VRI[MainActivity]( 6706): WindowInsets changed: 1080x1920 statusBars:[0,63,0,0] navigationBars:[0,0,0,63] mandatorySystemGestures:[0,63,0,84] 
+D/WindowOnBackDispatcher( 6706): setTopOnBackInvokedCallback (unwrapped): android.view.ViewRootImpl$$ExternalSyntheticLambda12@6d53f12
+E/libEGL  ( 6706): called unimplemented OpenGL ES API
+I/ocle.regression( 6706): Compiler allocated 5087KB to compile void android.view.ViewRootImpl.performTraversals()
+D/WindowLayoutComponentImpl( 6706): Register WindowLayoutInfoListener on Context=com.example.medcollab_app.MainActivity@bef86e3, of which baseContext=android.app.ContextImpl@a19d3f8
+I/HWUI    ( 6706): Using FreeType backend (prop=Auto)
+VMServiceFlutterDriver: Connecting to Flutter application at http://127.0.0.1:12940/[redacted-vm-service]/
+VMServiceFlutterDriver: Isolate found with number: 8467747752974463
+VMServiceFlutterDriver: Isolate 8467747752974463 is runnable.
+VMServiceFlutterDriver: Isolate is paused at start.
+VMServiceFlutterDriver: Attempting to resume isolate
+I/flutter ( 6706): 00:00 +0: FR-NAV-04: Android resume
+VMServiceFlutterDriver: Connected to Flutter application.
+E/libEGL  ( 6706): called unimplemented OpenGL ES API
+V/Configuration( 6706): Updating configuration, locales updated from [en_US] to [en]
+D/InsetsController( 6706): hide(ime())
+I/ImeTracker( 6706): com.vocle.regression:aa1af00c: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+V/Configuration( 6706): Updating configuration, locales updated from [en] to [en_US]
+D/ProfileInstaller( 6706): Installing profile for com.vocle.regression
+E/libEGL  ( 6706): called unimplemented OpenGL ES API
+E/libEGL  ( 6706): called unimplemented OpenGL ES API
+W/WindowOnBackDispatcher( 6706): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher( 6706): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+I/ImeTracker( 6706): com.vocle.regression:b8964869: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+D/InsetsController( 6706): show(ime())
+D/InsetsController( 6706): Setting requestedVisibleTypes to 511 (was 503)
+I/ImeTracker( 6706): com.vocle.regression:1b28e255: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+D/InsetsController( 6706): show(ime())
+I/ImeTracker( 6706): com.vocle.regression:1b28e255: onCancelled at PHASE_CLIENT_REPORT_REQUESTED_VISIBLE_TYPES
+D/InputConnectionAdaptor( 6706): The input method toggled cursor monitoring on
+I/AssistStructure( 6706): Flattened final assist data: 512 bytes, containing 1 windows, 3 views
+E/libEGL  ( 6706): called unimplemented OpenGL ES API
+W/ocle.regression( 6706): userfaultfd: MOVE ioctl seems unsupported: Connection timed out
+I/ocle.regression( 6706): Background concurrent mark compact GC freed 14MB AllocSpace bytes, 508(18MB) LOS objects, 49% free, 3855KB/7710KB, paused 1.551ms,7.656ms total 167.231ms
+D/WindowOnBackDispatcher( 6706): setTopOnBackInvokedCallback (unwrapped): android.view.ImeBackAnimationController@5c6208a
+D/WindowOnBackDispatcher( 6706): setTopOnBackInvokedCallback (unwrapped): android.view.ViewRootImpl$$ExternalSyntheticLambda12@6d53f12
+W/InteractionJankMonitor( 6706): Initializing without READ_DEVICE_CONFIG permission. enabled=false, interval=1, missedFrameThreshold=3, frameTimeThreshold=64, package=com.vocle.regression
+I/ImeTracker( 6706): com.vocle.regression:b8964869: onCancelled at PHASE_CLIENT_ANIMATION_CANCEL
+W/ocle.regression( 6706): Suspending all threads took: 7.532ms
+I/ocle.regression( 6706): IncrementDisableThreadFlip blocked for 14.450ms
+D/VRI[MainActivity]( 6706): visibilityChanged oldVisibility=true newVisibility=false
+W/ocle.regression( 6706): Suspending all threads took: 20.625ms
+I/AutofillManager( 6706): onInvisibleForAutofill(): expiringResponse
+E/libEGL  ( 6706): called unimplemented OpenGL ES API
+W/ImeBackCallbackProxy( 6706): Ime callback not found. Ignoring unregisterReceivedCallback. callbackId: 180671550 remaining callbacks: 0
+D/InsetsController( 6706): hide(ime())
+D/InsetsController( 6706): Setting requestedVisibleTypes to 503 (was 511)
+D/WindowOnBackDispatcher( 6706): setTopOnBackInvokedCallback (unwrapped): android.view.ImeBackAnimationController@5c6208a
+D/WindowOnBackDispatcher( 6706): setTopOnBackInvokedCallback (unwrapped): android.view.ViewRootImpl$$ExternalSyntheticLambda12@6d53f12
+I/ImeTracker( 6706): system_server:9543c35b: onCancelled at PHASE_CLIENT_ON_CONTROLS_CHANGED
+I/ocle.regression( 6706): Background young concurrent mark compact GC freed 1893KB AllocSpace bytes, 56(2048KB) LOS objects, 44% free, 4359KB/7862KB, paused 1.981ms,33.291ms total 257.602ms
+I/ImeTracker( 6706): com.vocle.regression:2181431: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+D/InsetsController( 6706): hide(ime())
+I/ImeTracker( 6706): com.vocle.regression:2181431: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+I/flutter ( 6706): VOCLE_DEVICE_RECORD {"id":"FR-NAV-04","status":"PASS","executed":true,"phase":"resume","runId":"3422fdcc-66dc-48ca-8e6a-a1a6626350e5","processId":6706,"durationMs":8410,"evidence":["Observed native lifecycle: inactive, hidden, paused, hidden, inactive","Native paused/resumed; transport recovered; exact peer ID persisted and displayed; draft retained."]}
+I/flutter ( 6706): 00:08 +1: (tearDownAll)
+All tests passed.
+I/flutter ( 6706): 00:08 +2: All tests passed!
+Leaving the application running.

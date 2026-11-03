@@ -1,0 +1,172 @@
+{
+  "scope": "retained Flutter tests outside 241 catalog",
+  "passed": 33,
+  "failures": 0,
+  "cases": [
+    {
+      "name": "ActiveChatTracker tracks enter / leave / isViewing",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "name": "AvailabilityStatus.offline parses and labels Offline",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "name": "availabilityStatusColor maps known API status strings",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "name": "availabilityStatusColor unknown status falls back to muted",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "name": "handoffAccentColor maps lifecycle statuses for list accent bar",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "name": "handoffBadgeColors returns chip bg/text pairs",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "name": "MessageReplyTo parses snapshot and builds preview labels",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "name": "MessageReplyTo empty messageId is ignored by parser",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "name": "MessageReplyTo media types get friendly labels when text empty",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "name": "NotificationPreferencesModel defaults message requests to off (opt-in)",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "name": "NotificationPreferencesModel round-trips allowMessageRequestsFromAnyone",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "name": "UserLookupResult canMessage does not imply canRequest (open DM vs request)",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "name": "UserLookupResult acceptsMessageRequests aliases canRequest from legacy field",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "name": "DashboardPreferencesService default prefs hide inbox widgets (lean Home)",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "name": "DashboardPreferencesService load returns defaults when storage is empty",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "name": "DashboardPreferencesService reset restores v4 lean defaults",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "name": "DashboardPreferencesService load merges new widgets from newer app versions",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "name": "DashboardPreferencesService load falls back to defaults on corrupt JSON",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "name": "DraftMessageService saves and retrieves channel draft",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "name": "DraftMessageService thread drafts use separate keys from root draft",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "name": "DraftMessageService empty draft removes key",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "name": "DraftMessageService draftChannelIds skips thread keys",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "name": "DraftMessageService clearDraft removes stored text",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "name": "HandoffPriorityColors forStatus maps patient severity to palette",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "name": "HandoffPriorityColors statusLabel returns human-readable copy",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "name": "HandoffPriorityColors handoffStatusColor matches redesign tokens",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "name": "PhoneUtils.validateLocalNumber accepts valid Indian mobile",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "name": "PhoneUtils.validateLocalNumber rejects repeated digits",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "name": "PhoneUtils.validateLocalNumber rejects short numbers",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "name": "PhoneUtils.extractInviteCode from join path URL",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "name": "PhoneUtils.extractInviteCode from deep link",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "name": "PhoneUtils.extractInviteCode from raw code",
+      "result": "success",
+      "skipped": false
+    },
+    {
+      "name": "Vocle app shows branded splash on launch",
+      "result": "success",
+      "skipped": false
+    }
+  ]
+}

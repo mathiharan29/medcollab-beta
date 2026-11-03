@@ -1,0 +1,4617 @@
+[
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-auth-01",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-AUTH-01"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-AUTH-01",
+        "module": "AUTH",
+        "status": "PASS",
+        "durationMs": 785,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-auth-02",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-AUTH-02"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-AUTH-02",
+        "module": "AUTH",
+        "status": "PASS",
+        "durationMs": 334,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-auth-03",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-AUTH-03"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-AUTH-03",
+        "module": "AUTH",
+        "status": "PASS",
+        "durationMs": 272,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-auth-04",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-AUTH-04"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-AUTH-04",
+        "module": "AUTH",
+        "status": "PASS",
+        "durationMs": 760,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-auth-05",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-AUTH-05"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-AUTH-05",
+        "module": "AUTH",
+        "status": "PASS",
+        "durationMs": 504,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-auth-06",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-AUTH-06"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-AUTH-06",
+        "module": "AUTH",
+        "status": "PASS",
+        "durationMs": 127,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-auth-07",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-AUTH-07"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-AUTH-07",
+        "module": "AUTH",
+        "status": "PASS",
+        "durationMs": 368,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-channels",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-CH-01",
+      "FR-CH-02",
+      "FR-CH-04",
+      "FR-CH-05",
+      "FR-CH-03"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 5,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-CH-01",
+        "module": "CH",
+        "status": "PASS",
+        "durationMs": 785,
+        "error": ""
+      },
+      {
+        "id": "FR-CH-02",
+        "module": "CH",
+        "status": "PASS",
+        "durationMs": 260,
+        "error": ""
+      },
+      {
+        "id": "FR-CH-04",
+        "module": "CH",
+        "status": "PASS",
+        "durationMs": 109,
+        "error": ""
+      },
+      {
+        "id": "FR-CH-05",
+        "module": "CH",
+        "status": "PASS",
+        "durationMs": 173,
+        "error": ""
+      },
+      {
+        "id": "FR-CH-03",
+        "module": "CH",
+        "status": "PASS",
+        "durationMs": 93,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-conversations-01",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-DM-01"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-DM-01",
+        "module": "DM",
+        "status": "PASS",
+        "durationMs": 1194,
+        "prerequisiteSeed": "Accepted A/B request inserted directly for pair-delegation branch; no accept endpoint behavior credited",
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-conversations-02",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-DM-02"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-DM-02",
+        "module": "DM",
+        "status": "PASS",
+        "durationMs": 1331,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-conversations-03",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-DM-03"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-DM-03",
+        "module": "DM",
+        "status": "PASS",
+        "durationMs": 553,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-conversations-04",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-DM-04"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-DM-04",
+        "module": "DM",
+        "status": "PASS",
+        "durationMs": 523,
+        "prerequisiteSeed": "Two direct channels inserted as existing conversation fixtures because live pair creation returns 500 on pinned upstream; list ordering and peer projection are tested independently",
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-conversations-05",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-DM-05"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-DM-05",
+        "module": "DM",
+        "status": "PASS",
+        "durationMs": 507,
+        "prerequisiteSeed": "Existing A/B direct channel and three timestamped synthetic roots inserted directly; live pair creation is a separate failing contract",
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-conversations-06",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-DM-06"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-DM-06",
+        "module": "DM",
+        "status": "PASS",
+        "durationMs": 597,
+        "prerequisiteSeed": "Existing A/B direct channel and 502 synthetic roots inserted directly to isolate all-history copy behavior",
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-conversations-07",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-DM-07"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-DM-07",
+        "module": "DM",
+        "status": "PASS",
+        "durationMs": 529,
+        "prerequisiteSeed": "Existing A/B direct channel inserted directly; root, thread reply and quote then created through live message APIs",
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-conversations-08",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-DM-08"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-DM-08",
+        "module": "DM",
+        "status": "PASS",
+        "durationMs": 493,
+        "prerequisiteSeed": "Existing A/B direct channel inserted directly; history messages sent through live API before and after first expansion",
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-conversations-09",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-DM-09"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-DM-09",
+        "module": "DM",
+        "status": "PASS",
+        "durationMs": 555,
+        "prerequisiteSeed": "Accepted A/B request inserted directly before concurrent pair intents because live acceptance is a separate failing contract",
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-discovery",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-DISC-01",
+      "FR-DISC-03",
+      "FR-DISC-04",
+      "FR-DISC-02"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 4,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-DISC-01",
+        "module": "DISC",
+        "status": "PASS",
+        "durationMs": 1018,
+        "prerequisiteSeed": "Accepted A/C request inserted directly to represent an existing peer relationship",
+        "error": ""
+      },
+      {
+        "id": "FR-DISC-03",
+        "module": "DISC",
+        "status": "PASS",
+        "durationMs": 99,
+        "error": ""
+      },
+      {
+        "id": "FR-DISC-04",
+        "module": "DISC",
+        "status": "PASS",
+        "durationMs": 41,
+        "prerequisiteSeed": "Twenty-one eligible and two ineligible synthetic users inserted directly as search fixtures, then added to a test space",
+        "error": ""
+      },
+      {
+        "id": "FR-DISC-02",
+        "module": "DISC",
+        "status": "PASS",
+        "durationMs": 36,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-handoffs",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-HOF-01",
+      "FR-HOF-02",
+      "FR-HOF-03",
+      "FR-HOF-04",
+      "FR-HOF-05",
+      "FR-HOF-06",
+      "FR-HOF-07",
+      "FR-HOF-08",
+      "FR-HOF-09",
+      "FR-HOF-10"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 10,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-HOF-01",
+        "module": "HOF",
+        "status": "PASS",
+        "durationMs": 769,
+        "error": ""
+      },
+      {
+        "id": "FR-HOF-02",
+        "module": "HOF",
+        "status": "PASS",
+        "durationMs": 139,
+        "error": ""
+      },
+      {
+        "id": "FR-HOF-03",
+        "module": "HOF",
+        "status": "PASS",
+        "durationMs": 120,
+        "error": ""
+      },
+      {
+        "id": "FR-HOF-04",
+        "module": "HOF",
+        "status": "PASS",
+        "durationMs": 100,
+        "error": ""
+      },
+      {
+        "id": "FR-HOF-05",
+        "module": "HOF",
+        "status": "PASS",
+        "durationMs": 62,
+        "error": ""
+      },
+      {
+        "id": "FR-HOF-06",
+        "module": "HOF",
+        "status": "PASS",
+        "durationMs": 125,
+        "error": ""
+      },
+      {
+        "id": "FR-HOF-07",
+        "module": "HOF",
+        "status": "PASS",
+        "durationMs": 109,
+        "error": ""
+      },
+      {
+        "id": "FR-HOF-08",
+        "module": "HOF",
+        "status": "PASS",
+        "durationMs": 85,
+        "error": ""
+      },
+      {
+        "id": "FR-HOF-09",
+        "module": "HOF",
+        "status": "PASS",
+        "durationMs": 120,
+        "error": ""
+      },
+      {
+        "id": "FR-HOF-10",
+        "module": "HOF",
+        "status": "PASS",
+        "durationMs": 206,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-journeys",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-JRN-01",
+      "FR-JRN-02",
+      "FR-JRN-03",
+      "FR-JRN-04"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 4,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-JRN-01",
+        "module": "JRN",
+        "status": "PASS",
+        "durationMs": 896,
+        "error": ""
+      },
+      {
+        "id": "FR-JRN-02",
+        "module": "JRN",
+        "status": "PASS",
+        "durationMs": 228,
+        "error": ""
+      },
+      {
+        "id": "FR-JRN-03",
+        "module": "JRN",
+        "status": "PASS",
+        "durationMs": 197,
+        "error": ""
+      },
+      {
+        "id": "FR-JRN-04",
+        "module": "JRN",
+        "status": "PASS",
+        "durationMs": 3419,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-media",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-MED-01",
+      "FR-MED-02",
+      "FR-MED-03",
+      "FR-MED-04",
+      "FR-MED-05",
+      "FR-MED-06",
+      "FR-MED-07"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 7,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-MED-01",
+        "module": "MED",
+        "status": "PASS",
+        "durationMs": 372,
+        "error": ""
+      },
+      {
+        "id": "FR-MED-02",
+        "module": "MED",
+        "status": "PASS",
+        "durationMs": 12,
+        "error": ""
+      },
+      {
+        "id": "FR-MED-03",
+        "module": "MED",
+        "status": "PASS",
+        "durationMs": 477,
+        "error": ""
+      },
+      {
+        "id": "FR-MED-04",
+        "module": "MED",
+        "status": "PASS",
+        "durationMs": 47,
+        "error": ""
+      },
+      {
+        "id": "FR-MED-05",
+        "module": "MED",
+        "status": "PASS",
+        "durationMs": 47,
+        "error": ""
+      },
+      {
+        "id": "FR-MED-06",
+        "module": "MED",
+        "status": "PASS",
+        "durationMs": 34,
+        "error": ""
+      },
+      {
+        "id": "FR-MED-07",
+        "module": "MED",
+        "status": "PASS",
+        "durationMs": 73,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-messages-01",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-MSG-01"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-MSG-01",
+        "module": "MSG",
+        "status": "PASS",
+        "durationMs": 663,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-messages-02",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-MSG-02"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-MSG-02",
+        "module": "MSG",
+        "status": "PASS",
+        "durationMs": 369,
+        "prerequisiteSeed": "Controlled ObjectId sequence and one thread reply inserted directly to isolate root cursor behavior",
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-messages-03",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-MSG-03"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-MSG-03",
+        "module": "MSG",
+        "status": "PASS",
+        "durationMs": 495,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-messages-04",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-MSG-04"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-MSG-04",
+        "module": "MSG",
+        "status": "PASS",
+        "durationMs": 523,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-messages-05",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-MSG-05"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-MSG-05",
+        "module": "MSG",
+        "status": "PASS",
+        "durationMs": 574,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-messages-06",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-MSG-06"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-MSG-06",
+        "module": "MSG",
+        "status": "PASS",
+        "durationMs": 490,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-messages-07",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-MSG-07"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-MSG-07",
+        "module": "MSG",
+        "status": "PASS",
+        "durationMs": 446,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-messages-08",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-MSG-08"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-MSG-08",
+        "module": "MSG",
+        "status": "PASS",
+        "durationMs": 247,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-needl-01",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-NDL-01"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-NDL-01",
+        "module": "NDL",
+        "status": "PASS",
+        "durationMs": 834,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-needl-02",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-NDL-02"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-NDL-02",
+        "module": "NDL",
+        "status": "PASS",
+        "durationMs": 679,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-needl-03",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-NDL-03"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-NDL-03",
+        "module": "NDL",
+        "status": "PASS",
+        "durationMs": 508,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-needl-04",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-NDL-04"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-NDL-04",
+        "module": "NDL",
+        "status": "PASS",
+        "durationMs": 427,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-needl-05",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-NDL-05"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-NDL-05",
+        "module": "NDL",
+        "status": "PASS",
+        "durationMs": 509,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-needl-06",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-NDL-06"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-NDL-06",
+        "module": "NDL",
+        "status": "PASS",
+        "durationMs": 541,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-needl-07",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-NDL-07"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-NDL-07",
+        "module": "NDL",
+        "status": "PASS",
+        "durationMs": 537,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-needl-08",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-NDL-08"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-NDL-08",
+        "module": "NDL",
+        "status": "PASS",
+        "durationMs": 523,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-needl-09",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-NDL-09"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-NDL-09",
+        "module": "NDL",
+        "status": "PASS",
+        "durationMs": 495,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-needl-10",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-NDL-10"
+    ],
+    "complete": true,
+    "success": false,
+    "tally": {
+      "PASS": 0,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 1,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-NDL-10",
+        "module": "NDL",
+        "status": "NEEDS_DECISION",
+        "durationMs": 618,
+        "errorCategory": "DecisionPending",
+        "error": "NDL-D1: archived Needl expansion policy requires product decision; observed HTTP 200",
+        "verifiedSubassertions": [
+          "Archived group excluded from active list",
+          "Authorized historical detail remains readable by explicit allowArchived:true",
+          "Message writes denied and persisted source remains archived"
+        ]
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-needl-11",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-NDL-11"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-NDL-11",
+        "module": "NDL",
+        "status": "PASS",
+        "durationMs": 583,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-needl-12",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-NDL-12"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-NDL-12",
+        "module": "NDL",
+        "status": "PASS",
+        "durationMs": 542,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-needl-13",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-NDL-13"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-NDL-13",
+        "module": "NDL",
+        "status": "PASS",
+        "durationMs": 526,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-needl-14",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-NDL-14"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-NDL-14",
+        "module": "NDL",
+        "status": "PASS",
+        "durationMs": 553,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-needl-15",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-NDL-15"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-NDL-15",
+        "module": "NDL",
+        "status": "PASS",
+        "durationMs": 697,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-needl-16",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-NDL-16"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-NDL-16",
+        "module": "NDL",
+        "status": "PASS",
+        "durationMs": 554,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-needl-17",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-NDL-17"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-NDL-17",
+        "module": "NDL",
+        "status": "PASS",
+        "durationMs": 1190,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-needl-18",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-NDL-18"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-NDL-18",
+        "module": "NDL",
+        "status": "PASS",
+        "durationMs": 588,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-needl-19",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-NDL-19"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-NDL-19",
+        "module": "NDL",
+        "status": "PASS",
+        "durationMs": 556,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-needl-20",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-NDL-20"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-NDL-20",
+        "module": "NDL",
+        "status": "PASS",
+        "durationMs": 605,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-needl-21",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-NDL-21"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-NDL-21",
+        "module": "NDL",
+        "status": "PASS",
+        "durationMs": 542,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-needl-22",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-NDL-22"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-NDL-22",
+        "module": "NDL",
+        "status": "PASS",
+        "durationMs": 608,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-needl-23",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-NDL-23"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-NDL-23",
+        "module": "NDL",
+        "status": "PASS",
+        "durationMs": 673,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-needl-24",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-NDL-24"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-NDL-24",
+        "module": "NDL",
+        "status": "PASS",
+        "durationMs": 617,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-needl-25",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-NDL-25"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-NDL-25",
+        "module": "NDL",
+        "status": "PASS",
+        "durationMs": 622,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-needl-26",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-NDL-26"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-NDL-26",
+        "module": "NDL",
+        "status": "PASS",
+        "durationMs": 574,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-needl-27",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-NDL-27"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-NDL-27",
+        "module": "NDL",
+        "status": "PASS",
+        "durationMs": 1598,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-needl-28",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-NDL-28"
+    ],
+    "complete": true,
+    "success": false,
+    "tally": {
+      "PASS": 0,
+      "FAIL": 1,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-NDL-28",
+        "module": "NDL",
+        "status": "FAIL",
+        "durationMs": 522,
+        "errorCategory": "AssertionError",
+        "error": "Every concurrent expansion must return a usable existing/new destination"
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-needl-29",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-NDL-29"
+    ],
+    "complete": true,
+    "success": false,
+    "tally": {
+      "PASS": 0,
+      "FAIL": 1,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-NDL-29",
+        "module": "NDL",
+        "status": "FAIL",
+        "durationMs": 570,
+        "errorCategory": "AssertionError",
+        "error": "Retry must recover intended history after the database fault is removed\n\n0 !== 1\n"
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-needl-30",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-NDL-30"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-NDL-30",
+        "module": "NDL",
+        "status": "PASS",
+        "durationMs": 523,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-notifications-01",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-NOT-01"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-NOT-01",
+        "module": "NOT",
+        "status": "PASS",
+        "durationMs": 717,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-notifications-02",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-NOT-02"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-NOT-02",
+        "module": "NOT",
+        "status": "PASS",
+        "durationMs": 355,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-notifications-03",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-NOT-03"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-NOT-03",
+        "module": "NOT",
+        "status": "PASS",
+        "durationMs": 218,
+        "prerequisiteSeed": "Seven synthetic inbox documents inserted with controlled ObjectIds and read/type values to isolate cursor filtering",
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-notifications-04",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-NOT-04"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-NOT-04",
+        "module": "NOT",
+        "status": "PASS",
+        "durationMs": 214,
+        "prerequisiteSeed": "Synthetic inbox records inserted with both string and ObjectId channel metadata, bypassing schema casting for the legacy representation",
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-notifications-05",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-NOT-05"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-NOT-05",
+        "module": "NOT",
+        "status": "PASS",
+        "durationMs": 415,
+        "prerequisiteSeed": "Disposable MongoDB notification collection validator rejects exactly the first synthetic message body, then is removed after the backend failure log",
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-profile",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-PRO-01",
+      "FR-PRO-02",
+      "FR-PRO-04",
+      "FR-PRO-03"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 4,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-PRO-01",
+        "module": "PRO",
+        "status": "PASS",
+        "durationMs": 781,
+        "error": ""
+      },
+      {
+        "id": "FR-PRO-02",
+        "module": "PRO",
+        "status": "PASS",
+        "durationMs": 282,
+        "error": ""
+      },
+      {
+        "id": "FR-PRO-04",
+        "module": "PRO",
+        "status": "PASS",
+        "durationMs": 202,
+        "prerequisiteSeed": "Existing A/B direct channel inserted directly to exercise profile projections; live direct-DM creation returns 500 on pinned upstream and is not credited here",
+        "error": ""
+      },
+      {
+        "id": "FR-PRO-03",
+        "module": "PRO",
+        "status": "PASS",
+        "durationMs": 47,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-push-01",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-PUSH-01"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-PUSH-01",
+        "module": "PUSH",
+        "status": "PASS",
+        "durationMs": 725,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-push-02",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-PUSH-02"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-PUSH-02",
+        "module": "PUSH",
+        "status": "PASS",
+        "durationMs": 650,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-push-03",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-PUSH-03"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-PUSH-03",
+        "module": "PUSH",
+        "status": "PASS",
+        "durationMs": 1037,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-push-04",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-PUSH-04"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-PUSH-04",
+        "module": "PUSH",
+        "status": "PASS",
+        "durationMs": 459,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-realtime-01",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-RT-01"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-RT-01",
+        "module": "RT",
+        "status": "PASS",
+        "durationMs": 811,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-realtime-02",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-RT-02"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-RT-02",
+        "module": "RT",
+        "status": "PASS",
+        "durationMs": 343,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-realtime-03",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-RT-03"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-RT-03",
+        "module": "RT",
+        "status": "PASS",
+        "durationMs": 360,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-realtime-07",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-RT-07"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-RT-07",
+        "module": "RT",
+        "status": "PASS",
+        "durationMs": 1799,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-requests-01",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-REQ-01"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-REQ-01",
+        "module": "REQ",
+        "status": "PASS",
+        "durationMs": 1192,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-requests-02",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-REQ-02"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-REQ-02",
+        "module": "REQ",
+        "status": "PASS",
+        "durationMs": 506,
+        "prerequisiteSeed": "Accepted request inserted as component prerequisite; no accept endpoint behavior credited",
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-requests-03",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-REQ-03"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-REQ-03",
+        "module": "REQ",
+        "status": "PASS",
+        "durationMs": 852,
+        "prerequisiteSeed": "Accepted and declined statuses set directly after real request creation to isolate list/filter serialization; transition behavior is exercised separately",
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-requests-04",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-REQ-04"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-REQ-04",
+        "module": "REQ",
+        "status": "PASS",
+        "durationMs": 555,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-requests-05",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-REQ-05"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-REQ-05",
+        "module": "REQ",
+        "status": "PASS",
+        "durationMs": 414,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-runtime",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-RUN-01",
+      "FR-RUN-02"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 2,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-RUN-01",
+        "module": "RUN",
+        "status": "PASS",
+        "durationMs": 1812,
+        "error": ""
+      },
+      {
+        "id": "FR-RUN-02",
+        "module": "RUN",
+        "status": "PASS",
+        "durationMs": 11493,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "retained-sanity-48",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "authentication-and-profiles-01",
+      "authentication-and-profiles-02",
+      "authentication-and-profiles-03",
+      "authentication-and-profiles-04",
+      "authentication-and-profiles-05",
+      "authentication-and-profiles-06",
+      "authentication-and-profiles-07",
+      "spaces-and-invitations-01",
+      "spaces-and-invitations-02",
+      "spaces-and-invitations-03",
+      "spaces-and-invitations-04",
+      "spaces-and-invitations-05",
+      "channels-01",
+      "channels-02",
+      "channels-03",
+      "messaging-and-needl-01",
+      "messaging-and-needl-02",
+      "messaging-and-needl-03",
+      "messaging-and-needl-04",
+      "messaging-and-needl-05",
+      "messaging-and-needl-06",
+      "messaging-and-needl-07",
+      "message-requests-01",
+      "message-requests-02",
+      "message-requests-03",
+      "direct-and-group-conversations-01",
+      "direct-and-group-conversations-02",
+      "direct-and-group-conversations-03",
+      "direct-and-group-conversations-04",
+      "direct-and-group-conversations-05",
+      "handoffs-01",
+      "handoffs-02",
+      "handoffs-03",
+      "handoffs-04",
+      "handoffs-05",
+      "media-01",
+      "media-02",
+      "media-03",
+      "notifications-01",
+      "notifications-02",
+      "notifications-03",
+      "realtime-and-availability-01",
+      "realtime-and-availability-02",
+      "realtime-and-availability-03",
+      "search-01",
+      "search-02",
+      "support-01",
+      "startup-01"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 48,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "authentication-and-profiles-01",
+        "module": "authentication-and-profiles",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 322
+      },
+      {
+        "id": "authentication-and-profiles-02",
+        "module": "authentication-and-profiles",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 208
+      },
+      {
+        "id": "authentication-and-profiles-03",
+        "module": "authentication-and-profiles",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 364
+      },
+      {
+        "id": "authentication-and-profiles-04",
+        "module": "authentication-and-profiles",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 8
+      },
+      {
+        "id": "authentication-and-profiles-05",
+        "module": "authentication-and-profiles",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 38
+      },
+      {
+        "id": "authentication-and-profiles-06",
+        "module": "authentication-and-profiles",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 27
+      },
+      {
+        "id": "authentication-and-profiles-07",
+        "module": "authentication-and-profiles",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 77
+      },
+      {
+        "id": "spaces-and-invitations-01",
+        "module": "spaces-and-invitations",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 39
+      },
+      {
+        "id": "spaces-and-invitations-02",
+        "module": "spaces-and-invitations",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 93
+      },
+      {
+        "id": "spaces-and-invitations-03",
+        "module": "spaces-and-invitations",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 26
+      },
+      {
+        "id": "spaces-and-invitations-04",
+        "module": "spaces-and-invitations",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 41
+      },
+      {
+        "id": "spaces-and-invitations-05",
+        "module": "spaces-and-invitations",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 78
+      },
+      {
+        "id": "channels-01",
+        "module": "channels",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 63
+      },
+      {
+        "id": "channels-02",
+        "module": "channels",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 40
+      },
+      {
+        "id": "channels-03",
+        "module": "channels",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 111
+      },
+      {
+        "id": "messaging-and-needl-01",
+        "module": "messaging-and-needl",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 76
+      },
+      {
+        "id": "messaging-and-needl-02",
+        "module": "messaging-and-needl",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 122
+      },
+      {
+        "id": "messaging-and-needl-03",
+        "module": "messaging-and-needl",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 33
+      },
+      {
+        "id": "messaging-and-needl-04",
+        "module": "messaging-and-needl",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 124
+      },
+      {
+        "id": "messaging-and-needl-05",
+        "module": "messaging-and-needl",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 93
+      },
+      {
+        "id": "messaging-and-needl-06",
+        "module": "messaging-and-needl",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 109
+      },
+      {
+        "id": "messaging-and-needl-07",
+        "module": "messaging-and-needl",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 38
+      },
+      {
+        "id": "message-requests-01",
+        "module": "message-requests",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 100
+      },
+      {
+        "id": "message-requests-02",
+        "module": "message-requests",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 32
+      },
+      {
+        "id": "message-requests-03",
+        "module": "message-requests",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 47
+      },
+      {
+        "id": "direct-and-group-conversations-01",
+        "module": "direct-and-group-conversations",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 20
+      },
+      {
+        "id": "direct-and-group-conversations-02",
+        "module": "direct-and-group-conversations",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 49
+      },
+      {
+        "id": "direct-and-group-conversations-03",
+        "module": "direct-and-group-conversations",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 65
+      },
+      {
+        "id": "direct-and-group-conversations-04",
+        "module": "direct-and-group-conversations",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 100
+      },
+      {
+        "id": "direct-and-group-conversations-05",
+        "module": "direct-and-group-conversations",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 97
+      },
+      {
+        "id": "handoffs-01",
+        "module": "handoffs",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 36
+      },
+      {
+        "id": "handoffs-02",
+        "module": "handoffs",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 23
+      },
+      {
+        "id": "handoffs-03",
+        "module": "handoffs",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 57
+      },
+      {
+        "id": "handoffs-04",
+        "module": "handoffs",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 122
+      },
+      {
+        "id": "handoffs-05",
+        "module": "handoffs",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 55
+      },
+      {
+        "id": "media-01",
+        "module": "media",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 38
+      },
+      {
+        "id": "media-02",
+        "module": "media",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 34
+      },
+      {
+        "id": "media-03",
+        "module": "media",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 79
+      },
+      {
+        "id": "notifications-01",
+        "module": "notifications",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 37
+      },
+      {
+        "id": "notifications-02",
+        "module": "notifications",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 56
+      },
+      {
+        "id": "notifications-03",
+        "module": "notifications",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 61
+      },
+      {
+        "id": "realtime-and-availability-01",
+        "module": "realtime-and-availability",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 60
+      },
+      {
+        "id": "realtime-and-availability-02",
+        "module": "realtime-and-availability",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 1
+      },
+      {
+        "id": "realtime-and-availability-03",
+        "module": "realtime-and-availability",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 43
+      },
+      {
+        "id": "search-01",
+        "module": "search",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 22
+      },
+      {
+        "id": "search-02",
+        "module": "search",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 54
+      },
+      {
+        "id": "support-01",
+        "module": "support",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 42
+      },
+      {
+        "id": "startup-01",
+        "module": "startup",
+        "status": "PASS",
+        "error": "",
+        "durationMs": 0
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "originalRunnerExit": {
+        "code": 1,
+        "signal": null
+      }
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-search-01",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-SRCH-01"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-SRCH-01",
+        "module": "SRCH",
+        "status": "PASS",
+        "durationMs": 728,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-search-02",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-SRCH-02"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-SRCH-02",
+        "module": "SRCH",
+        "status": "PASS",
+        "durationMs": 291,
+        "prerequisiteSeed": "51 matching text roots and 51 matching document attachments inserted directly with deterministic timestamps, plus two records in an archivable channel",
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-search-03",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-SRCH-03"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-SRCH-03",
+        "module": "SRCH",
+        "status": "PASS",
+        "durationMs": 369,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-social-01",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-SOC-01"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-SOC-01",
+        "module": "SOC",
+        "status": "PASS",
+        "durationMs": 905,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-social-02",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-SOC-02"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-SOC-02",
+        "module": "SOC",
+        "status": "PASS",
+        "durationMs": 382,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-social-03",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-SOC-03"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-SOC-03",
+        "module": "SOC",
+        "status": "PASS",
+        "durationMs": 490,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-social-04",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-SOC-04"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-SOC-04",
+        "module": "SOC",
+        "status": "PASS",
+        "durationMs": 335,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-social-05",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-SOC-05"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-SOC-05",
+        "module": "SOC",
+        "status": "PASS",
+        "durationMs": 601,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-spaces-01",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-SPC-01"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-SPC-01",
+        "module": "SPC",
+        "status": "PASS",
+        "durationMs": 553,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-spaces-02",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-SPC-02"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-SPC-02",
+        "module": "SPC",
+        "status": "PASS",
+        "durationMs": 569,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-spaces-03",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-SPC-03"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-SPC-03",
+        "module": "SPC",
+        "status": "PASS",
+        "durationMs": 446,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-spaces-04",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-SPC-04"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-SPC-04",
+        "module": "SPC",
+        "status": "PASS",
+        "durationMs": 508,
+        "prerequisiteSeed": "C space role promoted to admin directly; no promotion route exists",
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-spaces-05",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-SPC-05"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-SPC-05",
+        "module": "SPC",
+        "status": "PASS",
+        "durationMs": 1050,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-spaces-06",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-SPC-06"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-SPC-06",
+        "module": "SPC",
+        "status": "PASS",
+        "durationMs": 5212,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-support",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-SUP-01",
+      "FR-SUP-02",
+      "FR-SUP-03"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 3,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-SUP-01",
+        "module": "SUP",
+        "status": "PASS",
+        "durationMs": 503,
+        "error": ""
+      },
+      {
+        "id": "FR-SUP-02",
+        "module": "SUP",
+        "status": "PASS",
+        "durationMs": 30,
+        "error": ""
+      },
+      {
+        "id": "FR-SUP-03",
+        "module": "SUP",
+        "status": "PASS",
+        "durationMs": 1109,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-threads-01",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-THR-01"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-THR-01",
+        "module": "THR",
+        "status": "PASS",
+        "durationMs": 831,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-threads-02",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-THR-02"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-THR-02",
+        "module": "THR",
+        "status": "PASS",
+        "durationMs": 431,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-threads-03",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-THR-03"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-THR-03",
+        "module": "THR",
+        "status": "PASS",
+        "durationMs": 259,
+        "prerequisiteSeed": "41 active thread roots and one archived-channel root inserted directly with distinct updatedAt values to isolate Needl selection",
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  },
+  {
+    "schemaVersion": 1,
+    "scope": "backend-subset-threads-04",
+    "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "selectedIds": [
+      "FR-THR-04"
+    ],
+    "complete": true,
+    "success": true,
+    "tally": {
+      "PASS": 1,
+      "FAIL": 0,
+      "ERROR": 0,
+      "BLOCKED": 0,
+      "NEEDS_DECISION": 0,
+      "SKIP": 0
+    },
+    "results": [
+      {
+        "id": "FR-THR-04",
+        "module": "THR",
+        "status": "PASS",
+        "durationMs": 462,
+        "error": ""
+      }
+    ],
+    "cleanup": {
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    "provenance": {
+      "status": "PASS",
+      "sourceKind": "local-fork-checkout",
+      "targetSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+      "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999"
+    }
+  }
+]

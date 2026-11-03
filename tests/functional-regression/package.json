@@ -8,7 +8,8 @@
   },
   "scripts": {
     "validate": "node scripts/validate-catalog.mjs",
-    "test": "node src/runner.mjs --self-check",
+    "test": "node src/runner.mjs --self-check && npm run contracts",
+    "contracts": "node --test scripts/ci-contracts.test.mjs scripts/device-contracts.test.mjs scripts/fixtures.test.mjs scripts/report-local-catalog.test.mjs",
     "smoke": "node src/runner.mjs --smoke",
     "sanity": "node src/sanity-adapter.mjs"
   }

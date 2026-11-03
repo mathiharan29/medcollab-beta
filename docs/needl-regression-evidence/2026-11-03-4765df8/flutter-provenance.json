@@ -1,0 +1,13 @@
+{
+  "inputSha256": "6382d5b3bc654e081b04b1593d535336dc380815a870bba588a5f8c21552f9bf",
+  "harnessSha": "4765df8b89912dcb48f377fc184f83041f0decc0",
+  "source": {
+    "sha": "4765df8b89912dcb48f377fc184f83041f0decc0",
+    "kind": "commit",
+    "verified": true
+  },
+  "sourceKind": "commit",
+  "baselineApplicationSha": "4c01dc24247aa95a73e286a2b42c7f2f81257c7a",
+  "flutter": "3.29.3",
+  "encodingNormalization": "PowerShell UTF-16 stdout losslessly decoded to UTF-8"
+}

@@ -1,0 +1,12 @@
+{
+  "source": {
+    "sha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+    "kind": "commit",
+    "verified": true
+  },
+  "harnessSha": "345b6797ab4fb26979a5958836cb2b76f1254999",
+  "sourceKind": "commit",
+  "baselineApplicationSha": "4c01dc24247aa95a73e286a2b42c7f2f81257c7a",
+  "flutterSdk": "3.29.3",
+  "inputSha256": "1771ef44d8797d2974139f0b3efb4cd54249ce6c2fbef464355f3f1e4524d7d1"
+}

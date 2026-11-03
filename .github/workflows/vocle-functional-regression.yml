@@ -1,6 +1,7 @@
 name: Vocle Functional Regression
 
 on:
+  workflow_dispatch:
   pull_request:
     branches: [master]
     types: [opened, reopened, ready_for_review, synchronize]
@@ -23,19 +24,27 @@ jobs:
       scope: ${{ steps.target.outputs.scope }}
       fingerprint: ${{ steps.fingerprint.outputs.value }}
     steps:
-      - name: Validate supported PR context
+      - name: Validate supported PR or manual context
         working-directory: ${{ github.workspace }}
         shell: bash
         env:
           QA_REPOSITORY: ${{ github.repository }}
           QA_EVENT: ${{ github.event_name }}
+          QA_REF: ${{ github.ref }}
+          QA_SHA: ${{ github.sha }}
           QA_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
           QA_BASE_REF: ${{ github.event.pull_request.base.ref }}
         run: |
+          set -euo pipefail
           test "$QA_REPOSITORY" = mathiharan29/medcollab-beta
-          test "$QA_EVENT" = pull_request
-          test "$QA_HEAD_REPOSITORY" = mathiharan29/medcollab-beta
-          test "$QA_BASE_REF" = master
+          if [ "$QA_EVENT" = pull_request ]; then
+            test "$QA_HEAD_REPOSITORY" = mathiharan29/medcollab-beta
+            test "$QA_BASE_REF" = master
+          else
+            test "$QA_EVENT" = workflow_dispatch
+            [[ "$QA_REF" == refs/heads/?* ]]
+            [[ "$QA_SHA" =~ ^[0-9a-f]{40}$ ]]
+          fi
       - name: Check out exact PR harness revision
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -71,19 +80,27 @@ jobs:
       report_ready: ${{ steps.report.outputs.report_ready }}
       artifact_digest: ${{ steps.upload.outputs.artifact-digest }}
     steps:
-      - name: Validate supported PR context
+      - name: Validate supported PR or manual context
         working-directory: ${{ github.workspace }}
         shell: bash
         env:
           QA_REPOSITORY: ${{ github.repository }}
           QA_EVENT: ${{ github.event_name }}
+          QA_REF: ${{ github.ref }}
+          QA_SHA: ${{ github.sha }}
           QA_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
           QA_BASE_REF: ${{ github.event.pull_request.base.ref }}
         run: |
+          set -euo pipefail
           test "$QA_REPOSITORY" = mathiharan29/medcollab-beta
-          test "$QA_EVENT" = pull_request
-          test "$QA_HEAD_REPOSITORY" = mathiharan29/medcollab-beta
-          test "$QA_BASE_REF" = master
+          if [ "$QA_EVENT" = pull_request ]; then
+            test "$QA_HEAD_REPOSITORY" = mathiharan29/medcollab-beta
+            test "$QA_BASE_REF" = master
+          else
+            test "$QA_EVENT" = workflow_dispatch
+            [[ "$QA_REF" == refs/heads/?* ]]
+            [[ "$QA_SHA" =~ ^[0-9a-f]{40}$ ]]
+          fi
       - name: Check out exact harness revision
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -198,21 +215,30 @@ jobs:
     timeout-minutes: 30
     env:
       TZ: Asia/Kolkata
+      VOCLE_TARGET_KIND: ${{ needs.detect.outputs.targetKind }}
       VOCLE_FLUTTER_OUTPUT: ${{ github.workspace }}/vocle-flutter-output
     steps:
-      - name: Validate supported PR context
+      - name: Validate supported PR or manual context
         working-directory: ${{ github.workspace }}
         shell: bash
         env:
           QA_REPOSITORY: ${{ github.repository }}
           QA_EVENT: ${{ github.event_name }}
+          QA_REF: ${{ github.ref }}
+          QA_SHA: ${{ github.sha }}
           QA_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
           QA_BASE_REF: ${{ github.event.pull_request.base.ref }}
         run: |
+          set -euo pipefail
           test "$QA_REPOSITORY" = mathiharan29/medcollab-beta
-          test "$QA_EVENT" = pull_request
-          test "$QA_HEAD_REPOSITORY" = mathiharan29/medcollab-beta
-          test "$QA_BASE_REF" = master
+          if [ "$QA_EVENT" = pull_request ]; then
+            test "$QA_HEAD_REPOSITORY" = mathiharan29/medcollab-beta
+            test "$QA_BASE_REF" = master
+          else
+            test "$QA_EVENT" = workflow_dispatch
+            [[ "$QA_REF" == refs/heads/?* ]]
+            [[ "$QA_SHA" =~ ^[0-9a-f]{40}$ ]]
+          fi
       - name: Check out exact PR revision
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -225,7 +251,7 @@ jobs:
           set -euo pipefail
           mkdir -p "$VOCLE_FLUTTER_OUTPUT"
           test "$(git rev-parse HEAD)" = "$TARGET_SHA"
-          printf '{"targetKind":"pr-head","targetSha":"%s","harnessSha":"%s","timezone":"%s"}\n' "$TARGET_SHA" "$(git rev-parse HEAD)" "$TZ" > "$VOCLE_FLUTTER_OUTPUT/provenance.json"
+          printf '{"targetKind":"%s","targetSha":"%s","harnessSha":"%s","timezone":"%s"}\n' "$VOCLE_TARGET_KIND" "$TARGET_SHA" "$(git rev-parse HEAD)" "$TZ" > "$VOCLE_FLUTTER_OUTPUT/provenance.json"
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '22'
@@ -276,7 +302,7 @@ jobs:
           if (sha !== process.env.TARGET_SHA || sha !== process.env.HARNESS_SHA) throw new Error('Flutter application/harness checkout mismatch');
           const output = process.env.VOCLE_FLUTTER_OUTPUT;
           writeFileSync(output + '/catalog-provenance.json', JSON.stringify({ source: { sha, kind: 'commit', verified: true },
-            harnessSha: sha, sourceKind: 'pr-head', inputSha256: createHash('sha256').update(readFileSync(output + '/catalog.ndjson')).digest('hex') }));
+            harnessSha: sha, sourceKind: process.env.VOCLE_TARGET_KIND, inputSha256: createHash('sha256').update(readFileSync(output + '/catalog.ndjson')).digest('hex') }));
           NODE
             if ! node tests/functional-regression/scripts/aggregate-flutter.mjs "$VOCLE_FLUTTER_OUTPUT/catalog.ndjson" "$VOCLE_FLUTTER_OUTPUT/report" "$VOCLE_FLUTTER_OUTPUT/catalog-provenance.json" > "$VOCLE_FLUTTER_OUTPUT/aggregation.log" 2>&1; then
               cat "$VOCLE_FLUTTER_OUTPUT/aggregation.log" >> "$GITHUB_STEP_SUMMARY"
@@ -289,14 +315,14 @@ jobs:
           fi
           cat "$VOCLE_FLUTTER_OUTPUT/report.md" >> "$GITHUB_STEP_SUMMARY"
           node tests/developer-workflow/qa.mjs "$VOCLE_FLUTTER_OUTPUT/report.json" "$VOCLE_FLUTTER_OUTPUT"
-          node -e 'const r=require(process.argv[1]); if (!r.complete || r.implementedAndExecuted !== 32) process.exit(1)' "$VOCLE_FLUTTER_OUTPUT/report.json"
+          node -e 'const r=require(process.argv[1]); if (!r.complete || r.implementedAndExecuted !== 56) process.exit(1)' "$VOCLE_FLUTTER_OUTPUT/report.json"
           echo "catalog_exit=${CATALOG_EXIT:-missing}; retained_exit=${RETAINED_EXIT:-missing}" >> "$GITHUB_STEP_SUMMARY"
       - name: Generate detailed offline Flutter dashboard even after setup failure
         if: always()
         env:
           GITHUB_TOKEN: ${{ github.token }}
           VOCLE_TARGET_SHA: ${{ needs.detect.outputs.targetSha }}
-          VOCLE_TARGET_KIND: pr-head
+          VOCLE_TARGET_KIND: ${{ needs.detect.outputs.targetKind }}
           VOCLE_HARNESS_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: >-
           node tests/reporting/report.mjs
@@ -329,7 +355,7 @@ jobs:
           test "$ARTIFACT_RESULT" = success
           test "$CATALOG_EXIT" = 0
           test "$RETAINED_EXIT" = 0
-          node -e 'const r=require(process.argv[1]); if (!r.fullSuccess || !r.complete || r.counts.PASS !== 32) process.exit(1)' "$VOCLE_FLUTTER_OUTPUT/report.json"
+          node -e 'const r=require(process.argv[1]); if (!r.fullSuccess || !r.complete || r.counts.PASS !== 56) process.exit(1)' "$VOCLE_FLUTTER_OUTPUT/report.json"
 
   summary:
     name: Summary
@@ -337,19 +363,27 @@ jobs:
     if: always()
     runs-on: ubuntu-24.04
     steps:
-      - name: Validate supported PR context
+      - name: Validate supported PR or manual context
         working-directory: ${{ github.workspace }}
         shell: bash
         env:
           QA_REPOSITORY: ${{ github.repository }}
           QA_EVENT: ${{ github.event_name }}
+          QA_REF: ${{ github.ref }}
+          QA_SHA: ${{ github.sha }}
           QA_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
           QA_BASE_REF: ${{ github.event.pull_request.base.ref }}
         run: |
+          set -euo pipefail
           test "$QA_REPOSITORY" = mathiharan29/medcollab-beta
-          test "$QA_EVENT" = pull_request
-          test "$QA_HEAD_REPOSITORY" = mathiharan29/medcollab-beta
-          test "$QA_BASE_REF" = master
+          if [ "$QA_EVENT" = pull_request ]; then
+            test "$QA_HEAD_REPOSITORY" = mathiharan29/medcollab-beta
+            test "$QA_BASE_REF" = master
+          else
+            test "$QA_EVENT" = workflow_dispatch
+            [[ "$QA_REF" == refs/heads/?* ]]
+            [[ "$QA_SHA" =~ ^[0-9a-f]{40}$ ]]
+          fi
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -392,7 +426,7 @@ jobs:
           EXECUTE_RESULT: ${{ needs.execute.result }}
           FLUTTER_RESULT: ${{ needs.flutter.result }}
         run: |
-          echo 'Functional catalog: 187 total / 179 hosted / 8 LOCAL_ONLY' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Functional catalog: 241 total / 233 hosted / 8 LOCAL_ONLY' >> "$GITHUB_STEP_SUMMARY"
           test "$DETECT_RESULT" = success
           test "$EXECUTE_RESULT" = success
           test "$FLUTTER_RESULT" = success

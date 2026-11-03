@@ -1,0 +1,1 @@
+PASS: actual partial Android evidence rejected; no complete-catalog report written.

@@ -1,0 +1,421 @@
+{
+  "sourceSha": "4765df8b89912dcb48f377fc184f83041f0decc0",
+  "harnessSha": "4765df8b89912dcb48f377fc184f83041f0decc0",
+  "baselineApplicationSha": "4c01dc24247aa95a73e286a2b42c7f2f81257c7a",
+  "scope": "needl-functional-subset",
+  "selected": 54,
+  "counts": {
+    "PASS": 48,
+    "FAIL": 5,
+    "ERROR": 0,
+    "BLOCKED": 0,
+    "NEEDS_DECISION": 1,
+    "SKIP": 0
+  },
+  "fullFlutterCounts": {
+    "PASS": 53,
+    "FAIL": 3,
+    "ERROR": 0,
+    "BLOCKED": 0,
+    "NEEDS_DECISION": 0,
+    "SKIP": 0
+  },
+  "backendCleanup": [
+    {
+      "selectedIds": [
+        "FR-NDL-01"
+      ],
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    {
+      "selectedIds": [
+        "FR-NDL-02"
+      ],
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    {
+      "selectedIds": [
+        "FR-NDL-03"
+      ],
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    {
+      "selectedIds": [
+        "FR-NDL-04"
+      ],
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    {
+      "selectedIds": [
+        "FR-NDL-05"
+      ],
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    {
+      "selectedIds": [
+        "FR-NDL-06"
+      ],
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    {
+      "selectedIds": [
+        "FR-NDL-07"
+      ],
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    {
+      "selectedIds": [
+        "FR-NDL-08"
+      ],
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    {
+      "selectedIds": [
+        "FR-NDL-09"
+      ],
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    {
+      "selectedIds": [
+        "FR-NDL-10"
+      ],
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    {
+      "selectedIds": [
+        "FR-NDL-11"
+      ],
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    {
+      "selectedIds": [
+        "FR-NDL-12"
+      ],
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    {
+      "selectedIds": [
+        "FR-NDL-13"
+      ],
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    {
+      "selectedIds": [
+        "FR-NDL-14"
+      ],
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    {
+      "selectedIds": [
+        "FR-NDL-15"
+      ],
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    {
+      "selectedIds": [
+        "FR-NDL-16"
+      ],
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    {
+      "selectedIds": [
+        "FR-NDL-17"
+      ],
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    {
+      "selectedIds": [
+        "FR-NDL-18"
+      ],
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    {
+      "selectedIds": [
+        "FR-NDL-19"
+      ],
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    {
+      "selectedIds": [
+        "FR-NDL-20"
+      ],
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    {
+      "selectedIds": [
+        "FR-NDL-21"
+      ],
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    {
+      "selectedIds": [
+        "FR-NDL-22"
+      ],
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    {
+      "selectedIds": [
+        "FR-NDL-23"
+      ],
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    {
+      "selectedIds": [
+        "FR-NDL-24"
+      ],
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    {
+      "selectedIds": [
+        "FR-NDL-25"
+      ],
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    {
+      "selectedIds": [
+        "FR-NDL-26"
+      ],
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    {
+      "selectedIds": [
+        "FR-NDL-27"
+      ],
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    {
+      "selectedIds": [
+        "FR-NDL-28"
+      ],
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    {
+      "selectedIds": [
+        "FR-NDL-29"
+      ],
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    },
+    {
+      "selectedIds": [
+        "FR-NDL-30"
+      ],
+      "status": "PASS",
+      "backendStopped": true,
+      "mongoStopped": true,
+      "runtimeRemoved": true
+    }
+  ],
+  "inputs": [
+    {
+      "path": "C:\\Users\\delll\\AndroidStudioProjects\\Vocle\\vocle-needl-regression\\test-results\\needl-backend-sealed\\needl-01-e4f3519c-f2af-4648-8c4c-3769cb83a9af\\results.json",
+      "sha256": "ebad96744befa574af191f33089dad75d31fcc7210bbc901f74731c56fa805ce"
+    },
+    {
+      "path": "C:\\Users\\delll\\AndroidStudioProjects\\Vocle\\vocle-needl-regression\\test-results\\needl-backend-sealed\\needl-02-e4f3519c-f2af-4648-8c4c-3769cb83a9af\\results.json",
+      "sha256": "f76879347f04154aeb6a4d26d1faef2f3556a9df9a1e37632439ac0019225153"
+    },
+    {
+      "path": "C:\\Users\\delll\\AndroidStudioProjects\\Vocle\\vocle-needl-regression\\test-results\\needl-backend-sealed\\needl-03-e4f3519c-f2af-4648-8c4c-3769cb83a9af\\results.json",
+      "sha256": "291a0ff1bd50d2474e605797dffc21397768e3ff358a8fd9065c3d8a4ca702b8"
+    },
+    {
+      "path": "C:\\Users\\delll\\AndroidStudioProjects\\Vocle\\vocle-needl-regression\\test-results\\needl-backend-sealed\\needl-04-e4f3519c-f2af-4648-8c4c-3769cb83a9af\\results.json",
+      "sha256": "dfa7b72c6fc6a66930b3976146f3d2f60dcb5d4b1621a54d614cc26cf04dfa73"
+    },
+    {
+      "path": "C:\\Users\\delll\\AndroidStudioProjects\\Vocle\\vocle-needl-regression\\test-results\\needl-backend-sealed\\needl-05-e4f3519c-f2af-4648-8c4c-3769cb83a9af\\results.json",
+      "sha256": "6be6c7b9a0caf2b97856a49d28b493a02de53d6ae79e83ba7cadb9ab934caa8e"
+    },
+    {
+      "path": "C:\\Users\\delll\\AndroidStudioProjects\\Vocle\\vocle-needl-regression\\test-results\\needl-backend-sealed\\needl-06-e4f3519c-f2af-4648-8c4c-3769cb83a9af\\results.json",
+      "sha256": "dca3964935e5a56ea11e3376246e31410b2710e4e7bf349aab9ad24da336edc1"
+    },
+    {
+      "path": "C:\\Users\\delll\\AndroidStudioProjects\\Vocle\\vocle-needl-regression\\test-results\\needl-backend-sealed\\needl-07-e4f3519c-f2af-4648-8c4c-3769cb83a9af\\results.json",
+      "sha256": "d6a5ebfd8ad9320f83b003de6b01d822d416d766b781084adfc04ec3fab36c17"
+    },
+    {
+      "path": "C:\\Users\\delll\\AndroidStudioProjects\\Vocle\\vocle-needl-regression\\test-results\\needl-backend-sealed\\needl-08-e4f3519c-f2af-4648-8c4c-3769cb83a9af\\results.json",
+      "sha256": "267aae97ae51c0337fe5865665d071bb964acf61ba05b46eb3592df72a608a5e"
+    },
+    {
+      "path": "C:\\Users\\delll\\AndroidStudioProjects\\Vocle\\vocle-needl-regression\\test-results\\needl-backend-sealed\\needl-09-e4f3519c-f2af-4648-8c4c-3769cb83a9af\\results.json",
+      "sha256": "f1ac4bf02a65f34f55f18ac7af5f6b80cc3818f7bac9a654c7dcafc18690a745"
+    },
+    {
+      "path": "C:\\Users\\delll\\AndroidStudioProjects\\Vocle\\vocle-needl-regression\\test-results\\needl-backend-sealed\\needl-10-e4f3519c-f2af-4648-8c4c-3769cb83a9af\\results.json",
+      "sha256": "cf2113b1a9d0ea019122fe575a71569ae05420ecbf3e1707cafd73ffe467c1b0"
+    },
+    {
+      "path": "C:\\Users\\delll\\AndroidStudioProjects\\Vocle\\vocle-needl-regression\\test-results\\needl-backend-sealed\\needl-11-e4f3519c-f2af-4648-8c4c-3769cb83a9af\\results.json",
+      "sha256": "1b6680ad91eb6deed9e08efe5a37480d72704f168df511254a553689c7129901"
+    },
+    {
+      "path": "C:\\Users\\delll\\AndroidStudioProjects\\Vocle\\vocle-needl-regression\\test-results\\needl-backend-sealed\\needl-12-e4f3519c-f2af-4648-8c4c-3769cb83a9af\\results.json",
+      "sha256": "e12735b70face510b8389d443467bf07205577bf0373c32a82358f5fe0a8a585"
+    },
+    {
+      "path": "C:\\Users\\delll\\AndroidStudioProjects\\Vocle\\vocle-needl-regression\\test-results\\needl-backend-sealed\\needl-13-e4f3519c-f2af-4648-8c4c-3769cb83a9af\\results.json",
+      "sha256": "e4bca578f644c105013680458204713c58b470f07e7eed827d42cba68f702286"
+    },
+    {
+      "path": "C:\\Users\\delll\\AndroidStudioProjects\\Vocle\\vocle-needl-regression\\test-results\\needl-backend-sealed\\needl-14-e4f3519c-f2af-4648-8c4c-3769cb83a9af\\results.json",
+      "sha256": "b3bb55549b492b454448dc74d7a9ad87386eb03e7469126f5c6176106f25689d"
+    },
+    {
+      "path": "C:\\Users\\delll\\AndroidStudioProjects\\Vocle\\vocle-needl-regression\\test-results\\needl-backend-sealed\\needl-15-e4f3519c-f2af-4648-8c4c-3769cb83a9af\\results.json",
+      "sha256": "eb4040f6c14f3381cf2a1bf9179ea7c9c5a7c1106fd627f8449cceaa7d569686"
+    },
+    {
+      "path": "C:\\Users\\delll\\AndroidStudioProjects\\Vocle\\vocle-needl-regression\\test-results\\needl-backend-sealed\\needl-16-e4f3519c-f2af-4648-8c4c-3769cb83a9af\\results.json",
+      "sha256": "fc19ca4ea2e106bfefb3cf611691abdc93f3471e666b445901622c5a3eb7f7fd"
+    },
+    {
+      "path": "C:\\Users\\delll\\AndroidStudioProjects\\Vocle\\vocle-needl-regression\\test-results\\needl-backend-sealed\\needl-17-e4f3519c-f2af-4648-8c4c-3769cb83a9af\\results.json",
+      "sha256": "bfa5ac6f1b5070bba8f5db5e7bc85b6988702bb820fd57c6b77da008e6811ddf"
+    },
+    {
+      "path": "C:\\Users\\delll\\AndroidStudioProjects\\Vocle\\vocle-needl-regression\\test-results\\needl-backend-sealed\\needl-18-e4f3519c-f2af-4648-8c4c-3769cb83a9af\\results.json",
+      "sha256": "c565a1a14f0d92b09744ce30c0510af51032db7de45e01937f0ce775a70b8cb9"
+    },
+    {
+      "path": "C:\\Users\\delll\\AndroidStudioProjects\\Vocle\\vocle-needl-regression\\test-results\\needl-backend-sealed\\needl-19-e4f3519c-f2af-4648-8c4c-3769cb83a9af\\results.json",
+      "sha256": "d158afe9c2ce32e3780d52d9784ce2afd07283f36d29524197dc8653bb396105"
+    },
+    {
+      "path": "C:\\Users\\delll\\AndroidStudioProjects\\Vocle\\vocle-needl-regression\\test-results\\needl-backend-sealed\\needl-20-e4f3519c-f2af-4648-8c4c-3769cb83a9af\\results.json",
+      "sha256": "cd119c1b4435e81ca17f1bd58c81dbfe4cc8d24424b8a664d2ea10adf9cae809"
+    },
+    {
+      "path": "C:\\Users\\delll\\AndroidStudioProjects\\Vocle\\vocle-needl-regression\\test-results\\needl-backend-sealed\\needl-21-e4f3519c-f2af-4648-8c4c-3769cb83a9af\\results.json",
+      "sha256": "4f52b326caac807ecd7f66da8b1ca1b013374f8799d656b520ae7302f40ad74c"
+    },
+    {
+      "path": "C:\\Users\\delll\\AndroidStudioProjects\\Vocle\\vocle-needl-regression\\test-results\\needl-backend-sealed\\needl-22-e4f3519c-f2af-4648-8c4c-3769cb83a9af\\results.json",
+      "sha256": "2d5539569ce66ca23e10d77bc5fdbc1a014a5d258c9b27d5319b8c685bd5ccd3"
+    },
+    {
+      "path": "C:\\Users\\delll\\AndroidStudioProjects\\Vocle\\vocle-needl-regression\\test-results\\needl-backend-sealed\\needl-23-e4f3519c-f2af-4648-8c4c-3769cb83a9af\\results.json",
+      "sha256": "c6f90bcc1f48bf54ce87179457eac1f5dcdcd909c1bb8d91412aa0d98b9336ab"
+    },
+    {
+      "path": "C:\\Users\\delll\\AndroidStudioProjects\\Vocle\\vocle-needl-regression\\test-results\\needl-backend-sealed\\needl-24-e4f3519c-f2af-4648-8c4c-3769cb83a9af\\results.json",
+      "sha256": "4cbab7ede7a9f1af7a0ce331d5a9faab9df29d01ab97cfa5a64afc0a4b210d02"
+    },
+    {
+      "path": "C:\\Users\\delll\\AndroidStudioProjects\\Vocle\\vocle-needl-regression\\test-results\\needl-backend-sealed\\needl-25-e4f3519c-f2af-4648-8c4c-3769cb83a9af\\results.json",
+      "sha256": "979bd30129656499303ca2a6033950420d2564aaf9b63455d78b41f956709ce9"
+    },
+    {
+      "path": "C:\\Users\\delll\\AndroidStudioProjects\\Vocle\\vocle-needl-regression\\test-results\\needl-backend-sealed\\needl-26-e4f3519c-f2af-4648-8c4c-3769cb83a9af\\results.json",
+      "sha256": "a13801c6bb47de592787fb12dfa439dc91298685f0ac7b656660f91833fb834c"
+    },
+    {
+      "path": "C:\\Users\\delll\\AndroidStudioProjects\\Vocle\\vocle-needl-regression\\test-results\\needl-backend-sealed\\needl-27-e4f3519c-f2af-4648-8c4c-3769cb83a9af\\results.json",
+      "sha256": "74d211aa0fa36c5a10802553837d5896881a99378f23cd7bb557dd4fa3632879"
+    },
+    {
+      "path": "C:\\Users\\delll\\AndroidStudioProjects\\Vocle\\vocle-needl-regression\\test-results\\needl-backend-sealed\\needl-28-e4f3519c-f2af-4648-8c4c-3769cb83a9af\\results.json",
+      "sha256": "048e990561e740e13643d41904b6b2fbcc60b20bb7652d8ab2c57e8e19c23be5"
+    },
+    {
+      "path": "C:\\Users\\delll\\AndroidStudioProjects\\Vocle\\vocle-needl-regression\\test-results\\needl-backend-sealed\\needl-29-e4f3519c-f2af-4648-8c4c-3769cb83a9af\\results.json",
+      "sha256": "7cb81e5bed6fae6532d00a9936b876c7e3bcd47dd405341cf457db37a64ee7b5"
+    },
+    {
+      "path": "C:\\Users\\delll\\AndroidStudioProjects\\Vocle\\vocle-needl-regression\\test-results\\needl-backend-sealed\\needl-30-e4f3519c-f2af-4648-8c4c-3769cb83a9af\\results.json",
+      "sha256": "a37f5ae582a97446251ea88649b72019e1b27588d90472616b2423dac761ce59"
+    },
+    {
+      "path": "C:\\Users\\delll\\AndroidStudioProjects\\Vocle\\vocle-needl-regression\\test-results\\needl-flutter\\report-sealed.json",
+      "sha256": "c5ee0f133d7298eea0a83ff54e62773c1f78d6761ffe6b9a81c5c1fcade79ae2"
+    }
+  ]
+}

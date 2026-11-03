@@ -129,7 +129,7 @@ test('coverage requires registered new IDs, security justification and trusted e
 test('baseline catalog and workflow integration remain connected to exact candidate and isolation', async () => {
   const root = join(import.meta.dirname, '../..');
   const catalog = JSON.parse(await readFile(join(root, 'tests/functional-regression/catalog.json')));
-  assert.equal(catalog.cases.length, 187);
+  assert.equal(catalog.cases.length, 241);
   const workflow = await readFile(join(root, '.github/workflows/vocle-functional-regression.yml'), 'utf8');
   assert(!workflow.includes('paths:'));
   assert(workflow.includes('tests/developer-workflow/qa.mjs'));

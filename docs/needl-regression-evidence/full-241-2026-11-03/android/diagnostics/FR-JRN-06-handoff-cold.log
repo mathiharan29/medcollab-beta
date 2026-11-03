@@ -1,0 +1,89 @@
+Running Gradle task 'assembleDebug'...                          
+Warning: The plugin file_picker requires Android SDK version 36 or higher.
+For more information about build configuration, see https://flutter.dev/to/review-gradle-config.
+Your project is configured to compile against Android SDK 35, but the following plugin(s) require to be compiled against a higher Android SDK version:
+- file_picker compiles against Android SDK 36
+Fix this issue by compiling against the highest Android SDK version (they are backward compatible).
+Add the following to C:\Users\delll\AppData\Local\Temp\vocle-device-sjUCDD\medcollab-app\android\app\build.gradle.kts:
+
+    android {
+        compileSdk = 36
+        ...
+    }
+
+Running Gradle task 'assembleDebug'...                             41.0s
+√ Built build\app\outputs\flutter-apk\app-debug.apk
+Installing build\app\outputs\flutter-apk\app-debug.apk...        2,559ms
+I/flutter (10398): The Dart VM service is listening on http://127.0.0.1:36573/[redacted-vm-service]/
+D/FLTFireContextHolder(10398): received application context.
+I/ocle.regression(10398): hiddenapi: Accessing hidden method Landroid/view/accessibility/AccessibilityNodeInfo;->getSourceNodeId()J (runtime_flags=0, domain=platform, api=unsupported,test-api) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=35) using reflection: allowed
+I/ocle.regression(10398): hiddenapi: Accessing hidden method Landroid/view/accessibility/AccessibilityRecord;->getSourceNodeId()J (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=35) using reflection: allowed
+I/ocle.regression(10398): hiddenapi: Accessing hidden field Landroid/view/accessibility/AccessibilityNodeInfo;->mChildNodeIds:Landroid/util/LongArray; (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=35) using reflection: allowed
+I/ocle.regression(10398): hiddenapi: Accessing hidden method Landroid/util/LongArray;->get(I)J (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=35) using reflection: allowed
+D/CompatChangeReporter(10398): Compat change id reported: 309578419; UID 10234; state: ENABLED
+D/CompatChangeReporter(10398): Compat change id reported: 349153669; UID 10234; state: ENABLED
+W/HWUI    (10398): Unknown dataspace 0
+I/WindowExtensionsImpl(10398): Initializing Window Extensions, vendor API level=9, activity embedding enabled=true
+VMServiceFlutterDriver: Connecting to Flutter application at http://127.0.0.1:2634/[redacted-vm-service]/
+D/VRI[MainActivity](10398): WindowInsets changed: 1080x1920 statusBars:[0,63,0,0] navigationBars:[0,0,0,63] mandatorySystemGestures:[0,63,0,84] 
+D/WindowOnBackDispatcher(10398): setTopOnBackInvokedCallback (unwrapped): android.view.ViewRootImpl$$ExternalSyntheticLambda12@6d53f12
+VMServiceFlutterDriver: Isolate found with number: 180106344450975
+E/libEGL  (10398): called unimplemented OpenGL ES API
+I/ocle.regression(10398): Compiler allocated 5087KB to compile void android.view.ViewRootImpl.performTraversals()
+VMServiceFlutterDriver: Isolate 180106344450975 is runnable.
+VMServiceFlutterDriver: Isolate is paused at start.
+VMServiceFlutterDriver: Attempting to resume isolate
+I/Choreographer(10398): Skipped 64 frames!  The application may be doing too much work on its main thread.
+I/flutter (10398): 00:00 +0: FR-JRN-06: Android handoff-cold
+VMServiceFlutterDriver: Connected to Flutter application.
+D/ProfileInstaller(10398): Installing profile for com.vocle.regression
+E/libEGL  (10398): called unimplemented OpenGL ES API
+D/WindowLayoutComponentImpl(10398): Register WindowLayoutInfoListener on Context=com.example.medcollab_app.MainActivity@bef86e3, of which baseContext=android.app.ContextImpl@d6790c2
+I/Choreographer(10398): Skipped 49 frames!  The application may be doing too much work on its main thread.
+I/HWUI    (10398): Using FreeType backend (prop=Auto)
+I/HWUI    (10398): Davey! duration=997ms; Flags=1, FrameTimelineVsyncId=[SIX-DIGIT CODE REDACTED], IntendedVsync=1496916039612, Vsync=1497732706246, InputEventId=0, HandleInputStart=1497741553900, AnimationStart=1497741580100, PerformTraversalsStart=1497741616200, DrawStart=1497746495300, FrameDeadline=1496932706278, FrameStartTime=1497740237700, FrameInterval=16666666, WorkloadTarget=16666666, SyncQueued=1497747369400, SyncStart=1497749129600, IssueDrawCommandsStart=1497749379000, SwapBuffers=1497780291100, FrameCompleted=1497915714000, DequeueBufferDuration=4585100, QueueBufferDuration=1315800, GpuCompleted=1497910967100, SwapBuffersCompleted=1497915714000, DisplayPresentTime=946, CommandSubmissionCompleted=1497780291100, 
+D/InsetsController(10398): hide(ime())
+I/ImeTracker(10398): com.vocle.regression:addb51f8: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+W/ocle.regression(10398): userfaultfd: MOVE ioctl seems unsupported: Try again
+V/Activity(10398): No requestable permission in the request.
+E/libEGL  (10398): called unimplemented OpenGL ES API
+E/libEGL  (10398): called unimplemented OpenGL ES API
+W/WindowOnBackDispatcher(10398): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher(10398): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+I/ocle.regression(10398): Background concurrent mark compact GC freed 1068KB AllocSpace bytes, 39(1404KB) LOS objects, 49% free, 3623KB/7246KB, paused 1.627ms,6.560ms total 77.634ms
+W/WindowOnBackDispatcher(10398): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher(10398): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+I/ImeTracker(10398): com.vocle.regression:4341cd0b: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+D/InsetsController(10398): show(ime())
+D/InsetsController(10398): Setting requestedVisibleTypes to 511 (was 503)
+I/ImeTracker(10398): com.vocle.regression:d0b5f0f1: onRequestShow at ORIGIN_CLIENT reason SHOW_SOFT_INPUT fromUser false
+D/InsetsController(10398): show(ime())
+I/ImeTracker(10398): com.vocle.regression:d0b5f0f1: onCancelled at PHASE_CLIENT_REPORT_REQUESTED_VISIBLE_TYPES
+D/InputConnectionAdaptor(10398): The input method toggled cursor monitoring on
+I/AssistStructure(10398): Flattened final assist data: 636 bytes, containing 1 windows, 4 views
+E/libEGL  (10398): called unimplemented OpenGL ES API
+D/WindowOnBackDispatcher(10398): setTopOnBackInvokedCallback (unwrapped): android.view.ImeBackAnimationController@bd127d7
+I/ImeTracker(10398): com.vocle.regression:1e44b1a4: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT fromUser false
+D/InsetsController(10398): hide(ime())
+D/WindowOnBackDispatcher(10398): setTopOnBackInvokedCallback (unwrapped): android.view.ViewRootImpl$$ExternalSyntheticLambda12@6d53f12
+D/InsetsController(10398): Setting requestedVisibleTypes to 503 (was 511)
+I/ImeTracker(10398): system_server:920ad0f7: onCancelled at PHASE_CLIENT_ON_CONTROLS_CHANGED
+E/libEGL  (10398): called unimplemented OpenGL ES API
+I/ocle.regression(10398): Background young concurrent mark compact GC freed 1578KB AllocSpace bytes, 44(1616KB) LOS objects, 46% free, 3911KB/7246KB, paused 1.387ms,7.359ms total 58.015ms
+V/Activity(10398): No requestable permission in the request.
+I/flutter (10398): FCM: no device token yet
+E/libEGL  (10398): call to OpenGL ES API with no current context (logged once per thread)
+W/WindowOnBackDispatcher(10398): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher(10398): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+E/libEGL  (10398): called unimplemented OpenGL ES API
+I/ocle.regression(10398): Background young concurrent mark compact GC freed 1644KB AllocSpace bytes, 70(2520KB) LOS objects, 37% free, 4919KB/7878KB, paused 4.512ms,3.376ms total 103.844ms
+I/ocle.regression(10398): Background concurrent mark compact GC freed 1253KB AllocSpace bytes, 44(1584KB) LOS objects, 49% free, 3899KB/7798KB, paused 2.802ms,6.482ms total 193.046ms
+I/ocle.regression(10398): Background young concurrent mark compact GC freed 1632KB AllocSpace bytes, 60(2160KB) LOS objects, 49% free, 3955KB/7798KB, paused 5.237ms,5.953ms total 100.627ms
+E/libEGL  (10398): called unimplemented OpenGL ES API
+I/ocle.regression(10398): Background concurrent mark compact GC freed 2445KB AllocSpace bytes, 92(3312KB) LOS objects, 49% free, 5175KB/10MB, paused 2.162ms,16.742ms total 434.718ms
+I/flutter (10398): VOCLE_DEVICE_RECORD {"id":"FR-JRN-06","status":"PASS","executed":true,"phase":"handoff-cold","runId":"3422fdcc-66dc-48ca-8e6a-a1a6626350e5","processId":10398,"durationMs":9832,"evidence":["Host force-stop, injected cold notification, required login, exact patient/assignee, UI acknowledgement, sender event and persisted receipt."]}
+E/libEGL  (10398): called unimplemented OpenGL ES API
+I/flutter (10398): 00:10 +1: (tearDownAll)
+I/flutter (10398): 00:10 +2: All tests passed!
+All tests passed.
+Leaving the application running.

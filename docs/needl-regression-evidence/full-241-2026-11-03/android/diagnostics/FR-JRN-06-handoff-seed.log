@@ -1,0 +1,52 @@
+Running Gradle task 'assembleDebug'...                          
+Warning: The plugin file_picker requires Android SDK version 36 or higher.
+For more information about build configuration, see https://flutter.dev/to/review-gradle-config.
+Your project is configured to compile against Android SDK 35, but the following plugin(s) require to be compiled against a higher Android SDK version:
+- file_picker compiles against Android SDK 36
+Fix this issue by compiling against the highest Android SDK version (they are backward compatible).
+Add the following to C:\Users\delll\AppData\Local\Temp\vocle-device-sjUCDD\medcollab-app\android\app\build.gradle.kts:
+
+    android {
+        compileSdk = 36
+        ...
+    }
+
+Running Gradle task 'assembleDebug'...                             35.8s
+√ Built build\app\outputs\flutter-apk\app-debug.apk
+Installing build\app\outputs\flutter-apk\app-debug.apk...        1,947ms
+D/FLTFireContextHolder(10216): received application context.
+I/ocle.regression(10216): hiddenapi: Accessing hidden method Landroid/view/accessibility/AccessibilityNodeInfo;->getSourceNodeId()J (runtime_flags=0, domain=platform, api=unsupported,test-api) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=35) using reflection: allowed
+I/ocle.regression(10216): hiddenapi: Accessing hidden method Landroid/view/accessibility/AccessibilityRecord;->getSourceNodeId()J (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=35) using reflection: allowed
+I/ocle.regression(10216): hiddenapi: Accessing hidden field Landroid/view/accessibility/AccessibilityNodeInfo;->mChildNodeIds:Landroid/util/LongArray; (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=35) using reflection: allowed
+I/ocle.regression(10216): hiddenapi: Accessing hidden method Landroid/util/LongArray;->get(I)J (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=35) using reflection: allowed
+D/CompatChangeReporter(10216): Compat change id reported: 309578419; UID 10234; state: ENABLED
+D/CompatChangeReporter(10216): Compat change id reported: 349153669; UID 10234; state: ENABLED
+W/HWUI    (10216): Unknown dataspace 0
+D/ProfileInstaller(10216): Installing profile for com.vocle.regression
+VMServiceFlutterDriver: Connecting to Flutter application at http://127.0.0.1:2497/[redacted-vm-service]/
+I/WindowExtensionsImpl(10216): Initializing Window Extensions, vendor API level=9, activity embedding enabled=true
+VMServiceFlutterDriver: Isolate found with number: 5830467454184911
+D/VRI[MainActivity](10216): WindowInsets changed: 1080x1920 statusBars:[0,63,0,0] navigationBars:[0,0,0,63] mandatorySystemGestures:[0,63,0,84] 
+D/WindowOnBackDispatcher(10216): setTopOnBackInvokedCallback (unwrapped): android.view.ViewRootImpl$$ExternalSyntheticLambda12@b443a5e
+VMServiceFlutterDriver: Isolate 5830467454184911 is runnable.
+VMServiceFlutterDriver: Isolate is paused at start.
+VMServiceFlutterDriver: Attempting to resume isolate
+E/libEGL  (10216): called unimplemented OpenGL ES API
+I/ocle.regression(10216): Compiler allocated 5087KB to compile void android.view.ViewRootImpl.performTraversals()
+I/flutter (10216): 00:00 +0: Cold handoff prerequisite clears the native session
+VMServiceFlutterDriver: Connected to Flutter application.
+E/libEGL  (10216): called unimplemented OpenGL ES API
+I/Choreographer(10216): Skipped 101 frames!  The application may be doing too much work on its main thread.
+D/WindowLayoutComponentImpl(10216): Register WindowLayoutInfoListener on Context=com.example.medcollab_app.MainActivity@889ae3f, of which baseContext=android.app.ContextImpl@a1437a4
+I/HWUI    (10216): Using FreeType backend (prop=Auto)
+V/Configuration(10216): Updating configuration, locales updated from [en_US] to [en]
+D/InsetsController(10216): hide(ime())
+I/ImeTracker(10216): com.vocle.regression:a96d9270: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+V/Configuration(10216): Updating configuration, locales updated from [en] to [en_US]
+W/ocle.regression(10216): userfaultfd: MOVE ioctl seems unsupported: Try again
+I/ocle.regression(10216): Background concurrent mark compact GC freed 2796KB AllocSpace bytes, 6(224KB) LOS objects, 49% free, 3407KB/6814KB, paused 6.795ms,2.702ms total 261.192ms
+E/libEGL  (10216): called unimplemented OpenGL ES API
+I/flutter (10216): 00:03 +1: (tearDownAll)
+I/flutter (10216): 00:03 +2: All tests passed!
+All tests passed.
+Leaving the application running.

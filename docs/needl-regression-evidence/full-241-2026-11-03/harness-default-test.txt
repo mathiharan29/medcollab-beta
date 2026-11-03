@@ -1,0 +1,34 @@
+
+> vocle-functional-regression@0.1.0 test
+> node src/runner.mjs --self-check && npm run contracts
+
+Classification contract PASS: distinct non-green statuses and incomplete report
+
+> vocle-functional-regression@0.1.0 contracts
+> node --test scripts/ci-contracts.test.mjs scripts/device-contracts.test.mjs scripts/fixtures.test.mjs scripts/report-local-catalog.test.mjs
+
+✔ catalog selection keeps all 177 backend IDs and retained 48 (1.3795ms)
+✔ fork changes select mapped modules; unknown shared changes select all (0.7077ms)
+✔ Flutter lane runs for client and reporter changes, and unknown diffs (0.0973ms)
+✔ full success requires exact IDs, status, source and cleanup (0.6473ms)
+✔ PR target pins the exact head and full scope; unsupported contexts fail (368.8831ms)
+✔ device registry matches the exact eight catalog IDs, files and phases (13.0013ms)
+✔ native output refuses to overwrite an existing run directory (6.4135ms)
+✔ device driver rejects provider, physical-device and malformed origins (3.5869ms)
+✔ restart proof rejects same-process, stale-run and absent-phase evidence (0.5577ms)
+✔ activity observation accepts Android 36 fields and excludes historical activities (0.1996ms)
+✔ background barrier requires the test activity to stop, not only another top activity (0.219ms)
+✔ late application Bloc failure is functional failure; setup and unknown errors are infrastructure (0.2011ms)
+✔ all literal backend identity references have unique synthetic phone fixtures (12.6983ms)
+✔ undefined fixture is ERROR while an application assertion remains FAIL (1.9898ms)
+✔ local completeness requires every tier and exactly its own unique IDs (2.208ms)
+✔ unexecuted, skipped, blocked and missing-report rows cannot claim a complete run (0.3201ms)
+✔ executed failures and unresolved decisions are retained without becoming passes (0.1193ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 458.3411

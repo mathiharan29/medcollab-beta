@@ -1,0 +1,62 @@
+Running Gradle task 'assembleDebug'...                          
+Warning: The plugin file_picker requires Android SDK version 36 or higher.
+For more information about build configuration, see https://flutter.dev/to/review-gradle-config.
+Your project is configured to compile against Android SDK 35, but the following plugin(s) require to be compiled against a higher Android SDK version:
+- file_picker compiles against Android SDK 36
+Fix this issue by compiling against the highest Android SDK version (they are backward compatible).
+Add the following to C:\Users\delll\AppData\Local\Temp\vocle-device-sjUCDD\medcollab-app\android\app\build.gradle.kts:
+
+    android {
+        compileSdk = 36
+        ...
+    }
+
+Running Gradle task 'assembleDebug'...                             46.8s
+√ Built build\app\outputs\flutter-apk\app-debug.apk
+Installing build\app\outputs\flutter-apk\app-debug.apk...           5.6s
+D/FLTFireContextHolder( 8033): received application context.
+I/ocle.regression( 8033): hiddenapi: Accessing hidden method Landroid/view/accessibility/AccessibilityNodeInfo;->getSourceNodeId()J (runtime_flags=0, domain=platform, api=unsupported,test-api) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=35) using reflection: allowed
+I/ocle.regression( 8033): hiddenapi: Accessing hidden method Landroid/view/accessibility/AccessibilityRecord;->getSourceNodeId()J (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=35) using reflection: allowed
+I/ocle.regression( 8033): hiddenapi: Accessing hidden field Landroid/view/accessibility/AccessibilityNodeInfo;->mChildNodeIds:Landroid/util/LongArray; (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=35) using reflection: allowed
+I/ocle.regression( 8033): hiddenapi: Accessing hidden method Landroid/util/LongArray;->get(I)J (runtime_flags=0, domain=platform, api=unsupported) from Lio/flutter/view/AccessibilityViewEmbedder$ReflectionAccessors; (domain=app, TargetSdkVersion=35) using reflection: allowed
+D/CompatChangeReporter( 8033): Compat change id reported: 309578419; UID 10231; state: ENABLED
+D/CompatChangeReporter( 8033): Compat change id reported: 349153669; UID 10231; state: ENABLED
+W/HWUI    ( 8033): Unknown dataspace 0
+D/ProfileInstaller( 8033): Installing profile for com.vocle.regression
+VMServiceFlutterDriver: Connecting to Flutter application at http://127.0.0.1:9040/[redacted-vm-service]/
+I/WindowExtensionsImpl( 8033): Initializing Window Extensions, vendor API level=9, activity embedding enabled=true
+VMServiceFlutterDriver: Isolate found with number: 3870202856712787
+D/VRI[MainActivity]( 8033): WindowInsets changed: 1080x1920 statusBars:[0,63,0,0] navigationBars:[0,0,0,63] mandatorySystemGestures:[0,63,0,84] 
+D/WindowOnBackDispatcher( 8033): setTopOnBackInvokedCallback (unwrapped): android.view.ViewRootImpl$$ExternalSyntheticLambda12@970930c
+VMServiceFlutterDriver: Isolate 3870202856712787 is runnable.
+VMServiceFlutterDriver: Isolate is paused at start.
+VMServiceFlutterDriver: Attempting to resume isolate
+E/libEGL  ( 8033): called unimplemented OpenGL ES API
+E/libEGL  ( 8033): called unimplemented OpenGL ES API
+I/flutter ( 8033): 00:00 +0: FR-NAV-05: Android session-empty
+VMServiceFlutterDriver: Connected to Flutter application.
+I/HWUI    ( 8033): Using FreeType backend (prop=Auto)
+E/libEGL  ( 8033): called unimplemented OpenGL ES API
+I/Choreographer( 8033): Skipped 455 frames!  The application may be doing too much work on its main thread.
+D/WindowLayoutComponentImpl( 8033): Register WindowLayoutInfoListener on Context=com.example.medcollab_app.MainActivity@9047455, of which baseContext=android.app.ContextImpl@bd6c041
+D/InsetsController( 8033): hide(ime())
+W/ocle.regression( 8033): Verification of java.lang.Object androidx.security.crypto.EncryptedSharedPreferences.getDecryptedObject(java.lang.String) took 125.438ms (2678.61 bytecodes/s) (0B arena alloc)
+I/ImeTracker( 8033): com.vocle.regression:e47cfa82: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+W/ocle.regression( 8033): Suspending all threads took: 6.236ms
+W/ocle.regression( 8033): userfaultfd: MOVE ioctl seems unsupported: Connection timed out
+I/ocle.regression( 8033): Background concurrent mark compact GC freed 2643KB AllocSpace bytes, 11(276KB) LOS objects, 49% free, 3349KB/6699KB, paused 9.015ms,10.809ms total 506.271ms
+I/ocle.regression( 8033): Compiler allocated 5087KB to compile void android.view.ViewRootImpl.performTraversals()
+I/ocle.regression( 8033): Background young concurrent mark compact GC freed 1712KB AllocSpace bytes, 48(1728KB) LOS objects, 47% free, 3527KB/6699KB, paused 12.360ms,87.501ms total 481.710ms
+E/libEGL  ( 8033): called unimplemented OpenGL ES API
+E/libEGL  ( 8033): called unimplemented OpenGL ES API
+E/libEGL  ( 8033): called unimplemented OpenGL ES API
+W/WindowOnBackDispatcher( 8033): OnBackInvokedCallback is not enabled for the application.
+W/WindowOnBackDispatcher( 8033): Set 'android:enableOnBackInvokedCallback="true"' in the application manifest.
+E/libEGL  ( 8033): call to OpenGL ES API with no current context (logged once per thread)
+E/libEGL  ( 8033): called unimplemented OpenGL ES API
+I/flutter ( 8033): VOCLE_DEVICE_RECORD {"id":"FR-NAV-05","status":"PASS","executed":true,"phase":"session-empty","runId":"3422fdcc-66dc-48ca-8e6a-a1a6626350e5","processId":8033,"durationMs":16078,"evidence":["Two host force-stops; native encrypted session restored, cleared after API 503, and absent on next launch."]}
+I/ocle.regression( 8033): Background concurrent mark compact GC freed 1389KB AllocSpace bytes, 48(1728KB) LOS objects, 49% free, 3675KB/7350KB, paused 2.811ms,22.386ms total 241.825ms
+I/flutter ( 8033): 00:18 +1: (tearDownAll)
+All tests passed.
+I/flutter ( 8033): 00:18 +2: All tests passed!
+Leaving the application running.

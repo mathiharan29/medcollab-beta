@@ -1,0 +1,50 @@
+✔ workflow entry points and suite ownership require complete PR execution with cleanup-safe concurrency (34.6309ms)
+✔ hosted Android inventory is local-only SKIP; 233 hosted passes never become 241 executed passes (120.4271ms)
+fatal: not a tree object
+✔ first catalog bootstrap accepts only a genuinely absent base and a validated testing-only change (1950.3038ms)
+✔ security observations remain observations and explicit failures retain their status (0.7215ms)
+✔ setup errors and dependency blocks never inflate actual assertion execution (0.1394ms)
+✔ all comparison transitions, including omission and harness/environment drift (1.0397ms)
+✔ real assertion failure and successful fixture produce verifiable reports and comparison (46.6514ms)
+✔ tampered manifest, duplicate IDs and unverified source are rejected (16.5295ms)
+✔ required red statuses gate; optional omissions remain visible (0.3517ms)
+✔ submission rejects wrong candidate, omitted required coverage and tooling-only success (0.459ms)
+✔ owners stay UNASSIGNED until approval and root causes group only with evidence (0.4706ms)
+✔ coverage requires registered new IDs, security justification and trusted exceptions (0.8373ms)
+✔ baseline catalog and workflow integration remain connected to exact candidate and isolation (3.8709ms)
+✔ catalog selection keeps all 177 backend IDs and retained 48 (2.6073ms)
+✔ fork changes select mapped modules; unknown shared changes select all (1.2112ms)
+✔ Flutter lane runs for client and reporter changes, and unknown diffs (0.1833ms)
+✔ full success requires exact IDs, status, source and cleanup (1.0786ms)
+✔ PR target pins the exact head and full scope; unsupported contexts fail (473.8036ms)
+✔ hosted execution rejects Android evidence and fixture isolation restores CI identity (4.0497ms)
+✔ local-only presentation preserves unexecuted ERROR, BLOCKED and SKIP outcomes (1.876ms)
+✔ Flutter aggregation leaves unknown application source unverified and preserves failures (369.1052ms)
+✔ Flutter aggregation binds a different application commit without relabeling it as harness HEAD (360.8086ms)
+✔ Flutter aggregation preserves working-tree identity and its source fingerprint (361.8536ms)
+✔ Flutter aggregation rejects mismatched events, harness, missing fingerprint and unverified source (679.5351ms)
+✔ all 241 scenarios have unique metadata, prerequisites and executable definitions (0.8884ms)
+✔ all six classifications and original counts survive normalization (1.899ms)
+✔ unexecuted PASS, duplicate IDs, wrong counts and unknown statuses are rejected (0.7119ms)
+✔ missing setup evidence produces 48 unexecuted ERRORs and a separate infrastructure error (4.0722ms)
+✔ sanity planned self-check and explicit skips never become execution (2.8931ms)
+✔ HTTP failure records expected/actual operation without inventing root cause (0.8369ms)
+✔ secrets and signed links are redacted recursively, including opaque credentials (0.4949ms)
+✔ links cannot use javascript, absolute paths or traversal (0.2709ms)
+✔ comparison reuses strict contract for FIXED, NEW_REGRESSION, STILL_FAILING, STILL_PASSING (2.7242ms)
+✔ HTML and Markdown safely handle hostile markup, multiline logs, and missing diagnostics (13.5767ms)
+✔ synthetic backend, Flutter, device and sanity formats preserve complete inventories (31.7786ms)
+✔ large report is generated, deterministic and preserves 241 IDs (229.6292ms)
+✔ publication excludes binaries/runtime and sanitizes raw logs without altering originals (20.1166ms)
+✔ invalid result input still writes all five infrastructure reports and signals validation failure (151.2744ms)
+✔ workflow integration generates/uploads after failure and retains original gates (4.3281ms)
+✔ CLI optional history import completes without a circular top-level await (292.8799ms)
+✔ a broken aggregate tally does not relabel an observed application FAIL as ERROR (134.6493ms)
+ℹ tests 41
+ℹ suites 0
+ℹ pass 41
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2890.6651

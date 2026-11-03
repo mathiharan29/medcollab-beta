@@ -1,0 +1,23 @@
+{
+  "status": "PASS",
+  "repository": "mathiharan29/medcollab-beta",
+  "remote": "https://github.com/mathiharan29/medcollab-beta.git",
+  "branch": "temp/needl-functional-regression-20261103",
+  "testedCodeCommit": "d41386cfb23f9e6ac0d0c45332547941f8199871",
+  "baseMaster": "4c01dc24247aa95a73e286a2b42c7f2f81257c7a",
+  "contractTests": 82,
+  "passed": 82,
+  "failed": 0,
+  "catalog": {
+    "total": 241,
+    "backend": 177,
+    "flutter": 56,
+    "device": 8,
+    "retainedSanity": 48
+  },
+  "catalogExecutionRepeated": false,
+  "hostedExecutionClaimed": false,
+  "applicationSourceChanges": false,
+  "originalEvidenceRelabeled": false,
+  "target": "temporary branch only; master unchanged"
+}

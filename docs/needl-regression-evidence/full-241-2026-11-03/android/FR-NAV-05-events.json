@@ -1,0 +1,193 @@
+{
+  "checkpoints": [
+    {
+      "phase": "session-seed",
+      "runId": "3422fdcc-66dc-48ca-8e6a-a1a6626350e5",
+      "processId": 7010,
+      "status": "PASS",
+      "evidence": {
+        "nativeSessionWritten": true
+      }
+    },
+    {
+      "phase": "session-restore",
+      "runId": "3422fdcc-66dc-48ca-8e6a-a1a6626350e5",
+      "processId": 7618,
+      "status": "PASS",
+      "evidence": {
+        "sessionRestoredFromPriorProcess": true,
+        "failedApiLogoutRemovedNativeSession": true,
+        "logoutFaultObserved": true
+      }
+    },
+    {
+      "phase": "session-empty",
+      "runId": "3422fdcc-66dc-48ca-8e6a-a1a6626350e5",
+      "processId": 8033,
+      "status": "PASS",
+      "evidence": {
+        "loggedOutRelaunchHasNoNativeSession": true
+      }
+    }
+  ],
+  "controlActions": [
+    {
+      "action": "fixture",
+      "at": "2026-11-03T15:18:56.784Z"
+    },
+    {
+      "action": "checkpoint",
+      "at": "2026-11-03T15:18:57.350Z"
+    },
+    {
+      "action": "fixture",
+      "at": "2026-11-03T15:24:59.499Z"
+    },
+    {
+      "action": "logout-failure",
+      "at": "2026-11-03T15:25:10.570Z"
+    },
+    {
+      "action": "logout-failure",
+      "at": "2026-11-03T15:25:25.868Z"
+    },
+    {
+      "action": "checkpoint",
+      "at": "2026-11-03T15:25:25.936Z"
+    },
+    {
+      "action": "checkpoints",
+      "at": "2026-11-03T15:26:44.919Z"
+    },
+    {
+      "action": "checkpoint",
+      "at": "2026-11-03T15:26:58.699Z"
+    },
+    {
+      "action": "result",
+      "at": "2026-11-03T15:26:59.942Z"
+    }
+  ],
+  "backendRequests": [
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/users/me"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/spaces"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/handoffs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/channels/dm"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/handoffs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications"
+    },
+    {
+      "method": "POST",
+      "pathname": "/api/auth/logout"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/handoffs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/handoffs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/handoffs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/handoffs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/handoffs"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    },
+    {
+      "method": "GET",
+      "pathname": "/api/notifications/unread-count"
+    }
+  ]
+}

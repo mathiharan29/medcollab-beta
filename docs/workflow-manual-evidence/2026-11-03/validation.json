@@ -1,0 +1,49 @@
+{
+  "status": "PASS",
+  "workflowYamlParsed": 10,
+  "contractTests": 82,
+  "passed": 82,
+  "failed": 0,
+  "actualShellGuardsExercised": 14,
+  "shellContextScenarios": 154,
+  "manualEntryPoints": [
+    "secrets-scan.yml",
+    "vocle-api-realtime-security.yml",
+    "vocle-cloudinary-security.yml",
+    "vocle-data-security.yml",
+    "vocle-developer-qa.yml",
+    "vocle-functional-regression.yml",
+    "vocle-media-security.yml",
+    "vocle-sanity.yml"
+  ],
+  "reusableWorkflows": [
+    "vocle-reporting.yml",
+    "vocle-sanity.yml",
+    "vocle-security-environment-test.yml"
+  ],
+  "manualSourceKind": "commit",
+  "manualSelection": "exact GitHub SHA for selected upstream branch",
+  "fullBackendScope": "backend-all",
+  "upstreamDefaultBranchVerified": "master",
+  "upstreamMasterObserved": "4c01dc24247aa95a73e286a2b42c7f2f81257c7a",
+  "preChangeHarnessCommit": "722817340ae60081d77f3698eec5db2e34cfc83d",
+  "hostedExecutionClaimed": false,
+  "applicationTestsRerun": false,
+  "applicationSourceChanges": false,
+  "realProviderOperations": false,
+  "fileSha256": {
+    ".github/workflows/secrets-scan.yml": "980d45c6c0c954b9a6de93f36f0954a7088ccbe2bf9bc76393da69be3d62d784",
+    ".github/workflows/vocle-api-realtime-security.yml": "9e0fab520bff7ff854639655ba3357a2b8f52c0293dd460b8ed5a181edbbc5fd",
+    ".github/workflows/vocle-cloudinary-security.yml": "d4c41adefcfaf8edeefe3b13b0abd9fad4c2bf0ab01f15557340173557763450",
+    ".github/workflows/vocle-data-security.yml": "1659cd1244b021c60124a615246f9d38ded866d9ff1be122e65dfb3a43272fd1",
+    ".github/workflows/vocle-developer-qa.yml": "4b9547481adb3bb521a696deb6f9092ce7d101970acfa44b403f6ec1e1211b4a",
+    ".github/workflows/vocle-functional-regression.yml": "1ac05d0e08466a570335f32ff612bef27913f1cb818970e36daa67955c4c781c",
+    ".github/workflows/vocle-media-security.yml": "f4d31e5de1938c98fe7b49a47e3d58168fc581a8e5265d14a63c6447c7d946f7",
+    ".github/workflows/vocle-reporting.yml": "59438c2bfb79bb0390b6866b1c3592d3c0ecb5cbf0740a370056d560ece652c0",
+    ".github/workflows/vocle-sanity.yml": "130605f090a9db5e237b5be319391b3451c68808b8318ec508de8981a5a70fb5",
+    ".github/workflows/vocle-security-environment-test.yml": "478e8a2217080e5480e6299d8bf60d5752906e83f715cae397bac0f7c41b48cb",
+    "tests/functional-regression/scripts/resolve-target.mjs": "1b950c4e6fd6fc83c7e16f7377879c907a0857d80ecd318a5e7b13e91aa49efb",
+    "tests/developer-workflow/manual-workflows.test.mjs": "32a83053a06da64e449b87c7d2b44e5ee4b1d3cfa6fcd66d1dbffc37e9efbbcf"
+  },
+  "hashInput": "UTF-8 source text with LF line endings"
+}
