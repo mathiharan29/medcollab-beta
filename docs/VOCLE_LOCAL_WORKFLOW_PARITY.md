@@ -2,7 +2,7 @@
 
 Routine Actions entry points run on pull requests targeting `master`, for opened,
 reopened, ready_for_review and synchronize events. They test the exact PR head.
-Standalone suites also support manual execution from a branch in the upstream
+Standalone suites also support manual execution from a branch in the Vocle repo
 repository and pin its GitHub event SHA. Same-repository PR checks remain in place;
 fork contexts, tags and unsupported events fail explicitly. There are no automatic
 push, schedule or path-selection triggers. Concurrency is scoped to workflow and

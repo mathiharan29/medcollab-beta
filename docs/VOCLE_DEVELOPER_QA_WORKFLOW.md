@@ -3,7 +3,7 @@
 Use [the local testing guide](../user-guides/LOCAL_TESTING_GUIDE.md) for setup and
 commands. [Suite ownership and CI parity](VOCLE_LOCAL_WORKFLOW_PARITY.md) records
 every execution lane. PRs target `master`; standalone suites also support manual
-branch execution after the workflow changes are merged into upstream master. See
+branch execution after the workflow changes are merged into Vocle repo master. See
 [manual workflow setup](VOCLE_MANUAL_WORKFLOW_RESTORATION.md). Routine suites always execute without
 history or changed-file skipping. Application behavior is unchanged by this tooling.
 

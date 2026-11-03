@@ -152,3 +152,12 @@ Exact next action after delivery: developer fixes for the five recorded Needl de
 ## Manual workflow restoration follow-up
 
 Owner changed upstream default branch to master; upstream master4c01dc2 still has PR-only routine triggers. Added manual entry points and exact-commit source/provenance handling on the same temporary fork branch. All14 real Bash context guards passed154 scenarios, and82/82 relevant local contracts plus10 YAML parses passed. No application code/case assertions changed or241-case execution relabeled. See VOCLE_MANUAL_WORKFLOW_RESTORATION.md and docs/workflow-manual-evidence/2026-11-03/. Exact next action: owner review/integration into upstream master, then an actual hosted manual run. No upstream push, PR, merge, workflow dispatch, settings change or production operation was performed by this session.
+
+
+## Vocle repository delivery — latest user authorization
+
+The user now designates mathiharan29/medcollab-beta as the single **Vocle repo** and explicitly authorizes committing/publishing the workflow fix on the same temporary branch as the extra regression cases there. This supersedes earlier fork-only delivery restrictions. A fresh isolated checkout, vocle-regression-review, uses only origin=https://github.com/mathiharan29/medcollab-beta.git. The original working tree and its untracked work remain untouched. AGENTS.md and current operating instructions reflect this change.
+
+Branch: **temp/needl-functional-regression-20261103** in Vocle repo. Includes the complete54-case Needl expansion, catalog241 wiring, fixture/reporting repairs, prior local execution evidence, and workflow fix **d41386c**. All commits descend from observed master4c01dc2; application source and dependencies are unchanged. Earlier reports retain their actual source/harness/repository identities. They are not imported as a new Vocle hosted execution or success marker.
+
+Local validation in the Vocle checkout: catalog validator and82 workflow/reporting/coverage contracts. No application catalog rerun or hosted execution is claimed for this delivery. Master is not changed. Exact next action: review this same-repository temporary branch and merge through the repository's normal process; then open Actions and run the desired standalone workflow. The existing five functional FAILs and NDL-D1 decision remain visible and must not be bypassed or relabeled.
