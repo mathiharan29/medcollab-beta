@@ -36,6 +36,7 @@ import 'package:medcollab_app/features/support/presentation/pages/help_faq_page.
 import 'package:medcollab_app/features/support/presentation/pages/legal_document_page.dart';
 import 'package:medcollab_app/features/support/presentation/pages/report_bug_page.dart';
 import 'package:medcollab_app/core/constants/legal_copy.dart';
+import 'package:medcollab_app/core/router/popup_route_tracker.dart';
 
 class AppRouter {
   AppRouter({required AuthBloc authBloc}) : _authBloc = authBloc {
@@ -47,8 +48,12 @@ class AppRouter {
   final GlobalKey<NavigatorState> rootNavigatorKey =
       GlobalKey<NavigatorState>(debugLabel: 'root');
 
+  /// Open dialogs/sheets/menus on any navigator; consulted on system back.
+  final PopupRouteTracker popupTracker = PopupRouteTracker();
+
   late final GoRouter router = GoRouter(
     navigatorKey: rootNavigatorKey,
+    observers: [popupTracker.createObserver()],
     initialLocation: AppRoutes.splash,
     debugLogDiagnostics: kDebugMode,
     refreshListenable: _refreshListenable,
@@ -114,6 +119,7 @@ class AppRouter {
         },
         branches: [
           StatefulShellBranch(
+            observers: [popupTracker.createObserver()],
             routes: [
               GoRoute(
                 path: AppRoutes.home,
@@ -122,6 +128,7 @@ class AppRouter {
             ],
           ),
           StatefulShellBranch(
+            observers: [popupTracker.createObserver()],
             routes: [
               GoRoute(
                 path: AppRoutes.messages,
@@ -130,6 +137,7 @@ class AppRouter {
             ],
           ),
           StatefulShellBranch(
+            observers: [popupTracker.createObserver()],
             routes: [
               GoRoute(
                 path: AppRoutes.handoffs,
@@ -138,6 +146,7 @@ class AppRouter {
             ],
           ),
           StatefulShellBranch(
+            observers: [popupTracker.createObserver()],
             routes: [
               GoRoute(
                 path: AppRoutes.notifications,
@@ -146,6 +155,7 @@ class AppRouter {
             ],
           ),
           StatefulShellBranch(
+            observers: [popupTracker.createObserver()],
             routes: [
               GoRoute(
                 path: AppRoutes.profile,

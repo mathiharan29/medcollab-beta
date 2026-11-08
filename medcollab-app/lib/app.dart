@@ -85,6 +85,7 @@ class _MedCollabAppState extends State<MedCollabApp> {
               routerConfig: deps.appRouter.router,
               builder: (context, child) => AppNavigationBackHandler(
                 router: deps.appRouter.router,
+                popupTracker: deps.appRouter.popupTracker,
                 child: child ?? const SizedBox.shrink(),
               ),
             ),

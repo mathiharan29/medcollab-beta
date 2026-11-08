@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:medcollab_app/core/router/popup_route_tracker.dart';
 import 'package:medcollab_app/core/router/shell_tab_history.dart';
 import 'package:medcollab_app/core/router/app_routes.dart';
 
@@ -16,11 +19,16 @@ class AppNavigationBackHandler extends StatefulWidget {
   const AppNavigationBackHandler({
     required this.child,
     this.router,
+    this.popupTracker,
     super.key,
   });
 
   final Widget child;
   final GoRouter? router;
+
+  /// When a dialog, sheet or menu is open, back closes it first instead of
+  /// switching tabs / going Home underneath it.
+  final PopupRouteTracker? popupTracker;
 
   @override
   State<AppNavigationBackHandler> createState() =>
@@ -78,6 +86,12 @@ class _AppNavigationBackHandlerState extends State<AppNavigationBackHandler>
   }
 
   void _handleBack() {
+    final popups = widget.popupTracker;
+    if (popups != null && popups.hasOpenPopup) {
+      unawaited(popups.dismissTopmost());
+      return;
+    }
+
     final router = _router;
     if (router == null) return;
 
@@ -117,6 +131,10 @@ class _AppNavigationBackHandlerState extends State<AppNavigationBackHandler>
   @override
   Future<bool> didPopRoute() async {
     if (!mounted) return false;
+    final popups = widget.popupTracker;
+    if (popups != null && popups.hasOpenPopup) {
+      return popups.dismissTopmost();
+    }
     final router = _router;
     if (router == null) return false;
     final location = router.state.uri.path.isNotEmpty
