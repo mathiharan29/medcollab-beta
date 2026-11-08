@@ -11,6 +11,7 @@ import 'package:medcollab_app/core/utils/phone_utils.dart';
 import 'package:medcollab_app/features/auth/data/models/user_model.dart';
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:medcollab_app/features/messages/data/models/user_lookup_result.dart';
+import 'package:medcollab_app/features/messages/presentation/widgets/message_request_prompt.dart';
 import 'package:medcollab_app/features/messages/presentation/widgets/peer_profile_card.dart';
 import 'package:medcollab_app/shared/presentation/widgets/app_avatar.dart';
 import 'package:medcollab_app/shared/presentation/widgets/app_empty_state.dart';
@@ -302,47 +303,13 @@ class _StartDmPageState extends State<StartDmPage> {
   Future<void> _sendRequest(UserModel user) async {
     if (_busyUserId != null && _busyUserId != user.id) return;
 
-    final introController = TextEditingController();
-    final intro = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Send message request'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'They will see your name and this note. Chat opens only after they accept — no Seen until then.',
-              style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: introController,
-              maxLength: 140,
-              maxLines: 3,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                hintText: 'Optional — e.g. ICU R2 from AIIMS, need a consult',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, introController.text.trim()),
-            child: const Text('Send request'),
-          ),
-        ],
-      ),
+    final intro = await showMessageRequestIntroDialog(
+      context,
+      title: 'Send message request',
+      explanation: 'They will see your name and this note. Chat opens only '
+          'after they accept — no Seen until then.',
+      hintText: 'Optional — e.g. ICU R2 from AIIMS, need a consult',
     );
-    introController.dispose();
     if (intro == null || !mounted) return;
 
     setState(() => _busyUserId = user.id);

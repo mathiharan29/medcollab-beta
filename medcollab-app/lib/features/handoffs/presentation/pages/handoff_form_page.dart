@@ -10,6 +10,7 @@ import 'package:medcollab_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:medcollab_app/features/handoffs/data/models/handoff_model.dart';
 import 'package:medcollab_app/features/handoffs/data/models/handoff_patient_model.dart';
 import 'package:medcollab_app/features/handoffs/presentation/cubit/handoff_form_cubit.dart';
+import 'package:medcollab_app/features/handoffs/presentation/utils/handoff_doctor_options.dart';
 import 'package:medcollab_app/features/handoffs/presentation/widgets/handoff_widgets.dart';
 import 'package:medcollab_app/features/handoffs/presentation/widgets/patient_editor_sheet.dart';
 import 'package:medcollab_app/features/members/data/models/space_member_model.dart';
@@ -208,10 +209,11 @@ class _HandoffFormBodyState extends State<_HandoffFormBody> {
         ),
         body: BlocBuilder<HandoffFormCubit, HandoffFormState>(
           builder: (context, state) {
-            final doctors = _members
-                .map((m) => m.user)
-                .where((u) => u.id.isNotEmpty)
-                .toList();
+            final options = handoffDoctorOptions(
+              _members.map((m) => m.user),
+              state.assignedDoctor,
+            );
+            final doctors = options.doctors;
 
             return ListView(
               padding: const EdgeInsets.all(16),
@@ -236,7 +238,7 @@ class _HandoffFormBodyState extends State<_HandoffFormBody> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<UserModel>(
-                  value: state.assignedDoctor,
+                  value: options.selected,
                   decoration: const InputDecoration(
                     labelText: 'Assigned doctor',
                   ),

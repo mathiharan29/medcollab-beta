@@ -52,3 +52,21 @@ __pycache__/
 /test-results/
 # Allow curated Vocle handoff evidence logs
 !docs/handoffs/evidence/**/*.log
+
+# Local secrets hand-off, signing, builds, tool caches (never commit)
+Vocle-apk-secrets-for-Sanjay/
+Vocle-apk-secrets-for-Sanjay.zip
+medcollab-app/config/*.local.json
+medcollab-app/scripts/dart-defines.release.json
+medcollab-app/android/app/google-services.json
+medcollab-app/android/key.properties
+*.jks
+*.keystore
+*.apk
+*.aab
+docs/e2e-screenshots/
+.tmp-localappdata/
+.tmp-tools/
+.cursor/
+apk-rebuild-*.txt
+apk-rebuild-*.txt.err

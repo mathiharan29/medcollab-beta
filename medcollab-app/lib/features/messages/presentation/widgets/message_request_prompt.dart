@@ -9,52 +9,15 @@ Future<bool> promptAndSendMessageRequest(
   required String toUserId,
   String? peerName,
 }) async {
-  final introController = TextEditingController();
-  final intro = await showDialog<String>(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      title: Text(
-        peerName == null || peerName.isEmpty
-            ? 'Send message request'
-            : 'Message request to $peerName',
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'You share a Vocle network with them, but chat still needs their '
-            'approval. They will see your name and this note.',
-            style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: introController,
-            maxLength: 140,
-            maxLines: 3,
-            textCapitalization: TextCapitalization.sentences,
-            decoration: const InputDecoration(
-              hintText: 'Optional — e.g. from our ward group, need a consult',
-              border: OutlineInputBorder(),
-            ),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(ctx),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(ctx, introController.text.trim()),
-          child: const Text('Send request'),
-        ),
-      ],
-    ),
+  final intro = await showMessageRequestIntroDialog(
+    context,
+    title: peerName == null || peerName.isEmpty
+        ? 'Send message request'
+        : 'Message request to $peerName',
+    explanation: 'You share a Vocle network with them, but chat still needs '
+        'their approval. They will see your name and this note.',
+    hintText: 'Optional — e.g. from our ward group, need a consult',
   );
-  introController.dispose();
   if (intro == null || !context.mounted) return false;
 
   try {
@@ -81,5 +44,98 @@ Future<bool> promptAndSendMessageRequest(
       const SnackBar(content: Text('Could not send request')),
     );
     return false;
+  }
+}
+
+/// Shows the intro-note dialog for a message request.
+///
+/// Returns the trimmed note (possibly empty) when the user taps
+/// "Send request", or `null` when the dialog is cancelled or dismissed.
+///
+/// The text controller is owned by the dialog's [State] so it is disposed
+/// only after the route (including its exit animation) is fully removed.
+/// Disposing it right after `showDialog` returns crashed with
+/// "TextEditingController was used after being disposed".
+Future<String?> showMessageRequestIntroDialog(
+  BuildContext context, {
+  required String title,
+  required String explanation,
+  required String hintText,
+}) {
+  return showDialog<String>(
+    context: context,
+    builder: (_) => MessageRequestIntroDialog(
+      title: title,
+      explanation: explanation,
+      hintText: hintText,
+    ),
+  );
+}
+
+class MessageRequestIntroDialog extends StatefulWidget {
+  const MessageRequestIntroDialog({
+    super.key,
+    required this.title,
+    required this.explanation,
+    required this.hintText,
+  });
+
+  final String title;
+  final String explanation;
+  final String hintText;
+
+  @override
+  State<MessageRequestIntroDialog> createState() =>
+      _MessageRequestIntroDialogState();
+}
+
+class _MessageRequestIntroDialogState extends State<MessageRequestIntroDialog> {
+  final _introController = TextEditingController();
+
+  @override
+  void dispose() {
+    _introController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.title),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            widget.explanation,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _introController,
+            maxLength: 140,
+            maxLines: 3,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: InputDecoration(
+              hintText: widget.hintText,
+              border: const OutlineInputBorder(),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () =>
+              Navigator.pop(context, _introController.text.trim()),
+          child: const Text('Send request'),
+        ),
+      ],
+    );
   }
 }
