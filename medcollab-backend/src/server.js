@@ -84,6 +84,16 @@ const startServer = async () => {
     // 1. Connect to MongoDB Atlas
     await connectDB();
 
+    // REQ 5: give every onboarded doctor a Vocle ID (@username). Idempotent;
+    // runs in the background so startup is not delayed. Not in NODE_ENV=test:
+    // the security suite starts extra servers mid-run and checks that
+    // unrelated requests leave the database unchanged.
+    if (process.env.NODE_ENV !== 'test') {
+      require('./utils/username')
+        .backfillUsernames()
+        .catch((err) => logger.error(`Username backfill failed: ${err.message}`));
+    }
+
     // 2. Initialise Cloudinary (media storage)
     connectCloudinary();
 

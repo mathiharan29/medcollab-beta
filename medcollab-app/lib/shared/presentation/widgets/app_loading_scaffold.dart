@@ -22,7 +22,7 @@ class AppLoadingScaffold extends StatelessWidget {
       ),
       body: Column(
         children: [
-          const LinearProgressIndicator(
+          LinearProgressIndicator(
             minHeight: 2,
             color: AppColors.tealPrimary,
             backgroundColor: AppColors.borderLight,

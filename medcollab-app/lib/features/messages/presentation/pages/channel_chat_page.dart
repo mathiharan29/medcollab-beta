@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
 import 'package:medcollab_app/core/di/app_dependencies.dart';
 import 'package:medcollab_app/core/error/app_exception.dart';
+import 'package:medcollab_app/core/realtime/hub_refresh_signal.dart';
 import 'package:medcollab_app/core/presence/presence_cubit.dart';
 import 'package:medcollab_app/core/router/app_routes.dart';
 import 'package:medcollab_app/core/theme/app_colors.dart';
@@ -24,6 +25,8 @@ import 'package:medcollab_app/features/messages/data/models/message_delivery_sta
 import 'package:medcollab_app/features/messages/presentation/cubit/channel_chat_cubit.dart';
 import 'package:medcollab_app/features/messages/presentation/pages/thread_page.dart';
 import 'package:medcollab_app/features/messages/presentation/utils/message_list_utils.dart';
+import 'package:medcollab_app/features/messages/presentation/widgets/chat_wallpaper.dart';
+import 'package:medcollab_app/features/messages/presentation/widgets/voice_note.dart';
 import 'package:medcollab_app/features/messages/presentation/widgets/mention_composer.dart';
 import 'package:medcollab_app/features/messages/presentation/widgets/message_widgets.dart';
 import 'package:medcollab_app/features/messages/presentation/widgets/peer_profile_card.dart';
@@ -65,6 +68,8 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
   final _composerFocusNode = FocusNode();
   final _scrollController = ScrollController();
   final _mediaPicker = MediaPickerService();
+  // Voice notes (REQ 12).
+  final _voice = VoiceRecorderController();
   int _lastMessageCount = 0;
   bool _userNearBottom = true;
   List<UserModel> _mentionCandidates = const [];
@@ -323,14 +328,29 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
       return;
     }
 
+    // The list is reversed (newest at offset 0), so distance from the
+    // bottom is the number of items after this one. Scroll near it so the
+    // row gets built, then align exactly with ensureVisible.
     const estimatedItemHeight = 72.0;
-    final target = (itemIndex * estimatedItemHeight)
+    final fromBottom = listItems.length - 1 - itemIndex;
+    final target = (fromBottom * estimatedItemHeight)
         .clamp(0.0, _scrollController.position.maxScrollExtent);
-    _scrollController.animateTo(
-      target,
-      duration: const Duration(milliseconds: 350),
-      curve: Curves.easeOut,
-    );
+    _scrollController
+        .animateTo(
+          target,
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeOut,
+        )
+        .then((_) {
+      if (!mounted) return;
+      final rowContext = GlobalObjectKey(id).currentContext;
+      if (rowContext == null) return;
+      Scrollable.ensureVisible(
+        rowContext,
+        duration: const Duration(milliseconds: 200),
+        alignment: 0.35,
+      );
+    });
   }
 
   @override
@@ -338,6 +358,9 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
     _draftDebounce?.cancel();
     _typingStopDebounce?.cancel();
     _highlightClearTimer?.cancel();
+    // Leaving the chat discards an unsent recording and stops playback.
+    _voice.dispose();
+    unawaited(VoiceNotePlayback.instance.stopAll());
     // Flush latest draft before leaving so the parent list sees it immediately.
     unawaited(
       AppDependencies.instance.draftMessageService.saveDraft(
@@ -350,6 +373,8 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
     _textController.dispose();
     _composerFocusNode.dispose();
     _scrollController.dispose();
+    // Previews, drafts and unread dots in the Messages hub may have changed.
+    HubRefreshSignal.ping('chat-closed');
     super.dispose();
   }
 
@@ -380,29 +405,76 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
     }
   }
 
+  // The message list is reversed: offset 0 is the newest message (bottom of
+  // the screen). This is what makes a chat always open at the latest
+  // message — no dependence on estimated row heights, late image loads or
+  // restored scroll offsets (REQ 2).
   void _onScroll() {
     if (!_scrollController.hasClients) return;
-    final max = _scrollController.position.maxScrollExtent;
-    final offset = _scrollController.offset;
-    _userNearBottom = max - offset < 120;
+    _userNearBottom = _scrollController.offset < 120;
   }
 
   void _scrollToBottom({bool force = false}) {
     if (!force && !_userNearBottom) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_scrollController.hasClients) return;
-      final max = _scrollController.position.maxScrollExtent;
-      // Jump on first open so chat never lands mid-thread.
+      final bottom = _scrollController.position.minScrollExtent;
       if (force) {
-        _scrollController.jumpTo(max);
+        _scrollController.jumpTo(bottom);
+        _userNearBottom = true;
       } else {
         _scrollController.animateTo(
-          max,
+          bottom,
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOut,
         );
       }
     });
+  }
+
+  /// A message arrived while the user is reading history. In a reversed
+  /// list the new row is added at offset 0, which pushes everything on
+  /// screen up by its height; shift the offset by the same amount so the
+  /// messages being read stay where they are (WhatsApp behaviour).
+  ///
+  /// Anchors on a message row that is laid out right now and measures its
+  /// real on-screen movement (scroll extents of unbuilt rows are only
+  /// estimates and over/under-correct).
+  void _keepReadingPosition(List<MessageModel> messages) {
+    if (!_scrollController.hasClients) return;
+    String? anchorId;
+    double? anchorY;
+    for (final m in messages.reversed) {
+      final y = _rowTop(m.id);
+      if (y != null) {
+        anchorId = m.id;
+        anchorY = y;
+        break;
+      }
+    }
+    if (anchorId == null || anchorY == null) return;
+    final id = anchorId;
+    final oldY = anchorY;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      final newY = _rowTop(id);
+      if (newY == null) return;
+      final movedUp = oldY - newY;
+      if (movedUp.abs() < 0.5) return;
+      // Reversed list: a larger offset moves content down the screen.
+      final position = _scrollController.position;
+      _scrollController.jumpTo(
+        (position.pixels + movedUp)
+            .clamp(position.minScrollExtent, position.maxScrollExtent),
+      );
+    });
+  }
+
+  /// Global top of a built message row, or null if it isn't laid out.
+  double? _rowTop(String messageId) {
+    final box = GlobalObjectKey(messageId).currentContext?.findRenderObject();
+    if (box is! RenderBox || !box.attached || !box.hasSize) return null;
+    return box.localToGlobal(Offset.zero).dy;
   }
 
   void _openThread(BuildContext context, MessageModel message) {
@@ -422,6 +494,50 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
         extra: args,
       );
     }
+  }
+
+  Future<void> _startVoiceNote(BuildContext context) async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    await VoiceNotePlayback.instance.stopAll();
+    _voice.onAutoStop = (rec) {
+      if (mounted) _sendVoiceRecording(this.context, rec);
+    };
+    final ok = await _voice.start();
+    if (!ok && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Allow microphone access in Settings to send voice messages',
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _finishVoiceNote(BuildContext context) async {
+    final rec = await _voice.stop();
+    if (!context.mounted) return;
+    if (rec == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Voice message too short')),
+      );
+      return;
+    }
+    await _sendVoiceRecording(context, rec);
+  }
+
+  Future<void> _sendVoiceRecording(
+    BuildContext context,
+    VoiceNoteRecording rec,
+  ) async {
+    await context.read<ChannelChatCubit>().sendAttachment(
+          bytes: rec.bytes,
+          fileName: rec.fileName,
+          mimeType: rec.mimeType,
+          durationMs: rec.duration.inMilliseconds,
+          waveform: rec.waveform,
+        );
+    _scrollToBottom(force: true);
   }
 
   Future<void> _sendAttachment(
@@ -725,6 +841,13 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
                       case 'pinned':
                         await _showPinnedMessagesSheet();
                         return;
+                      case 'wallpaper':
+                        await ChatWallpaperPage.open(
+                          context,
+                          channelId: widget.channelId,
+                          chatName: title,
+                        );
+                        return;
                     }
                   },
                   itemBuilder: (ctx) {
@@ -789,6 +912,7 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
                             dense: true,
                           ),
                         ),
+                        _wallpaperMenuItem,
                       ];
                     }
                     return const [
@@ -828,6 +952,7 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
                           dense: true,
                         ),
                       ),
+                      _wallpaperMenuItem,
                     ];
                   },
                 ),
@@ -836,6 +961,9 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
             body: Column(
               children: [
                 Expanded(
+                  // REQ 2: WhatsApp-like chat wallpaper behind the messages.
+                  child: ChatWallpaperBackground(
+                  channelId: widget.channelId,
                   child: BlocConsumer<ChannelChatCubit, ChannelChatState>(
                     listenWhen: (prev, next) =>
                         prev.messages.length != next.messages.length ||
@@ -845,10 +973,22 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
                       final firstPaint =
                           _lastMessageCount == 0 && state.messages.isNotEmpty;
                       _lastMessageCount = state.messages.length;
+                      // Someone renamed the Needl / channel: refresh the
+                      // header for everyone, not only the renamer.
+                      if (grew &&
+                          !firstPaint &&
+                          state.messages.isNotEmpty &&
+                          state.messages.last.type == MessageType.system &&
+                          (state.messages.last.content.text ?? '')
+                              .contains('name to "')) {
+                        unawaited(_loadChannelContext());
+                      }
                       if (firstPaint) {
                         _scrollToBottom(force: true);
-                      } else if (grew) {
+                      } else if (grew && _userNearBottom) {
                         _scrollToBottom();
+                      } else if (grew) {
+                        _keepReadingPosition(state.messages);
                       }
                       final initialId = widget.initialMessageId;
                       if (!_didOpenInitialMessage &&
@@ -881,9 +1021,13 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
                             child: state.messages.isEmpty
                                 ? _EmptyChatState(isDm: _isDm)
                                 : ListView.builder(
-                                    key: PageStorageKey(
+                                    // Not a PageStorageKey: restoring an old
+                                    // offset reopened chats mid-history.
+                                    key: ValueKey(
                                         'chat-list-${widget.channelId}'),
                                     controller: _scrollController,
+                                    // Newest message at offset 0 (bottom).
+                                    reverse: true,
                                     cacheExtent: 480,
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 12,
@@ -891,10 +1035,20 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
                                     ),
                                     itemCount: listItems.length,
                                     itemBuilder: (context, index) {
-                                      final item = listItems[index];
+                                      final item = listItems[
+                                          listItems.length - 1 - index];
                                       return switch (item) {
                                         DateSeparatorItem(:final label) =>
                                           DateSeparatorChip(label: label),
+                                        // REQ 2: "X added Y" activity line.
+                                        ChatMessageItem(:final message)
+                                            when message.type ==
+                                                MessageType.system =>
+                                          SystemEventChip(
+                                            key: GlobalObjectKey(message.id),
+                                            text: message.content.text ?? '',
+                                            time: message.createdAt,
+                                          ),
                                         ChatMessageItem(
                                           :final message,
                                           :final showSender,
@@ -996,6 +1150,7 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
                       );
                     },
                   ),
+                  ),
                 ),
                 BlocBuilder<ChannelChatCubit, ChannelChatState>(
                   buildWhen: (p, n) =>
@@ -1044,7 +1199,34 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
                             onCancel: cubit.clearPendingReply,
                           ),
                         if (!state.isReadOnly)
-                          _TypingBinder(
+                          ListenableBuilder(
+                            listenable: _voice,
+                            builder: (context, composer) => _voice.isRecording
+                                ? SafeArea(
+                                    top: false,
+                                    child: Container(
+                                      margin: const EdgeInsets.fromLTRB(
+                                          8, 4, 8, 6),
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.surfaceCard,
+                                        borderRadius:
+                                            BorderRadius.circular(28),
+                                        border: Border.all(
+                                          color: AppColors.borderDefault,
+                                          width: 0.5,
+                                        ),
+                                      ),
+                                      child: VoiceRecordingBar(
+                                        controller: _voice,
+                                        onCancel: () => _voice.cancel(),
+                                        onSend: () =>
+                                            _finishVoiceNote(context),
+                                      ),
+                                    ),
+                                  )
+                                : composer!,
+                            child: _TypingBinder(
                             controller: _textController,
                             cubit: cubit,
                             onTyping: _handleTyping,
@@ -1075,7 +1257,9 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
                                 context,
                                 _mediaPicker.pickDocument,
                               ),
+                              onRecordVoice: () => _startVoiceNote(context),
                             ),
+                          ),
                           ),
                       ],
                     );
@@ -1778,3 +1962,14 @@ class _ChatLinkList extends StatelessWidget {
     );
   }
 }
+
+/// Chat menu entry for the wallpaper picker (REQ 2).
+const _wallpaperMenuItem = PopupMenuItem<String>(
+  value: 'wallpaper',
+  child: ListTile(
+    contentPadding: EdgeInsets.zero,
+    leading: Icon(Icons.palette_outlined),
+    title: Text('Chat theme'),
+    dense: true,
+  ),
+);

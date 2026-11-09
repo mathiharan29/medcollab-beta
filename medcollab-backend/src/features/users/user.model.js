@@ -217,8 +217,12 @@ const userSchema = new mongoose.Schema(
       handoffs: { type: Boolean, default: true },
       // When false: do not write DM read receipts / hide "Seen by" UI
       readReceiptsEnabled: { type: Boolean, default: true },
-      // Opt-in: strangers who find you by phone may send a message request
+      // Legacy: message requests are now open to everyone (REQ 5); kept so
+      // older app builds still read/write the field.
       allowMessageRequestsFromAnyone: { type: Boolean, default: false },
+      // Privacy (REQ 5): may people you don't know add you to a group?
+      // People who share a group or a chat with you can always add you.
+      allowGroupAddsFromAnyone: { type: Boolean, default: false },
       // Quiet hours: no notifications between these times
       quietHoursStart: { type: String, default: null }, // "22:00"
       quietHoursEnd: { type: String, default: null },   // "07:00"

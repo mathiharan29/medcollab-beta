@@ -64,6 +64,8 @@ const MESSAGE_TYPES = {
   ECG: 'ecg',             // ECG strips (image, but categorised separately for UI)
   HANDOFF: 'handoff',     // System message when a handoff is submitted
   ALERT: 'alert',         // System-generated emergency alert
+  AUDIO: 'audio',         // Voice note (REQ 12)
+  SYSTEM: 'system',       // "Dr X added Dr Y", "left", "renamed" (REQ 2)
 };
 
 // ─── Message Priority ──────────────────────────────────────────────────────────
@@ -143,7 +145,22 @@ const MEDIA = {
     'video/webm',
     'video/3gpp',
     'application/pdf',
+    // Voice notes (REQ 12). The app records AAC in .m4a.
+    'audio/mp4',
+    'audio/m4a',
+    'audio/x-m4a',
+    'audio/aac',
+    'audio/mpeg',
+    'audio/ogg',
+    'audio/opus',
+    'audio/webm',
+    'audio/wav',
+    'audio/x-wav',
+    'audio/3gpp',
   ],
+  // Voice notes are capped well below the general limit (~15 min of AAC).
+  MAX_AUDIO_BYTES: 15 * 1024 * 1024,
+  MAX_AUDIO_DURATION_MS: 15 * 60 * 1000,
 };
 
 // ─── Socket Events ─────────────────────────────────────────────────────────────
@@ -186,6 +203,8 @@ const SOCKET_EVENTS = {
   HANDOFF_ACKNOWLEDGED: 'handoff_acknowledged',
   HANDOFF_NOTE_ADDED: 'handoff_note_added',
   HANDOFF_REASSIGNED: 'handoff_reassigned',
+  HANDOFF_UPDATED: 'handoff_updated',
+  HANDOFF_DELETED: 'handoff_deleted',
 
   // Spaces
   SPACE_MEMBER_JOINED: 'space_member_joined',

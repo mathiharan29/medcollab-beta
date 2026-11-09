@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -29,6 +31,45 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late UserRole _role;
   String? _pgPrepSubject;
   bool _submitting = false;
+  late final String _originalUsername;
+  Timer? _usernameDebounce;
+  int _usernameCheck = 0;
+  bool _checkingUsername = false;
+  bool _usernameAvailable = false;
+  bool _usernameTaken = false;
+  String? _usernameReason;
+
+  /// Live "available / taken" while typing (REQ 5).
+  void _onUsernameChanged(String raw) {
+    _usernameDebounce?.cancel();
+    final v = raw.trim().toLowerCase();
+    setState(() {
+      _usernameAvailable = false;
+      _usernameTaken = false;
+      _usernameReason = null;
+      _checkingUsername = false;
+    });
+    if (v.length < 3 || v == _originalUsername) return;
+    _usernameDebounce = Timer(const Duration(milliseconds: 350), () async {
+      final id = ++_usernameCheck;
+      setState(() => _checkingUsername = true);
+      try {
+        final r = await AppDependencies.instance.userRepository
+            .checkUsername(v);
+        if (!mounted || id != _usernameCheck) return;
+        setState(() {
+          _checkingUsername = false;
+          _usernameAvailable = r.available;
+          _usernameTaken = !r.available;
+          _usernameReason = r.reason;
+        });
+      } catch (_) {
+        if (!mounted || id != _usernameCheck) return;
+        // Offline: the server still checks on save.
+        setState(() => _checkingUsername = false);
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -39,6 +80,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _customRoleController = TextEditingController();
     _usernameController =
         TextEditingController(text: user.vocleUsername ?? '');
+    _originalUsername = (user.vocleUsername ?? '').toLowerCase();
     _role = user.role;
 
     final spec = user.speciality ?? '';
@@ -58,6 +100,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _specialityController.dispose();
     _institutionController.dispose();
     _customRoleController.dispose();
+    _usernameDebounce?.cancel();
     _usernameController.dispose();
     super.dispose();
   }
@@ -161,21 +204,42 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9_]')),
                 LengthLimitingTextInputFormatter(30),
               ],
-              decoration: const InputDecoration(
-                labelText: 'Vocle username',
+              onChanged: _onUsernameChanged,
+              decoration: InputDecoration(
+                labelText: 'Vocle ID (username)',
                 hintText: 'e.g. dr_anita',
                 prefixText: '@',
-                helperText: 'Letters, numbers and underscore (min 3)',
+                // REQ 5: unique; colleagues can find you by it.
+                helperText: _usernameTaken
+                    ? null
+                    : _usernameAvailable
+                        ? '@${_usernameController.text.trim().toLowerCase()} is available'
+                        : 'Unique. Colleagues can find you by @username.',
+                helperStyle: _usernameAvailable
+                    ? TextStyle(color: AppColors.tealDark)
+                    : null,
+                errorText: _usernameTaken ? _usernameReason : null,
+                suffixIcon: _checkingUsername
+                    ? const Padding(
+                        padding: EdgeInsets.all(14),
+                        child: SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    : _usernameAvailable
+                        ? Icon(Icons.check_circle, color: AppColors.tealDark)
+                        : null,
               ),
               validator: (value) {
                 final v = value?.trim() ?? '';
-                // Optional until the backend field ships for all users, but
-                // when provided it must be a valid handle.
                 if (v.isEmpty) return null;
                 if (v.length < 3) return 'Use at least 3 characters';
                 if (!RegExp(r'^[A-Za-z0-9_]+$').hasMatch(v)) {
                   return 'Only letters, numbers and underscore';
                 }
+                if (_usernameTaken) return _usernameReason;
                 return null;
               },
             ),

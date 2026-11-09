@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
+import 'package:medcollab_app/core/di/app_dependencies.dart';
 import 'package:medcollab_app/features/handoffs/data/models/handoff_patient_model.dart';
+import 'package:medcollab_app/features/media/data/services/media_picker_service.dart';
 import 'package:medcollab_app/features/handoffs/presentation/utils/handoff_priority_colors.dart';
 
 /// Field length caps aligned with backend handoff.model.js + clinical practice:
@@ -16,14 +18,34 @@ abstract final class PatientFieldLimits {
   static const taskLine = 200;
 }
 
+/// Picks a file for a patient attachment; null when cancelled.
+typedef PickPatientAttachment = Future<PickedAttachment?> Function(
+  BuildContext context,
+);
+
+/// Uploads a picked file and returns the stored attachment.
+typedef UploadPatientAttachment = Future<HandoffAttachment> Function(
+  PickedAttachment picked,
+);
+
 /// Add or edit a single patient entry in a handoff draft.
 class PatientEditorSheet extends StatefulWidget {
   const PatientEditorSheet({
     this.initial,
+    this.pickAttachment,
+    this.uploadAttachment,
     super.key,
   });
 
   final HandoffPatientModel? initial;
+
+  /// Defaults to a Camera / Photo / Document chooser ([MediaPickerService]).
+  final PickPatientAttachment? pickAttachment;
+
+  /// Defaults to [MediaRepository.uploadFile] with context `handoff`.
+  final UploadPatientAttachment? uploadAttachment;
+
+  static const maxAttachments = 5;
 
   static Future<HandoffPatientModel?> show(
     BuildContext context, {
@@ -57,7 +79,109 @@ class _PatientEditorSheetState extends State<PatientEditorSheet> {
   );
   late PatientStatus _status = widget.initial?.status ?? PatientStatus.stable;
   late bool _isFlagged = widget.initial?.isFlagged ?? false;
-  final List<String> _attachments = <String>[];
+  // Real uploaded files (REQ 9). Previously a placeholder list that only
+  // added fake "Attachment N" chips and was never saved.
+  late final List<HandoffAttachment> _attachments = [
+    ...?widget.initial?.attachments,
+  ];
+  bool _uploading = false;
+
+  Future<PickedAttachment?> _defaultPick(BuildContext context) async {
+    final picker = MediaPickerService();
+    final source = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: const Text('Take photo'),
+              onTap: () => Navigator.pop(ctx, 'camera'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Choose photo'),
+              onTap: () => Navigator.pop(ctx, 'gallery'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.description_outlined),
+              title: const Text('Document (PDF, report)'),
+              onTap: () => Navigator.pop(ctx, 'document'),
+            ),
+          ],
+        ),
+      ),
+    );
+    return switch (source) {
+      'camera' => picker.captureFromCamera(),
+      'gallery' => picker.pickFromGallery(),
+      'document' => picker.pickDocument(),
+      _ => Future.value(null),
+    };
+  }
+
+  Future<HandoffAttachment> _defaultUpload(PickedAttachment picked) async {
+    // image_picker renames downscaled photos "scaled_<name>"; keep the
+    // doctor's original file name.
+    final name = picked.fileName.startsWith('scaled_')
+        ? picked.fileName.substring('scaled_'.length)
+        : picked.fileName;
+    final upload = await AppDependencies.instance.mediaRepository.uploadFile(
+      bytes: picked.bytes,
+      fileName: name,
+      mimeType: picked.mimeType,
+      context: 'handoff',
+    );
+    return HandoffAttachment(
+      url: upload.url,
+      thumbnailUrl: upload.thumbnailUrl,
+      fileName: name,
+      mimeType: upload.mimeType.isNotEmpty ? upload.mimeType : picked.mimeType,
+    );
+  }
+
+  Future<void> _addAttachment() async {
+    if (_uploading ||
+        _attachments.length >= PatientEditorSheet.maxAttachments) {
+      return;
+    }
+    final PickedAttachment? picked;
+    try {
+      picked = await (widget.pickAttachment ?? _defaultPick)(context);
+    } catch (_) {
+      _snack('Could not open the picker. Check camera/storage permission.');
+      return;
+    }
+    if (picked == null || !mounted) return;
+    setState(() => _uploading = true);
+    try {
+      final attachment =
+          await (widget.uploadAttachment ?? _defaultUpload)(picked);
+      if (!mounted) return;
+      setState(() => _attachments.add(attachment));
+    } catch (_) {
+      _snack('Upload failed. Try again.');
+    } finally {
+      if (mounted) setState(() => _uploading = false);
+    }
+  }
+
+  /// Explicit readable label colour. The app chip theme's badge style made
+  /// these labels invisible on the chip background (sanity F3).
+  TextStyle? _chipLabelStyle(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Theme.of(context)
+        .textTheme
+        .labelLarge
+        ?.copyWith(color: scheme.onSurface, fontWeight: FontWeight.w500);
+  }
+
+  void _snack(String text) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+  }
 
   @override
   void dispose() {
@@ -71,6 +195,10 @@ class _PatientEditorSheetState extends State<PatientEditorSheet> {
   }
 
   void _save() {
+    if (_uploading) {
+      _snack('Wait for the attachment to finish uploading');
+      return;
+    }
     final bed = _bedController.text.trim();
     final ward = _wardController.text.trim();
     final alias = _aliasController.text.trim();
@@ -134,6 +262,7 @@ class _PatientEditorSheetState extends State<PatientEditorSheet> {
         notes: _notesController.text.trim(),
         pendingTasks: tasks,
         isFlagged: _isFlagged,
+        attachments: List.unmodifiable(_attachments),
       ),
     );
   }
@@ -266,27 +395,49 @@ class _PatientEditorSheetState extends State<PatientEditorSheet> {
               maxLines: 4,
             ),
             const SizedBox(height: 12),
-            Text('Attachment', style: Theme.of(context).textTheme.titleSmall),
+            Text(
+              'Attachments (${_attachments.length}/${PatientEditorSheet.maxAttachments})',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
             const SizedBox(height: 4),
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
-                for (final name in _attachments)
+                for (final attachment in _attachments)
                   InputChip(
-                    avatar: const Icon(Icons.attach_file, size: 16),
-                    label: Text(name),
-                    onDeleted: () => setState(() => _attachments.remove(name)),
-                  ),
-                ActionChip(
-                  avatar: const Icon(Icons.attach_file, size: 16),
-                  label: const Text('Add attachment'),
-                  onPressed: () => setState(
-                    () => _attachments.add(
-                      'Attachment ${_attachments.length + 1}',
+                    key: ValueKey('attachment-${attachment.url}'),
+                    avatar: Icon(
+                      attachment.isImage
+                          ? Icons.image_outlined
+                          : Icons.description_outlined,
+                      size: 16,
                     ),
+                    label: Text(
+                      attachment.displayName,
+                      overflow: TextOverflow.ellipsis,
+                      style: _chipLabelStyle(context),
+                    ),
+                    deleteButtonTooltipMessage: 'Remove attachment',
+                    onDeleted: _uploading
+                        ? null
+                        : () => setState(() => _attachments.remove(attachment)),
                   ),
-                ),
+                if (_attachments.length < PatientEditorSheet.maxAttachments)
+                  ActionChip(
+                    avatar: _uploading
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.attach_file, size: 16),
+                    label: Text(
+                      _uploading ? 'Uploading…' : 'Add attachment',
+                      style: _chipLabelStyle(context),
+                    ),
+                    onPressed: _uploading ? null : _addAttachment,
+                  ),
               ],
             ),
             const SizedBox(height: 12),
@@ -305,7 +456,7 @@ class _PatientEditorSheetState extends State<PatientEditorSheet> {
             ),
             const SizedBox(height: 16),
             FilledButton(
-              onPressed: _save,
+              onPressed: _uploading ? null : _save,
               child: Text(widget.initial == null ? 'Add' : 'Save'),
             ),
           ],

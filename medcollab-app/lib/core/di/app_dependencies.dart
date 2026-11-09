@@ -15,6 +15,7 @@ import 'package:medcollab_app/features/auth/data/repositories/user_repository.da
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_event.dart';
 import 'package:medcollab_app/features/channels/data/repositories/channel_repository.dart';
+import 'package:medcollab_app/features/contacts/contact_sync_service.dart';
 import 'package:medcollab_app/features/handoffs/data/repositories/handoff_repository.dart';
 import 'package:medcollab_app/features/home/data/dashboard_preferences_service.dart';
 import 'package:medcollab_app/features/media/data/repositories/media_repository.dart';
@@ -45,6 +46,7 @@ class AppDependencies {
   late final MediaRepository mediaRepository;
   late final ChannelRepository channelRepository;
   late final MemberRepository memberRepository;
+  late final ContactSyncService contactSyncService;
   late final HandoffRepository handoffRepository;
   late final DashboardPreferencesService dashboardPreferencesService;
   late final NotificationRepository notificationRepository;
@@ -88,6 +90,7 @@ class AppDependencies {
     mediaRepository = MediaRepository(apiClient: apiClient);
     channelRepository = ChannelRepository(apiClient: apiClient);
     memberRepository = MemberRepository(apiClient: apiClient);
+    contactSyncService = ContactSyncService(apiClient: apiClient);
     handoffRepository = HandoffRepository(apiClient: apiClient);
     dashboardPreferencesService = DashboardPreferencesService();
     notificationRepository = NotificationRepository(apiClient: apiClient);

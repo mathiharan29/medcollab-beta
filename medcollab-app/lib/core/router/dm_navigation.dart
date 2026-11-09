@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:medcollab_app/core/router/app_routes.dart';
 import 'package:medcollab_app/features/spaces/data/models/channel_model.dart';
@@ -16,6 +16,9 @@ Future<void> openDmChat(
   final path = AppRoutes.dmPath(channelId);
   final current = GoRouterState.of(context).uri.path;
   if (current == path) return;
+  // A snackbar from the previous screen ("Request sent…") would sit over
+  // the new chat's message box for seconds.
+  ScaffoldMessenger.maybeOf(context)?.hideCurrentSnackBar();
 
   if (replace) {
     context.pushReplacement(path, extra: channel);

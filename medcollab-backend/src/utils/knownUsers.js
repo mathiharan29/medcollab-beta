@@ -101,7 +101,9 @@ async function canMessageUser(callerId, targetUserId) {
   }
 
   // Exact 1:1 DM only — a group Needl that happens to contain both users
-  // must not count as an open pair conversation.
+  // must not count as an open pair conversation. An archived 1:1 does not
+  // count either: archiving ends the relationship (security suite), so a
+  // fresh request/accept is needed — the app offers it (REQ 11).
   const existingDm = await Channel.findOne({
     type: CHANNEL_TYPES.DIRECT,
     members: { $all: [callerId, targetUserId], $size: 2 },
@@ -126,7 +128,27 @@ async function canMessageUser(callerId, targetUserId) {
 }
 
 /**
+ * True when either side blocked the other via a message request.
+ */
+async function isBlockedPair(callerId, targetUserId) {
+  const blocked = await MessageRequest.findOne({
+    status: MESSAGE_REQUEST_STATUS.BLOCKED,
+    $or: [
+      { fromUserId: callerId, toUserId: targetUserId },
+      { fromUserId: targetUserId, toUserId: callerId },
+    ],
+  })
+    .select('_id')
+    .lean();
+  return Boolean(blocked);
+}
+
+/**
  * True when caller may send a message request to target.
+ *
+ * REQ 5: requests are open by default — any active, onboarded doctor can be
+ * asked. The recipient still decides (accept / decline), so no chat or Seen
+ * happens without consent. Privacy settings only guard being added to groups.
  */
 async function canRequestMessage(callerId, targetUserId) {
   if (!targetUserId || callerId.toString() === targetUserId.toString()) {
@@ -136,14 +158,83 @@ async function canRequestMessage(callerId, targetUserId) {
     return false;
   }
 
-  if (await shareActiveSpace(callerId, targetUserId)) {
-    return true;
+  const target = await User.findById(targetUserId)
+    .select('isActive isOnboarded')
+    .lean();
+  // Blocks are enforced separately (createRequest, describeRelationship) so
+  // the controller's own block check stays independently testable.
+  return Boolean(target && target.isActive !== false && target.isOnboarded);
+}
+
+/**
+ * May `callerId` put `targetUserId` straight into a group conversation
+ * (Needl / group DM, or a group via "Add members")?
+ *
+ * REQ 5: message *requests* are open to everyone, but being *added* is the
+ * privacy boundary: only people who already know you (an open 1:1 chat or
+ * accepted request, or a shared group) — or anyone, if you allow it.
+ * Never across a block.
+ */
+async function canAddToConversation(callerId, targetUserId) {
+  if (!targetUserId || callerId.toString() === targetUserId.toString()) {
+    return false;
+  }
+  const target = await User.findById(targetUserId)
+    .select('isActive isOnboarded notifications.allowGroupAddsFromAnyone')
+    .lean();
+  if (!target || target.isActive === false || !target.isOnboarded) return false;
+  if (await isBlockedPair(callerId, targetUserId)) return false;
+  if (target.notifications?.allowGroupAddsFromAnyone === true) return true;
+  return (
+    (await canMessageUser(callerId, targetUserId)) ||
+    (await shareActiveSpace(callerId, targetUserId))
+  );
+}
+
+/**
+ * Everything the app needs to decide between "Message", "Send request",
+ * "Request pending" and "Accept" for one person (REQ 11).
+ */
+async function describeRelationship(callerId, targetUserId) {
+  const canMessage = await canMessageUser(callerId, targetUserId);
+  const sharesGroup = await shareActiveSpace(callerId, targetUserId);
+  const canRequest =
+    (await canRequestMessage(callerId, targetUserId)) &&
+    !(await isBlockedPair(callerId, targetUserId));
+
+  let pendingRequest = null;
+  const pending = await MessageRequest.findOne({
+    status: MESSAGE_REQUEST_STATUS.PENDING,
+    $or: [
+      { fromUserId: callerId, toUserId: targetUserId },
+      { fromUserId: targetUserId, toUserId: callerId },
+    ],
+  }).select('_id fromUserId toUserId introMessage createdAt');
+
+  if (pending) {
+    pendingRequest = {
+      id: pending._id.toString(),
+      direction:
+        pending.fromUserId.toString() === callerId.toString()
+          ? 'sent'
+          : 'received',
+      introMessage: pending.introMessage || '',
+      createdAt: pending.createdAt,
+    };
   }
 
-  const target = await User.findById(targetUserId)
-    .select('notifications.allowMessageRequestsFromAnyone')
-    .lean();
-  return target?.notifications?.allowMessageRequestsFromAnyone === true;
+  return {
+    relationship: canMessage
+      ? 'known'
+      : sharesGroup
+        ? 'group_member'
+        : 'stranger',
+    canMessage,
+    sharesGroup,
+    acceptsMessageRequests: canRequest,
+    canRequest,
+    pendingRequest,
+  };
 }
 
 module.exports = {
@@ -152,5 +243,8 @@ module.exports = {
   shareActiveSpace,
   canMessageUser,
   canRequestMessage,
+  isBlockedPair,
+  canAddToConversation,
+  describeRelationship,
   normalizeInstitution,
 };

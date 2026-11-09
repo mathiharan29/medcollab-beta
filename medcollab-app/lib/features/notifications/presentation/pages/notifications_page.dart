@@ -63,7 +63,7 @@ class _NotificationsView extends StatelessWidget {
                     tooltip: 'Settings',
                     onPressed: () =>
                         context.push(AppRoutes.notificationSettings),
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.settings_outlined,
                       color: AppColors.textSecondary,
                     ),
@@ -233,7 +233,9 @@ class _FilterPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? AppColors.navyPrimary : AppColors.surfaceCard,
+      color: selected
+          ? (AppColors.isDark ? AppColors.tealDark : AppColors.navyPrimary)
+          : AppColors.surfaceCard,
       borderRadius: AppRadius.pill,
       child: InkWell(
         onTap: onTap,

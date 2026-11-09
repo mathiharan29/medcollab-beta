@@ -134,7 +134,7 @@ class _JoinInvitePageState extends State<JoinInvitePage> {
             children: [
               ErrorBanner(message: message),
               const SizedBox(height: AppSpacing.md),
-              const Text(
+              Text(
                 'Ask a colleague for a fresh invite code, or browse groups '
                 'you already belong to.',
                 style: AppTextStyles.body,
@@ -193,7 +193,7 @@ class _JoinInvitePageState extends State<JoinInvitePage> {
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.md),
       children: [
-        const Text(
+        Text(
           'You have been invited to join this clinical group.',
           style: AppTextStyles.body,
         ),

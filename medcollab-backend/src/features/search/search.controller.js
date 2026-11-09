@@ -83,6 +83,8 @@ const globalSearch = asyncHandler(async (req, res) => {
       const messages = await Message.find({
         channelId: { $in: channelIds },
         deletedAt: null,
+        // Activity lines ("X added Y") are not searchable content.
+        type: { $ne: MESSAGE_TYPES.SYSTEM },
         'content.text': regex,
       })
         .populate('senderId', 'name displayTitle role avatarUrl')

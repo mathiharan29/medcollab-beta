@@ -72,6 +72,11 @@ class GroupedMessageNotification {
               cancelNotification: false,
               showsUserInterface: false,
             ),
+            const AndroidNotificationAction(
+              'mark_read',
+              'Mark as read',
+              showsUserInterface: false,
+            ),
           ];
 
     await plugin.show(
@@ -110,6 +115,20 @@ class GroupedMessageNotification {
         'body': body,
       }),
     );
+  }
+
+  /// Removes a chat's notification and forgets its lines, so the next
+  /// message starts a fresh conversation entry instead of re-showing ones
+  /// already read (REQ 4). Called when the chat is opened or marked read.
+  static Future<void> clear(String channelId) async {
+    if (channelId.isEmpty) return;
+    try {
+      await plugin.cancel(_idFor(channelId), tag: channelId);
+    } catch (_) {}
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('$_prefsPrefix$channelId');
+    } catch (_) {}
   }
 
   static int _idFor(String key) => key.hashCode & 0x7fffffff;

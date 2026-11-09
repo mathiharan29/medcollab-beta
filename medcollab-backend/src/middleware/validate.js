@@ -147,7 +147,27 @@ const validateCreateChannel = [
 const validateSendMessage = [
   body('type')
     .optional()
-    .isIn(['text', 'image', 'document', 'video', 'ecg']).withMessage('Invalid message type'),
+    // 'system' and 'handoff' are server-generated only.
+    .isIn(['text', 'image', 'document', 'video', 'ecg', 'audio']).withMessage('Invalid message type'),
+  // Voice note (REQ 12): needs the uploaded file + a sane length/waveform.
+  body('content.mediaUrl').custom((value, { req }) => {
+    if ((req.body?.type || 'text') === 'audio' && (typeof value !== 'string' || !value)) {
+      throw new Error('Voice message file is missing');
+    }
+    return true;
+  }),
+  body('content.durationMs')
+    .optional({ nullable: true })
+    .isInt({ min: 0, max: 15 * 60 * 1000 }).withMessage('Voice message is too long'),
+  body('content.waveform')
+    .optional({ nullable: true })
+    .custom((value) => {
+      if (!Array.isArray(value) || value.length > 64 ||
+          !value.every((n) => Number.isFinite(n) && n >= 0 && n <= 100)) {
+        throw new Error('Invalid waveform');
+      }
+      return true;
+    }),
   body('content.text').custom((value, { req }) => {
     const type = req.body?.type || 'text';
     if (type === 'text') {

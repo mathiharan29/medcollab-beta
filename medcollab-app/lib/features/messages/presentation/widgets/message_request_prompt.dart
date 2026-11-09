@@ -14,9 +14,9 @@ Future<bool> promptAndSendMessageRequest(
     title: peerName == null || peerName.isEmpty
         ? 'Send message request'
         : 'Message request to $peerName',
-    explanation: 'You share a Vocle network with them, but chat still needs '
-        'their approval. They will see your name and this note.',
-    hintText: 'Optional — e.g. from our ward group, need a consult',
+    explanation: 'Chat opens when they accept. They will see your name and '
+        'this note.',
+    hintText: 'Optional — e.g. ICU R2 from AIIMS, need a consult',
   );
   if (intro == null || !context.mounted) return false;
 

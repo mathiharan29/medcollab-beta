@@ -156,7 +156,7 @@ const listUsers = asyncHandler(async (req, res) => {
 
   const [messageCounts, handoffCounts] = await Promise.all([
     Message.aggregate([
-      { $match: { senderId: { $in: userIds }, deletedAt: null } },
+      { $match: { senderId: { $in: userIds }, deletedAt: null, type: { $ne: 'system' } } },
       { $group: { _id: '$senderId', count: { $sum: 1 } } },
     ]),
     Handoff.aggregate([
@@ -211,7 +211,7 @@ const getUser = asyncHandler(async (req, res) => {
   if (!user) return respond.notFound(res, 'User not found');
 
   const [messageCount, handoffCount, spaces] = await Promise.all([
-    Message.countDocuments({ senderId: user._id, deletedAt: null }),
+    Message.countDocuments({ senderId: user._id, deletedAt: null, type: { $ne: 'system' } }),
     Handoff.countDocuments({
       fromUserId: user._id,
       status: { $ne: HANDOFF_STATUS.DRAFT },

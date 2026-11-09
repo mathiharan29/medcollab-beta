@@ -1,5 +1,6 @@
 import 'package:medcollab_app/core/constants/api_endpoints.dart';
 import 'package:medcollab_app/core/error/app_exception.dart';
+import 'package:medcollab_app/core/network/shared_fetch.dart';
 import 'package:medcollab_app/core/utils/json_map_utils.dart';
 import 'package:medcollab_app/features/spaces/data/models/channel_model.dart';
 import 'package:medcollab_app/features/spaces/data/models/space_model.dart';
@@ -11,12 +12,18 @@ class SpaceRepository extends BaseRepository {
 
   /// `GET /api/spaces`
   Future<List<SpaceModel>> getMySpaces() {
-    return execute(
-      () => apiClient.get(
-        ApiEndpoints.spaces,
-        parser: (json) => parseNestedList(json, 'spaces', SpaceModel.fromJson),
+    // Shared between tabs that load together (REQ 13). Each caller gets its
+    // own list copy, so an in-place sort never leaks into another screen.
+    return SharedFetch.run<List<SpaceModel>>(
+      'spaces',
+      () => execute(
+        () => apiClient.get(
+          ApiEndpoints.spaces,
+          parser: (json) =>
+              parseNestedList(json, 'spaces', SpaceModel.fromJson),
+        ),
       ),
-    );
+    ).then(List.of);
   }
 
   /// `POST /api/spaces`

@@ -17,6 +17,8 @@ class MessageContent extends Equatable {
     this.mimeType,
     this.width,
     this.height,
+    this.durationMs,
+    this.waveform = const [],
   });
 
   factory MessageContent.fromJson(Map<String, dynamic> json) {
@@ -27,8 +29,16 @@ class MessageContent extends Equatable {
       fileName: json['fileName'] as String?,
       fileSize: (json['fileSize'] as num?)?.toInt(),
       mimeType: json['mimeType'] as String?,
-      width: json['width'] as int?,
-      height: json['height'] as int?,
+      // num, not int: some uploads report 1080.0.
+      width: (json['width'] as num?)?.toInt(),
+      height: (json['height'] as num?)?.toInt(),
+      durationMs: (json['durationMs'] as num?)?.toInt(),
+      waveform: (json['waveform'] is List)
+          ? (json['waveform'] as List)
+              .whereType<num>()
+              .map((n) => n.toInt().clamp(0, 100))
+              .toList()
+          : const [],
     );
   }
 
@@ -48,6 +58,12 @@ class MessageContent extends Equatable {
   final int? width;
   final int? height;
 
+  /// Voice note length (REQ 12).
+  final int? durationMs;
+
+  /// Voice note loudness bars, 0–100 (REQ 12).
+  final List<int> waveform;
+
   bool get hasMedia => mediaUrl != null && mediaUrl!.isNotEmpty;
 
   Map<String, dynamic> toJson() => {
@@ -59,11 +75,14 @@ class MessageContent extends Equatable {
         if (mimeType != null) 'mimeType': mimeType,
         if (width != null) 'width': width,
         if (height != null) 'height': height,
+        if (durationMs != null) 'durationMs': durationMs,
+        if (waveform.isNotEmpty) 'waveform': waveform,
       };
 
   @override
   List<Object?> get props =>
-      [text, mediaUrl, thumbnailUrl, fileName, fileSize, mimeType, width, height];
+      [text, mediaUrl, thumbnailUrl, fileName, fileSize, mimeType, width, height,
+       durationMs, waveform];
 }
 
 class MessageModel extends Equatable {

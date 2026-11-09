@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:medcollab_app/core/state/safe_emit.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
 import 'package:medcollab_app/core/constants/socket_events.dart';
 import 'package:medcollab_app/core/error/app_exception.dart';
@@ -13,7 +14,7 @@ part 'global_handoffs_state.dart';
 
 enum GlobalHandoffFilter { pending, active, completed, drafts, reassigned }
 
-class GlobalHandoffsCubit extends Cubit<GlobalHandoffsState> {
+class GlobalHandoffsCubit extends Cubit<GlobalHandoffsState> with SafeEmit<GlobalHandoffsState> {
   GlobalHandoffsCubit({
     required HandoffRepository handoffRepository,
     required SocketClient socketClient,
@@ -35,6 +36,8 @@ class GlobalHandoffsCubit extends Cubit<GlobalHandoffsState> {
   StreamSubscription<Map<String, dynamic>>? _submittedSub;
   StreamSubscription<Map<String, dynamic>>? _ackSub;
   StreamSubscription<Map<String, dynamic>>? _reassignedSub;
+  StreamSubscription<Map<String, dynamic>>? _updatedSub;
+  StreamSubscription<Map<String, dynamic>>? _deletedSub;
   StreamSubscription<bool>? _connectionSub;
   Timer? _reloadDebounce;
 
@@ -71,6 +74,13 @@ class GlobalHandoffsCubit extends Cubit<GlobalHandoffsState> {
     _reassignedSub = _socketClient
         .onMapEvent(SocketEvents.handoffReassigned)
         .listen((_) => _scheduleReload());
+    // REQ 10: edits after submit and deletions refresh the list live.
+    _updatedSub = _socketClient
+        .onMapEvent(SocketEvents.handoffUpdated)
+        .listen((_) => _scheduleReload());
+    _deletedSub = _socketClient
+        .onMapEvent(SocketEvents.handoffDeleted)
+        .listen((_) => _scheduleReload());
   }
 
   void _scheduleReload() {
@@ -84,6 +94,8 @@ class GlobalHandoffsCubit extends Cubit<GlobalHandoffsState> {
     _submittedSub?.cancel();
     _ackSub?.cancel();
     _reassignedSub?.cancel();
+    _updatedSub?.cancel();
+    _deletedSub?.cancel();
     _connectionSub?.cancel();
     return super.close();
   }

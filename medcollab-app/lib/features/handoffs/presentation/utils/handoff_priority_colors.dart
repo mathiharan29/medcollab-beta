@@ -71,28 +71,41 @@ abstract final class HandoffPriorityColors {
   }
 
   /// Soft chip background/foreground for handoff lifecycle.
+  ///
+  /// Uses theme-aware tints (REQ 6): fixed pastel backgrounds glared as
+  /// bright chips on dark cards. Foregrounds lighten in dark mode so the
+  /// label keeps contrast on the darker tint.
   static (Color bg, Color fg, String label) statusChip(HandoffModel handoff) {
+    final dark = AppColors.isDark;
     final key = handoff.lifecycleLabel.toLowerCase();
     if (key.contains('not attended')) {
-      return (const Color(0xFFFFF0F1), const Color(0xFFB91C1C), 'Not attended');
+      return (
+        AppColors.emergencyTint,
+        dark ? const Color(0xFFFCA5A5) : const Color(0xFFB91C1C),
+        'Not attended',
+      );
     }
     if (key.contains('completed') || key.contains('done')) {
-      return (VocleColors.tealBg, const Color(0xFF00856F), 'Done');
+      return (
+        AppColors.tealTint,
+        dark ? const Color(0xFF5EEAD4) : const Color(0xFF00856F),
+        'Done',
+      );
     }
     return switch (handoff.status) {
       HandoffStatus.draft => (
-          const Color(0xFFF3F4F6),
-          const Color(0xFF6B7280),
+          AppColors.statusNeutTint,
+          dark ? AppColors.textSecondary : const Color(0xFF6B7280),
           'Draft',
         ),
       HandoffStatus.submitted => (
-          const Color(0xFFFFF7ED),
-          const Color(0xFFB45309),
+          AppColors.statusPendTint,
+          dark ? const Color(0xFFFDBA74) : const Color(0xFFB45309),
           'Pending',
         ),
       HandoffStatus.acknowledged => (
-          const Color(0xFFEFF6FF),
-          VocleColors.blue,
+          dark ? const Color(0xFF13294B) : const Color(0xFFEFF6FF),
+          dark ? const Color(0xFF93C5FD) : VocleColors.blue,
           'Active',
         ),
     };

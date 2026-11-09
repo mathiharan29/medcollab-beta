@@ -1,7 +1,7 @@
 name: medcollab_app
 description: Medical collaboration platform for hospital teams — MedCollab MVP.
 publish_to: 'none'
-version: 1.0.0+28
+version: 1.0.0+31
 
 environment:
   sdk: '>=3.5.0 <4.0.0'
@@ -45,6 +45,11 @@ dependencies:
   firebase_core: ^4.12.1
   firebase_messaging: ^16.4.3
   flutter_local_notifications: ^19.5.0
+  flutter_contacts: 1.1.9+2
+  record: 6.0.0
+  just_audio: 0.9.46
+  package_info_plus: 8.1.0
+  smart_auth: 2.0.0
   # Avoid mobile_scanner — Kotlin/ML Kit release build breaks on this toolchain.
 
 dev_dependencies:
@@ -70,5 +75,8 @@ flutter_launcher_icons:
 flutter:
   uses-material-design: true
   assets:
-    - assets/branding/
+    # Only the images the app uses (REQ 13): the 1.1 MB vocle_logo.png in this
+    # folder is unused and was shipped in every APK.
+    - assets/branding/vocle_full_logo.jpeg
+    - assets/branding/vocle_icon.jpeg
     - assets/data/

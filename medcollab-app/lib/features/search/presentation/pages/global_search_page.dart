@@ -10,6 +10,7 @@ import 'package:medcollab_app/core/theme/app_colors.dart';
 import 'package:medcollab_app/core/theme/app_spacing.dart';
 import 'package:medcollab_app/features/auth/data/models/user_model.dart';
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:medcollab_app/features/messages/presentation/utils/start_conversation.dart';
 import 'package:medcollab_app/features/search/data/repositories/search_repository.dart';
 import 'package:medcollab_app/shared/presentation/widgets/app_empty_state.dart';
 import 'package:medcollab_app/shared/presentation/widgets/app_search_bar.dart';
@@ -85,26 +86,16 @@ class _GlobalSearchPageState extends State<GlobalSearchPage> {
   Future<void> _openDoctor(UserModel doctor) async {
     if (_openingDoctorId != null) return;
     setState(() => _openingDoctorId = doctor.id);
-    try {
-      final channel = await AppDependencies.instance.channelRepository
-          .createOrGetDM(doctor.id);
-      if (!mounted) return;
-      openDmChat(
-        context,
-        channelId: channel.id,
-        channel: channel,
-        replace: true,
-      );
-    } catch (_) {
-      if (!mounted) return;
+    // REQ 11: no DM yet → offer a message request instead of a dead end.
+    final outcome = await startConversation(
+      context,
+      userId: doctor.id,
+      peerName: doctor.displayName,
+      replaceRoute: true,
+    );
+    if (!mounted) return;
+    if (outcome != StartConversationOutcome.opened) {
       setState(() => _openingDoctorId = null);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Could not start conversation — you can only message known colleagues',
-          ),
-        ),
-      );
     }
   }
 

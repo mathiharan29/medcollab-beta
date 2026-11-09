@@ -71,6 +71,25 @@ const contentSchema = new mongoose.Schema(
       ref: 'Handoff',
       default: null,
     },
+
+    // For type: audio (voice note, REQ 12) — length in milliseconds and a
+    // small loudness profile (0–100 values) for the waveform.
+    durationMs: { type: Number, default: null, min: 0 },
+    waveform: {
+      type: [Number],
+      default: undefined,
+      validate: {
+        validator: (v) => !v || (v.length <= 64 && v.every((n) => n >= 0 && n <= 100)),
+        message: 'Invalid waveform',
+      },
+    },
+
+    // For type: system (REQ 2) — what happened and to whom.
+    systemEvent: { type: String, default: null },
+    targetUserIds: {
+      type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+      default: undefined,
+    },
   },
   { _id: false }
 );

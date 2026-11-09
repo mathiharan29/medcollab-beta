@@ -25,6 +25,13 @@ abstract final class ShellTabHistory {
     }
   }
 
+  /// Back now always returns Home (REQ 3); keep the visit stack consistent.
+  static void resetToHome() {
+    _stack
+      ..clear()
+      ..add(0);
+  }
+
   /// Returns true when back was handled by switching tabs.
   static bool goBack() {
     final nav = shell;

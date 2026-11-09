@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:medcollab_app/core/state/safe_emit.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
 import 'package:medcollab_app/core/constants/socket_events.dart';
 import 'package:medcollab_app/core/error/app_exception.dart';
@@ -14,7 +15,7 @@ import 'package:medcollab_app/features/messages/data/repositories/thread_reposit
 
 part 'thread_state.dart';
 
-class ThreadCubit extends Cubit<ThreadState> {
+class ThreadCubit extends Cubit<ThreadState> with SafeEmit<ThreadState> {
   ThreadCubit({
     required ThreadRepository threadRepository,
     required MediaRepository mediaRepository,
@@ -180,7 +181,41 @@ class ThreadCubit extends Cubit<ThreadState> {
       if (message.id.isNotEmpty && !_seenReplyIds.add(message.id)) return;
       _upsertReply(message);
     });
+
+    // Live edits / deletes of replies (and the root) in an open thread.
+    _updatedSub =
+        _socketClient.onMapEvent(SocketEvents.messageUpdated).listen((data) {
+      final id = data['messageId']?.toString() ?? data['_id']?.toString();
+      if (id == null || id.isEmpty) return;
+      final contentJson = asJsonMap(data['content']);
+      MessageModel apply(MessageModel m) => m.copyWith(
+            content: contentJson != null
+                ? MessageContent.fromJson(contentJson)
+                : m.content,
+            isEdited: data['isEdited'] == true || m.isEdited,
+          );
+      if (state.rootMessage?.id == id) {
+        emit(state.copyWith(rootMessage: apply(state.rootMessage!)));
+        return;
+      }
+      final index = state.replies.indexWhere((r) => r.id == id);
+      if (index < 0) return;
+      final updated = List<MessageModel>.from(state.replies);
+      updated[index] = apply(updated[index]);
+      emit(state.copyWith(replies: updated));
+    });
+    _deletedSub =
+        _socketClient.onMapEvent(SocketEvents.messageDeleted).listen((data) {
+      final id = data['messageId']?.toString() ?? '';
+      final index = state.replies.indexWhere((r) => r.id == id);
+      if (index < 0) return;
+      final updated = List<MessageModel>.from(state.replies)..removeAt(index);
+      emit(state.copyWith(replies: updated));
+    });
   }
+
+  StreamSubscription<Map<String, dynamic>>? _updatedSub;
+  StreamSubscription<Map<String, dynamic>>? _deletedSub;
 
   void _listenForTyping() {
     _typingSub =
@@ -250,6 +285,8 @@ class ThreadCubit extends Cubit<ThreadState> {
     emitTypingStop();
     _connectionSub?.cancel();
     _messageSub?.cancel();
+    _updatedSub?.cancel();
+    _deletedSub?.cancel();
     _typingSub?.cancel();
     _stoppedTypingSub?.cancel();
     return super.close();

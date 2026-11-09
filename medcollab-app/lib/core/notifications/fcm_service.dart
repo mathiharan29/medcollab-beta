@@ -28,7 +28,8 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 @pragma('vm:entry-point')
 void onBackgroundNotificationResponse(NotificationResponse response) {
-  if (response.actionId == 'reply') {
+  if (response.actionId == 'reply' ||
+      response.actionId == NotificationReplySender.markReadAction) {
     unawaited(NotificationReplySender.send(response));
   }
 }
@@ -45,7 +46,8 @@ Future<void> _ensureLocalNotifications() async {
 }
 
 void _onLocalNotificationResponse(NotificationResponse response) {
-  if (response.actionId == 'reply') {
+  if (response.actionId == 'reply' ||
+      response.actionId == NotificationReplySender.markReadAction) {
     unawaited(NotificationReplySender.send(response));
     return;
   }
@@ -152,7 +154,10 @@ class FcmService {
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
     await _initLocalNotifications();
-    await _requestPermissions();
+    ActiveChatTracker.instance.onEnter =
+        (id) => unawaited(GroupedMessageNotification.clear(id));
+    // Permission is requested after sign-in (registerTokenWithBackend), not
+    // during launch, where the system dialog blocked the first screen.
 
     final launch = await GroupedMessageNotification.plugin
         .getNotificationAppLaunchDetails();
@@ -178,6 +183,8 @@ class FcmService {
 
   /// Call after the user is authenticated so the token reaches our API.
   Future<void> registerTokenWithBackend() async {
+    // Push is set up lazily at sign-in (REQ 13); idempotent.
+    await initialize();
     if (!_firebaseReady) return;
 
     try {

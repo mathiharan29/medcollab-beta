@@ -37,6 +37,7 @@ import 'package:medcollab_app/features/support/presentation/pages/legal_document
 import 'package:medcollab_app/features/support/presentation/pages/report_bug_page.dart';
 import 'package:medcollab_app/core/constants/legal_copy.dart';
 import 'package:medcollab_app/core/router/popup_route_tracker.dart';
+import 'package:medcollab_app/features/shell/presentation/widgets/swipeable_shell_container.dart';
 
 class AppRouter {
   AppRouter({required AuthBloc authBloc}) : _authBloc = authBloc {
@@ -113,10 +114,16 @@ class AppRouter {
         path: AppRoutes.profileSetup,
         builder: (context, state) => const ProfileSetupPage(),
       ),
-      StatefulShellRoute.indexedStack(
+      StatefulShellRoute(
         builder: (context, state, navigationShell) {
           return MainShellPage(navigationShell: navigationShell);
         },
+        // Swipeable main tabs (REQ 8); branches stay alive like IndexedStack.
+        navigatorContainerBuilder: (context, navigationShell, children) =>
+            SwipeableShellContainer(
+          navigationShell: navigationShell,
+          children: children,
+        ),
         branches: [
           StatefulShellBranch(
             observers: [popupTracker.createObserver()],

@@ -70,12 +70,12 @@ class _PhoneEntryPageState extends State<PhoneEntryPage> {
                     FilteringTextInputFormatter.digitsOnly,
                     LengthLimitingTextInputFormatter(10),
                   ],
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
                     color: AppColors.textPrimary,
                   ),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Mobile number',
                     labelStyle: TextStyle(color: AppColors.textMuted),
                     prefixText: '${AppConstants.defaultCountryCode} ',
@@ -122,7 +122,7 @@ class _PhoneEntryPageState extends State<PhoneEntryPage> {
                   onPressed: _submit,
                 ),
                 const SizedBox(height: 16),
-                const Text(
+                Text(
                   "We'll send a 6-digit OTP",
                   style: AppTextStyles.caption,
                   textAlign: TextAlign.center,

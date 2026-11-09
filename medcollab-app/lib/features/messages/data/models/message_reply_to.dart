@@ -58,6 +58,8 @@ class MessageReplyTo extends Equatable {
         return 'Document';
       case MessageType.handoff:
         return 'Handoff';
+      case MessageType.audio:
+        return 'Voice message';
       default:
         return 'Message';
     }

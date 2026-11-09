@@ -9,6 +9,7 @@ import 'package:medcollab_app/core/theme/app_text_styles.dart';
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:medcollab_app/features/handoffs/presentation/cubit/global_handoffs_cubit.dart';
 import 'package:medcollab_app/features/handoffs/presentation/widgets/handoff_card.dart';
+import 'package:medcollab_app/features/handoffs/presentation/widgets/handoff_filter_pills.dart';
 import 'package:medcollab_app/features/spaces/data/models/space_model.dart';
 import 'package:medcollab_app/shared/presentation/widgets/app_empty_state.dart';
 import 'package:medcollab_app/shared/presentation/widgets/app_search_bar.dart';
@@ -207,24 +208,11 @@ class _GlobalHandoffsViewState extends State<_GlobalHandoffsView> {
             BlocBuilder<GlobalHandoffsCubit, GlobalHandoffsState>(
               buildWhen: (p, n) => p.filter != n.filter,
               builder: (context, state) {
-                return SizedBox(
-                  height: 40,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppGaps.screenH,
-                    ),
-                    children: [
-                      for (final filter in _filters) ...[
-                        _FilterPill(
-                          label: _filterLabel(filter),
-                          selected: state.filter == filter,
-                          onTap: () => _onFilterTap(filter),
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-                    ],
-                  ),
+                return HandoffFilterPills<GlobalHandoffFilter>(
+                  values: _filters,
+                  selected: state.filter,
+                  labelOf: _filterLabel,
+                  onSelected: _onFilterTap,
                 );
               },
             ),
@@ -334,46 +322,6 @@ class _TealIconButton extends StatelessWidget {
             width: 36,
             height: 36,
             child: Icon(icon, size: 20, color: AppColors.tealDark),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _FilterPill extends StatelessWidget {
-  const _FilterPill({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: selected ? AppColors.navyPrimary : AppColors.surfaceCard,
-      borderRadius: AppRadius.pill,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: AppRadius.pill,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            borderRadius: AppRadius.pill,
-            border: selected
-                ? null
-                : Border.all(color: AppColors.borderDefault, width: 0.5),
-          ),
-          child: Text(
-            label,
-            style: AppTextStyles.caption.copyWith(
-              fontWeight: FontWeight.w600,
-              color: selected ? AppColors.textOnDark : AppColors.textMuted,
-            ),
           ),
         ),
       ),

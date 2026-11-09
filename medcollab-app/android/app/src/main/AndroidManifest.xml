@@ -5,6 +5,10 @@
     <uses-permission android:name="android.permission.VIBRATE"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.CAMERA"/>
+    <!-- REQ 5: find which phone contacts are on Vocle (asked only when the doctor taps Sync). -->
+    <uses-permission android:name="android.permission.READ_CONTACTS"/>
+    <!-- REQ 12: voice notes (asked on first hold of the mic button). -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <application
         android:label="Vocle"

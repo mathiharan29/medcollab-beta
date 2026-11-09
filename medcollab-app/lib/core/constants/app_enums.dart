@@ -117,7 +117,11 @@ enum MessageType {
   document('document'),
   ecg('ecg'),
   handoff('handoff'),
-  alert('alert');
+  alert('alert'),
+  // Voice note (REQ 12).
+  audio('audio'),
+  // Group activity line: "Dr X added Dr Y" (REQ 2). Server-generated only.
+  system('system');
 
   const MessageType(this.value);
   final String value;
@@ -133,6 +137,7 @@ enum MessageType {
     final value = mime.toLowerCase();
     if (value.startsWith('image/')) return MessageType.image;
     if (value.startsWith('video/')) return MessageType.video;
+    if (value.startsWith('audio/')) return MessageType.audio;
     return MessageType.document;
   }
 }

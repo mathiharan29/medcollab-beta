@@ -112,14 +112,17 @@ class _ThreadPageState extends State<ThreadPage> {
     super.dispose();
   }
 
-  void _scrollToBottom() {
+  /// Pins the thread to its latest reply. Re-checks for a few frames because
+  /// images/attachments finishing layout after the first jump grow the
+  /// content and would otherwise leave the view mid-thread (REQ 2).
+  void _scrollToBottom({int settleFrames = 6}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_scrollController.hasClients) return;
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOut,
-      );
+      if (!mounted || !_scrollController.hasClients) return;
+      final position = _scrollController.position;
+      if (position.pixels < position.maxScrollExtent) {
+        _scrollController.jumpTo(position.maxScrollExtent);
+      }
+      if (settleFrames > 0) _scrollToBottom(settleFrames: settleFrames - 1);
     });
   }
 

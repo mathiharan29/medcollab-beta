@@ -4,6 +4,26 @@ import 'package:medcollab_app/core/theme/app_colors.dart';
 import 'package:medcollab_app/core/theme/app_design_system.dart';
 import 'package:medcollab_app/core/theme/app_spacing.dart';
 
+const _honorifics = {'dr', 'prof', 'mr', 'mrs', 'ms', 'miss', 'sr', 'sri', 'smt'};
+
+/// Avatar initials: up to two letters (first + last name), skipping titles.
+/// "Dr Asha Rao" → "AR". Previously every doctor showed "D" (sanity F4).
+String avatarInitials(String name) {
+  final words = name
+      .trim()
+      .split(RegExp(r'\s+'))
+      .map((w) => w.replaceAll(RegExp(r'[^\p{L}\p{N}]', unicode: true), ''))
+      .where((w) => w.isNotEmpty)
+      .toList();
+  final meaningful =
+      words.where((w) => !_honorifics.contains(w.toLowerCase())).toList();
+  final parts = meaningful.isNotEmpty ? meaningful : words;
+  if (parts.isEmpty) return '?';
+  final first = parts.first.characters.first.toUpperCase();
+  if (parts.length == 1) return first;
+  return first + parts.last.characters.first.toUpperCase();
+}
+
 /// Vocle avatar — navy circle, white initials.
 class AppAvatar extends StatelessWidget {
   const AppAvatar({
@@ -25,11 +45,7 @@ class AppAvatar extends StatelessWidget {
   final Color? backgroundColor;
   final Color? foregroundColor;
 
-  String get _initial {
-    final trimmed = name.trim();
-    if (trimmed.isEmpty) return '?';
-    return trimmed[0].toUpperCase();
-  }
+  String get _initial => avatarInitials(name);
 
   @override
   Widget build(BuildContext context) {

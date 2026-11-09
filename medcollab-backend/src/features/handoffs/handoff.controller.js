@@ -185,9 +185,37 @@ const getHandoffById = asyncHandler(async (req, res) => {
   return respond.ok(res, 'Handoff fetched', { handoff });
 });
 
+const populateHandoff = (id) =>
+  Handoff.findById(id)
+    .populate('fromUserId', 'name displayTitle role avatarUrl speciality')
+    .populate('toUserId', 'name displayTitle role avatarUrl speciality')
+    .populate('writeBackNotes.authorId', 'name displayTitle role avatarUrl')
+    .lean();
+
+const emitHandoffEvent = (event, handoff, extra = {}) => {
+  try {
+    getIO().to(`space:${handoff.spaceId}`).emit(event, {
+      handoffId: handoff._id.toString(),
+      spaceId: handoff.spaceId.toString(),
+      fromUserId: handoff.fromUserId.toString(),
+      toUserId: handoff.toUserId.toString(),
+      status: handoff.status,
+      ...extra,
+    });
+  } catch (err) {
+    logger.debug(`Handoff socket broadcast skipped: ${err.message}`);
+  }
+};
+
 /**
  * PUT /api/handoffs/:id
- * Update a DRAFT handoff (sender only)
+ * Sender edits a handoff — drafts freely; after submit too (REQ 10).
+ *
+ * Clinical safety for submitted handoffs:
+ *  - every edit is recorded in editHistory + a visible write-back note;
+ *  - an acknowledged handoff goes back to "submitted" so the receiver
+ *    re-acknowledges the changed content;
+ *  - the receiver is notified.
  */
 const updateHandoff = asyncHandler(async (req, res) => {
   const handoff = await Handoff.findById(req.params.id);
@@ -195,17 +223,71 @@ const updateHandoff = asyncHandler(async (req, res) => {
   if (handoff.fromUserId.toString() !== req.user._id.toString()) {
     return respond.forbidden(res, 'Only the sender can edit a handoff');
   }
-  if (handoff.status !== HANDOFF_STATUS.DRAFT) {
-    return respond.badRequest(res, 'Cannot edit a submitted handoff');
-  }
 
   const allowed = ['patients', 'shiftSummary', 'shiftDate', 'shiftType'];
   allowed.forEach((f) => {
     if (req.body[f] !== undefined) handoff[f] = req.body[f];
   });
+  const changed = allowed.filter((f) => handoff.isModified(f));
 
+  const wasDraft = handoff.status === HANDOFF_STATUS.DRAFT;
+  if (wasDraft || changed.length === 0) {
+    await handoff.save();
+    return respond.ok(res, 'Handoff updated', {
+      handoff: wasDraft ? handoff : await populateHandoff(handoff._id),
+    });
+  }
+
+  if (handoff.patients.length === 0) {
+    return respond.badRequest(res, 'A submitted handoff needs at least one patient');
+  }
+
+  const statusBefore = handoff.status;
+  handoff.editHistory.push({
+    byUserId: req.user._id,
+    fields: changed,
+    statusBefore,
+    at: new Date(),
+  });
+  const reAck = statusBefore === HANDOFF_STATUS.ACKNOWLEDGED;
+  if (reAck) {
+    handoff.status = HANDOFF_STATUS.SUBMITTED;
+    handoff.acknowledgedAt = null;
+    handoff.acknowledgementNote = '';
+  }
+  handoff.writeBackNotes.push({
+    authorId: req.user._id,
+    text: reAck
+      ? 'Handoff edited after acknowledgement — please review and acknowledge again.'
+      : 'Handoff edited — please review the changes.',
+    kind: 'note',
+    createdAt: new Date(),
+  });
   await handoff.save();
-  return respond.ok(res, 'Handoff updated', { handoff });
+
+  const populated = await populateHandoff(handoff._id);
+  respond.ok(res, 'Handoff updated', { handoff: populated });
+
+  emitHandoffEvent(SOCKET_EVENTS.HANDOFF_UPDATED, handoff, { fields: changed });
+  setImmediate(async () => {
+    try {
+      const { sendNotification } = require('../../services/notification.service');
+      const { NOTIFICATION_TYPES, MESSAGE_PRIORITY } = require('../../constants');
+      await sendNotification({
+        userId: handoff.toUserId,
+        type: NOTIFICATION_TYPES.HANDOFF_RECEIVED,
+        title: 'Handoff updated',
+        body: `${req.user.name} edited the ${handoff.shiftType} shift handoff${reAck ? ' — please acknowledge again' : ''}`,
+        referenceId: handoff._id,
+        referenceType: 'Handoff',
+        metadata: { spaceId: handoff.spaceId, handoffId: handoff._id },
+        actor: req.user,
+        priority: reAck ? MESSAGE_PRIORITY.URGENT : MESSAGE_PRIORITY.NORMAL,
+      });
+    } catch (err) {
+      logger.error(`Handoff edit notify failed: ${err.message}`);
+    }
+  });
 });
 
 /**
@@ -464,7 +546,9 @@ const reassignHandoff = asyncHandler(async (req, res) => {
 
 /**
  * DELETE /api/handoffs/:id
- * Delete a DRAFT handoff (cannot delete submitted/acknowledged)
+ * Sender deletes a handoff (REQ 10). Drafts are removed; submitted or
+ * acknowledged handoffs are soft-deleted — hidden from everyone, kept in
+ * the database for the medical audit trail — and the receiver is told.
  */
 const deleteHandoff = asyncHandler(async (req, res) => {
   const handoff = await Handoff.findById(req.params.id);
@@ -472,12 +556,40 @@ const deleteHandoff = asyncHandler(async (req, res) => {
   if (handoff.fromUserId.toString() !== req.user._id.toString()) {
     return respond.forbidden(res, 'Only the sender can delete');
   }
-  if (handoff.status !== HANDOFF_STATUS.DRAFT) {
-    return respond.badRequest(res, 'Cannot delete a submitted handoff — medical audit trail');
+
+  if (handoff.status === HANDOFF_STATUS.DRAFT) {
+    await handoff.deleteOne();
+    return respond.ok(res, 'Draft handoff deleted');
   }
 
-  await handoff.deleteOne();
-  return respond.ok(res, 'Draft handoff deleted');
+  handoff.isDeleted = true;
+  handoff.deletedAt = new Date();
+  handoff.deletedBy = req.user._id;
+  await handoff.save();
+
+  respond.ok(res, 'Handoff deleted');
+
+  emitHandoffEvent(SOCKET_EVENTS.HANDOFF_DELETED, handoff);
+  setImmediate(async () => {
+    try {
+      const { sendNotification } = require('../../services/notification.service');
+      const { NOTIFICATION_TYPES, MESSAGE_PRIORITY } = require('../../constants');
+      await sendNotification({
+        userId: handoff.toUserId,
+        type: NOTIFICATION_TYPES.HANDOFF_RECEIVED,
+        title: 'Handoff withdrawn',
+        body: `${req.user.name} deleted the ${handoff.shiftType} shift handoff they sent you`,
+        referenceId: handoff._id,
+        referenceType: 'Handoff',
+        // No handoffId: the alert must not open a handoff that is gone.
+        metadata: { spaceId: handoff.spaceId, deletedHandoffId: handoff._id },
+        actor: req.user,
+        priority: MESSAGE_PRIORITY.NORMAL,
+      });
+    } catch (err) {
+      logger.error(`Handoff delete notify failed: ${err.message}`);
+    }
+  });
 });
 
 /**

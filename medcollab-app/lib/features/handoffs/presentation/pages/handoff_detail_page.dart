@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -153,7 +154,9 @@ class _HandoffDetailPageState extends State<HandoffDetailPage> {
       case 'covered_late':
         return AppColors.statusWarnTint;
       case 'reassign':
-        return const Color(0xFFDBEAFE);
+        return AppColors.isDark
+            ? const Color(0xFF13294B)
+            : const Color(0xFFDBEAFE);
       default:
         return AppColors.tealTint;
     }
@@ -379,6 +382,46 @@ class _HandoffDetailPageState extends State<HandoffDetailPage> {
     }
   }
 
+  Future<void> _openEdit(HandoffModel handoff) async {
+    await context.push(
+      AppRoutes.spaceHandoffEditPath(widget.spaceId, handoff.id),
+    );
+    // Show the saved version (edits after submit change status/notes too).
+    if (mounted) _reload();
+  }
+
+  /// REQ 10: the sender may delete any of their handoffs, after confirming.
+  Future<void> _confirmDelete(HandoffModel handoff) async {
+    final submitted = !handoff.isDraft;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(submitted ? 'Delete this handoff?' : 'Delete draft?'),
+        content: Text(
+          submitted
+              ? '${handoff.toUser.displayName} will no longer see it and will '
+                  'be told it was withdrawn. This cannot be undone.'
+              : 'This draft will be deleted. This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.emergencyRed,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (ok == true && mounted) await _deleteDraft(handoff);
+  }
+
   Future<void> _deleteDraft(HandoffModel handoff) async {
     setState(() {
       _isBusy = true;
@@ -408,6 +451,7 @@ class _HandoffDetailPageState extends State<HandoffDetailPage> {
               backgroundColor: AppColors.navyPrimary,
               foregroundColor: AppColors.textOnDark,
               leading: IconButton(
+                tooltip: 'Back',
                 icon: const Icon(
                   Icons.arrow_back_ios_new_rounded,
                   size: 18,
@@ -452,6 +496,7 @@ class _HandoffDetailPageState extends State<HandoffDetailPage> {
               backgroundColor: AppColors.navyPrimary,
               foregroundColor: AppColors.textOnDark,
               leading: IconButton(
+                tooltip: 'Back',
                 icon: const Icon(
                   Icons.arrow_back_ios_new_rounded,
                   size: 18,
@@ -493,7 +538,9 @@ class _HandoffDetailPageState extends State<HandoffDetailPage> {
         final handoff = snapshot.data!;
         final isSender = handoff.fromUser.id == currentUserId;
         final isReceiver = handoff.toUser.id == currentUserId;
-        final canEdit = handoff.isDraft && isSender;
+        // REQ 10: the creator can edit / delete at any status (the server
+        // records the edit and asks the receiver to re-acknowledge).
+        final canEdit = isSender;
         final canAcknowledge =
             handoff.status == HandoffStatus.submitted && isReceiver;
         final updated = handoff.lastUpdated;
@@ -503,7 +550,11 @@ class _HandoffDetailPageState extends State<HandoffDetailPage> {
             ? DateFormat.yMMMd().format(handoff.shiftDate!.toLocal())
             : '';
 
-        return Scaffold(
+        // Navy header: light status-bar icons in both themes (they were dark
+        // and unreadable on the header in light mode).
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: SystemUiOverlayStyle.light,
+          child: Scaffold(
           backgroundColor: AppColors.backgroundApp,
           body: Column(
             children: [
@@ -518,6 +569,7 @@ class _HandoffDetailPageState extends State<HandoffDetailPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         IconButton(
+                          tooltip: 'Back',
                           icon: const Icon(
                             Icons.arrow_back_ios_new_rounded,
                             size: 18,
@@ -689,14 +741,8 @@ class _HandoffDetailPageState extends State<HandoffDetailPage> {
                         if (canEdit) ...[
                           Expanded(
                             child: OutlinedButton.icon(
-                              onPressed: _isBusy
-                                  ? null
-                                  : () => context.push(
-                                        AppRoutes.spaceHandoffEditPath(
-                                          widget.spaceId,
-                                          handoff.id,
-                                        ),
-                                      ),
+                              onPressed:
+                                  _isBusy ? null : () => _openEdit(handoff),
                               icon: const Icon(Icons.edit_outlined),
                               label: const Text('Edit'),
                             ),
@@ -704,8 +750,9 @@ class _HandoffDetailPageState extends State<HandoffDetailPage> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: OutlinedButton.icon(
-                              onPressed:
-                                  _isBusy ? null : () => _deleteDraft(handoff),
+                              onPressed: _isBusy
+                                  ? null
+                                  : () => _confirmDelete(handoff),
                               icon: const Icon(Icons.delete_outline),
                               label: const Text('Delete'),
                             ),
@@ -760,6 +807,7 @@ class _HandoffDetailPageState extends State<HandoffDetailPage> {
                 ),
             ],
           ),
+          ),
         );
       },
     );
@@ -795,13 +843,13 @@ class _MetaCard extends StatelessWidget {
       child: Column(
         children: [
           _MetaRow(label: 'From', value: handoff.fromUser.displayName),
-          const Divider(height: 1, color: AppColors.borderLight),
+          Divider(height: 1, color: AppColors.borderLight),
           _MetaRow(
             label: 'Assigned to',
             value: handoff.toUser.displayName,
             valueColor: AppColors.tealPrimary,
           ),
-          const Divider(height: 1, color: AppColors.borderLight),
+          Divider(height: 1, color: AppColors.borderLight),
           Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: AppGaps.cardH,
@@ -839,7 +887,7 @@ class _MetaCard extends StatelessWidget {
             ),
           ),
           if (handoff.shiftSummary.isNotEmpty) ...[
-            const Divider(height: 1, color: AppColors.borderLight),
+            Divider(height: 1, color: AppColors.borderLight),
             _MetaRow(label: 'Summary', value: handoff.shiftSummary),
           ],
         ],

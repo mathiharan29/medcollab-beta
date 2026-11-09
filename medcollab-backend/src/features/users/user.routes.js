@@ -106,6 +106,19 @@ router.get('/search', requireOnboarding, userController.searchUsers);
 router.get('/lookup', requireOnboarding, userController.lookupByPhone);
 
 /**
+ * @route   GET /api/users/username-available?u=
+ * @desc    Is this Vocle ID free? (REQ 5)
+ */
+router.get('/username-available', userController.usernameAvailable);
+
+/**
+ * @route   POST /api/users/contacts/match
+ * @desc    Which of my phone contacts are on Vocle? Numbers are not stored.
+ * @body    { phones: string[] }  (max 3000)
+ */
+router.post('/contacts/match', requireOnboarding, userController.matchContacts);
+
+/**
  * @route   GET /api/users/:id
  * @desc    Get a user's public profile
  * @access  Protected
@@ -116,6 +129,13 @@ router.get('/lookup', requireOnboarding, userController.lookupByPhone);
  * - Viewing member list in a space
  * - Selecting handoff recipient
  */
+router.get(
+  '/:id/relationship',
+  requireOnboarding,
+  validateMongoId('id'),
+  userController.getRelationship
+);
+
 router.get('/:id', validateMongoId('id'), userController.getUserById);
 
 module.exports = router;

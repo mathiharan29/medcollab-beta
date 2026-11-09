@@ -1,7 +1,9 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:smart_auth/smart_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:medcollab_app/core/constants/app_constants.dart';
 import 'package:medcollab_app/core/theme/app_colors.dart';
@@ -49,10 +51,34 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
     _tickTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() {});
     });
+    _listenForSmsCode();
+  }
+
+  // ── OTP auto-read (Android SMS User Consent API) ─────────────────────────
+  // When the OTP SMS arrives, Android asks "Allow Vocle to read this
+  // message?". On Allow, the code is filled in and verified. No READ_SMS
+  // permission is needed and nothing else in the inbox is visible to us.
+  final _smartAuth = SmartAuth();
+  bool _smsListening = false;
+
+  Future<void> _listenForSmsCode() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+    if (_smsListening) return;
+    _smsListening = true;
+    final res = await _smartAuth.getSmsCode(
+      useUserConsentApi: true,
+      matcher: r'\d{6}',
+    );
+    _smsListening = false;
+    if (!mounted || !res.codeFound) return;
+    final code = res.code!;
+    _applyOtpDigits(code);
+    if (!context.read<AuthBloc>().state.isLoading) _submit();
   }
 
   @override
   void dispose() {
+    unawaited(_smartAuth.removeSmsListener());
     _resendTimer?.cancel();
     _tickTimer?.cancel();
     _otpController.dispose();
@@ -218,6 +244,8 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
     if (_resendSecondsLeft > 0) return;
     context.read<AuthBloc>().add(const AuthOtpResendRequested());
     _clearDigits();
+    // Listen again for the new SMS.
+    unawaited(_smartAuth.removeSmsListener().then((_) => _listenForSmsCode()));
     _otpExpiresAt = DateTime.now().add(
       const Duration(minutes: AppConstants.otpValidityMinutes),
     );
@@ -239,8 +267,13 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
     return BlocConsumer<AuthBloc, AuthState>(
       listenWhen: (prev, next) =>
           prev.status == AuthStatus.loading &&
-          next.status == AuthStatus.otpSent,
+          (next.status == AuthStatus.otpSent || next.errorMessage != null),
       listener: (context, state) {
+        if (state.errorMessage != null) {
+          // F5: a rejected code is cleared so the doctor can retype at once.
+          _clearDigits();
+          return;
+        }
         // Successful resend arrives back at otpSent.
         _otpExpiresAt = DateTime.now().add(
           const Duration(minutes: AppConstants.otpValidityMinutes),
@@ -362,6 +395,19 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                         : AppColors.textSecondary,
                   ),
                 ),
+                if (defaultTargetPlatform == TargetPlatform.android &&
+                    !kIsWeb) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    'When the SMS arrives, tap Allow to fill the code '
+                    'automatically.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 20),
                 AuthPrimaryButton(
                   label: 'Verify & Continue',
@@ -407,6 +453,31 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
   }
 }
 
+/// One digit per box: when a box already holds a digit and another is
+/// typed, keep the newly typed one. Longer input (paste / SMS autofill of the
+/// whole code) is left for the page to spread across boxes.
+class _ReplaceDigitFormatter extends TextInputFormatter {
+  const _ReplaceDigitFormatter();
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.text.length != 2 || oldValue.text.length != 1) {
+      return newValue;
+    }
+    final end = newValue.selection.end;
+    final typed = end > 0 && end <= 2
+        ? newValue.text[end - 1]
+        : newValue.text.characters.last;
+    return TextEditingValue(
+      text: typed,
+      selection: const TextSelection.collapsed(offset: 1),
+    );
+  }
+}
+
 class _OtpDigitBox extends StatelessWidget {
   const _OtpDigitBox({
     required this.controller,
@@ -445,19 +516,22 @@ class _OtpDigitBox extends StatelessWidget {
         textInputAction: onSubmitted != null
             ? TextInputAction.done
             : TextInputAction.next,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
         ),
         inputFormatters: [
           FilteringTextInputFormatter.digitsOnly,
+          // F5: typing into a filled box replaces its digit (a 1-char limit
+          // used to swallow the keypress). Full SMS autofill still passes.
+          const _ReplaceDigitFormatter(),
           // First box may receive the full SMS OTP via autofill.
           LengthLimitingTextInputFormatter(
             autofillHint != null ? AppConstants.otpLength : 1,
           ),
         ],
-        decoration: const InputDecoration(
+        decoration: InputDecoration(
           isDense: true,
           contentPadding: EdgeInsets.zero,
           filled: true,

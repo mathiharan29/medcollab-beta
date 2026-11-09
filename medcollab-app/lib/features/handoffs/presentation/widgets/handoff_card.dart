@@ -49,7 +49,7 @@ class HandoffCard extends StatelessWidget {
 
     return Material(
       color: AppColors.surfaceCard,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: AppRadius.card,
         side: BorderSide(color: AppColors.borderDefault, width: 0.5),
       ),
@@ -112,7 +112,7 @@ class HandoffCard extends StatelessWidget {
                                 minWidth: 28,
                                 minHeight: 28,
                               ),
-                              icon: const Icon(
+                              icon: Icon(
                                 Icons.more_vert,
                                 size: 18,
                                 color: AppColors.textMuted,

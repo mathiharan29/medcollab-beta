@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:medcollab_app/core/state/safe_emit.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
 import 'package:medcollab_app/core/error/app_exception.dart';
 import 'package:medcollab_app/features/auth/data/models/user_model.dart';
@@ -9,7 +10,7 @@ import 'package:medcollab_app/features/handoffs/data/repositories/handoff_reposi
 
 part 'handoff_form_state.dart';
 
-class HandoffFormCubit extends Cubit<HandoffFormState> {
+class HandoffFormCubit extends Cubit<HandoffFormState> with SafeEmit<HandoffFormState> {
   HandoffFormCubit({
     required HandoffRepository handoffRepository,
     required this.spaceId,
@@ -80,7 +81,18 @@ class HandoffFormCubit extends Cubit<HandoffFormState> {
     }
   }
 
+  /// REQ 10: save edits to a handoff that was already sent. The server keeps
+  /// it sent, records the edit, and (if acknowledged) asks for re-ack.
+  Future<HandoffModel?> saveChanges() async {
+    if (state.patients.isEmpty) {
+      emit(state.copyWith(error: 'A sent handoff needs at least one patient'));
+      return null;
+    }
+    return saveDraft();
+  }
+
   Future<HandoffModel?> submit() async {
+    if (state.isSent) return saveChanges();
     final saved = await saveDraft();
     if (saved == null) return null;
     if (state.patients.isEmpty) {

@@ -12,7 +12,10 @@ import 'package:medcollab_app/features/messages/data/models/message_delivery_sta
 import 'package:medcollab_app/features/messages/data/models/message_model.dart';
 import 'package:medcollab_app/features/messages/data/models/message_reply_to.dart';
 import 'package:medcollab_app/features/messages/presentation/utils/message_list_utils.dart';
+import 'package:medcollab_app/features/messages/presentation/widgets/chat_wallpaper.dart';
+import 'package:medcollab_app/features/messages/presentation/widgets/emoji_picker.dart';
 import 'package:medcollab_app/features/messages/presentation/widgets/read_receipt_footer.dart';
+import 'package:medcollab_app/features/messages/presentation/widgets/voice_note.dart';
 import 'package:medcollab_app/shared/presentation/widgets/chat_network_image.dart';
 import 'package:medcollab_app/shared/presentation/widgets/mention_rich_text.dart';
 
@@ -29,6 +32,7 @@ class MessageComposer extends StatelessWidget {
     this.hintText = 'Message…',
     this.isBusy = false,
     this.showTopBorder = true,
+    this.onRecordVoice,
     super.key,
   });
 
@@ -38,6 +42,9 @@ class MessageComposer extends StatelessWidget {
   final VoidCallback? onPickGallery;
   final VoidCallback? onPickCamera;
   final VoidCallback? onPickDocument;
+
+  /// When set, an empty composer shows a mic instead of send (REQ 12).
+  final VoidCallback? onRecordVoice;
   final String hintText;
   final bool isBusy;
   final bool showTopBorder;
@@ -93,57 +100,12 @@ class MessageComposer extends StatelessWidget {
     );
   }
 
-  void _showEmojiPicker(BuildContext context) {
-    const emojis = [
-      '👍', '🙏', '✅', '❌', '⚠️', '🚨',
-      '💉', '🩺', '💊', '🏥', '📋', '📝',
-      '😊', '😂', '😮', '😢', '🔥', '💯',
-      '👀', '🤝', '⏰', '📌', '➡️', '⬅️',
-    ];
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Quick emoji',
-                style: Theme.of(ctx).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final emoji in emojis)
-                    InkWell(
-                      onTap: () {
-                        Navigator.pop(ctx);
-                        _insertAtCursor(emoji);
-                        focusNode?.requestFocus();
-                      },
-                      borderRadius: BorderRadius.circular(8),
-                      child: SizedBox(
-                        width: 44,
-                        height: 44,
-                        child: Center(
-                          child: Text(emoji, style: const TextStyle(fontSize: 24)),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  Future<void> _showEmojiPicker(BuildContext context) async {
+    // REQ 12: full tabbed picker with Recent (was 24 fixed emojis).
+    final emoji = await showEmojiPickerSheet(context);
+    if (emoji == null) return;
+    _insertAtCursor(emoji);
+    focusNode?.requestFocus();
   }
 
   @override
@@ -238,35 +200,60 @@ class MessageComposer extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 2),
-                child: Material(
-                  color: isBusy
-                      ? AppColors.navyPrimary.withValues(alpha: 0.5)
-                      : AppColors.navyPrimary,
-                  shape: const CircleBorder(),
-                  child: InkWell(
-                    customBorder: const CircleBorder(),
-                    onTap: isBusy ? null : () => onSend(controller.text),
-                    child: SizedBox(
-                      width: 44,
-                      height: 44,
-                      child: isBusy
-                          ? const Padding(
-                              padding: EdgeInsets.all(12),
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Icon(
-                              Icons.send_rounded,
-                              size: 20,
-                              color: Colors.white,
+              // Empty box → mic (voice note, REQ 12); text → send.
+              ValueListenableBuilder<TextEditingValue>(
+                valueListenable: controller,
+                builder: (context, value, _) {
+                  final showMic =
+                      onRecordVoice != null && value.text.trim().isEmpty;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 2),
+                    child: Semantics(
+                      // F6: icon-only buttons need a spoken label.
+                      button: true,
+                      label: showMic ? 'Record voice message' : 'Send message',
+                      child: Tooltip(
+                        message: showMic ? 'Record voice message' : 'Send',
+                        child: Material(
+                          // Navy on light; brand teal on dark, where navy
+                          // vanished into the composer (REQ 6).
+                          color: (AppColors.isDark
+                                  ? AppColors.tealDark
+                                  : AppColors.navyPrimary)
+                              .withValues(alpha: isBusy ? 0.5 : 1),
+                          shape: const CircleBorder(),
+                          child: InkWell(
+                            customBorder: const CircleBorder(),
+                            onTap: isBusy
+                                ? null
+                                : showMic
+                                    ? onRecordVoice
+                                    : () => onSend(controller.text),
+                            child: SizedBox(
+                              width: 44,
+                              height: 44,
+                              child: isBusy
+                                  ? const Padding(
+                                      padding: EdgeInsets.all(12),
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : Icon(
+                                      showMic
+                                          ? Icons.mic_rounded
+                                          : Icons.send_rounded,
+                                      size: showMic ? 24 : 20,
+                                      color: Colors.white,
+                                    ),
                             ),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
+                  );
+                },
               ),
             ],
           ),
@@ -289,11 +276,62 @@ class DateSeparatorChip extends StatelessWidget {
       child: Center(
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: AppColors.borderDefault,
             borderRadius: AppRadius.pill,
           ),
           child: Text(label, style: AppTextStyles.timestamp),
+        ),
+      ),
+    );
+  }
+}
+
+/// Group activity line — "Dr Asha Rao added Dr Vikram Shah" (REQ 2).
+/// Centred, muted and not a bubble, like WhatsApp; no long-press actions.
+class SystemEventChip extends StatelessWidget {
+  const SystemEventChip({required this.text, this.time, super.key});
+
+  final String text;
+  final DateTime? time;
+
+  @override
+  Widget build(BuildContext context) {
+    final at = time?.toLocal();
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 24),
+      child: Center(
+        child: Semantics(
+          label: 'Group update: $text',
+          // Read once, not label + text.
+          excludeSemantics: true,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.isDark
+                  ? AppColors.surfaceCard
+                  : AppColors.statusNeutTint,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.borderDefault, width: 0.5),
+            ),
+            child: Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(text: text),
+                  if (at != null)
+                    TextSpan(
+                      text: '  ${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(at))}',
+                      style: AppTextStyles.timestamp,
+                    ),
+                ],
+              ),
+              textAlign: TextAlign.center,
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -314,7 +352,7 @@ class ParentMessagePreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.primaryMuted,
         border: Border(bottom: BorderSide(color: AppColors.border)),
       ),
@@ -539,7 +577,9 @@ class MessageBubble extends StatelessWidget {
     );
     if (!context.mounted || action == null) return;
     if (action == 'more-react') {
-      final emoji = await _pickMoreReaction(context);
+      // REQ 12: any emoji, not a fixed 18.
+      if (!context.mounted) return;
+      final emoji = await showEmojiPickerSheet(context);
       if (emoji != null) onReact?.call(emoji);
       return;
     }
@@ -564,47 +604,6 @@ class MessageBubble extends StatelessWidget {
     } else if (action == 'unpin') {
       onUnpin?.call();
     }
-  }
-
-  Future<String?> _pickMoreReaction(BuildContext context) {
-    return showModalBottomSheet<String>(
-      context: context,
-      showDragHandle: true,
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'React',
-                style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 4,
-                runSpacing: 4,
-                children: moreReactions
-                    .map(
-                      (e) => InkWell(
-                        onTap: () => Navigator.pop(ctx, e),
-                        borderRadius: BorderRadius.circular(12),
-                        child: Padding(
-                          padding: const EdgeInsets.all(10),
-                          child: Text(e, style: const TextStyle(fontSize: 28)),
-                        ),
-                      ),
-                    )
-                    .toList(),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   @override
@@ -915,6 +914,8 @@ class MessageBubbleContent extends StatelessWidget {
       duration: const Duration(milliseconds: 250),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: AppDecorations.bubble(isMine: isMine).copyWith(
+        // Chat theme (REQ 2 / #4): own-bubble colour follows the theme.
+        color: isMine ? ChatThemeScope.mineBubbleOf(context) : null,
         border: isHighlighted
             ? Border.all(color: AppColors.tealPrimary, width: 2)
             : (isPinned && !isMine
@@ -1117,7 +1118,7 @@ class ReplyQuoteBar extends StatelessWidget {
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           border: Border(
             top: BorderSide(color: AppColors.borderDefault),
             left: BorderSide(color: AppColors.tealPrimary, width: 3),
@@ -1196,6 +1197,19 @@ class _MessageBody extends StatelessWidget {
               ? AppColors.textOnDarkMuted
               : AppColors.textSecondary,
         ),
+      );
+    }
+
+    // Voice note (REQ 12). Also treat audio files sent as documents alike.
+    if (message.type == MessageType.audio ||
+        (message.content.mimeType?.startsWith('audio/') ?? false)) {
+      return VoiceNoteBubble(
+        messageId: message.id,
+        url: message.content.mediaUrl,
+        isMine: isMine,
+        durationMs: message.content.durationMs,
+        waveform: message.content.waveform,
+        sending: message.localOnly,
       );
     }
 

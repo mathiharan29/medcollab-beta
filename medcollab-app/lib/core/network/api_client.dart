@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer' as developer;
 
 import 'package:dio/dio.dart';
@@ -7,6 +8,7 @@ import 'package:medcollab_app/core/constants/app_constants.dart';
 import 'package:medcollab_app/core/error/app_exception.dart';
 import 'package:medcollab_app/core/network/api_response.dart';
 import 'package:medcollab_app/core/network/auth_interceptor.dart';
+import 'package:medcollab_app/core/network/shared_fetch.dart';
 import 'package:medcollab_app/core/storage/secure_storage_service.dart';
 
 /// HTTP client for the MedCollab REST API.
@@ -31,6 +33,20 @@ class ApiClient {
         );
 
     _dio.interceptors.clear();
+    // Writes change server state: drop shared list results both when a write
+    // starts and when it lands, so no screen reuses a pre-write list.
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          if (_isWrite(options)) SharedFetch.invalidateAll();
+          handler.next(options);
+        },
+        onResponse: (response, handler) {
+          if (_isWrite(response.requestOptions)) SharedFetch.invalidateAll();
+          handler.next(response);
+        },
+      ),
+    );
     _dio.interceptors.add(
       AuthInterceptor(
         storage: _storage,
@@ -228,6 +244,9 @@ class ApiClient {
         if (status == 401) {
           return UnauthorizedException(apiResponse.message);
         }
+        if (status == 403) {
+          return ForbiddenException(apiResponse.message);
+        }
         if (status == 404) {
           return NotFoundException(apiResponse.message);
         }
@@ -271,6 +290,10 @@ class ApiClient {
     }
   }
 
+  static bool _isWrite(RequestOptions o) =>
+      o.method.toUpperCase() != 'GET' &&
+      o.path != ApiEndpoints.refreshToken;
+
   /// Called by [AuthInterceptor] on 401 — exchanges refresh token for new access token.
   Future<String?> _refreshAccessToken() {
     return _refreshInFlight ??= _performTokenRefresh().whenComplete(() {
@@ -299,7 +322,13 @@ class ApiClient {
       final newToken = data?['accessToken'] as String?;
       if (newToken != null) {
         await _storage.saveAccessToken(newToken);
-        await onAccessTokenRefreshed?.call(newToken);
+        // The socket reconnect with the new token runs alongside the retried
+        // request; awaiting it delayed every post-refresh call by ~0.6s and
+        // held the cold-start Home screen (REQ 13).
+        final refreshed = onAccessTokenRefreshed;
+        if (refreshed != null) {
+          unawaited(refreshed(newToken).catchError((Object _) {}));
+        }
       }
       return newToken;
     } on DioException {

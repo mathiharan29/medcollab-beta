@@ -22,6 +22,8 @@ class FakeMessageRepository extends MessageRepository {
   int textSendCount = 0;
   final List<String> sentChannelIds = [];
   int mediaSendCount = 0;
+  int? lastMediaDurationMs;
+  List<int> lastMediaWaveform = const [];
 
   @override
   Future<MessagesPage> getMessages(String channelId, {String? before, int limit = 30}) async {
@@ -42,8 +44,11 @@ class FakeMessageRepository extends MessageRepository {
   Future<MessageModel> sendMediaMessage({
     required String channelId, required MessageType type,
     required MediaUploadResult upload, String? caption, String? replyToId,
+    int? durationMs, List<int> waveform = const [],
   }) {
     mediaSendCount++;
+    lastMediaDurationMs = durationMs;
+    lastMediaWaveform = waveform;
     return onSendMedia!(type, upload, caption);
   }
 

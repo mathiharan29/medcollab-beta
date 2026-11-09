@@ -56,6 +56,8 @@ class MessageRepository extends BaseRepository {
     required MediaUploadResult upload,
     String? caption,
     String? replyToId,
+    int? durationMs,
+    List<int> waveform = const [],
   }) {
     return _sendMessage(
       channelId: channelId,
@@ -69,6 +71,8 @@ class MessageRepository extends BaseRepository {
         mimeType: upload.mimeType,
         width: upload.width,
         height: upload.height,
+        durationMs: durationMs,
+        waveform: waveform,
       ),
       replyToId: replyToId,
     );

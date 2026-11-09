@@ -15,6 +15,7 @@ class MentionAwareComposer extends StatefulWidget {
     this.onPickGallery,
     this.onPickCamera,
     this.onPickDocument,
+    this.onRecordVoice,
     this.isBusy = false,
     this.showTopBorder = true,
     super.key,
@@ -29,6 +30,9 @@ class MentionAwareComposer extends StatefulWidget {
   final VoidCallback? onPickGallery;
   final VoidCallback? onPickCamera;
   final VoidCallback? onPickDocument;
+
+  /// Voice note (REQ 12): mic shows when the box is empty.
+  final VoidCallback? onRecordVoice;
   final bool isBusy;
   final bool showTopBorder;
 
@@ -226,6 +230,7 @@ class _MentionAwareComposerState extends State<MentionAwareComposer> {
           onPickGallery: widget.onPickGallery,
           onPickCamera: widget.onPickCamera,
           onPickDocument: widget.onPickDocument,
+          onRecordVoice: widget.onRecordVoice,
           hintText: 'Message… @ to mention',
         ),
       ],

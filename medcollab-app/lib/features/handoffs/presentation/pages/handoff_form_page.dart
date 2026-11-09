@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
 import 'package:medcollab_app/core/di/app_dependencies.dart';
 import 'package:medcollab_app/core/error/app_exception.dart';
+import 'package:medcollab_app/core/router/back_guard.dart';
 import 'package:medcollab_app/core/theme/app_colors.dart';
 import 'package:medcollab_app/features/auth/data/models/user_model.dart';
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_bloc.dart';
@@ -126,10 +127,44 @@ class _HandoffFormBodyState extends State<_HandoffFormBody> {
   late final HandoffFormCubit _cubit;
   late final TextEditingController _summaryController;
   late final List<SpaceMemberModel> _members;
+  late final HandoffFormState _initial;
+  bool _saved = false;
+
+  /// F7: unsaved edits (anything differs from what the form opened with).
+  bool get _dirty =>
+      !_saved && _cubit.state.copyWith(isSaving: false) != _initial;
+
+  Future<bool> _confirmDiscard() async {
+    if (!_dirty || !mounted) return true;
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Discard changes?'),
+        content: const Text('Your handoff changes have not been saved.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Keep editing'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    );
+    return discard == true;
+  }
+
+  void _leaveWith(HandoffModel result) {
+    _saved = true;
+    context.pop(result);
+  }
 
   @override
   void initState() {
     super.initState();
+    BackGuard.register(_confirmDiscard);
     final deps = AppDependencies.instance;
     final currentUserId =
         context.read<AuthBloc>().state.user?.id ?? '';
@@ -145,10 +180,12 @@ class _HandoffFormBodyState extends State<_HandoffFormBody> {
       currentUserId: currentUserId,
       existing: widget.bootstrap.existingHandoff,
     );
+    _initial = _cubit.state;
   }
 
   @override
   void dispose() {
+    BackGuard.unregister(_confirmDiscard);
     _cubit.close();
     _summaryController.dispose();
     super.dispose();
@@ -175,7 +212,18 @@ class _HandoffFormBodyState extends State<_HandoffFormBody> {
 
     return BlocProvider.value(
       value: _cubit,
-      child: Scaffold(
+      // F7: the app-bar back arrow asks before discarding unsaved changes
+      // (system back is covered by BackGuard).
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) async {
+          if (didPop) return;
+          if (await _confirmDiscard() && mounted) {
+            _saved = true;
+            context.pop();
+          }
+        },
+        child: Scaffold(
         appBar: AppBar(
           title: Text(
             widget.handoffId == null ? 'Create handoff' : 'Edit handoff',
@@ -190,7 +238,7 @@ class _HandoffFormBodyState extends State<_HandoffFormBody> {
                       : () async {
                           final result = await _cubit.submit();
                           if (!mounted || result == null) return;
-                          context.pop(result);
+                          _leaveWith(result);
                         },
                   child: state.isSaving
                       ? const SizedBox(
@@ -198,9 +246,9 @@ class _HandoffFormBodyState extends State<_HandoffFormBody> {
                           height: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text(
-                          'Submit',
-                          style: TextStyle(fontWeight: FontWeight.w700),
+                      : Text(
+                          state.isSent ? 'Save' : 'Submit',
+                          style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
                 );
               },
@@ -236,6 +284,30 @@ class _HandoffFormBodyState extends State<_HandoffFormBody> {
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ),
+                if (state.isSent) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.statusWarnTint,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      state.status == HandoffStatus.acknowledged
+                          ? 'Already acknowledged by '
+                              '${state.assignedDoctor?.displayName ?? 'the receiver'}. '
+                              'Saving changes notifies them and asks them to '
+                              'acknowledge again.'
+                          : 'Already sent to '
+                              '${state.assignedDoctor?.displayName ?? 'the receiver'}. '
+                              'Saving changes notifies them. To hand over to '
+                              'someone else, use Reassign on the handoff.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.textPrimary,
+                          ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 DropdownButtonFormField<UserModel>(
                   value: options.selected,
@@ -254,7 +326,8 @@ class _HandoffFormBodyState extends State<_HandoffFormBody> {
                         ),
                       )
                       .toList(),
-                  onChanged: state.isSaving
+                  // A sent handoff changes hands only via Reassign (audited).
+                  onChanged: state.isSaving || state.isSent
                       ? null
                       : (u) {
                           if (u != null) {
@@ -295,7 +368,13 @@ class _HandoffFormBodyState extends State<_HandoffFormBody> {
                       .map(
                         (s) => DropdownMenuItem(
                           value: s,
-                          child: Text(s.value),
+                          // "Morning", not the raw API value "morning".
+                          child: Text(
+                            s.value.isEmpty
+                                ? s.value
+                                : '${s.value[0].toUpperCase()}'
+                                    '${s.value.substring(1)}',
+                          ),
                         ),
                       )
                       .toList(),
@@ -361,24 +440,42 @@ class _HandoffFormBodyState extends State<_HandoffFormBody> {
                     );
                   }),
                 const SizedBox(height: 24),
-                OutlinedButton(
-                  onPressed: state.isSaving
-                      ? null
-                      : () async {
-                          final result = await _cubit.saveDraft();
-                          if (!mounted || result == null) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Draft saved')),
-                          );
-                          context.pop(result);
-                        },
-                  child: const Text('Save draft'),
-                ),
+                if (state.isSent)
+                  FilledButton(
+                    onPressed: state.isSaving
+                        ? null
+                        : () async {
+                            final result = await _cubit.saveChanges();
+                            if (!mounted || result == null) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Changes saved — receiver notified'),
+                              ),
+                            );
+                            _leaveWith(result);
+                          },
+                    child: const Text('Save changes'),
+                  )
+                else
+                  OutlinedButton(
+                    onPressed: state.isSaving
+                        ? null
+                        : () async {
+                            final result = await _cubit.saveDraft();
+                            if (!mounted || result == null) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Draft saved')),
+                            );
+                            _leaveWith(result);
+                          },
+                    child: const Text('Save draft'),
+                  ),
                 const SizedBox(height: 32),
               ],
             );
           },
         ),
+      ),
       ),
     );
   }

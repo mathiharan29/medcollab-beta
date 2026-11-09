@@ -58,7 +58,7 @@ class _TypingBubbleState extends State<TypingBubble>
                   child: Container(
                     width: widget.compact ? 5 : 7,
                     height: widget.compact ? 5 : 7,
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: AppColors.textSecondary,
                       shape: BoxShape.circle,
                     ),

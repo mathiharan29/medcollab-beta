@@ -51,7 +51,7 @@ class _SplashPageState extends State<SplashPage> {
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'For doctors. Built for India.',
               style: AppTextStyles.body,
             ),

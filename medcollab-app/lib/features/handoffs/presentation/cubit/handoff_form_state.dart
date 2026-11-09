@@ -11,6 +11,7 @@ class HandoffFormState extends Equatable {
     this.shiftSummary = '',
     this.isSaving = false,
     this.error,
+    this.status = HandoffStatus.draft,
   });
 
   factory HandoffFormState.initial({required String channelId}) {
@@ -29,6 +30,7 @@ class HandoffFormState extends Equatable {
       shiftType: handoff.shiftType,
       patients: handoff.patients,
       shiftSummary: handoff.shiftSummary,
+      status: handoff.status,
     );
   }
 
@@ -43,6 +45,12 @@ class HandoffFormState extends Equatable {
   final String? error;
 
   bool get isEditing => handoffId != null;
+
+  /// Status of the handoff being edited (draft for a new one).
+  final HandoffStatus status;
+
+  /// Already sent to the receiver: saving updates it in place (REQ 10).
+  bool get isSent => status != HandoffStatus.draft;
 
   HandoffFormState copyWith({
     String? handoffId,
@@ -65,6 +73,7 @@ class HandoffFormState extends Equatable {
       shiftSummary: shiftSummary ?? this.shiftSummary,
       isSaving: isSaving ?? this.isSaving,
       error: error,
+      status: status,
     );
   }
 
@@ -79,5 +88,6 @@ class HandoffFormState extends Equatable {
         shiftSummary,
         isSaving,
         error,
+        status,
       ];
 }

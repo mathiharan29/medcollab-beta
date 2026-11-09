@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:medcollab_app/core/state/safe_emit.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
 import 'package:medcollab_app/core/constants/socket_events.dart';
 import 'package:medcollab_app/core/error/app_exception.dart';
@@ -16,7 +17,7 @@ import 'package:medcollab_app/features/members/data/repositories/member_reposito
 
 part 'members_state.dart';
 
-class MembersCubit extends Cubit<MembersState> {
+class MembersCubit extends Cubit<MembersState> with SafeEmit<MembersState> {
   MembersCubit({
     required MemberRepository memberRepository,
     required UserRepository userRepository,

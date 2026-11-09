@@ -1,5 +1,6 @@
 import 'package:medcollab_app/core/constants/api_endpoints.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
+import 'package:medcollab_app/core/network/shared_fetch.dart';
 import 'package:medcollab_app/features/handoffs/data/models/handoff_model.dart';
 import 'package:medcollab_app/features/handoffs/data/models/handoff_patient_model.dart';
 import 'package:medcollab_app/shared/data/repositories/base_repository.dart';
@@ -43,18 +44,22 @@ class HandoffRepository extends BaseRepository {
     String type = 'all',
     HandoffStatus? status,
   }) {
-    return execute(
-      () => apiClient.get(
-        ApiEndpoints.handoffs,
-        queryParameters: {
-          'type': type,
-          if (spaceId != null) 'spaceId': spaceId,
-          if (status != null) 'status': status.value,
-        },
-        parser: (json) =>
-            parseNestedList(json, 'handoffs', HandoffModel.fromJson),
+    // Shared between tabs/badges that load together (REQ 13); per-caller copy.
+    return SharedFetch.run<List<HandoffModel>>(
+      'handoffs:$type:${spaceId ?? ''}:${status?.value ?? ''}',
+      () => execute(
+        () => apiClient.get(
+          ApiEndpoints.handoffs,
+          queryParameters: {
+            'type': type,
+            if (spaceId != null) 'spaceId': spaceId,
+            if (status != null) 'status': status.value,
+          },
+          parser: (json) =>
+              parseNestedList(json, 'handoffs', HandoffModel.fromJson),
+        ),
       ),
-    );
+    ).then(List.of);
   }
 
   /// Merges space history with the current user's sent handoffs (drafts + submitted).

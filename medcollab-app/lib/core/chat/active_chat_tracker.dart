@@ -10,7 +10,12 @@ class ActiveChatTracker {
 
   void enter(String channelId) {
     _channelId = channelId;
+    // Reading the chat clears its shade notification, like WhatsApp (REQ 4).
+    onEnter?.call(channelId);
   }
+
+  /// Set at startup (kept as a hook so this file stays plugin-free for tests).
+  void Function(String channelId)? onEnter;
 
   void leave(String channelId) {
     if (_channelId == channelId) {

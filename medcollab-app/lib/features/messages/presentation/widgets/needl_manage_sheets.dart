@@ -304,7 +304,7 @@ Future<void> showAddNeedlPeopleSheet(
                               ),
                               backgroundColor: AppColors.surfaceInput,
                               deleteIconColor: AppColors.textSecondary,
-                              side: const BorderSide(
+                              side: BorderSide(
                                 color: AppColors.borderDefault,
                               ),
                               onDeleted: () => setModal(() {

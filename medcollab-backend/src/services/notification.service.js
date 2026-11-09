@@ -305,7 +305,9 @@ const notifyNewMessage = async ({ recipientIds, message, sender, channel }) => {
           ? 'Sent a photo'
           : message.type === 'video'
             ? 'Sent a video'
-            : 'Sent a file',
+            : message.type === 'audio'
+              ? '🎤 Voice message'
+              : 'Sent a file',
       referenceId: message._id,
       referenceType: 'Message',
       metadata: {

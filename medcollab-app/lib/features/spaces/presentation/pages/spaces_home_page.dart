@@ -149,7 +149,7 @@ class _SpacesHomePageState extends State<SpacesHomePage>
                   color: AppColors.surface,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                    side: const BorderSide(color: AppColors.border),
+                    side: BorderSide(color: AppColors.border),
                   ),
                   child: ListTile(
                     contentPadding: const EdgeInsets.symmetric(
@@ -168,7 +168,7 @@ class _SpacesHomePageState extends State<SpacesHomePage>
                       '${space.channels.length} channels · ${space.type.label}',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
-                    trailing: const Icon(
+                    trailing: Icon(
                       Icons.chevron_right,
                       color: AppColors.textTertiary,
                       size: 20,

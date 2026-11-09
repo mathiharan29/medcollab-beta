@@ -172,7 +172,7 @@ class _SpaceDetailPageState extends State<SpaceDetailPage> {
                     ),
                     child: Container(
                       width: double.infinity,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         border: Border(
                           bottom: BorderSide(color: AppColors.border),
                         ),
@@ -240,7 +240,7 @@ class _SpaceDetailPageState extends State<SpaceDetailPage> {
                       'Structured patient handover between shifts',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
-                    trailing: const Icon(
+                    trailing: Icon(
                       Icons.chevron_right,
                       color: AppColors.textTertiary,
                     ),
@@ -336,7 +336,7 @@ class _ChannelTile extends StatelessWidget {
         color: AppColors.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-          side: const BorderSide(color: AppColors.border),
+          side: BorderSide(color: AppColors.border),
         ),
         child: InkWell(
           onTap: onTap,
@@ -402,7 +402,7 @@ class _ChannelTile extends StatelessWidget {
                     ],
                   ),
                 ),
-                const Icon(
+                Icon(
                   Icons.chevron_right,
                   size: 18,
                   color: AppColors.textTertiary,

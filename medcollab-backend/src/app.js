@@ -149,6 +149,8 @@ app.get('/health', (req, res) => {
     status: 'ok',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV,
+    // Deployed commit (Railway sets this) — confirms which build is live.
+    version: (process.env.RAILWAY_GIT_COMMIT_SHA || '').slice(0, 7) || null,
     database: dbState[mongoose.connection.readyState] || 'unknown',
     uptime: Math.floor(process.uptime()) + 's',
     firebase: isFirebaseReady(),

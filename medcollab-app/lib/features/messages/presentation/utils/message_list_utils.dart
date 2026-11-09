@@ -1,3 +1,4 @@
+import 'package:medcollab_app/core/constants/app_enums.dart';
 import 'package:medcollab_app/features/messages/data/models/message_model.dart';
 
 /// Builds a channel message list with date separators and sender grouping.
@@ -53,7 +54,10 @@ List<MessageListItem> buildMessageListItems({
         isMine: isMine,
       ),
     );
-    lastSenderId = message.sender.id;
+    // An activity line ("X added Y") breaks the run: the next bubble shows
+    // its sender again.
+    lastSenderId =
+        message.type == MessageType.system ? null : message.sender.id;
   }
 
   return items;

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:medcollab_app/core/state/safe_emit.dart';
 import 'package:medcollab_app/core/chat/active_chat_tracker.dart';
 import 'package:medcollab_app/core/chat/chat_transcript_cache.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
@@ -22,7 +23,7 @@ import 'package:medcollab_app/features/notifications/data/repositories/notificat
 
 part 'channel_chat_state.dart';
 
-class ChannelChatCubit extends Cubit<ChannelChatState> {
+class ChannelChatCubit extends Cubit<ChannelChatState> with SafeEmit<ChannelChatState> {
   StreamSubscription<bool>? _connectionSub;
 
   /// Dedupe socket fan-out (channel room + user room).
@@ -311,6 +312,9 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
     required String fileName,
     required String mimeType,
     String? caption,
+    // Voice note (REQ 12).
+    int? durationMs,
+    List<int> waveform = const [],
   }) async {
     if (state.isSending || state.isReadOnly) return;
     if (bytes.length > 50 * 1024 * 1024) {
@@ -340,6 +344,8 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
         text: caption,
         fileName: fileName,
         mimeType: mimeType,
+        durationMs: durationMs,
+        waveform: waveform,
       ),
       replyTo: replyTo,
       createdAt: DateTime.now(),
@@ -368,6 +374,8 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
         upload: upload,
         caption: caption,
         replyToId: replyTo?.messageId,
+        durationMs: durationMs,
+        waveform: waveform,
       );
       _replaceLocalMessage(tempId, message);
       emit(state.copyWith(isSending: false, isUploading: false));
@@ -481,6 +489,25 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
         return;
       }
 
+      // Edits arrive as a partial update { messageId, content, isEdited }:
+      // merge them into the message we already show. Parsing them as a full
+      // message created a stray "null" row and the edit never appeared.
+      if (data['_id'] == null && data['id'] == null) {
+        if (messageId.isEmpty) return;
+        final index = state.messages.indexWhere((m) => m.id == messageId);
+        if (index < 0) return;
+        final contentJson = asJsonMap(data['content']);
+        final updated = List<MessageModel>.from(state.messages);
+        updated[index] = updated[index].copyWith(
+          content: contentJson != null
+              ? MessageContent.fromJson(contentJson)
+              : updated[index].content,
+          isEdited: data['isEdited'] == true || updated[index].isEdited,
+        );
+        emit(state.copyWith(messages: updated));
+        return;
+      }
+
       final message = _parseSocketMessage(data);
       if (message == null) return;
       final msgChannelId = message.channelId.isNotEmpty
@@ -488,10 +515,11 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
           : data['channelId']?.toString() ?? '';
       if (msgChannelId.isNotEmpty && msgChannelId != channelId) return;
       if (message.isThreadReply) {
-        _applyThreadReplyToRoot(message);
-      } else {
-        _upsertRootMessage(message);
+        // A full message_updated for a reply is not a *new* reply: don't
+        // bump the count (only new_message does).
+        return;
       }
+      _upsertRootMessage(message);
     });
 
     _messageDeletedSub =
@@ -501,11 +529,9 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
       if (messageId.isEmpty) return;
       final index = state.messages.indexWhere((m) => m.id == messageId);
       if (index < 0) {
-        // May be a thread reply — refresh counts softly when possible.
-        final parsed = _parseSocketMessage(data);
-        if (parsed != null && parsed.channelId == channelId) {
-          _upsertRootMessage(parsed.copyWith(isDeleted: true));
-        }
+        // Not in the main timeline (e.g. a thread reply). The payload is only
+        // { messageId, deletedAt }: never turn it into a row — that showed a
+        // stray "deleted" bubble. Thread screens handle their own deletes.
         return;
       }
       _upsertRootMessage(state.messages[index].copyWith(isDeleted: true));

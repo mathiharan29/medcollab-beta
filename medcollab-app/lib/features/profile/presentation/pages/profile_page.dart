@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:medcollab_app/core/config/app_version.dart';
 import 'package:medcollab_app/core/config/env_config.dart';
-import 'package:medcollab_app/core/constants/app_constants.dart';
+import 'package:medcollab_app/features/messages/presentation/widgets/chat_wallpaper.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
 import 'package:medcollab_app/core/di/app_dependencies.dart';
 import 'package:medcollab_app/core/router/app_routes.dart';
@@ -32,6 +34,8 @@ class ProfilePage extends StatelessWidget {
         final availability =
             user?.availability.status ?? AvailabilityStatus.available;
         final roleLine = [
+          // REQ 5: Vocle ID, so colleagues can find you by @username.
+          if (user?.vocleUsername?.isNotEmpty == true) '@${user!.vocleUsername}',
           if (user?.role.label.isNotEmpty == true) user!.role.label,
           if (user?.speciality != null && user!.speciality!.isNotEmpty)
             user.speciality!,
@@ -89,6 +93,12 @@ class ProfilePage extends StatelessWidget {
                         const _RowDivider(),
                         _AppearanceRow(onTap: _showAppearanceSheet),
                         _SettingsRow(
+                          icon: Icons.palette_outlined,
+                          label: 'Chat theme',
+                          onTap: () => ChatWallpaperPage.open(context),
+                        ),
+                        const _RowDivider(),
+                        _SettingsRow(
                           icon: Icons.notifications_outlined,
                           label: 'Notification settings',
                           onTap: () =>
@@ -98,11 +108,12 @@ class ProfilePage extends StatelessWidget {
                         _SettingsRow(
                           icon: Icons.lock_outline,
                           label: 'Messaging privacy',
-                        subtitle: user?.notifications
-                                    .allowMessageRequestsFromAnyone ==
-                                true
-                            ? 'Anyone with your number can send a request'
-                            : 'Only shared-group doctors can send a request',
+                          // REQ 5: requests are open; privacy guards group adds.
+                          subtitle: user?.notifications
+                                      .allowGroupAddsFromAnyone ==
+                                  true
+                              ? 'Anyone can add you to groups'
+                              : 'Only people you know can add you to groups',
                           onTap: () =>
                               context.push(AppRoutes.notificationSettings),
                         ),
@@ -167,9 +178,36 @@ class ProfilePage extends StatelessWidget {
                     const SizedBox(height: 16),
                     _SignOutCard(
                       enabled: !state.isLoading,
-                      onTap: () => context
-                          .read<AuthBloc>()
-                          .add(const AuthLogoutRequested()),
+                      // F8: one stray tap used to sign the doctor out.
+                      onTap: () async {
+                        final bloc = context.read<AuthBloc>();
+                        final ok = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('Sign out of Vocle?'),
+                            content: const Text(
+                              'You will stop getting message and handoff '
+                              'alerts on this phone until you sign in again.',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, false),
+                                child: const Text('Cancel'),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, true),
+                                child: Text(
+                                  'Sign out',
+                                  style: TextStyle(
+                                    color: AppColors.emergencyRed,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (ok == true) bloc.add(const AuthLogoutRequested());
+                      },
                     ),
                     const SizedBox(height: 20),
                     const _VersionFooter(),
@@ -257,6 +295,22 @@ class ProfilePage extends StatelessWidget {
                     await _pickCropAndUpload(context, ImageSource.camera);
                   },
                 ),
+                if (user.avatarUrl != null && user.avatarUrl!.trim().isNotEmpty)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(
+                      Icons.delete_outline,
+                      color: AppColors.emergencyRed,
+                    ),
+                    title: const Text(
+                      'Remove photo',
+                      style: TextStyle(color: AppColors.emergencyRed),
+                    ),
+                    onTap: () async {
+                      Navigator.pop(sheetContext);
+                      await _removePhoto(context);
+                    },
+                  ),
               ],
             ),
           ),
@@ -295,6 +349,46 @@ class ProfilePage extends StatelessWidget {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Could not update profile photo')),
+      );
+    }
+  }
+
+  /// REQ 7: remove the profile photo (falls back to the initials avatar).
+  Future<void> _removePhoto(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remove profile photo?'),
+        content: const Text(
+          'Colleagues will see your initials instead of a photo.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.emergencyRed,
+            ),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    try {
+      final user = await AppDependencies.instance.userRepository.removeAvatar();
+      if (!context.mounted) return;
+      context.read<AuthBloc>().add(AuthUserUpdated(user));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile photo removed')),
+      );
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not remove profile photo')),
       );
     }
   }
@@ -528,7 +622,7 @@ class _VersionFooterState extends State<_VersionFooter> {
         child: Column(
           children: [
             Text(
-              'Vocle closed beta ${AppConstants.appVersionLabel}',
+              'Vocle closed beta ${AppVersion.label}',
               textAlign: TextAlign.center,
               style: AppTextStyles.caption.copyWith(
                 color: AppColors.textMuted,
@@ -570,114 +664,119 @@ class _ProfileHeader extends StatelessWidget {
     final top = MediaQuery.paddingOf(context).top;
     final pillColor = availabilityColor(availability);
 
-    return Container(
-      width: double.infinity,
-      color: AppColors.navyPrimary,
-      padding: EdgeInsets.fromLTRB(16, top + 20, 16, 28),
-      child: Column(
-        children: [
-          GestureDetector(
-            onTap: onAvatarTap,
-            child: Stack(
-              alignment: Alignment.bottomRight,
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border:
-                        Border.all(color: AppColors.tealPrimary, width: 2.5),
-                  ),
-                  padding: const EdgeInsets.all(2),
-                  child: AppAvatar(
-                    name: name,
-                    imageUrl: imageUrl,
-                    size: 64,
-                    foregroundColor: AppColors.tealPrimary,
-                  ),
-                ),
-                if (onAvatarTap != null)
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      // Navy header: light status-bar icons in both themes (REQ 6).
+      value: SystemUiOverlayStyle.light
+          .copyWith(statusBarColor: Colors.transparent),
+      child: Container(
+        width: double.infinity,
+        color: AppColors.navyPrimary,
+        padding: EdgeInsets.fromLTRB(16, top + 20, 16, 28),
+        child: Column(
+          children: [
+            GestureDetector(
+              onTap: onAvatarTap,
+              child: Stack(
+                alignment: Alignment.bottomRight,
+                children: [
                   Container(
-                    width: 26,
-                    height: 26,
                     decoration: BoxDecoration(
-                      color: AppColors.tealPrimary,
                       shape: BoxShape.circle,
-                      border: Border.all(
+                      border:
+                          Border.all(color: AppColors.tealPrimary, width: 2.5),
+                    ),
+                    padding: const EdgeInsets.all(2),
+                    child: AppAvatar(
+                      name: name,
+                      imageUrl: imageUrl,
+                      size: 64,
+                      foregroundColor: AppColors.tealPrimary,
+                    ),
+                  ),
+                  if (onAvatarTap != null)
+                    Container(
+                      width: 26,
+                      height: 26,
+                      decoration: BoxDecoration(
+                        color: AppColors.tealPrimary,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppColors.navyPrimary,
+                          width: 2,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.camera_alt_rounded,
+                        size: 14,
                         color: AppColors.navyPrimary,
-                        width: 2,
                       ),
                     ),
-                    child: const Icon(
-                      Icons.camera_alt_rounded,
-                      size: 14,
-                      color: AppColors.navyPrimary,
+                ],
+              ),
+            ),
+            if (onAvatarTap != null) ...[
+              const SizedBox(height: 6),
+              Text(
+                'Tap photo to view profile',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.white.withValues(alpha: 0.55),
+                ),
+              ),
+            ],
+            const SizedBox(height: 14),
+            Text(
+              name,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textOnDark,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              roleLine,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+                color: Colors.white.withValues(alpha: 0.55),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: pillColor.withValues(alpha: 0.18),
+                borderRadius: AppRadius.pill,
+                border: Border.all(color: pillColor.withValues(alpha: 0.55)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 7,
+                    height: 7,
+                    decoration: BoxDecoration(
+                      color: pillColor,
+                      shape: BoxShape.circle,
                     ),
                   ),
-              ],
-            ),
-          ),
-          if (onAvatarTap != null) ...[
-            const SizedBox(height: 6),
-            Text(
-              'Tap photo to view profile',
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.white.withValues(alpha: 0.55),
+                  const SizedBox(width: 6),
+                  Text(
+                    availabilityLabel(availability),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: pillColor,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
-          const SizedBox(height: 14),
-          Text(
-            name,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textOnDark,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            roleLine,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w400,
-              color: Colors.white.withValues(alpha: 0.55),
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: pillColor.withValues(alpha: 0.18),
-              borderRadius: AppRadius.pill,
-              border: Border.all(color: pillColor.withValues(alpha: 0.55)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 7,
-                  height: 7,
-                  decoration: BoxDecoration(
-                    color: pillColor,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  availabilityLabel(availability),
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: pillColor,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -749,9 +848,10 @@ class _SettingsRow extends StatelessWidget {
               Container(
                 width: 32,
                 height: 32,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFF5F7FA),
-                  borderRadius: BorderRadius.all(Radius.circular(8)),
+                decoration: BoxDecoration(
+                  // Theme token (REQ 6): was a fixed light grey tile.
+                  color: AppColors.surfaceInput,
+                  borderRadius: const BorderRadius.all(Radius.circular(8)),
                 ),
                 child: Icon(
                   icon,
@@ -776,7 +876,7 @@ class _SettingsRow extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.chevron_right,
                 color: AppColors.textMuted,
                 size: 20,
@@ -794,7 +894,7 @@ class _RowDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Divider(
+    return Divider(
       height: 1,
       thickness: 0.5,
       indent: 58,

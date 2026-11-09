@@ -85,7 +85,7 @@ class _AppSearchBarState extends State<AppSearchBar> {
             contentPadding: const EdgeInsets.symmetric(
               vertical: AppSpacing.sm,
             ),
-            prefixIcon: const Icon(
+            prefixIcon: Icon(
               Icons.search,
               size: AppDesignSystem.iconMd,
               color: AppColors.textTertiary,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
@@ -216,8 +217,8 @@ class _HomeDashboardView extends StatelessWidget {
 
     var selected = options.length == 1 ? options.first : null;
     if (selected == null) {
-      selected =
-          await showModalBottomSheet<({SpaceModel space, ChannelModel channel})>(
+      selected = await showModalBottomSheet<
+          ({SpaceModel space, ChannelModel channel})>(
         context: context,
         showDragHandle: true,
         builder: (sheetContext) {
@@ -293,99 +294,120 @@ class _Header extends StatelessWidget {
     final user = context.watch<AuthBloc>().state.user;
     final topPadding = MediaQuery.paddingOf(context).top;
 
-    return Container(
-      color: AppColors.navyPrimary,
-      padding: EdgeInsets.fromLTRB(
-        AppGaps.screenH,
-        topPadding + 20,
-        AppGaps.screenH,
-        24,
+    // Navy header under the status bar: light icons in both themes
+    // (REQ 6 — dark icons were invisible on navy).
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light.copyWith(
+        statusBarColor: Colors.transparent,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      clinicalGreeting(DateTime.now()),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.55),
+      child: Container(
+        color: AppColors.navyPrimary,
+        padding: EdgeInsets.fromLTRB(
+          AppGaps.screenH,
+          topPadding + 20,
+          AppGaps.screenH,
+          24,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        clinicalGreeting(DateTime.now()),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withValues(alpha: 0.55),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      user?.displayName ?? 'Doctor',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.doctorName,
-                    ),
-                  ],
+                      const SizedBox(height: 2),
+                      Text(
+                        user?.displayName ?? 'Doctor',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.doctorName,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              IconButton(
-                tooltip: 'Search',
-                onPressed: () => context.push(AppRoutes.search),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                icon: Icon(
-                  Icons.search,
-                  color: Colors.white.withValues(alpha: 0.55),
-                  size: 20,
+                // Actions share one centred row so the alerts pill sits on
+                // the same line as the icons (it used to ride high).
+                SizedBox(
+                  height: 36,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                IconButton(
+                  tooltip: 'Search',
+                  onPressed: () => context.push(AppRoutes.search),
+                  padding: EdgeInsets.zero,
+                  constraints:
+                      const BoxConstraints(minWidth: 36, minHeight: 36),
+                  icon: Icon(
+                    Icons.search,
+                    color: Colors.white.withValues(alpha: 0.55),
+                    size: 20,
+                  ),
                 ),
-              ),
-              if (state.unreadNotifications > 0)
-                Padding(
-                  padding: const EdgeInsets.only(top: 2, right: 2),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () => context.go(AppRoutes.notifications),
-                      borderRadius: BorderRadius.circular(999),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.emergencyRed.withValues(alpha: 0.9),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Text(
-                          state.unreadNotifications > 99
-                              ? '99+ alerts'
-                              : '${state.unreadNotifications} alert${state.unreadNotifications == 1 ? '' : 's'}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
+                if (state.unreadNotifications > 0)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => context.go(AppRoutes.notifications),
+                        borderRadius: BorderRadius.circular(999),
+                        child: Container(
+                          height: 24,
+                          alignment: Alignment.center,
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          decoration: BoxDecoration(
+                            color:
+                                AppColors.emergencyRed.withValues(alpha: 0.9),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            state.unreadNotifications > 99
+                                ? '99+ alerts'
+                                : '${state.unreadNotifications} alert${state.unreadNotifications == 1 ? '' : 's'}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              height: 1,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
+                IconButton(
+                  tooltip: 'Configure Home',
+                  onPressed: () => _openConfigureSheet(context),
+                  padding: EdgeInsets.zero,
+                  constraints:
+                      const BoxConstraints(minWidth: 36, minHeight: 36),
+                  icon: Icon(
+                    Icons.tune,
+                    color: Colors.white.withValues(alpha: 0.55),
+                    size: 20,
+                  ),
                 ),
-              IconButton(
-                tooltip: 'Configure Home',
-                onPressed: () => _openConfigureSheet(context),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                icon: Icon(
-                  Icons.tune,
-                  color: Colors.white.withValues(alpha: 0.55),
-                  size: 20,
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _ShiftCard(state: state, user: user),
-        ],
+              ],
+            ),
+            const SizedBox(height: 16),
+            _ShiftCard(state: state, user: user),
+          ],
+        ),
       ),
     );
   }
@@ -612,8 +634,7 @@ class _WelcomeEmptyCard extends StatelessWidget {
         compact: true,
         icon: Icons.waving_hand_outlined,
         title: 'Welcome to Vocle',
-        subtitle:
-            'Join your department space to see handoffs, messages, and '
+        subtitle: 'Join your department space to see handoffs, messages, and '
             'shift context for your team.',
         action: Column(
           mainAxisSize: MainAxisSize.min,

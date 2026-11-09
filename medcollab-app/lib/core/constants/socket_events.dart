@@ -35,6 +35,8 @@ abstract final class SocketEvents {
   static const String handoffSubmitted = 'handoff_submitted';
   static const String handoffAcknowledged = 'handoff_acknowledged';
   static const String handoffReassigned = 'handoff_reassigned';
+  static const String handoffUpdated = 'handoff_updated';
+  static const String handoffDeleted = 'handoff_deleted';
 
   // Spaces
   static const String spaceMemberJoined = 'space_member_joined';

@@ -228,11 +228,42 @@ const handoffSchema = new mongoose.Schema(
         _id: false,
       },
     ],
+
+    // REQ 10: the sender may edit after submitting. Every edit is recorded.
+    editHistory: [
+      {
+        byUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        fields: { type: [String], default: [] },
+        statusBefore: { type: String },
+        at: { type: Date, default: Date.now },
+        _id: false,
+      },
+    ],
+
+    // REQ 10: submitted handoffs are soft-deleted (hidden everywhere, kept
+    // for the medical audit trail). Drafts are hard-deleted.
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: { type: Date, default: null },
+    deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   },
   {
     timestamps: true,
   }
 );
+
+// Hide soft-deleted handoffs from every query unless the query names
+// `isDeleted` itself (audit tooling can pass { isDeleted: true }).
+handoffSchema.pre(
+  ['find', 'findOne', 'findOneAndUpdate', 'countDocuments', 'updateOne', 'updateMany'],
+  function excludeDeleted() {
+    if (this.getFilter().isDeleted === undefined) {
+      this.where({ isDeleted: { $ne: true } });
+    }
+  }
+);
+handoffSchema.pre('aggregate', function excludeDeletedAgg() {
+  this.pipeline().unshift({ $match: { isDeleted: { $ne: true } } });
+});
 
 // ── Indexes ───────────────────────────────────────────────────────────────────
 handoffSchema.index({ spaceId: 1, shiftDate: -1 });                      // List handoffs by space, recent first

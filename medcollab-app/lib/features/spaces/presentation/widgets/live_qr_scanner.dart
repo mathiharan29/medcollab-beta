@@ -103,7 +103,7 @@ class _LiveQrScannerState extends State<LiveQrScanner> {
           child: Text(
             _initError!,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.textMuted),
+            style: TextStyle(color: AppColors.textMuted),
           ),
         ),
       );

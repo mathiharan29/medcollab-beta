@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:medcollab_app/core/state/safe_emit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // Color is used by ThemePalette.primary getters.
@@ -67,7 +68,7 @@ class ThemeSettingsState extends Equatable {
 }
 
 /// Persists Light / Dark / System and the accent palette stub.
-class ThemeModeCubit extends Cubit<ThemeSettingsState> {
+class ThemeModeCubit extends Cubit<ThemeSettingsState> with SafeEmit<ThemeSettingsState> {
   ThemeModeCubit() : super(const ThemeSettingsState());
 
   static const _modeKey = 'vocle_theme_mode';

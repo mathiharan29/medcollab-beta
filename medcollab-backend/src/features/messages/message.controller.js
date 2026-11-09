@@ -28,8 +28,16 @@ const { notifyNewMessage, notifyMention } = require('../../services/notification
 const { MESSAGE_TYPES, MESSAGE_PRIORITY, PAGINATION, CHANNEL_TYPES } = require('../../constants');
 const logger = require('../../utils/logger');
 
+const formatDuration = (ms) => {
+  const total = Math.round((Number(ms) || 0) / 1000);
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+};
+
 const messagePreviewText = (message) =>
   message.content?.text?.slice(0, 200) ||
+  (message.type === MESSAGE_TYPES.AUDIO
+    ? `🎤 Voice message${message.content?.durationMs ? ` (${formatDuration(message.content.durationMs)})` : ''}`
+    : null) ||
   (message.type === MESSAGE_TYPES.IMAGE || message.type === MESSAGE_TYPES.ECG
     ? '📷 Photo'
     : message.type === MESSAGE_TYPES.VIDEO
@@ -156,9 +164,16 @@ const sendMessage = asyncHandler(async (req, res) => {
       _id: threadId,
       channelId: channel._id,
       isDeleted: { $ne: true },
-    }).select('_id');
+    }).select('_id type threadId');
     if (!threadParent) {
       return respond.badRequest(res, 'Thread parent not found in this chat');
+    }
+    // Threads hang off real messages only (not "X added Y", not a reply).
+    if (threadParent.type === MESSAGE_TYPES.SYSTEM) {
+      return respond.badRequest(res, 'Cannot start a thread on group activity');
+    }
+    if (threadParent.threadId) {
+      return respond.badRequest(res, 'Reply in the original thread');
     }
   }
 
@@ -190,7 +205,9 @@ const sendMessage = asyncHandler(async (req, res) => {
           ? parent.content?.fileName || 'Document'
           : parent.type === MESSAGE_TYPES.HANDOFF
             ? 'Handoff'
-            : 'Message');
+            : parent.type === MESSAGE_TYPES.AUDIO
+              ? 'Voice message'
+              : 'Message');
     replyTo = {
       messageId: parent._id,
       senderId: parentSender?._id || parentSender || null,
@@ -233,6 +250,22 @@ const sendMessage = asyncHandler(async (req, res) => {
       sentAt: message.createdAt,
     },
   });
+  if (threadId) {
+    // Reply count before the response, so reopening the chat right away
+    // never shows a stale "N replies". Never touch a foreign parent (VR-S1).
+    await Message.updateOne(
+      { _id: threadId, channelId: channel._id },
+      {
+        $inc: { replyCount: 1 },
+        lastReply: {
+          senderId: req.user._id,
+          senderName: req.user.name,
+          text: content?.text?.slice(0, 100) || messagePreviewText(message)?.slice(0, 100) || null,
+          sentAt: message.createdAt,
+        },
+      }
+    );
+  }
 
   // ── HTTP response first ─────────────────────────────────────────────────────
   respond.created(res, 'Message sent', { message });
@@ -251,21 +284,8 @@ const sendMessage = asyncHandler(async (req, res) => {
         recipientIds
       );
 
-      // Thread reply bookkeeping — never update a foreign-channel parent (VR-S1).
-      if (threadId) {
-        await Message.updateOne(
-          { _id: threadId, channelId: channel._id },
-          {
-            $inc: { replyCount: 1 },
-            lastReply: {
-              senderId: req.user._id,
-              senderName: req.user.name,
-              text: content?.text?.slice(0, 100) || null,
-              sentAt: message.createdAt,
-            },
-          }
-        );
-      }
+      // Live "N replies": clients bump the root from the new_message above
+      // (threadId set), so no separate message_updated is sent here.
 
       await notifyNewMessage({
         recipientIds,
@@ -382,6 +402,11 @@ const deleteMessage = asyncHandler(async (req, res) => {
   if (!message) return respond.notFound(res, 'Message not found');
   if (!assertMessageInChannel(message, req.params.channelId, res)) return;
 
+  // Activity lines ("X removed Y") are a record, not someone's message.
+  if (message.type === MESSAGE_TYPES.SYSTEM) {
+    return respond.badRequest(res, 'Group activity cannot be deleted');
+  }
+
   const isSender = message.senderId.toString() === req.user._id.toString();
   const isAdmin  = access.space?.isAdmin(req.user._id);
 
@@ -445,6 +470,9 @@ const toggleReaction = asyncHandler(async (req, res) => {
   if (!message) return respond.notFound(res, 'Message not found');
   if (!assertMessageInChannel(message, req.params.channelId, res)) return;
   if (message.isDeleted) return respond.badRequest(res, 'Cannot react to a deleted message');
+  if (message.type === MESSAGE_TYPES.SYSTEM) {
+    return respond.badRequest(res, 'Cannot react to group activity');
+  }
 
   await message.toggleReaction(req.body.emoji, req.user._id);
 

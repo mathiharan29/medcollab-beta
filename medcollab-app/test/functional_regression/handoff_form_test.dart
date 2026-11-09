@@ -124,4 +124,68 @@ void main() {
     expect(repository.savedSummary, 'Synthetic shift summary');
     expect(repository.savedPatients, const [_patient]);
   });
+
+  HandoffModel sent(HandoffStatus status) => HandoffModel(
+        id: 'handoff-synthetic-1',
+        spaceId: 'space-synthetic-1',
+        channelId: 'channel-synthetic-1',
+        fromUser: _sender,
+        toUser: _receiver,
+        shiftDate: DateTime.utc(2026, 10, 10),
+        shiftType: ShiftType.night,
+        patients: const [_patient],
+        status: status,
+      );
+
+  for (final status in [HandoffStatus.submitted, HandoffStatus.acknowledged]) {
+    test('REQ 10: editing a ${status.name} handoff saves in place, never '
+        're-submits', () async {
+      final repository = _FakeHandoffRepository();
+      final form = HandoffFormCubit(
+        handoffRepository: repository,
+        spaceId: 'space-synthetic-1',
+        channelId: 'channel-synthetic-1',
+        currentUserId: _sender.id,
+        existing: sent(status),
+      );
+      addTearDown(form.close);
+      expect(form.state.isSent, isTrue);
+
+      form.setShiftSummary('Bed B-04 K+ 6.1 — repeat at 2am');
+      final saved = await form.submit(); // app-bar "Save" on a sent handoff
+      expect(saved, isNotNull);
+      expect(repository.updatedIds, ['handoff-synthetic-1']);
+      expect(repository.submitCalls, 0,
+          reason: 'a sent handoff must not hit /submit again');
+      expect(repository.createCalls, 0);
+      expect(repository.savedSummary, 'Bed B-04 K+ 6.1 — repeat at 2am');
+    });
+  }
+
+  test('REQ 10: a sent handoff cannot be saved with no patients', () async {
+    final repository = _FakeHandoffRepository();
+    final form = HandoffFormCubit(
+      handoffRepository: repository,
+      spaceId: 'space-synthetic-1',
+      channelId: 'channel-synthetic-1',
+      currentUserId: _sender.id,
+      existing: sent(HandoffStatus.submitted),
+    );
+    addTearDown(form.close);
+    form.setPatients(const []);
+    expect(await form.saveChanges(), isNull);
+    expect(form.state.error, 'A sent handoff needs at least one patient');
+    expect(repository.updateCalls, 0);
+  });
+
+  test('REQ 10: a new handoff is not "sent"', () {
+    final form = HandoffFormCubit(
+      handoffRepository: _FakeHandoffRepository(),
+      spaceId: 'space-synthetic-1',
+      channelId: 'channel-synthetic-1',
+      currentUserId: _sender.id,
+    );
+    addTearDown(form.close);
+    expect(form.state.isSent, isFalse);
+  });
 }

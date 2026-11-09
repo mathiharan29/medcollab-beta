@@ -313,21 +313,37 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                     _SettingsSectionTitle('Messaging privacy'),
                     ClinicalCard(
                       padding: EdgeInsets.zero,
-                      child: SwitchListTile(
-                        title: const Text('Allow message requests from anyone'),
-                        subtitle: const Text(
-                          'On: doctors who find your number can ask to chat. '
-                          'Off: only colleagues who already share a Vocle group with you can send a request. '
-                          'Chat never opens until you accept.',
-                        ),
-                        value: _prefs!.allowMessageRequestsFromAnyone,
-                        onChanged: _saving
-                            ? null
-                            : (v) => _save(
-                                  _prefs!.copyWith(
-                                    allowMessageRequestsFromAnyone: v,
-                                  ),
-                                ),
+                      child: Column(
+                        children: [
+                          // REQ 5: requests are open to every doctor; the
+                          // chat still opens only after you accept.
+                          const ListTile(
+                            leading: Icon(Icons.mark_chat_unread_outlined),
+                            title: Text('Message requests'),
+                            subtitle: Text(
+                              'Any doctor on Vocle can send you a request. '
+                              'Chat opens only after you accept — no Seen '
+                              'until then.',
+                            ),
+                          ),
+                          const Divider(height: 1),
+                          SwitchListTile(
+                            title: const Text('Let anyone add me to groups'),
+                            subtitle: const Text(
+                              'Off: only doctors who share a group or a chat '
+                              'with you can add you. Others must send you '
+                              'the invite link.',
+                            ),
+                            value: _prefs!.allowGroupAddsFromAnyone,
+                            onChanged: _saving
+                                ? null
+                                : (v) => _save(
+                                      _prefs!.copyWith(
+                                        allowGroupAddsFromAnyone: v,
+                                      ),
+                                    ),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: AppSpacing.md),

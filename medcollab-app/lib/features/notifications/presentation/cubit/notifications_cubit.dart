@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:medcollab_app/core/state/safe_emit.dart';
 import 'package:medcollab_app/core/constants/socket_events.dart';
 import 'package:medcollab_app/core/error/app_exception.dart';
 import 'package:medcollab_app/core/socket/socket_client.dart';
@@ -76,7 +77,7 @@ class NotificationsState extends Equatable {
       [isLoading, error, notifications, filter, unreadCount];
 }
 
-class NotificationsCubit extends Cubit<NotificationsState> {
+class NotificationsCubit extends Cubit<NotificationsState> with SafeEmit<NotificationsState> {
   NotificationsCubit({
     required NotificationRepository repository,
     required SocketClient socketClient,

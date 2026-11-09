@@ -18,13 +18,23 @@ class AlertCard extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
 
-  static const Color _mentionBg = Color(0xFFEEF2FF);
-  static const Color _mentionFg = Color(0xFF6366F1);
-  static const Color _emergencyTitle = Color(0xFF991B1B);
-  static const Color _emergencyTitleRead = Color(0xFFB45353);
-  static const Color _emergencyCardBg = Color(0xFFFFF5F5);
-  static const Color _emergencyCardBgRead = Color(0xFFFFFBFB);
-  static const Color _unreadTint = Color(0xFFF0FDFA);
+  // Theme-aware (REQ 6): these were fixed light colours, so in dark mode an
+  // unread alert became a pale card with near-invisible white text.
+  static bool get _dark => AppColors.isDark;
+  static Color get _mentionBg =>
+      _dark ? const Color(0xFF26295A) : const Color(0xFFEEF2FF);
+  static Color get _mentionFg =>
+      _dark ? const Color(0xFFA5B4FC) : const Color(0xFF6366F1);
+  static Color get _emergencyTitle =>
+      _dark ? const Color(0xFFFCA5A5) : const Color(0xFF991B1B);
+  static Color get _emergencyTitleRead =>
+      _dark ? const Color(0xFFE59A9A) : const Color(0xFFB45353);
+  static Color get _emergencyCardBg =>
+      _dark ? AppColors.emergencyTint : const Color(0xFFFFF5F5);
+  static Color get _emergencyCardBgRead =>
+      _dark ? AppColors.surfaceCard : const Color(0xFFFFFBFB);
+  static Color get _unreadTint =>
+      _dark ? AppColors.tealTint : const Color(0xFFF0FDFA);
 
   bool get _isEmergency {
     final cat = notification.categoryLabel.toLowerCase();

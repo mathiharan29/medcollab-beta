@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:medcollab_app/core/state/safe_emit.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
 import 'package:medcollab_app/core/constants/socket_events.dart';
 import 'package:medcollab_app/core/socket/socket_client.dart';
@@ -36,7 +37,8 @@ class PresenceInfo extends Equatable {
 }
 
 /// Tracks online status and availability from socket `presence_update` events.
-class PresenceCubit extends Cubit<Map<String, PresenceInfo>> {
+class PresenceCubit extends Cubit<Map<String, PresenceInfo>>
+    with SafeEmit<Map<String, PresenceInfo>> {
   PresenceCubit({required SocketClient socketClient})
       : _socketClient = socketClient,
         super(const {}) {

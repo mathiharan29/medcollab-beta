@@ -4,13 +4,14 @@ import 'package:medcollab_app/core/constants/app_enums.dart';
 import 'package:medcollab_app/core/di/app_dependencies.dart';
 import 'package:medcollab_app/core/error/app_exception.dart';
 import 'package:medcollab_app/core/presence/presence_cubit.dart';
-import 'package:medcollab_app/core/router/dm_navigation.dart';
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_state.dart';
 import 'package:medcollab_app/features/members/data/models/space_member_model.dart';
+import 'package:medcollab_app/core/theme/app_colors.dart';
 import 'package:medcollab_app/features/members/presentation/cubit/members_cubit.dart';
+import 'package:medcollab_app/features/members/presentation/pages/add_members_page.dart';
 import 'package:medcollab_app/features/members/presentation/widgets/member_widgets.dart';
-import 'package:medcollab_app/features/messages/presentation/widgets/message_request_prompt.dart';
+import 'package:medcollab_app/features/messages/presentation/utils/start_conversation.dart';
 import 'package:medcollab_app/features/spaces/data/repositories/space_repository.dart';
 import 'package:medcollab_app/shared/presentation/widgets/app_empty_state.dart';
 import 'package:medcollab_app/shared/presentation/widgets/app_search_bar.dart';
@@ -238,6 +239,30 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
                                   padding: const EdgeInsets.all(8),
                                   child: ErrorBanner(message: state.error!),
                                 ),
+                              if (isAdmin)
+                                ListTile(
+                                  leading: CircleAvatar(
+                                    backgroundColor: AppColors.tealDark,
+                                    foregroundColor: Colors.white,
+                                    child: const Icon(Icons.person_add_alt_1),
+                                  ),
+                                  title: const Text('Add members'),
+                                  subtitle: const Text(
+                                    'They can read earlier messages',
+                                  ),
+                                  onTap: () async {
+                                    final cubit = context.read<MembersCubit>();
+                                    final added = await AddMembersPage.open(
+                                      context,
+                                      spaceId: widget.spaceId,
+                                      spaceName: widget.spaceName,
+                                      existingMemberIds: state.members
+                                          .map((m) => m.user.id)
+                                          .toSet(),
+                                    );
+                                    if (added) cubit.loadMembers(silent: true);
+                                  },
+                                ),
                               if (isAdmin &&
                                   (_pendingJoins.isNotEmpty ||
                                       _loadingPending))
@@ -274,71 +299,12 @@ class _SpaceMembersPageState extends State<SpaceMembersPage> {
                                               onMessage: me != null &&
                                                       member.user.id !=
                                                           me.user.id
-                                                  ? () async {
-                                                      try {
-                                                        final channel =
-                                                            await AppDependencies
-                                                                .instance
-                                                                .channelRepository
-                                                                .createOrGetDM(
-                                                          member.user.id,
-                                                        );
-                                                        if (!context.mounted) {
-                                                          return;
-                                                        }
-                                                        openDmChat(
-                                                          context,
-                                                          channelId: channel.id,
-                                                          channel: channel,
-                                                        );
-                                                      } on AppException catch (e) {
-                                                        if (!context.mounted) {
-                                                          return;
-                                                        }
-                                                        final msg =
-                                                            e.message.toLowerCase();
-                                                        if (msg.contains(
-                                                              'message request',
-                                                            ) ||
-                                                            msg.contains(
-                                                              'only after',
-                                                            ) ||
-                                                            msg.contains(
-                                                              'send a message',
-                                                            )) {
-                                                          await promptAndSendMessageRequest(
-                                                            context,
-                                                            toUserId:
-                                                                member.user.id,
-                                                            peerName: member
-                                                                .user
-                                                                .displayName,
-                                                          );
-                                                          return;
-                                                        }
-                                                        ScaffoldMessenger.of(
-                                                          context,
-                                                        ).showSnackBar(
-                                                          SnackBar(
-                                                            content:
-                                                                Text(e.message),
-                                                          ),
-                                                        );
-                                                      } catch (_) {
-                                                        if (!context.mounted) {
-                                                          return;
-                                                        }
-                                                        ScaffoldMessenger.of(
-                                                          context,
-                                                        ).showSnackBar(
-                                                          const SnackBar(
-                                                            content: Text(
-                                                              'Could not start conversation',
-                                                            ),
-                                                          ),
-                                                        );
-                                                      }
-                                                    }
+                                                  ? () => startConversation(
+                                                        context,
+                                                        userId: member.user.id,
+                                                        peerName: member
+                                                            .user.displayName,
+                                                      )
                                                   : null,
                                               onRemove: canRemove
                                                   ? () {

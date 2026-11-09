@@ -40,7 +40,7 @@ class ContactTeamPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
-          const Text(
+          Text(
             'Reach the Vocle beta team for account help, clinical workflow '
             'questions, or urgent issues during the pilot.',
             style: AppTextStyles.body,
@@ -55,7 +55,7 @@ class ContactTeamPage extends StatelessWidget {
                   style: AppTextStyles.screenTitle.copyWith(fontSize: 16),
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   'Email us and we will get back during the pilot window.',
                   style: AppTextStyles.body,
                 ),

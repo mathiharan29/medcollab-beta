@@ -33,6 +33,38 @@ class NotificationRepository extends BaseRepository {
     );
   }
 
+  // ── Shared "recent notifications" (REQ 13) ────────────────────────────
+  // Badges and the Messages hub both need the latest notifications after
+  // every event. They used to fetch 50 and 100 items separately (~80 KB per
+  // event). Concurrent callers now share one request, and the result is
+  // reused briefly; any read-state change invalidates it.
+  static const _recentLimit = 50;
+  static const _recentTtl = Duration(milliseconds: 1500);
+  Future<NotificationsPageResult>? _recentInFlight;
+  NotificationsPageResult? _recent;
+  DateTime? _recentAt;
+
+  Future<NotificationsPageResult> getRecentNotificationsShared() {
+    final cached = _recent;
+    final at = _recentAt;
+    if (cached != null &&
+        at != null &&
+        DateTime.now().difference(at) < _recentTtl) {
+      return Future.value(cached);
+    }
+    return _recentInFlight ??= getNotifications(limit: _recentLimit)
+        .then((page) {
+      _recent = page;
+      _recentAt = DateTime.now();
+      return page;
+    }).whenComplete(() => _recentInFlight = null);
+  }
+
+  void _invalidateRecent() {
+    _recent = null;
+    _recentAt = null;
+  }
+
   Future<int> getUnreadCount() {
     return execute(
       () => apiClient.get(
@@ -43,23 +75,27 @@ class NotificationRepository extends BaseRepository {
   }
 
   Future<void> markAsRead(String notificationId) {
+    _invalidateRecent();
     return executeVoid(
       () => apiClient.put(ApiEndpoints.markNotificationRead(notificationId)),
     );
   }
 
   Future<void> markAsUnread(String notificationId) {
+    _invalidateRecent();
     return executeVoid(
       () => apiClient.put(ApiEndpoints.markNotificationUnread(notificationId)),
     );
   }
 
   Future<void> markAllAsRead() {
+    _invalidateRecent();
     return executeVoid(() => apiClient.put(ApiEndpoints.markAllRead));
   }
 
   /// Mark all unread alerts for a channel as read (when the doctor opens that chat).
   Future<int> markReadByChannel(String channelId) {
+    _invalidateRecent();
     return execute(
       () => apiClient.put(
         ApiEndpoints.markNotificationsReadByChannel(channelId),
@@ -69,6 +105,7 @@ class NotificationRepository extends BaseRepository {
   }
 
   Future<void> deleteNotification(String notificationId) {
+    _invalidateRecent();
     return executeVoid(
       () => apiClient.delete(ApiEndpoints.notificationById(notificationId)),
     );

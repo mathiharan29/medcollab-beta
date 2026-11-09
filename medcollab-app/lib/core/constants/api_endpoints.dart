@@ -24,6 +24,9 @@ abstract final class ApiEndpoints {
   static const String lookupUser = '$users/lookup';
 
   static String userById(String id) => '$users/$id';
+  static String userRelationship(String id) => '$users/$id/relationship';
+  static const String matchContacts = '$users/contacts/match';
+  static const String usernameAvailable = '$users/username-available';
 
   // Spaces
   static const String joinSpace = '$spaces/join';

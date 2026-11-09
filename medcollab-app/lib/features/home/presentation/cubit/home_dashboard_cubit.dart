@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:medcollab_app/core/state/safe_emit.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
 import 'package:medcollab_app/core/constants/socket_events.dart';
 import 'package:medcollab_app/core/error/app_exception.dart';
@@ -16,7 +17,7 @@ import 'package:medcollab_app/features/notifications/data/repositories/notificat
 import 'package:medcollab_app/features/spaces/data/models/channel_model.dart';
 import 'package:medcollab_app/features/spaces/data/repositories/space_repository.dart';
 
-class HomeDashboardCubit extends Cubit<HomeDashboardState> {
+class HomeDashboardCubit extends Cubit<HomeDashboardState> with SafeEmit<HomeDashboardState> {
   HomeDashboardCubit({
     required SpaceRepository spaceRepository,
     required HandoffRepository handoffRepository,
