@@ -530,13 +530,13 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
     BuildContext context,
     VoiceNoteRecording rec,
   ) async {
-    await context.read<ChannelChatCubit>().sendAttachment(
+    unawaited(context.read<ChannelChatCubit>().sendAttachment(
           bytes: rec.bytes,
           fileName: rec.fileName,
           mimeType: rec.mimeType,
           durationMs: rec.duration.inMilliseconds,
           waveform: rec.waveform,
-        );
+        ));
     _scrollToBottom(force: true);
   }
 
@@ -547,11 +547,11 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
     try {
       final picked = await pick();
       if (picked == null || !context.mounted) return;
-      await context.read<ChannelChatCubit>().sendAttachment(
+      unawaited(context.read<ChannelChatCubit>().sendAttachment(
             bytes: picked.bytes,
             fileName: picked.fileName,
             mimeType: picked.mimeType,
-          );
+          ));
       _scrollToBottom(force: true);
     } catch (_) {
       // Picker/permission failures must leave the composer usable (FR-MED-08).
@@ -566,25 +566,82 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
     BuildContext context,
     MessageModel message,
   ) async {
-    final ok = await showDialog<bool>(
+    final currentUserId = context.read<AuthBloc>().state.user?.id ?? '';
+    final isMine = message.sender.id == currentUserId;
+    // WhatsApp-style: everyone can delete for themselves; the sender can
+    // also delete for everyone (removed from the server for all members).
+    final choice = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete message?'),
-        content: const Text('This cannot be undone.'),
+        content: Text(
+          isMine
+              ? '"Delete for everyone" removes it for all members and from '
+                  'Vocle\'s servers, including its thread replies. '
+                  'This cannot be undone.'
+              : 'It will be removed from your view only.',
+        ),
+        actionsOverflowDirection: VerticalDirection.up,
+        actionsOverflowButtonSpacing: 4,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, 'me'),
+            child: const Text('Delete for me'),
+          ),
+          if (isMine)
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.error,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () => Navigator.pop(ctx, 'everyone'),
+              child: const Text('Delete for everyone'),
+            ),
+        ],
+      ),
+    );
+    if (choice == null || !context.mounted) return;
+    await context.read<ChannelChatCubit>().deleteMessage(
+          message.id,
+          forEveryone: choice == 'everyone',
+        );
+  }
+
+  Future<void> _confirmClearChat(BuildContext context) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Clear this chat?'),
+        content: const Text(
+          'All messages will be removed from your view. Other members '
+          'still see them. New messages will appear as usual.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: const Text('Cancel'),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
+            child: const Text('Clear chat'),
           ),
         ],
       ),
     );
-    if (ok == true && context.mounted) {
-      await context.read<ChannelChatCubit>().deleteMessage(message.id);
+    if (ok != true || !context.mounted) return;
+    final cleared = await context.read<ChannelChatCubit>().clearChat();
+    if (cleared && context.mounted) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(const SnackBar(content: Text('Chat cleared')));
     }
   }
 
@@ -841,6 +898,9 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
                       case 'pinned':
                         await _showPinnedMessagesSheet();
                         return;
+                      case 'clear':
+                        await _confirmClearChat(context);
+                        return;
                       case 'wallpaper':
                         await ChatWallpaperPage.open(
                           context,
@@ -913,6 +973,7 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
                           ),
                         ),
                         _wallpaperMenuItem,
+                        _clearChatMenuItem,
                       ];
                     }
                     return const [
@@ -953,6 +1014,7 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
                         ),
                       ),
                       _wallpaperMenuItem,
+                      _clearChatMenuItem,
                     ];
                   },
                 ),
@@ -1118,12 +1180,11 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
                                                         message,
                                                       )
                                                   : null,
-                                              onDelete: isMine
-                                                  ? () => _confirmDeleteMessage(
-                                                        context,
-                                                        message,
-                                                      )
-                                                  : null,
+                                              onDelete: () =>
+                                                  _confirmDeleteMessage(
+                                                context,
+                                                message,
+                                              ),
                                               onBookmark: () =>
                                                   _bookmarkMessage(
                                                 message,
@@ -1235,7 +1296,8 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
                               focusNode: _composerFocusNode,
                               mentionCandidates: _mentionCandidates,
                               excludeSelfId: currentUserId,
-                              isBusy: state.isSending || state.isUploading,
+                              // Never block typing while something sends/uploads (beta feedback).
+                              isBusy: false,
                               showTopBorder: state.pendingReply == null,
                               onSend: (text, mentions) async {
                                 cubit.sendMessage(text, mentions: mentions);
@@ -1962,6 +2024,17 @@ class _ChatLinkList extends StatelessWidget {
     );
   }
 }
+
+/// "Clear chat" — removes history from this user's view only.
+const _clearChatMenuItem = PopupMenuItem<String>(
+  value: 'clear',
+  child: ListTile(
+    contentPadding: EdgeInsets.zero,
+    leading: Icon(Icons.cleaning_services_outlined),
+    title: Text('Clear chat'),
+    dense: true,
+  ),
+);
 
 /// Chat menu entry for the wallpaper picker (REQ 2).
 const _wallpaperMenuItem = PopupMenuItem<String>(

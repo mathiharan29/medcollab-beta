@@ -110,9 +110,8 @@ class MessageComposer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canAttach = onPickGallery != null ||
-        onPickDocument != null ||
-        onPickCamera != null;
+    final canAttach =
+        onPickGallery != null || onPickDocument != null || onPickCamera != null;
 
     // Floating pill (WhatsApp-style): transparent outer bar, no full-bleed
     // top border. [showTopBorder] is kept for call-site compatibility.
@@ -145,7 +144,8 @@ class MessageComposer extends StatelessWidget {
                   icon: const Icon(Icons.add_circle_outline, size: 26),
                   color: AppColors.tealDark,
                   padding: const EdgeInsets.all(8),
-                  constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                  constraints:
+                      const BoxConstraints(minWidth: 44, minHeight: 44),
                 ),
               Expanded(
                 child: Container(
@@ -191,7 +191,8 @@ class MessageComposer extends StatelessWidget {
                         tooltip: 'Emoji',
                         onPressed:
                             isBusy ? null : () => _showEmojiPicker(context),
-                        icon: const Icon(Icons.emoji_emotions_outlined, size: 22),
+                        icon:
+                            const Icon(Icons.emoji_emotions_outlined, size: 22),
                         color: AppColors.textSecondary,
                         visualDensity: VisualDensity.compact,
                       ),
@@ -320,7 +321,8 @@ class SystemEventChip extends StatelessWidget {
                   TextSpan(text: text),
                   if (at != null)
                     TextSpan(
-                      text: '  ${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(at))}',
+                      text:
+                          '  ${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(at))}',
                       style: AppTextStyles.timestamp,
                     ),
                 ],
@@ -427,11 +429,14 @@ class MessageBubble extends StatelessWidget {
   final bool isMine;
   final bool showSender;
   final bool showTimestamp;
+
   /// WhatsApp-style quote reply (swipe / Reply action).
   final VoidCallback? onQuoteReply;
+
   /// Slack-style side thread (long-press menu).
   final VoidCallback? onOpenThread;
   final void Function(String url)? onImageTap;
+
   /// Jump to the quoted parent message in the timeline.
   final VoidCallback? onJumpToQuoted;
   final VoidCallback? onEdit;
@@ -452,9 +457,24 @@ class MessageBubble extends StatelessWidget {
 
   static const quickReactions = ['👍', '❤️', '😂', '🙏', '✅', '👏'];
   static const moreReactions = [
-    '👍', '❤️', '😂', '😮', '😢', '🙏',
-    '✅', '👏', '🔥', '💯', '👀', '🫡',
-    '🩺', '💉', '🏥', '📋', '⚠️', '🚨',
+    '👍',
+    '❤️',
+    '😂',
+    '😮',
+    '😢',
+    '🙏',
+    '✅',
+    '👏',
+    '🔥',
+    '💯',
+    '👀',
+    '🫡',
+    '🩺',
+    '💉',
+    '🏥',
+    '📋',
+    '⚠️',
+    '🚨',
   ];
 
   Future<void> _showActions(BuildContext context) async {
@@ -462,116 +482,130 @@ class MessageBubble extends StatelessWidget {
     final action = await showModalBottomSheet<String>(
       context: context,
       showDragHandle: true,
+      // The action list is taller than the default 9/16 cap: without this,
+      // Delete / Bookmark / Pin were cut off below the fold.
+      isScrollControlled: true,
       builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (onReact != null) ...[
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                child: Row(
-                  children: [
-                    ...quickReactions.map(
-                      (e) => Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 8,
-                            horizontal: 2,
-                          ),
-                          child: Center(
-                            child: InkResponse(
-                              onTap: () => Navigator.pop(ctx, 'react:$e'),
-                              radius: 24,
-                              child: Container(
-                                width: 40,
-                                height: 40,
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  color: AppColors.surfaceInput,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: AppColors.borderDefault,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(ctx).height * 0.85,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (onReact != null) ...[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                    child: Row(
+                      children: [
+                        ...quickReactions.map(
+                          (e) => Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 8,
+                                horizontal: 2,
+                              ),
+                              child: Center(
+                                child: InkResponse(
+                                  onTap: () => Navigator.pop(ctx, 'react:$e'),
+                                  radius: 24,
+                                  child: Container(
+                                    width: 40,
+                                    height: 40,
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.surfaceInput,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: AppColors.borderDefault,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      e,
+                                      style: const TextStyle(fontSize: 22),
+                                    ),
                                   ),
-                                ),
-                                child: Text(
-                                  e,
-                                  style: const TextStyle(fontSize: 22),
                                 ),
                               ),
                             ),
                           ),
                         ),
-                      ),
+                        IconButton(
+                          tooltip: 'More reactions',
+                          onPressed: () => Navigator.pop(ctx, 'more-react'),
+                          icon: const Icon(Icons.add_reaction_outlined),
+                        ),
+                      ],
                     ),
-                    IconButton(
-                      tooltip: 'More reactions',
-                      onPressed: () => Navigator.pop(ctx, 'more-react'),
-                      icon: const Icon(Icons.add_reaction_outlined),
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(height: 1),
-            ],
-            if (onQuoteReply != null)
-              ListTile(
-                leading: const Icon(Icons.reply),
-                title: const Text('Reply'),
-                subtitle: const Text('Quote in this chat'),
-                onTap: () => Navigator.pop(ctx, 'quote'),
-              ),
-            if (onOpenThread != null)
-              ListTile(
-                leading: const Icon(Icons.forum_outlined),
-                title: const Text('Reply in thread'),
-                subtitle: const Text('Side discussion — keep main chat clean'),
-                onTap: () => Navigator.pop(ctx, 'thread'),
-              ),
-            if (onCopy != null)
-              ListTile(
-                leading: const Icon(Icons.copy_outlined),
-                title: const Text('Copy'),
-                onTap: () => Navigator.pop(ctx, 'copy'),
-              ),
-            if (onForward != null)
-              ListTile(
-                leading: const Icon(Icons.forward_outlined),
-                title: const Text('Forward / share'),
-                onTap: () => Navigator.pop(ctx, 'forward'),
-              ),
-            if (isMine &&
-                message.type == MessageType.text &&
-                onEdit != null)
-              ListTile(
-                leading: const Icon(Icons.edit_outlined),
-                title: const Text('Edit message'),
-                onTap: () => Navigator.pop(ctx, 'edit'),
-              ),
-            if (isMine && onDelete != null)
-              ListTile(
-                leading: const Icon(Icons.delete_outline, color: AppColors.error),
-                title: const Text('Delete message'),
-                onTap: () => Navigator.pop(ctx, 'delete'),
-              ),
-            if (onBookmark != null)
-              ListTile(
-                leading: const Icon(Icons.bookmark_outline),
-                title: const Text('Bookmark'),
-                onTap: () => Navigator.pop(ctx, 'bookmark'),
-              ),
-            if (isPinned && onUnpin != null)
-              ListTile(
-                leading: const Icon(Icons.push_pin),
-                title: const Text('Unpin message'),
-                onTap: () => Navigator.pop(ctx, 'unpin'),
-              )
-            else if (onPin != null)
-              ListTile(
-                leading: const Icon(Icons.push_pin_outlined),
-                title: const Text('Pin message'),
-                onTap: () => Navigator.pop(ctx, 'pin'),
-              ),
-          ],
+                  ),
+                  const Divider(height: 1),
+                ],
+                if (onQuoteReply != null)
+                  ListTile(
+                    leading: const Icon(Icons.reply),
+                    title: const Text('Reply'),
+                    subtitle: const Text('Quote in this chat'),
+                    onTap: () => Navigator.pop(ctx, 'quote'),
+                  ),
+                if (onOpenThread != null)
+                  ListTile(
+                    leading: const Icon(Icons.forum_outlined),
+                    title: const Text('Reply in thread'),
+                    subtitle:
+                        const Text('Side discussion — keep main chat clean'),
+                    onTap: () => Navigator.pop(ctx, 'thread'),
+                  ),
+                if (onCopy != null)
+                  ListTile(
+                    leading: const Icon(Icons.copy_outlined),
+                    title: const Text('Copy'),
+                    onTap: () => Navigator.pop(ctx, 'copy'),
+                  ),
+                if (onForward != null)
+                  ListTile(
+                    leading: const Icon(Icons.forward_outlined),
+                    title: const Text('Forward / share'),
+                    onTap: () => Navigator.pop(ctx, 'forward'),
+                  ),
+                if (isMine &&
+                    message.type == MessageType.text &&
+                    onEdit != null)
+                  ListTile(
+                    leading: const Icon(Icons.edit_outlined),
+                    title: const Text('Edit message'),
+                    onTap: () => Navigator.pop(ctx, 'edit'),
+                  ),
+                // Any message can be deleted for me; the page offers
+                // "for everyone" on the sender's own messages.
+                if (onDelete != null)
+                  ListTile(
+                    leading: const Icon(Icons.delete_outline,
+                        color: AppColors.error),
+                    title: const Text('Delete'),
+                    onTap: () => Navigator.pop(ctx, 'delete'),
+                  ),
+                if (onBookmark != null)
+                  ListTile(
+                    leading: const Icon(Icons.bookmark_outline),
+                    title: const Text('Bookmark'),
+                    onTap: () => Navigator.pop(ctx, 'bookmark'),
+                  ),
+                if (isPinned && onUnpin != null)
+                  ListTile(
+                    leading: const Icon(Icons.push_pin),
+                    title: const Text('Unpin message'),
+                    onTap: () => Navigator.pop(ctx, 'unpin'),
+                  )
+                else if (onPin != null)
+                  ListTile(
+                    leading: const Icon(Icons.push_pin_outlined),
+                    title: const Text('Pin message'),
+                    onTap: () => Navigator.pop(ctx, 'pin'),
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -660,55 +694,53 @@ class MessageBubble extends StatelessWidget {
                 children: message.reactions
                     .where((r) => r.emoji.isNotEmpty && r.count > 0)
                     .map(
-                      (r) {
-                        final mine = currentUserId != null &&
-                            r.reactedBy(currentUserId!);
-                        return InkWell(
-                          onTap: () {
-                            if (mine && onReact != null) {
-                              onReact!(r.emoji);
-                              return;
-                            }
-                            _showReactionPeople(
-                              context,
-                              emoji: r.emoji,
-                              userIds: r.userIds,
-                              nameByUserId: nameByUserId,
-                            );
-                          },
-                          onLongPress: () => _showReactionPeople(
-                            context,
-                            emoji: r.emoji,
-                            userIds: r.userIds,
-                            nameByUserId: nameByUserId,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: mine
-                                  ? AppColors.tealPrimary
-                                      .withValues(alpha: 0.15)
-                                  : AppColors.surfaceInput,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: mine
-                                    ? AppColors.tealPrimary
-                                    : AppColors.borderDefault,
-                              ),
-                            ),
-                            child: Text(
-                              '${r.emoji} ${r.count}',
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                          ),
+                  (r) {
+                    final mine =
+                        currentUserId != null && r.reactedBy(currentUserId!);
+                    return InkWell(
+                      onTap: () {
+                        if (mine && onReact != null) {
+                          onReact!(r.emoji);
+                          return;
+                        }
+                        _showReactionPeople(
+                          context,
+                          emoji: r.emoji,
+                          userIds: r.userIds,
+                          nameByUserId: nameByUserId,
                         );
                       },
-                    )
-                    .toList(),
+                      onLongPress: () => _showReactionPeople(
+                        context,
+                        emoji: r.emoji,
+                        userIds: r.userIds,
+                        nameByUserId: nameByUserId,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: mine
+                              ? AppColors.tealPrimary.withValues(alpha: 0.15)
+                              : AppColors.surfaceInput,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: mine
+                                ? AppColors.tealPrimary
+                                : AppColors.borderDefault,
+                          ),
+                        ),
+                        child: Text(
+                          '${r.emoji} ${r.count}',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    );
+                  },
+                ).toList(),
               ),
             ],
             if (onOpenThread != null && !message.localOnly) ...[
@@ -850,7 +882,8 @@ class _FingerSwipeReplyState extends State<_FingerSwipeReply> {
       onHorizontalDragEnd: _onEnd,
       onHorizontalDragCancel: () => setState(() => _dx = 0),
       child: Stack(
-        alignment: widget.fromLeft ? Alignment.centerLeft : Alignment.centerRight,
+        alignment:
+            widget.fromLeft ? Alignment.centerLeft : Alignment.centerRight,
         children: [
           if (showIcon)
             Padding(
@@ -905,8 +938,7 @@ class MessageBubbleContent extends StatelessWidget {
     final time = message.createdAt != null
         ? DateFormat.jm().format(message.createdAt!.toLocal())
         : '';
-    final textColor =
-        isMine ? AppColors.textOnDark : AppColors.textPrimary;
+    final textColor = isMine ? AppColors.textOnDark : AppColors.textPrimary;
     final timestampColor =
         isMine ? AppColors.textOnDarkMuted : AppColors.textMuted;
 
@@ -937,9 +969,8 @@ class MessageBubbleContent extends StatelessWidget {
                   Icon(
                     Icons.push_pin,
                     size: 12,
-                    color: isMine
-                        ? AppColors.textOnDarkMuted
-                        : AppColors.tealDark,
+                    color:
+                        isMine ? AppColors.textOnDarkMuted : AppColors.tealDark,
                   ),
                   const SizedBox(width: 4),
                   Text(
@@ -1011,8 +1042,7 @@ class MessageBubbleContent extends StatelessWidget {
                     ),
                   ],
                   if (isMine &&
-                      message.deliveryState ==
-                          MessageDeliveryState.failed) ...[
+                      message.deliveryState == MessageDeliveryState.failed) ...[
                     if (time.isNotEmpty) const SizedBox(width: 6),
                     const Icon(
                       Icons.error_outline,
@@ -1193,9 +1223,7 @@ class _MessageBody extends StatelessWidget {
         style: (isMine ? AppTextStyles.bubbleMine : AppTextStyles.bubbleTheirs)
             .copyWith(
           fontStyle: FontStyle.italic,
-          color: isMine
-              ? AppColors.textOnDarkMuted
-              : AppColors.textSecondary,
+          color: isMine ? AppColors.textOnDarkMuted : AppColors.textSecondary,
         ),
       );
     }
@@ -1214,19 +1242,18 @@ class _MessageBody extends StatelessWidget {
     }
 
     if (message.type == MessageType.image) {
-      final url = message.content.mediaUrl ?? message.content.thumbnailUrl ?? '';
-      final bytes = localImageBytes != null
-          ? Uint8List.fromList(localImageBytes!)
-          : null;
+      final url =
+          message.content.mediaUrl ?? message.content.thumbnailUrl ?? '';
+      final bytes =
+          localImageBytes != null ? Uint8List.fromList(localImageBytes!) : null;
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ChatNetworkImage(
             imageUrl: url,
             localBytes: bytes,
-            onTap: message.localOnly || url.isEmpty
-                ? null
-                : () => onImageTap(url),
+            onTap:
+                message.localOnly || url.isEmpty ? null : () => onImageTap(url),
           ),
           if (message.localOnly) ...[
             const SizedBox(height: 4),
@@ -1260,7 +1287,8 @@ class _MessageBody extends StatelessWidget {
       final name = message.content.fileName ?? 'Video';
       final url = message.content.mediaUrl;
       return InkWell(
-        onTap: url != null && !message.localOnly ? () => onDocumentTap(url) : null,
+        onTap:
+            url != null && !message.localOnly ? () => onDocumentTap(url) : null,
         borderRadius: BorderRadius.circular(8),
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.sm),
@@ -1312,7 +1340,8 @@ class _MessageBody extends StatelessWidget {
       final name = message.content.fileName ?? 'Document';
       final url = message.content.mediaUrl;
       return InkWell(
-        onTap: url != null && !message.localOnly ? () => onDocumentTap(url) : null,
+        onTap:
+            url != null && !message.localOnly ? () => onDocumentTap(url) : null,
         borderRadius: BorderRadius.circular(8),
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.sm),

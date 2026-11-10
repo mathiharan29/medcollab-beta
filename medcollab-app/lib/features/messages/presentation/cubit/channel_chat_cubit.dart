@@ -234,10 +234,34 @@ class ChannelChatCubit extends Cubit<ChannelChatState> with SafeEmit<ChannelChat
     });
   }
 
+  // Sends go out one after another in the background so the composer never
+  // blocks (typing / sending again while one is in flight, like WhatsApp)
+  // and the server keeps the order they were written in.
+  Future<void> _sendChain = Future.value();
+  int _inFlight = 0;
+  int _tempSeq = 0;
+
+  String _nextTempId() =>
+      'local-${DateTime.now().millisecondsSinceEpoch}-${_tempSeq++}';
+
+  Future<void> _enqueue(Future<void> Function() job) {
+    _inFlight++;
+    emit(state.copyWith(isSending: true, error: null));
+    final run = _sendChain.then((_) => job()).whenComplete(() {
+      _inFlight--;
+      // copyWith clears error unless passed: keep a send failure visible.
+      if (_inFlight == 0) {
+        emit(state.copyWith(isSending: false, error: state.error));
+      }
+    });
+    _sendChain = run.catchError((Object _) {});
+    return run;
+  }
+
   Future<void> sendMessage(String text,
       {List<String> mentions = const []}) async {
     final trimmed = text.trim();
-    if (trimmed.isEmpty || state.isSending || state.isReadOnly) return;
+    if (trimmed.isEmpty || state.isReadOnly) return;
 
     final replySource = state.pendingReply;
     final replyTo = replySource == null || replySource.localOnly
@@ -250,7 +274,7 @@ class ChannelChatCubit extends Cubit<ChannelChatState> with SafeEmit<ChannelChat
             text: replySource.displayText,
           );
 
-    final tempId = 'local-${DateTime.now().millisecondsSinceEpoch}';
+    final tempId = _nextTempId();
     final optimistic = MessageModel(
       id: tempId,
       channelId: channelId,
@@ -262,29 +286,31 @@ class ChannelChatCubit extends Cubit<ChannelChatState> with SafeEmit<ChannelChat
       localOnly: true,
       deliveryState: MessageDeliveryState.sending,
     );
+    // Shown instantly; the network round trip happens in the background.
     _upsertRootMessage(optimistic);
-    emit(state.copyWith(isSending: true, error: null, clearPendingReply: true));
-    try {
-      final message = await _messageRepository.sendTextMessage(
-        channelId: channelId,
-        text: trimmed,
-        mentions: mentions,
-        replyToId: replyTo?.messageId,
-      );
-      _replaceLocalMessage(tempId, message);
-      emit(state.copyWith(isSending: false));
-    } on AppException catch (e) {
-      _markFailed(tempId);
-      _markReadOnlyForAccessError(e);
-      emit(state.copyWith(isSending: false, error: e.message));
-    } catch (_) {
-      _markFailed(tempId);
-      emit(state.copyWith(isSending: false, error: 'Failed to send message'));
-    }
+    emit(state.copyWith(clearPendingReply: true));
+    await _enqueue(() async {
+      try {
+        final message = await _messageRepository.sendTextMessage(
+          channelId: channelId,
+          text: trimmed,
+          mentions: mentions,
+          replyToId: replyTo?.messageId,
+        );
+        _replaceLocalMessage(tempId, message);
+      } on AppException catch (e) {
+        _markFailed(tempId);
+        _markReadOnlyForAccessError(e);
+        emit(state.copyWith(error: e.message));
+      } catch (_) {
+        _markFailed(tempId);
+        emit(state.copyWith(error: 'Failed to send message'));
+      }
+    });
   }
 
   Future<void> retryFailedMessage(String messageId) async {
-    if (state.isSending || state.isReadOnly) return;
+    if (state.isReadOnly) return;
     final failed = state.messages
         .where((message) =>
             message.id == messageId &&
@@ -316,7 +342,7 @@ class ChannelChatCubit extends Cubit<ChannelChatState> with SafeEmit<ChannelChat
     int? durationMs,
     List<int> waveform = const [],
   }) async {
-    if (state.isSending || state.isReadOnly) return;
+    if (state.isReadOnly) return;
     if (bytes.length > 50 * 1024 * 1024) {
       emit(state.copyWith(error: 'That file is over 50 MB'));
       return;
@@ -333,7 +359,7 @@ class ChannelChatCubit extends Cubit<ChannelChatState> with SafeEmit<ChannelChat
             text: replySource.displayText,
           );
 
-    final tempId = 'local-${DateTime.now().millisecondsSinceEpoch}';
+    final tempId = _nextTempId();
     final mediaType = MessageType.forMime(mimeType);
     final optimistic = MessageModel(
       id: tempId,
@@ -361,40 +387,58 @@ class ChannelChatCubit extends Cubit<ChannelChatState> with SafeEmit<ChannelChat
       ),
     );
     _upsertRootMessage(optimistic);
-    emit(state.copyWith(isSending: true, error: null, isUploading: true));
+    // Upload starts right away and never blocks typing or other sends;
+    // only the final "post message" step joins the ordered send queue.
+    _uploading++;
+    emit(state.copyWith(error: null, isUploading: true));
+    void doneUploading() {
+      _uploading--;
+      if (_uploading == 0) {
+        emit(state.copyWith(isUploading: false, error: state.error));
+      }
+    }
+
     try {
       final upload = await _mediaRepository.uploadFile(
         bytes: bytes,
         fileName: fileName,
         mimeType: mimeType,
       );
-      final message = await _messageRepository.sendMediaMessage(
-        channelId: channelId,
-        type: mediaType,
-        upload: upload,
-        caption: caption,
-        replyToId: replyTo?.messageId,
-        durationMs: durationMs,
-        waveform: waveform,
-      );
-      _replaceLocalMessage(tempId, message);
-      emit(state.copyWith(isSending: false, isUploading: false));
+      doneUploading();
+      await _enqueue(() async {
+        try {
+          final message = await _messageRepository.sendMediaMessage(
+            channelId: channelId,
+            type: mediaType,
+            upload: upload,
+            caption: caption,
+            replyToId: replyTo?.messageId,
+            durationMs: durationMs,
+            waveform: waveform,
+          );
+          _replaceLocalMessage(tempId, message);
+        } on AppException catch (e) {
+          _markFailed(tempId);
+          _markReadOnlyForAccessError(e);
+          emit(state.copyWith(error: e.message));
+        } catch (_) {
+          _markFailed(tempId);
+          emit(state.copyWith(error: 'Failed to send attachment'));
+        }
+      });
     } on AppException catch (e) {
+      doneUploading();
       _markFailed(tempId);
       _markReadOnlyForAccessError(e);
-      emit(state.copyWith(
-          isSending: false, isUploading: false, error: e.message));
+      emit(state.copyWith(error: e.message));
     } catch (_) {
+      doneUploading();
       _markFailed(tempId);
-      emit(
-        state.copyWith(
-          isSending: false,
-          isUploading: false,
-          error: 'Failed to send attachment',
-        ),
-      );
+      emit(state.copyWith(error: 'Failed to send attachment'));
     }
   }
+
+  int _uploading = 0;
 
   Future<void> editMessage(String messageId, String text) async {
     final trimmed = text.trim();
@@ -411,21 +455,51 @@ class ChannelChatCubit extends Cubit<ChannelChatState> with SafeEmit<ChannelChat
     }
   }
 
-  Future<void> deleteMessage(String messageId) async {
+  /// WhatsApp-style delete. [forEveryone] removes it from the server for all
+  /// members; otherwise it is hidden for this user only. Either way it
+  /// leaves the timeline immediately and comes back only if the call fails.
+  Future<void> deleteMessage(String messageId, {bool forEveryone = true}) async {
     final index = state.messages.indexWhere((m) => m.id == messageId);
     if (index < 0) return;
-    final existing = state.messages[index];
-    // Optimistic soft-delete — API does not return the deleted message body.
-    _upsertRootMessage(existing.copyWith(isDeleted: true));
+    final before = state.messages;
+    emit(state.copyWith(
+      messages: before.where((m) => m.id != messageId).toList(),
+    ));
     try {
       await _messageRepository.deleteMessage(
         channelId: channelId,
         messageId: messageId,
+        forEveryone: forEveryone,
       );
     } on AppException catch (e) {
-      _upsertRootMessage(existing);
-      emit(state.copyWith(error: e.message));
+      // Restore, keeping anything that arrived meanwhile.
+      final current = state.messages;
+      final restored = List<MessageModel>.from(current)..add(before[index]);
+      restored.sort(_byCreatedAt);
+      emit(state.copyWith(messages: restored, error: e.message));
     }
+  }
+
+  /// "Clear chat" (this user only). Messages still sending stay visible.
+  Future<bool> clearChat() async {
+    final before = state.messages;
+    emit(state.copyWith(
+      messages: before.where((m) => m.localOnly).toList(),
+      hasMore: false,
+    ));
+    try {
+      await _messageRepository.clearChat(channelId);
+      return true;
+    } on AppException catch (e) {
+      emit(state.copyWith(messages: before, error: e.message));
+      return false;
+    }
+  }
+
+  static int _byCreatedAt(MessageModel a, MessageModel b) {
+    final at = a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+    final bt = b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+    return at.compareTo(bt);
   }
 
   void _listenForTyping() {
@@ -503,6 +577,8 @@ class ChannelChatCubit extends Cubit<ChannelChatState> with SafeEmit<ChannelChat
               ? MessageContent.fromJson(contentJson)
               : updated[index].content,
           isEdited: data['isEdited'] == true || updated[index].isEdited,
+          // A thread reply deleted for everyone lowers the root's count.
+          replyCount: (data['replyCount'] as num?)?.toInt(),
         );
         emit(state.copyWith(messages: updated));
         return;
@@ -529,12 +605,16 @@ class ChannelChatCubit extends Cubit<ChannelChatState> with SafeEmit<ChannelChat
       if (messageId.isEmpty) return;
       final index = state.messages.indexWhere((m) => m.id == messageId);
       if (index < 0) {
-        // Not in the main timeline (e.g. a thread reply). The payload is only
-        // { messageId, deletedAt }: never turn it into a row — that showed a
-        // stray "deleted" bubble. Thread screens handle their own deletes.
+        // Not in the main timeline (e.g. a thread reply, or another chat —
+        // deletes also reach members' personal rooms). Never turn the
+        // payload into a row.
         return;
       }
-      _upsertRootMessage(state.messages[index].copyWith(isDeleted: true));
+      // Deleted for everyone = gone from the server, so gone from view
+      // (matches what a reload shows).
+      emit(state.copyWith(
+        messages: state.messages.where((m) => m.id != messageId).toList(),
+      ));
     });
   }
 
@@ -552,14 +632,9 @@ class ChannelChatCubit extends Cubit<ChannelChatState> with SafeEmit<ChannelChat
 
   void _replaceLocalMessage(String tempId, MessageModel message) {
     final updated = List<MessageModel>.from(state.messages);
-    updated.removeWhere(
-      (m) =>
-          m.id == tempId ||
-          m.id == message.id ||
-          (m.localOnly &&
-              m.sender.id == currentUserId &&
-              _messagesMatch(m, message)),
-    );
+    // Only this send's placeholder (and a live echo of the same message):
+    // matching by text dropped a second identical quick send for a moment.
+    updated.removeWhere((m) => m.id == tempId || m.id == message.id);
     updated.add(message);
     updated.sort(_compareByCreatedAt);
 
@@ -659,13 +734,18 @@ class ChannelChatCubit extends Cubit<ChannelChatState> with SafeEmit<ChannelChat
   void _upsertRootMessage(MessageModel message, {bool fromSocket = false}) {
     final updated = List<MessageModel>.from(state.messages);
 
-    if (fromSocket && message.sender.id == currentUserId) {
-      updated.removeWhere(
+    if (fromSocket &&
+        message.sender.id == currentUserId &&
+        !updated.any((m) => m.id == message.id)) {
+      // Our own message echoed live: retire the oldest matching placeholder
+      // only (two quick identical sends keep both visible).
+      final i = updated.indexWhere(
         (m) =>
             m.localOnly &&
             m.sender.id == currentUserId &&
             _messagesMatch(m, message),
       );
+      if (i >= 0) updated.removeAt(i);
     }
 
     final existing = updated.indexWhere((m) => m.id == message.id);

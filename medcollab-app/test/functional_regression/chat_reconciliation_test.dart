@@ -57,9 +57,11 @@ void main() {
     cubit.setPendingReply(source);
     final sending = cubit.sendMessage('  Quoted reply  ');
     expect(cubit.state.isSending, isTrue);
+    // Shown instantly, before the network call starts.
     final optimistic = cubit.state.messages.where((item) => item.localOnly).single;
     expect(optimistic.content.text, 'Quoted reply');
     expect(optimistic.replyTo?.messageId, source.id);
+    await settle(); // queued send starts on the next microtask
     expect(capturedReply, source.id);
     pending.complete(message('server-1', 'Quoted reply', sender: 'me').copyWith(replyTo: optimistic.replyTo));
     await sending;
@@ -108,26 +110,28 @@ void main() {
     expect(ChatTranscriptCache.hasMoreFor('offline-regression'), isFalse);
   });
 
-  test('FR-OFF-05 failed upload creates no message and blocks duplicate busy send', () async {
+  test('FR-OFF-05 failed upload creates no message; uploads never block typing or other sends', () async {
     final pendingUpload = Completer<MediaUploadResult>();
     media.onUpload = () => pendingUpload.future;
     messages.onSendMedia = (type, upload, caption) async =>
         message('media-server', caption ?? '', sender: 'me');
+    messages.onSendText = (text, _) async => message('text-during-upload', text, sender: 'me');
     cubit = ChannelChatCubit(messageRepository: messages, mediaRepository: media,
         socketClient: socket, channelId: 'chat-regression', currentUserId: 'me');
     await settle();
-    final first = cubit.sendAttachment(bytes: [1, 2, 3], fileName: 'synthetic.png', mimeType: 'image/png');
-    final second = cubit.sendAttachment(bytes: [1, 2, 3], fileName: 'synthetic.png', mimeType: 'image/png');
+    final upload = cubit.sendAttachment(bytes: [1, 2, 3], fileName: 'synthetic.png', mimeType: 'image/png');
     expect(media.uploadCount, 1);
-    expect(messages.mediaSendCount, 0);
-    expect(messages.textSendCount, 0);
+    expect(cubit.state.isUploading, isTrue);
+    // While the photo uploads, a text still goes out (beta feedback).
+    await cubit.sendMessage('Typed during upload');
+    expect(cubit.state.messages.any((item) => item.id == 'text-during-upload'), isTrue);
     expect(cubit.state.isUploading, isTrue);
     pendingUpload.completeError(const NetworkException('Synthetic upload failure'));
-    await Future.wait([first, second]);
+    await upload;
     expect(cubit.state.isUploading, isFalse);
     expect(cubit.state.isSending, isFalse);
     expect(cubit.state.error, 'Synthetic upload failure');
-    expect(cubit.state.messages.single.deliveryState, MessageDeliveryState.failed);
+    expect(cubit.state.messages.where((m) => m.deliveryState == MessageDeliveryState.failed).length, 1);
     expect(messages.mediaSendCount, 0);
     media.onUpload = () async => const MediaUploadResult(
         url: 'https://synthetic.invalid/upload.png', publicId: 'synthetic/upload',
@@ -136,6 +140,35 @@ void main() {
     expect(media.uploadCount, 2);
     expect(messages.mediaSendCount, 1);
     expect(cubit.state.messages.any((item) => item.id == 'media-server'), isTrue);
+  });
+
+  test('quick sends: all shown instantly, sent in order, none dropped', () async {
+    final order = <String>[];
+    final gates = <Completer<void>>[];
+    messages.onSendText = (text, _) async {
+      final gate = Completer<void>();
+      gates.add(gate);
+      await gate.future;
+      order.add(text);
+      return message('srv-$text', text, sender: 'me');
+    };
+    cubit = ChannelChatCubit(messageRepository: messages, mediaRepository: media,
+        socketClient: socket, channelId: 'chat-regression', currentUserId: 'me');
+    await settle();
+    final a = cubit.sendMessage('one');
+    final b = cubit.sendMessage('ok');
+    final c = cubit.sendMessage('ok');
+    // All three visible immediately (the old code dropped b and c).
+    expect(cubit.state.messages.where((m) => m.localOnly).length, 3);
+    for (var i = 0; i < 3; i++) {
+      await settle();
+      gates[i].complete();
+    }
+    await Future.wait([a, b, c]);
+    expect(order, ['one', 'ok', 'ok']);
+    expect(messages.textSendCount, 3);
+    expect(cubit.state.messages.where((m) => m.localOnly), isEmpty);
+    expect(cubit.state.isSending, isFalse);
   });
 
   test('FR-THR-05 duplicate reply event increments once and HTTP refresh converges', () async {
@@ -228,5 +261,71 @@ void main() {
     socket.emitEvent(SocketEvents.userTyping,
         {'channelId': 'chat-regression', 'userId': 'peer-c', 'userName': 'Cai'});
     expect(cubit.state.typingUserNames, isEmpty);
+  });
+
+  test('delete for me / for everyone: instant removal, restore on failure, live delete', () async {
+    final mine = message('m-1', 'mine', sender: 'me');
+    final theirs = message('t-1', 'theirs');
+    final other = message('o-1', 'other');
+    messages.onGetMessages = () async => MessagesPage(messages: [mine, theirs, other], hasMore: false);
+    cubit = ChannelChatCubit(messageRepository: messages, mediaRepository: media,
+        socketClient: socket, channelId: 'chat-regression', currentUserId: 'me');
+    await settle();
+    expect(cubit.state.messages.length, 3);
+
+    await cubit.deleteMessage('m-1', forEveryone: true);
+    expect(messages.deletes.last, ('m-1', true));
+    expect(cubit.state.messages.map((m) => m.id), ['t-1', 'o-1']);
+
+    await cubit.deleteMessage('t-1', forEveryone: false);
+    expect(messages.deletes.last, ('t-1', false));
+    expect(cubit.state.messages.map((m) => m.id), ['o-1']);
+
+    // Server refuses: the message comes back with an error.
+    messages.onDelete = () async => throw const ForbiddenException('You can only delete your own messages for everyone');
+    await cubit.deleteMessage('o-1', forEveryone: true);
+    expect(cubit.state.messages.map((m) => m.id), ['o-1']);
+    expect(cubit.state.error, contains('your own messages'));
+
+    // Someone deleted for everyone: it disappears live (no placeholder row).
+    socket.emitEvent(SocketEvents.messageDeleted, {'messageId': 'o-1', 'channelId': 'chat-regression'});
+    expect(cubit.state.messages, isEmpty);
+    // Unknown ids (other chats / thread replies) never create rows.
+    socket.emitEvent(SocketEvents.messageDeleted, {'messageId': 'elsewhere'});
+    expect(cubit.state.messages, isEmpty);
+  });
+
+  test('partial message_updated with replyCount lowers the root count', () async {
+    messages.onGetMessages = () async =>
+        MessagesPage(messages: [message('root', 'root', replyCount: 2)], hasMore: false);
+    cubit = ChannelChatCubit(messageRepository: messages, mediaRepository: media,
+        socketClient: socket, channelId: 'chat-regression', currentUserId: 'me');
+    await settle();
+    socket.emitEvent(SocketEvents.messageUpdated, {'messageId': 'root', 'replyCount': 1});
+    expect(cubit.state.messages.single.replyCount, 1);
+    expect(cubit.state.messages.single.content.text, 'root');
+  });
+
+  test('clear chat empties the view, keeps sending messages, restores on failure', () async {
+    messages.onGetMessages = () async =>
+        MessagesPage(messages: [message('a', 'a'), message('b', 'b')], hasMore: true);
+    final gate = Completer<MessageModel>();
+    messages.onSendText = (text, _) => gate.future;
+    cubit = ChannelChatCubit(messageRepository: messages, mediaRepository: media,
+        socketClient: socket, channelId: 'chat-regression', currentUserId: 'me');
+    await settle();
+    final sending = cubit.sendMessage('in flight');
+    expect(await cubit.clearChat(), isTrue);
+    expect(messages.clearCount, 1);
+    expect(cubit.state.messages.map((m) => m.content.text), ['in flight']);
+    expect(cubit.state.hasMore, isFalse);
+    gate.complete(message('srv', 'in flight', sender: 'me'));
+    await sending;
+
+    messages.onClear = () async => throw const NetworkException('offline');
+    final before = cubit.state.messages.length;
+    expect(await cubit.clearChat(), isFalse);
+    expect(cubit.state.messages.length, before);
+    expect(cubit.state.error, 'offline');
   });
 }

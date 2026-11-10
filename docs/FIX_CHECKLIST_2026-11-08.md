@@ -254,6 +254,21 @@ Device journeys (all pass): Needl + threads 14/14 steps (run 3×), contacts/requ
 
 **Production deploy:** `addde78` pushed to GitHub `master` → Railway; `/health` reports `version: addde78`, database connected, Firebase + Cloudinary on. First start backfills Vocle IDs for existing doctors.
 
+### Beta feedback on 1.0.0+31 (2026-11-10, second round) → 1.0.0+32
+
+| # | Report | Fix | Verified |
+|---|---|---|---|
+| 1 | Dark theme not working (Appearance) | The Appearance sheet kept the white background it opened with while its text switched to light colours → unreadable after tapping Dark. Sheet now follows the live theme | Device: Profile › Appearance › Dark → sheet, Profile, Home, Messages, chat, Alerts, Handoffs, Needls all dark (screenshots); widget test light→dark→light + persists across restart |
+| 2 | No delete like other apps; must delete from DB | Long-press › **Delete** → **Delete for me** (any message, hidden only for you) or **Delete for everyone** (your own messages; the API also allows space admins, not yet offered in the app). For everyone **removes the message from MongoDB** with its thread replies, stored media file, alerts pointing at it and pins; quotes show "This message was deleted"; chat-list preview and thread reply count updated; other members' screens update live. Also fixed: the long-press menu was taller than the screen cap, so Delete/Bookmark/Pin were unreachable | API 15/15 with direct DB checks (row count 0, replies + alerts gone, file gone from disk, outsider/other-sender refused, `hiddenFor` never exposed, old app builds' DELETE = for everyone); device journey: delete for everyone → gone on both sides; other doctor's message → only "Delete for me" offered; other doctor deletes → disappears live |
+| 3 | Can't type while a photo uploads / sends | Composer never locks; uploads run in parallel; texts sent during an upload go out immediately | Unit: text sent and delivered while a photo upload is pending; composer is never disabled (device photo upload during typing not separately driven) |
+| 4 | Sending is slow | Messages show instantly and send in order in the background (quick repeated messages were previously dropped while one was in flight) | Device: send in Needl 82 ms, thread reply 67 ms to on-screen; unit: 3 quick sends all shown at once, sent in order |
+| 5 | No clear chat | Chat menu › **Clear chat** — personal (others keep history); new messages still arrive; stays cleared after reopening; chat-list preview and search respect it | API (clear for B only, A unaffected, search hides cleared); device journey incl. reopen |
+| 6 | Alerts: same person's messages as many rows | One row per chat: latest message, "N new messages", count badge; opening it marks the whole group read. Mentions, handoffs, invites, emergencies stay individual | Device: 3 messages from Dr Bala → one row with "3"; open → unread 0 on server; unit tests 3/3 |
+
+Policy change to note: messages were previously soft-deleted ("never hard delete, audit") — delete for everyone is now a hard delete by request. Handoffs keep their soft delete (audit). Security-suite checks that asserted "row kept with isDeleted" were updated to assert "row removed" (statuses unchanged, manifest hash still valid).
+
+Tests: app 156/156; API suites 88/88 (REQ 2, 5, 10, 11, 12, Needl, delete/clear); device journeys Needl + threads 14/14, delete/alerts 8/8 steps, dark tour 9 screens.
+
 **Constraints**
 - Backend changes reach phones only after deploy to Railway (from GitHub `master`; `sanjaybabu2210` currently has read-only access). Until then they are verified against the local backend; a release APK pointing at production will not show backend-dependent features.
 - REQ 4 real push (background/killed app, reply from shade) needs Firebase server credentials, which are not in this machine's hand-off; local verification covers in-app/local notifications and the reply code path.

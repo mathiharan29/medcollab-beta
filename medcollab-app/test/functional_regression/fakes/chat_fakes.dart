@@ -54,6 +54,26 @@ class FakeMessageRepository extends MessageRepository {
 
   @override
   Future<void> markMessagesRead({required String channelId, required List<String> messageIds}) async {}
+
+  /// (messageId, forEveryone) for each delete call; [onDelete] may throw.
+  final List<(String, bool)> deletes = [];
+  Future<void> Function()? onDelete;
+  int clearCount = 0;
+  Future<void> Function()? onClear;
+
+  @override
+  Future<void> deleteMessage({
+    required String channelId, required String messageId, bool forEveryone = true,
+  }) async {
+    deletes.add((messageId, forEveryone));
+    await onDelete?.call();
+  }
+
+  @override
+  Future<void> clearChat(String channelId) async {
+    clearCount++;
+    await onClear?.call();
+  }
 }
 
 class FakeMediaRepository extends MediaRepository {

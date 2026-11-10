@@ -151,13 +151,17 @@ router.put(
 );
 
 /**
- * @route   DELETE /api/channels/:channelId/messages/:id
- * @desc    Soft-delete a message
- * @access  Protected + Sender (own messages) OR Space Admin (any message)
- *
- * Does NOT remove the document from MongoDB.
- * Sets isDeleted: true, blanks content, emits `message_deleted` socket event.
- * Client shows "This message was deleted" placeholder.
+ * @route   POST /api/channels/:channelId/messages/clear
+ * @desc    Clear chat for the caller only (messages up to now are hidden)
+ */
+router.post('/clear', messageController.clearChat);
+
+/**
+ * @route   DELETE /api/channels/:channelId/messages/:id?scope=everyone|me
+ * @desc    scope=me: hide for the caller (any member).
+ *          scope=everyone (default): sender or space admin; removes the
+ *          message, its thread replies, media and alerts from the database
+ *          and emits `message_deleted` for each removed id.
  */
 router.delete('/:id', validateMongoId('id'), messageController.deleteMessage);
 

@@ -57,7 +57,9 @@ const getSpaceChannels = asyncHandler(async (req, res) => {
     ],
   }).sort({ position: 1, createdAt: 1 }).lean();
 
-  return respond.ok(res, 'Channels fetched', { channels });
+  const { personalizeLastMessages } = require('../../utils/personalLastMessage');
+  const personal = await personalizeLastMessages(channels, req.user._id);
+  return respond.ok(res, 'Channels fetched', { channels: personal });
 });
 
 /**
@@ -253,7 +255,9 @@ const getMyDMs = asyncHandler(async (req, res) => {
     .sort({ 'lastMessage.sentAt': -1, updatedAt: -1 })
     .lean();
 
-  const enriched = channels.map((ch) => enrichDM(ch, req.user._id));
+  const { personalizeLastMessages } = require('../../utils/personalLastMessage');
+  const personal = await personalizeLastMessages(channels, req.user._id);
+  const enriched = personal.map((ch) => enrichDM(ch, req.user._id));
   return respond.ok(res, 'DMs fetched', { channels: enriched });
 });
 

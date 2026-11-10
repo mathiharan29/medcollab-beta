@@ -11,12 +11,23 @@ class AlertCard extends StatelessWidget {
     required this.notification,
     required this.onTap,
     this.onLongPress,
+    this.groupCount = 1,
+    this.groupUnread = 0,
+    this.unreadOverride,
     super.key,
   });
 
+  /// Latest alert of the row (a grouped row shows its newest message).
   final AppNotificationModel notification;
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
+
+  /// Alerts collapsed into this row (1 = a single alert).
+  final int groupCount;
+  final int groupUnread;
+
+  /// Grouped rows are unread while any alert in them is.
+  final bool? unreadOverride;
 
   // Theme-aware (REQ 6): these were fixed light colours, so in dark mode an
   // unread alert became a pale card with near-invisible white text.
@@ -45,7 +56,7 @@ class AlertCard extends StatelessWidget {
         type.contains('emergency');
   }
 
-  bool get _isUnread => !notification.read;
+  bool get _isUnread => unreadOverride ?? !notification.read;
 
   @override
   Widget build(BuildContext context) {
@@ -147,14 +158,43 @@ class AlertCard extends StatelessWidget {
                                 ),
                               ),
                             ],
-                            if (time.isNotEmpty) ...[
+                            if (time.isNotEmpty || groupCount > 1) ...[
                               const SizedBox(height: 4),
-                              Text(time, style: AppTextStyles.timestamp),
+                              Text(
+                                [
+                                  if (groupCount > 1)
+                                    groupUnread > 1
+                                        ? '$groupUnread new messages'
+                                        : '$groupCount messages',
+                                  if (time.isNotEmpty) time,
+                                ].join(' · '),
+                                style: AppTextStyles.timestamp,
+                              ),
                             ],
                           ],
                         ),
                       ),
-                      if (_isUnread) ...[
+                      if (_isUnread && groupUnread > 1) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          key: const Key('alert-group-count'),
+                          constraints: const BoxConstraints(minWidth: 22),
+                          height: 22,
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: AppColors.tealPrimary,
+                            borderRadius: BorderRadius.circular(11),
+                          ),
+                          child: Text(
+                            groupUnread > 99 ? '99+' : '$groupUnread',
+                            style: AppTextStyles.badge.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ] else if (_isUnread) ...[
                         const SizedBox(width: 8),
                         Padding(
                           padding: const EdgeInsets.only(top: 6),

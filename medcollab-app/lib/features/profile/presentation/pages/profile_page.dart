@@ -404,7 +404,9 @@ class ProfilePage extends StatelessWidget {
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
-      backgroundColor: AppColors.surfaceCard,
+      // No fixed backgroundColor: this sheet switches the theme while open,
+      // so it must follow the live bottomSheetTheme (a colour captured at
+      // open left white-on-white text after picking Dark).
       shape: const RoundedRectangleBorder(borderRadius: AppRadius.sheet),
       builder: (ctx) => SafeArea(
         child: BlocBuilder<ThemeModeCubit, ThemeSettingsState>(

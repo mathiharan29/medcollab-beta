@@ -218,6 +218,39 @@ class NotificationsCubit extends Cubit<NotificationsState> with SafeEmit<Notific
     _badgeCubit.setCount(unread);
   }
 
+  /// Marks every alert of a chat read in one call (grouped Alerts row).
+  Future<void> markChannelRead(String channelId) async {
+    final hasUnread = state.notifications
+        .any((n) => !n.read && n.metadata.channelId == channelId);
+    if (!hasUnread) return;
+    try {
+      final serverUnread = await _repository.markReadByChannel(channelId);
+      final updated = state.notifications
+          .map((n) => n.metadata.channelId == channelId && !n.read
+              ? _withRead(n, true)
+              : n)
+          .toList();
+      emit(state.copyWith(notifications: updated, unreadCount: serverUnread));
+      _acceptBadgeSync = false;
+      _badgeCubit.setCount(serverUnread);
+      _acceptBadgeSync = true;
+    } on AppException {
+      // Navigation must not depend on this.
+    }
+  }
+
+  static AppNotificationModel _withRead(AppNotificationModel n, bool read) =>
+      AppNotificationModel(
+        id: n.id,
+        type: n.type,
+        title: n.title,
+        body: n.body,
+        read: read,
+        createdAt: n.createdAt,
+        actorName: n.actorName,
+        metadata: n.metadata,
+      );
+
   Future<void> markAllRead() async {
     try {
       await _repository.markAllAsRead();

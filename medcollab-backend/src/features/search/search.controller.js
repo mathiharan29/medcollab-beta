@@ -79,10 +79,20 @@ const globalSearch = asyncHandler(async (req, res) => {
   const wantHandoffs = type === 'all' || type === 'handoffs';
 
   if ((wantMessages || wantAttachments) && channelIds.length > 0) {
+    // Respect this user's "Delete for me" and "Clear chat".
+    const ChatClear = require('../messages/chatClear.model');
+    const clears = await ChatClear.find({ userId: req.user._id }).select('channelId clearedAt').lean();
+    const personal = {
+      hiddenFor: { $ne: req.user._id },
+      ...(clears.length
+        ? { $nor: clears.map((c) => ({ channelId: c.channelId, createdAt: { $lte: c.clearedAt } })) }
+        : {}),
+    };
     if (wantMessages) {
       const messages = await Message.find({
         channelId: { $in: channelIds },
         deletedAt: null,
+        ...personal,
         // Activity lines ("X added Y") are not searchable content.
         type: { $ne: MESSAGE_TYPES.SYSTEM },
         'content.text': regex,
@@ -111,6 +121,7 @@ const globalSearch = asyncHandler(async (req, res) => {
       const attachments = await Message.find({
         channelId: { $in: channelIds },
         deletedAt: null,
+        ...personal,
         type: {
           $in: [MESSAGE_TYPES.IMAGE, MESSAGE_TYPES.DOCUMENT, MESSAGE_TYPES.ECG],
         },

@@ -26,10 +26,11 @@
  *    For MVP: show read receipts only in DMs (2 participants).
  *    Use a separate UserChannelRead collection for group read tracking later.
  *
- * 4. Soft delete
- *    Medical context: we never hard-delete messages.
- *    deletedAt is set, content is replaced with a placeholder,
- *    but the document remains for audit purposes.
+ * 4. Deletion (beta feedback 2026-11-10)
+ *    "Delete for everyone" (sender or space admin) removes the message, its
+ *    thread replies, their media and alerts from the database.
+ *    "Delete for me" only adds the user to `hiddenFor`.
+ *    The isDeleted/deletedAt soft-delete fields remain for legacy rows.
  *
  * 5. content is a single embedded object (not separate fields)
  *    A message has ONE type of content. Embedding avoids optional
@@ -233,9 +234,19 @@ const messageSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    // "Delete for me": users who hid this message from their own view.
+    // ("Delete for everyone" removes the document entirely.)
+    hiddenFor: {
+      type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+      default: [],
+    },
   },
   {
     timestamps: true, // createdAt is our message timestamp
+    // Who hid a message for themselves is private to them.
+    toJSON: { transform: (_doc, ret) => { delete ret.hiddenFor; return ret; } },
+    toObject: { transform: (_doc, ret) => { delete ret.hiddenFor; return ret; } },
   }
 );
 

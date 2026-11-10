@@ -133,7 +133,8 @@ module.exports = function registerDirectMessageCases({ add, ids }) {
     addDm('delete direct-message sender ownership', actor, 'DELETE', `${mp}/${ids.dmMessageB}`, [status], undefined, {
       category: 'direct-message-ownership',
       sources: [...directSources, 'src/features/messages/message.controller.js:deleteMessage'],
-      check: actor === 'B' ? async (_body, ctx) => (await ctx.models.Message.findById(ids.dmMessageB)).isDeleted === true : undefined,
+      // Delete for everyone removes the row (beta feedback 2026-11-10).
+      check: actor === 'B' ? async (_body, ctx) => (await ctx.models.Message.findById(ids.dmMessageB)) === null : undefined,
     });
   }
 

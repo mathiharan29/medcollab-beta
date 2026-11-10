@@ -115,13 +115,25 @@ class MessageRepository extends BaseRepository {
     );
   }
 
-  /// Soft-deletes a message. Backend returns `{ success }` without a message body.
+  /// [forEveryone]: removes the message (and its thread) from the server for
+  /// all members. Otherwise hides it for the current user only.
   Future<void> deleteMessage({
     required String channelId,
     required String messageId,
+    bool forEveryone = true,
   }) {
     return executeVoid(
-      () => apiClient.delete(ApiEndpoints.messageById(channelId, messageId)),
+      () => apiClient.delete(
+        ApiEndpoints.messageById(channelId, messageId),
+        queryParameters: {'scope': forEveryone ? 'everyone' : 'me'},
+      ),
+    );
+  }
+
+  /// "Clear chat": hides every message so far, for the current user only.
+  Future<void> clearChat(String channelId) {
+    return executeVoid(
+      () => apiClient.post('${ApiEndpoints.channelMessages(channelId)}/clear'),
     );
   }
 

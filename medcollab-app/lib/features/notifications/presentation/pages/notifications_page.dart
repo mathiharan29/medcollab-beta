@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +10,7 @@ import 'package:medcollab_app/core/theme/app_radius.dart';
 import 'package:medcollab_app/core/theme/app_text_styles.dart';
 import 'package:medcollab_app/features/notifications/data/models/notification_model.dart';
 import 'package:medcollab_app/features/notifications/presentation/cubit/notifications_cubit.dart';
+import 'package:medcollab_app/features/notifications/presentation/utils/alert_grouping.dart';
 import 'package:medcollab_app/features/notifications/presentation/widgets/alert_card.dart';
 import 'package:medcollab_app/shared/presentation/widgets/app_empty_state.dart';
 import 'package:medcollab_app/shared/presentation/widgets/app_skeleton.dart';
@@ -160,11 +163,11 @@ class _NotificationsView extends StatelessWidget {
                               ),
                             ),
                             ...section.items.map(
-                              (n) => Padding(
+                              (g) => Padding(
                                 padding: const EdgeInsets.only(
                                   bottom: AppGaps.itemGap + 2,
                                 ),
-                                child: _AlertTile(notification: n),
+                                child: _AlertTile(group: g),
                               ),
                             ),
                           ],
@@ -193,15 +196,16 @@ class _NotificationsView extends StatelessWidget {
   List<_AlertSection> _groupByDay(List<AppNotificationModel> items) {
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
-    final today = <AppNotificationModel>[];
-    final earlier = <AppNotificationModel>[];
+    final today = <AlertGroup>[];
+    final earlier = <AlertGroup>[];
 
-    for (final n in items) {
-      final created = n.createdAt?.toLocal();
+    // One row per chat; the row sits in the section of its newest alert.
+    for (final g in groupAlerts(items)) {
+      final created = g.latest.createdAt?.toLocal();
       if (created != null && !created.isBefore(todayStart)) {
-        today.add(n);
+        today.add(g);
       } else {
-        earlier.add(n);
+        earlier.add(g);
       }
     }
 
@@ -216,7 +220,7 @@ class _AlertSection {
   const _AlertSection({required this.label, required this.items});
 
   final String label;
-  final List<AppNotificationModel> items;
+  final List<AlertGroup> items;
 }
 
 class _FilterPill extends StatelessWidget {
@@ -262,17 +266,36 @@ class _FilterPill extends StatelessWidget {
 }
 
 class _AlertTile extends StatelessWidget {
-  const _AlertTile({required this.notification});
+  const _AlertTile({required this.group});
 
-  final AppNotificationModel notification;
+  final AlertGroup group;
+
+  AppNotificationModel get notification => group.latest;
+  bool get _groupUnread => group.unreadCount > 0;
 
   @override
   Widget build(BuildContext context) {
     return AlertCard(
       notification: notification,
+      groupCount: group.count,
+      groupUnread: group.unreadCount,
+      unreadOverride: _groupUnread,
       onTap: () => _open(context),
       onLongPress: () => _showMenu(context),
     );
+  }
+
+  /// Opening (or marking) a grouped row clears every alert in it.
+  Future<void> _markRowRead(NotificationsCubit cubit) async {
+    if (!_groupUnread) return;
+    final channelId = group.channelId;
+    if (group.isGrouped && channelId != null) {
+      await cubit.markChannelRead(channelId);
+    } else {
+      for (final n in group.items.where((n) => !n.read)) {
+        await cubit.markRead(n);
+      }
+    }
   }
 
   Future<void> _showMenu(BuildContext context) async {
@@ -284,7 +307,7 @@ class _AlertTile extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (!notification.read)
+            if (_groupUnread)
               ListTile(
                 leading: const Icon(Icons.mark_email_read_outlined),
                 title: const Text('Mark read'),
@@ -301,7 +324,7 @@ class _AlertTile extends StatelessWidget {
       ),
     );
     if (action == 'read') {
-      await cubit.markRead(notification);
+      await _markRowRead(cubit);
     } else if (action == 'unread') {
       await cubit.markUnread(notification);
     }
@@ -311,9 +334,7 @@ class _AlertTile extends StatelessWidget {
     final cubit = context.read<NotificationsCubit>();
     final meta = notification.metadata;
 
-    if (!notification.read) {
-      cubit.markRead(notification);
-    }
+    unawaited(_markRowRead(cubit));
 
     if (meta.handoffId != null && meta.spaceId != null) {
       context.push(

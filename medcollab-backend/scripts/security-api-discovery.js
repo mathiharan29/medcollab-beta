@@ -120,7 +120,8 @@ for (const actor of ['A', 'B', 'C', 'anonymous']) {
       check: actor === owner ? async () => (await models.Message.findById(ids[`message${owner}`])).content.text === 'Discovery edit' : undefined,
     });
     add(`delete ${owner} message`, actor, 'DELETE', `${mp}/${ids[`message${owner}`]}`, [actor === owner || actor === 'A' ? 200 : denial], undefined, {
-      check: actor === owner || actor === 'A' ? async () => (await models.Message.findById(ids[`message${owner}`])).isDeleted === true : undefined,
+      // Delete for everyone removes the row (beta feedback 2026-11-10).
+      check: actor === owner || actor === 'A' ? async () => (await models.Message.findById(ids[`message${owner}`])) === null : undefined,
     });
   }
   add('edit submitted handoff', actor, 'PUT', hp, [actor === 'A' ? 400 : denial], { shiftSummary: 'Attempted edit' });

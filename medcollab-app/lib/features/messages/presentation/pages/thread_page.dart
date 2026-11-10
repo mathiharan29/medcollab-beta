@@ -132,11 +132,11 @@ class _ThreadPageState extends State<ThreadPage> {
   ) async {
     final picked = await pick();
     if (picked == null || !context.mounted) return;
-    await context.read<ThreadCubit>().sendAttachment(
+    unawaited(context.read<ThreadCubit>().sendAttachment(
           bytes: picked.bytes,
           fileName: picked.fileName,
           mimeType: picked.mimeType,
-        );
+        ));
     _scrollToBottom();
   }
 
@@ -293,10 +293,12 @@ class _ThreadPageState extends State<ThreadPage> {
                           child: MessageComposer(
                             controller: _textController,
                             hintText: 'Reply in thread…',
-                            isBusy: state.isSending || state.isUploading,
+                            // Never block typing while something sends/uploads (beta feedback).
+                            isBusy: false,
                             onSend: (text) async {
-                              await cubit.sendReply(text);
+                              // Clear first: the reply shows instantly.
                               _textController.clear();
+                              unawaited(cubit.sendReply(text));
                               await _clearDraft();
                               _isTyping = false;
                               cubit.emitTypingStop();
