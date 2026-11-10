@@ -238,6 +238,22 @@ Run locally exactly like the GitHub workflow (local MongoDB 7 on 27017, fixtures
 - The 19 observations not on master are the intended product changes: REQ 5 (search beyond known colleagues, requests open by default), REQ 10 (edit/delete submitted handoffs), and two "group DM with request-eligible peers" cases that are now refused (the suite itself flags that path as a consent concern). These need a deliberate expectation update by the security owner.
 - `package-lock.json` was missing the `socket.io-client` packages already listed in `devDependencies` (CI's `npm ci` would fail); `npm install` filled them in, no version changes to existing packages.
 
+### Beta feedback on 1.0.0+30 (2026-11-10) and production deploy
+
+**Root cause of the "Something went wrong" reports:** the 1.0.0+30 APK talks to production, which was still on `master` 4c01dc2 (server half not deployed). Replaying the app's calls against that exact code: relationship + contact-match endpoints 404, stranger request 403 (old rule), voice upload 400 "File type not allowed", audio message 400. Gap on my side: contact sync and voice recording had only been tested with simulated device parts, never on a device.
+
+| # | Report | Fix | Verified on device (emulator, local server = deployed code) |
+|---|---|---|---|
+| 1 | DM after search / request → error; Find contacts not syncing | Server deployed; app falls back to "send request" if an older server lacks the endpoint; leftover snackbar no longer covers the new chat's message box (chat open 4 s → 0.18 s) | Real address-book contact "Bala ICU" → "In your contacts as Bala ICU" (232 ms); stranger → request offered → sent |
+| 2 | Needl voice note "Failed to send" | Server deployed (audio type + uploads); release unchanged; debug/profile allow local http media | Real microphone recording 2.9 s → uploaded → other doctor receives `audio` (29-bar waveform) → plays back |
+| 3 | Auto-read OTP from SMS | Android SMS User Consent ("Allow Vocle to read the message…?"), no SMS permission; fills and verifies | Real SMS sent to the emulator → system prompt → Allow → signed in without typing |
+| 4 | Theme had no Save; "wallpaper" | **Chat theme**: background + own-bubble colour, live preview, **Save**, *This chat only* / *All chats*; leaving without Save changes nothing | Pick Mint → This chat only → Save → "Theme saved for this chat"; widget tests 3/3 |
+| 5 | Home alerts pill misaligned | Actions in one centred row; pill 24 px centred | Screenshot: pill centred on the icons' line |
+
+Device journeys (all pass): Needl + threads 14/14 steps (run 3×), contacts/request/voice/theme 11/11, OTP auto-read 1/1. App tests 147/147.
+
+**Production deploy:** `addde78` pushed to GitHub `master` → Railway; `/health` reports `version: addde78`, database connected, Firebase + Cloudinary on. First start backfills Vocle IDs for existing doctors.
+
 **Constraints**
 - Backend changes reach phones only after deploy to Railway (from GitHub `master`; `sanjaybabu2210` currently has read-only access). Until then they are verified against the local backend; a release APK pointing at production will not show backend-dependent features.
 - REQ 4 real push (background/killed app, reply from shade) needs Firebase server credentials, which are not in this machine's hand-off; local verification covers in-app/local notifications and the reply code path.
