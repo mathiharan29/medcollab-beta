@@ -346,7 +346,7 @@ F0/D0; sources F/features/auth/presentation/bloc/auth_bloc.dart; F/core/router/a
 |---|---|---|---|---|
 | FR-NAV-01 | Launch no session, valid incomplete session, valid onboarded session | Login/profile setup/home respectively, no transient wrong destination; stored identity loaded | F/P0 | partial: widget_test.dart splash only |
 | FR-NAV-02 | HTTP 401 refresh success, failure, repeated 401 and concurrent requests | Success retries request with new token; failure clears session; bounded retry desired, recursion/concurrency behavior recorded for clarification | F/P0 | Q7 |
-| FR-NAV-03 | Switch tabs, open nested detail, Back repeatedly | Detail then documented tab history restored; no duplicate route stack or lost selected tab | F/P1 | NEW |
+| FR-NAV-03 | Open a chat from Messages and press system Back | The app returns directly to Home and displays Home content, per REQ 3 | F/P1 | NEW |
 | FR-NAV-04 | Device background, offline, foreground, restore network | Resume invokes connection restoration; current chat can refetch; input survives supported draft storage | D/P0 | NEW |
 | FR-NAV-05 | Device force-stop/relaunch with session then logout and relaunch | Secure session restoration routes correctly; logout removes local session even if API logout errors | D/P0 | NEW |
 

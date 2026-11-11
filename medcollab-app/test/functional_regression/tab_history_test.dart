@@ -1,6 +1,5 @@
 // REQ 3: system back from anywhere inside the app goes to Home (popups
-// close first; Home asks before exiting). Supersedes FR-NAV-03, which
-// walked back through tab visit history.
+// close first; Home asks before exiting). The catalog case now covers REQ 3.
 // REQ 8: main tabs can be swiped; inner tabs swipe first and hand off to
 // the neighbouring main tab at their edge; tab state is preserved.
 import 'package:flutter/material.dart';
@@ -126,7 +125,8 @@ void main() {
   });
   tearDown(() => h.router.dispose());
 
-  testWidgets('REQ 3: back from a chat goes straight to Home', (tester) async {
+  testWidgets('FR-NAV-03: system Back from a chat returns directly to Home',
+      (tester) async {
     await tester.pumpWidget(h.app());
     await tester.pumpAndSettle();
     await tester.tap(find.text('Messages'));

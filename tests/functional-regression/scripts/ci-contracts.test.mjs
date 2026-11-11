@@ -56,5 +56,10 @@ test('PR target pins the exact head and full scope; unsupported contexts fail', 
   const run = overrides => spawnSync(process.execPath, [script], { env: { ...env, ...overrides }, encoding: 'utf8', windowsHide: true });
   const good = run({});assert.equal(good.status, 0, good.stderr);
   assert.deepEqual(JSON.parse(good.stdout), { targetKind: 'pr-head', targetSha, scope: 'backend-all', targetRepository: upstreamRepository });
-  for (const overrides of [{ VOCLE_PR_HEAD_SHA: 'invalid' }, { VOCLE_PR_HEAD_REPOSITORY: 'other/repo' }, { GITHUB_EVENT_NAME: 'push' }, { GITHUB_EVENT_NAME: 'workflow_dispatch' }, { GITHUB_REPOSITORY: 'other/repo' }]) assert.notEqual(run(overrides).status, 0);
+  for (const overrides of [{ VOCLE_PR_HEAD_SHA: 'invalid' }, { VOCLE_PR_HEAD_REPOSITORY: 'other/repo' }, { GITHUB_EVENT_NAME: 'push' }, { GITHUB_REPOSITORY: 'other/repo' }]) assert.notEqual(run(overrides).status, 0);
+  const manual = { GITHUB_EVENT_NAME: 'workflow_dispatch', GITHUB_REF: 'refs/heads/testing/manual', GITHUB_SHA: harnessSha };
+  const dispatched = run(manual);
+  assert.equal(dispatched.status, 0, dispatched.stderr);
+  assert.deepEqual(JSON.parse(dispatched.stdout), { targetKind: 'commit', targetSha: harnessSha, scope: 'backend-all', targetRepository: upstreamRepository });
+  for (const overrides of [{ GITHUB_REF: 'refs/tags/release' }, { GITHUB_REF: 'refs/heads/' }, { GITHUB_REF: '' }, { GITHUB_SHA: '' }, { GITHUB_SHA: 'invalid' }, { GITHUB_REPOSITORY: 'other/repo' }]) assert.notEqual(run({ ...manual, ...overrides }).status, 0);
 });
