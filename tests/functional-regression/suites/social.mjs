@@ -58,12 +58,11 @@ const cases = [{
     let reload = await request(path, { token: people.A.token });
     assert.deepEqual(reload.data.messages.find((item) => item._id === root._id).reactions.map((item) => item.emoji), ['👍']);
     await request(`${path}/${root._id}`, { method: 'DELETE', token: people.A.token });
-    const deletedReaction = await request(reactPath, { method: 'POST', token: people.B.token, body: { emoji: '❤️' }, expectedStatus: 400 });
+    const deletedReaction = await request(reactPath, { method: 'POST', token: people.B.token, body: { emoji: '❤️' }, expectedStatus: 404 });
     assert.equal(deletedReaction.payload.success, false);
     await db(async (connection) => {
       const stored = await connection.collection('messages').findOne({ _id: new connection.base.Types.ObjectId(root._id) });
-      assert.equal(stored.isDeleted, true);
-      assert.deepEqual(stored.reactions, [], 'Soft deletion clears old reactions and rejected additions must not restore them');
+      assert.equal(stored, null, 'A reaction must not recreate a permanently deleted message');
     });
   },
 }, {

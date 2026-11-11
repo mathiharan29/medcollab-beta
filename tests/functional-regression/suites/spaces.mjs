@@ -65,9 +65,10 @@ const cases = [{
 }, {
   id: 'FR-SPC-04', module: 'SPC',
   prerequisiteSeed: 'C space role promoted to admin directly; no promotion route exists',
-  run: async ({ identity, request, db }) => {
-    const a = await identity('A'), b = await identity('B'), c = await identity('C');
-    const space = (await request('/api/spaces', { method: 'POST', token: a.token, body: { name: 'Synthetic Roles', type: 'department' }, expectedStatus: 201 })).data.space;
+  run: async ({ identity, request, db, origin }) => {
+    const a = await identity('A'), b = await identity('B'), c = await identity('C'), d = await identity('D');
+    const created = (await request('/api/spaces', { method: 'POST', token: a.token, body: { name: 'Synthetic Roles', type: 'department' }, expectedStatus: 201 })).data;
+    const { space } = created;
     for (const person of [b, c]) await request('/api/spaces/join', { method: 'POST', token: person.token, body: { inviteCode: space.inviteCode } });
     await db(async (connection) => {
       const changed = await connection.collection('spaces').updateOne({ _id: new connection.base.Types.ObjectId(space._id), 'members.userId': new connection.base.Types.ObjectId(c.userId) }, { $set: { 'members.$.role': 'admin' } });
@@ -83,10 +84,33 @@ const cases = [{
     assert.equal(reread.data.space.name, 'Synthetic Roles Updated');
     assert.equal(reread.data.space.description, 'Admin saved setting');
     assert.equal(reread.data.space.settings.requireApproval, true);
+    const path = `/api/spaces/${space._id}/members`;
+    const add = (actor, expectedStatus = 200) => request(path, { method: 'POST', token: actor.token, body: { userIds: [d.userId, d.userId] }, expectedStatus });
+    await add(b, 403);
+    const skipped = (await add(c, 400)).data;
+    assert.deepEqual(skipped.added, []);
+    assert.deepEqual(skipped.skipped.map((item) => [item.userId, item.reason]), [[d.userId, 'privacy']]);
+    const channelId = created.channels.find((channel) => channel.name === 'general')._id;
+    const timeline = `/api/channels/${channelId}/messages`;
+    const prior = (await request(timeline, { method: 'POST', token: a.token, body: { content: { text: 'Synthetic history before admin add' } }, expectedStatus: 201 })).data.message;
+    await request(timeline, { token: d.token, expectedStatus: 403 });
+    await request('/api/users/me', { method: 'PUT', token: d.token, body: { notifications: { allowGroupAddsFromAnyone: true } } });
+    const socket = await connectSocket(null, origin, d.token);
+    try {
+      const alert = waitFor(socket, 'new_notification', (event) => event?.type === 'space_invite' && event.referenceId === space._id);
+      assert.deepEqual((await add(c)).data.added.map((item) => item._id), [d.userId]);
+      assert.equal((await alert).metadata.spaceId, space._id);
+      const messages = (await request(timeline, { token: d.token })).data.messages;
+      assert.equal(messages.find((item) => item._id === prior._id)?.content.text, 'Synthetic history before admin add');
+      const activity = messages.filter((item) => item.type === 'system' && item.content.systemEvent === 'member_added');
+      assert.deepEqual(activity.map((item) => item.content.targetUserIds), [[d.userId]]);
+      assert.equal(activity[0].senderId._id, c.userId);
+    } finally { socket.disconnect(); }
     await db(async (connection) => {
       const stored = await connection.collection('spaces').findOne({ _id: new connection.base.Types.ObjectId(space._id) });
       assert.equal(stored.members.find((item) => String(item.userId) === a.userId).role, 'owner');
       assert.equal(stored.members.find((item) => String(item.userId) === c.userId).role, 'admin');
+      assert.deepEqual(stored.members.filter((item) => String(item.userId) === d.userId).map((item) => item.role), ['member']);
       assert.equal(stored.name, 'Synthetic Roles Updated');
     });
   },

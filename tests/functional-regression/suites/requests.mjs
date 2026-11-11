@@ -5,13 +5,18 @@ const cases = [{
   id: 'FR-REQ-01', module: 'REQ',
   run: async ({ identity, request, db }) => {
     const a = await identity('A'), d = await identity('D');
-    await request('/api/users/me', { method: 'PUT', token: d.token, body: { notifications: { allowMessageRequestsFromAnyone: true } } });
-    await request('/api/users/me', { method: 'PUT', token: a.token, body: { notifications: { allowMessageRequestsFromAnyone: true } } });
     const first = await request('/api/message-requests', { method: 'POST', token: a.token, body: { toUserId: d.userId, introMessage: 'synthetic reverse collision' }, expectedStatus: 201 });
     const id = first.data.request.id;
     const reverse = await request('/api/message-requests', { method: 'POST', token: d.token, body: { toUserId: a.userId } });
     assert.equal(reverse.data.request.id, id);
     assert.equal(reverse.data.action, 'accept_incoming');
+    for (const [caller, peer, direction] of [[a, d, 'sent'], [d, a, 'received']]) {
+      const relationship = (await request(`/api/users/${peer.userId}/relationship`, { token: caller.token })).data;
+      assert.equal(relationship.canMessage, false);
+      assert.equal(relationship.pendingRequest.id, id);
+      assert.equal(relationship.pendingRequest.direction, direction);
+      await request('/api/channels/dm', { method: 'POST', token: caller.token, body: { userId: peer.userId }, expectedStatus: 403 });
+    }
     const sent = await request('/api/message-requests?direction=sent', { token: a.token });
     const received = await request('/api/message-requests?direction=received', { token: d.token });
     assert.equal(sent.data.requests.filter((item) => item.id === id).length, 1);
@@ -153,16 +158,17 @@ const cases = [{
   },
 }, {
   id: 'FR-REQ-02', module: 'REQ',
-  prerequisiteSeed: 'Accepted request inserted as component prerequisite; no accept endpoint behavior credited',
+  prerequisiteSeed: 'Accepted and blocked pairs inserted as prerequisites to exercise request creation boundaries',
   run: async ({ identity, request, db }) => {
     const a = await identity('A'), b = await identity('B'), e = await identity('E');
     const initialRecords = await db(async (connection) => connection.collection('messagerequests').countDocuments({}));
     let seededId;
     await db(async (connection) => {
-      const fromUserId = new connection.base.Types.ObjectId(a.userId);
-      const toUserId = new connection.base.Types.ObjectId(b.userId);
-      const seeded = await connection.collection('messagerequests').insertOne({ fromUserId, toUserId, status: 'accepted', introMessage: 'synthetic prerequisite', createdAt: new Date(), updatedAt: new Date() });
+      const objectId = (value) => new connection.base.Types.ObjectId(value);
+      const requests = connection.collection('messagerequests');
+      const seeded = await requests.insertOne({ fromUserId: objectId(a.userId), toUserId: objectId(b.userId), status: 'accepted', introMessage: 'synthetic prerequisite', createdAt: new Date(), updatedAt: new Date() });
       seededId = String(seeded.insertedId);
+      await requests.insertOne({ fromUserId: objectId(e.userId), toUserId: objectId(a.userId), status: 'blocked', createdAt: new Date(), updatedAt: new Date() });
     });
     const pendingBefore = await Promise.all([a, b, e].map((person) => request('/api/message-requests/pending-count', { token: person.token })));
     const notificationCountBefore = await db(async (connection) => connection.collection('notifications').countDocuments({ userId: { $in: [a, b, e].map((person) => new connection.base.Types.ObjectId(person.userId)) } }));
@@ -176,12 +182,16 @@ const cases = [{
       const denied = await request('/api/message-requests', { method: 'POST', token: a.token, body, expectedStatus: status });
       assert.equal(denied.payload.success, false);
     }
+    const blocked = (await request(`/api/users/${e.userId}/relationship`, { token: a.token })).data;
+    assert.equal(blocked.canRequest, false);
+    assert.equal(blocked.canMessage, false);
     const pendingAfter = await Promise.all([a, b, e].map((person) => request('/api/message-requests/pending-count', { token: person.token })));
     assert.deepEqual(pendingAfter.map((item) => item.data.count), pendingBefore.map((item) => item.data.count));
     await db(async (connection) => {
       const records = await connection.collection('messagerequests').find({}).toArray();
-      assert.equal(records.length, initialRecords + 1);
+      assert.equal(records.length, initialRecords + 2);
       assert.equal(records.filter((item) => String(item._id) === seededId && item.status === 'accepted').length, 1);
+      assert.equal(records.filter((item) => item.status === 'blocked').length, 1);
       const notifications = await connection.collection('notifications').countDocuments({ userId: { $in: [a, b, e].map((person) => new connection.base.Types.ObjectId(person.userId)) } });
       assert.equal(notifications, notificationCountBefore);
     });

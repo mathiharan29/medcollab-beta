@@ -129,7 +129,7 @@ const cases = [{
   },
 }, {
   id: 'FR-HOF-04', module: 'HOF',
-  run: async ({ identity, request, db }) => {
+  run: async ({ identity, request, db, origin }) => {
     const f = await fixture(identity, request, 'Synthetic Handoff Invalid Lifecycle');
     const empty = await draft(f, request, []);
     const created = await draft(f, request);
@@ -142,17 +142,59 @@ const cases = [{
     assert.equal((await stored(db, created._id)).status, 'draft');
     assert.equal((await stored(db, empty._id)).status, 'draft');
     await request(`/api/handoffs/${created._id}/submit`, { method: 'POST', token: f.a.token });
-    await request(`/api/handoffs/${created._id}`, { method: 'PUT', token: f.a.token, body: { patients: [] }, expectedStatus: 400 });
-    await request(`/api/handoffs/${created._id}`, { method: 'DELETE', token: f.a.token, expectedStatus: 400 });
-    const detail = (await request(`/api/handoffs/${created._id}`, { token: f.b.token })).data.handoff;
-    assert.equal(detail.status, 'submitted');
-    assert.equal(detail.patients.length, 1);
-    assert.equal(detail.patients[0].clinicalAlias, 'Synthetic alpha');
-    const row = await stored(db, created._id);
-    assert.equal(row.status, 'submitted');
-    assert.equal(row.patients.length, 1);
-    assert.equal(row.writeBackNotes.length, 0);
-    assert.equal(row.assignmentHistory.length, 0);
+    const path = `/api/handoffs/${created._id}`;
+    await request(path, { method: 'PUT', token: f.a.token, body: { patients: [] }, expectedStatus: 400 });
+    await request(path, { method: 'PUT', token: f.b.token, body: { shiftSummary: 'Receiver cannot edit' }, expectedStatus: 403 });
+    await request(path, { method: 'DELETE', token: f.b.token, expectedStatus: 403 });
+    const before = await stored(db, created._id);
+    assert.equal(before.status, 'submitted');
+    assert.equal(before.patients[0].clinicalAlias, 'Synthetic alpha');
+    assert.equal(before.editHistory.length, 0);
+    await request(`${path}/acknowledge`, { method: 'POST', token: f.b.token, body: { note: 'Synthetic original acknowledgement' } });
+    const listener = await connectSocket(null, origin, f.b.token);
+    try {
+      const editedEvent = waitFor(listener, 'handoff_updated', (event) => event?.handoffId === created._id);
+      const editedAlert = waitFor(listener, 'new_notification', (event) => event?.referenceId === created._id && event.title === 'Handoff updated');
+      const edited = (await request(path, { method: 'PUT', token: f.a.token, body: { shiftSummary: 'Synthetic revised shift' } })).data.handoff;
+      assert.equal((await editedEvent).status, 'submitted');
+      assert.equal((await editedAlert).metadata.handoffId, created._id);
+      assert.equal(edited.status, 'submitted');
+      assert.equal(edited.acknowledgedAt, null);
+      assert.equal(edited.acknowledgementNote, '');
+      const detail = (await request(path, { token: f.b.token })).data.handoff;
+      assert.equal(detail.shiftSummary, 'Synthetic revised shift');
+      assert.deepEqual(detail.patients, created.patients);
+      assert.equal(detail.editHistory.length, 1);
+      assert.equal(detail.editHistory[0].byUserId, f.a.userId);
+      assert.equal(detail.editHistory[0].statusBefore, 'acknowledged');
+      assert.deepEqual(detail.editHistory[0].fields, ['shiftSummary']);
+      assert.equal(detail.writeBackNotes.length, 1);
+      assert.match(detail.writeBackNotes[0].text, /acknowledge again/i);
+      assert.equal(detail.assignmentHistory.length, 0);
+      const reacknowledged = (await request(`${path}/acknowledge`, { method: 'POST', token: f.b.token, body: { note: 'Synthetic reviewed revision' } })).data.handoff;
+      assert.equal(reacknowledged.status, 'acknowledged');
+      assert.equal(reacknowledged.acknowledgementNote, 'Synthetic reviewed revision');
+
+      const withdrawnEvent = waitFor(listener, 'handoff_deleted', (event) => event?.handoffId === created._id);
+      const withdrawnAlert = waitFor(listener, 'new_notification', (event) => event?.referenceId === created._id && event.title === 'Handoff withdrawn');
+      await request(path, { method: 'DELETE', token: f.a.token });
+      assert.equal((await withdrawnEvent).handoffId, created._id);
+      const alert = await withdrawnAlert;
+      assert.equal(alert.referenceId, created._id);
+      assert.ok(!alert.metadata?.handoffId, 'Withdrawn alert must not link to a removed handoff');
+      for (const person of [f.a, f.b]) await request(path, { token: person.token, expectedStatus: 404 });
+      for (const listPath of ['/api/handoffs?type=received', `/api/spaces/${f.spaceId}/handoffs`, '/api/search?q=Synthetic%20alpha&type=handoffs']) {
+        const list = (await request(listPath, { token: f.b.token })).data.handoffs;
+        assert.ok(!list.some((item) => item._id === created._id), `Withdrawn handoff still visible at ${listPath}`);
+      }
+      const row = await stored(db, created._id);
+      assert.equal(row.isDeleted, true);
+      assert.equal(String(row.deletedBy), f.a.userId);
+      assert.ok(row.deletedAt instanceof Date);
+      assert.equal(row.editHistory.length, 1);
+      assert.deepEqual(row.patients[0].attachments, before.patients[0].attachments);
+      assert.equal(row.patients[0].clinicalAlias, 'Synthetic alpha');
+    } finally { listener.disconnect(); }
   },
 }, {
   id: 'FR-HOF-05', module: 'HOF',

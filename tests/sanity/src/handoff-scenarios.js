@@ -53,8 +53,8 @@ async function run() {
       await event;
       const [inbox, history] = await Promise.all([request('/api/handoffs?type=received', { token: people.B.token }), request(`/api/spaces/${space._id}/handoffs`, { token: people.B.token })]);
       const notification = await eventually('handoff recipient notification', () => notificationFor(people.B.userId, handoff._id));
-      await request(`/api/handoffs/${handoff._id}`, { method: 'PUT', token: people.A.token, expectedStatus: 400, body: { shiftSummary: marker('forbidden-edit') } });
-      await request(`/api/handoffs/${handoff._id}`, { method: 'DELETE', token: people.A.token, expectedStatus: 400 });
+      await request(`/api/handoffs/${handoff._id}`, { method: 'PUT', token: people.B.token, expectedStatus: 403, body: { shiftSummary: marker('forbidden-edit') } });
+      await request(`/api/handoffs/${handoff._id}`, { method: 'DELETE', token: people.B.token, expectedStatus: 403 });
       assert(submitted.status === 'submitted' && expectSuccess(inbox, 'handoff inbox').handoffs.some((item) => item._id === handoff._id), 'Submitted handoff was absent from recipient inbox.');
       assert(expectSuccess(history, 'handoff history').handoffs.some((item) => item._id === handoff._id) && notification.type === 'handoff_received', 'Submitted handoff history or notification was missing.');
     });
