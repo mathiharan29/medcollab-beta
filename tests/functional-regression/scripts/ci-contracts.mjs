@@ -10,13 +10,13 @@ export const forkRepository = 'mathiharan29/medcollab-beta';
 export const suiteFiles = Object.freeze({
   AUTH: 'auth', PRO: 'profile', DISC: 'discovery', SPC: 'spaces', CH: 'channels', REQ: 'requests', DM: 'conversations',
   MSG: 'messages', THR: 'threads', SOC: 'social', NOT: 'notifications', PUSH: 'push-contracts', RT: 'realtime', SRCH: 'search',
-  HOF: 'handoffs', MED: 'media', SUP: 'support', RUN: 'runtime', JRN: 'journeys',
+  HOF: 'handoffs', MED: 'media', SUP: 'support', RUN: 'runtime', JRN: 'journeys', NDL: 'needl',
 });
 export const statuses = Object.freeze(['PASS', 'FAIL', 'ERROR', 'BLOCKED', 'NEEDS_DECISION', 'SKIP']);
 
 export async function catalogCases() {
   const catalog = JSON.parse(await readFile(join(harnessRoot, 'catalog.json'), 'utf8'));
-  if (catalog.cases.length !== 187 || new Set(catalog.cases.map((item) => item.id)).size !== 187) throw new Error('Catalog size/uniqueness changed');
+  if (catalog.cases.length !== 241 || new Set(catalog.cases.map((item) => item.id)).size !== 241) throw new Error('Catalog size/uniqueness changed');
   return catalog.cases;
 }
 
@@ -31,7 +31,7 @@ export function selectBackend(cases, scope, affectedModules = []) {
     selectedIds.add(dependency);
   }
   const selected = cases.filter((item) => selectedIds.has(item.id));
-  if (scope === 'backend-all' && selected.length !== 147) throw new Error('Backend-all requires 147 catalog IDs');
+  if (scope === 'backend-all' && selected.length !== 177) throw new Error('Backend-all requires 177 catalog IDs');
   return selected;
 }
 
@@ -47,5 +47,5 @@ export function validateResultSet({ selected, results, targetSha, harnessSha, so
 }
 
 export function completeBackendSuccess({ scope, selected, tally, cleanup, provenance }) {
-  return scope === 'backend-all' && selected.length === 147 && tally.PASS === 147 && statuses.filter((status) => status !== 'PASS').every((status) => tally[status] === 0) && cleanup.status === 'PASS' && provenance.status === 'PASS';
+  return scope === 'backend-all' && selected.length === 177 && tally.PASS === 177 && statuses.filter((status) => status !== 'PASS').every((status) => tally[status] === 0) && cleanup.status === 'PASS' && provenance.status === 'PASS';
 }

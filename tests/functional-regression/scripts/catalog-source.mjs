@@ -17,7 +17,7 @@ const modules = [
   ['SUP', 'Support/developer tools', 'U'], ['NAV', 'Startup/navigation/lifecycle', 'F0'],
   ['OFF', 'Composer/offline state', 'F0'], ['SAVE', 'Saved/recent items', 'F0'],
   ['HOME', 'Home/dashboard', 'F0'], ['LINK', 'Forwarding/invites/deep links', 'F0'],
-  ['RUN', 'Runtime/error recovery', 'U'], ['JRN', 'Cross-feature journeys', 'U'],
+  ['RUN', 'Runtime/error recovery', 'U'], ['JRN', 'Cross-feature journeys', 'U'], ['NDL', 'Needl group conversations', 'C'],
 ];
 
 export const moduleNames = Object.fromEntries(modules.map(([code, name]) => [code, name]));
@@ -80,7 +80,7 @@ export async function parseCatalog() {
     if (!moduleNames[module]) throw new Error(`Unknown module ${module} at line ${i + 1}`);
     const tierPriority = retained ? ['B', 'P0'] : parts[3]?.split('/');
     if (!tierPriority || tierPriority.length !== 2) throw new Error(`Invalid tier/priority at line ${i + 1}`);
-    const questionIds = [...new Set((retained ? '' : `${parts[2]} ${parts[4]}`).match(/\bQ(?:1[0-4]|[1-9])\b/g) || [])];
+    const questionIds = [...new Set((retained ? '' : `${parts[2]} ${parts[4]}`).match(/\b(?:Q(?:1[0-4]|[1-9])|NDL-D1)\b/g) || [])];
     cases.push({
       id, module, moduleName: moduleNames[module], tier: tierPriority[0], priority: tierPriority[1],
       coverage: retained ? 'EXISTING' : 'NEW', fixtureProfile: tierPriority[0] === 'F' ? 'F0' : tierPriority[0] === 'D' ? 'D0' : moduleFixtures[module],

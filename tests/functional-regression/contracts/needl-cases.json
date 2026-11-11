@@ -1,0 +1,437 @@
+{
+  "sourceSha": "4c01dc24247aa95a73e286a2b42c7f2f81257c7a",
+  "cases": [
+    {
+      "id": "FR-NDL-01",
+      "title": "Create separate Needls with overlapping member sets",
+      "actions": "Create separate Needls with overlapping member sets",
+      "expected": "Different exact member sets return distinct IDs; repeating either intent reuses only its own group; DB memberships remain exact",
+      "tier": "B",
+      "priority": "P0"
+    },
+    {
+      "id": "FR-NDL-02",
+      "title": "Reject malformed group creation on both route aliases",
+      "actions": "Reject malformed group creation on both route aliases",
+      "expected": "Missing, empty, nonarray, malformed or object-shaped user IDs return validation errors without channel creation",
+      "tier": "B",
+      "priority": "P0"
+    },
+    {
+      "id": "FR-NDL-03",
+      "title": "Reject nonexistent participant without partial Needl",
+      "actions": "Reject nonexistent participant without partial Needl",
+      "expected": "404 and unchanged channels/messages; previously valid participants do not create a partial group",
+      "tier": "B",
+      "priority": "P1"
+    },
+    {
+      "id": "FR-NDL-04",
+      "title": "Respect unrelated colleague request opt-out",
+      "actions": "Respect unrelated colleague request opt-out",
+      "expected": "403 and no new group when any selected outsider disallows message requests",
+      "tier": "B",
+      "priority": "P1"
+    },
+    {
+      "id": "FR-NDL-05",
+      "title": "List Needls for every member and exclude outsiders",
+      "actions": "List Needls for every member and exclude outsiders",
+      "expected": "All members independently retrieve the same ID and exact membership; unrelated doctor never lists it",
+      "tier": "B",
+      "priority": "P0"
+    },
+    {
+      "id": "FR-NDL-06",
+      "title": "Deny outsider detail and members access",
+      "actions": "Deny outsider detail and members access",
+      "expected": "Detail and member endpoints deny nonmembers without exposing group data or changing persistence",
+      "tier": "B",
+      "priority": "P0"
+    },
+    {
+      "id": "FR-NDL-07",
+      "title": "Deny outsider rename without changing name",
+      "actions": "Deny outsider rename without changing name",
+      "expected": "403; all members and DB retain prior title and membership",
+      "tier": "B",
+      "priority": "P1"
+    },
+    {
+      "id": "FR-NDL-08",
+      "title": "Ignore membership and identity mass assignment on rename",
+      "actions": "Ignore membership and identity mass assignment on rename",
+      "expected": "Only name changes; members, type, owner, pair key and space binding remain unchanged",
+      "tier": "B",
+      "priority": "P1"
+    },
+    {
+      "id": "FR-NDL-09",
+      "title": "Project group members without private credential fields",
+      "actions": "Project group members without private credential fields",
+      "expected": "Exact IDs and public profile fields; no phone, OTP, refresh or device credentials returned",
+      "tier": "B",
+      "priority": "P1"
+    },
+    {
+      "id": "FR-NDL-10",
+      "title": "Verify archived Needl read-only behavior and record expansion policy",
+      "actions": "Verify archived Needl read-only behavior and record expansion policy",
+      "expected": "Archived groups disappear from lists; authorized historical detail is readable and message sends denied; whether expansion is permitted requires NDL-D1",
+      "tier": "B",
+      "priority": "P0"
+    },
+    {
+      "id": "FR-NDL-11",
+      "title": "Validate expansion payload before writes",
+      "actions": "Validate expansion payload before writes",
+      "expected": "Invalid history, IDs, date, offset and empty input rejected; source and destination resources unchanged",
+      "tier": "B",
+      "priority": "P1"
+    },
+    {
+      "id": "FR-NDL-12",
+      "title": "Reject missing or space-channel expansion source",
+      "actions": "Reject missing or space-channel expansion source",
+      "expected": "Missing source 404; ordinary space channel 400; no hidden direct conversation created",
+      "tier": "B",
+      "priority": "P1"
+    },
+    {
+      "id": "FR-NDL-13",
+      "title": "Deny outsider expansion of a private Needl",
+      "actions": "Deny outsider expansion of a private Needl",
+      "expected": "403 with no source mutation, copied messages or new destination",
+      "tier": "B",
+      "priority": "P0"
+    },
+    {
+      "id": "FR-NDL-14",
+      "title": "Reject additions containing only existing participants",
+      "actions": "Reject additions containing only existing participants",
+      "expected": "400 for self or existing-only selection; duplicates do not produce an empty or duplicate expansion",
+      "tier": "B",
+      "priority": "P1"
+    },
+    {
+      "id": "FR-NDL-15",
+      "title": "Reject nonexistent or ineligible new participant atomically",
+      "actions": "Reject nonexistent or ineligible new participant atomically",
+      "expected": "404/403 before destination or history writes; source membership/content preserved",
+      "tier": "B",
+      "priority": "P1"
+    },
+    {
+      "id": "FR-NDL-16",
+      "title": "Normalize mixed existing and duplicate new participants",
+      "actions": "Normalize mixed existing and duplicate new participants",
+      "expected": "Destination contains each old/new person once; source remains separate and unchanged",
+      "tier": "B",
+      "priority": "P1"
+    },
+    {
+      "id": "FR-NDL-17",
+      "title": "Enforce expansion nine-person boundary",
+      "actions": "Enforce expansion nine-person boundary",
+      "expected": "Expansion to nine succeeds; tenth rejected without partial group or source membership changes",
+      "tier": "B",
+      "priority": "P0"
+    },
+    {
+      "id": "FR-NDL-18",
+      "title": "Omitted history creates a fresh conversation",
+      "actions": "Omitted history creates a fresh conversation",
+      "expected": "No source messages copied when history omitted; new destination accepts independent subsequent messages",
+      "tier": "B",
+      "priority": "P1"
+    },
+    {
+      "id": "FR-NDL-19",
+      "title": "Copy today using explicit phone-local midnight",
+      "actions": "Copy today using explicit phone-local midnight",
+      "expected": "Before boundary excluded; exact boundary and later timestamps included unchanged; source rows unchanged",
+      "tier": "B",
+      "priority": "P1"
+    },
+    {
+      "id": "FR-NDL-20",
+      "title": "Handle today with no qualifying messages",
+      "actions": "Handle today with no qualifying messages",
+      "expected": "Empty destination and absent preview; source history preserved; sending after expansion works",
+      "tier": "B",
+      "priority": "P1"
+    },
+    {
+      "id": "FR-NDL-21",
+      "title": "Copy heterogeneous history and deletion state",
+      "actions": "Copy heterogeneous history and deletion state",
+      "expected": "Text/media/mentions/priority/sender/timestamps and deleted placeholders copied with new IDs; source untouched",
+      "tier": "B",
+      "priority": "P1"
+    },
+    {
+      "id": "FR-NDL-22",
+      "title": "Deliver Needl messages to all participants",
+      "actions": "Deliver Needl messages to all participants",
+      "expected": "Subscribe before send; each participant receives correlated message ID; DB and independent reads agree",
+      "tier": "B",
+      "priority": "P0"
+    },
+    {
+      "id": "FR-NDL-23",
+      "title": "Keep expanded conversation traffic out of original and outsider audiences",
+      "actions": "Keep expanded conversation traffic out of original and outsider audiences",
+      "expected": "New member receives destination message; notifications belong only to destination participants; source history and outsider inbox unchanged",
+      "tier": "B",
+      "priority": "P0"
+    },
+    {
+      "id": "FR-NDL-24",
+      "title": "Require authentication for all Needl endpoints",
+      "actions": "Require authentication for all Needl endpoints",
+      "expected": "Create/list/detail/members/rename/expand/message actions reject anonymous requests without writes",
+      "tier": "B",
+      "priority": "P0"
+    },
+    {
+      "id": "FR-NDL-25",
+      "title": "Edit and delete Needl messages with independent reload",
+      "actions": "Edit and delete Needl messages with independent reload",
+      "expected": "Edited content and tombstone persist in the correct group; unrelated group messages remain intact",
+      "tier": "B",
+      "priority": "P0"
+    },
+    {
+      "id": "FR-NDL-26",
+      "title": "Persist group pins and per-member receipts",
+      "actions": "Persist group pins and per-member receipts",
+      "expected": "Group member pin/unpin and read receipts persist; outsider actions denied; exact referenced message retained",
+      "tier": "B",
+      "priority": "P0"
+    },
+    {
+      "id": "FR-NDL-27",
+      "title": "Restore Needl identity after backend restart",
+      "actions": "Restore Needl identity after backend restart",
+      "expected": "Same group ID, title, members and message content survive restart against disposable DB",
+      "tier": "B",
+      "priority": "P0"
+    },
+    {
+      "id": "FR-NDL-28",
+      "title": "Converge concurrent expansion on one destination",
+      "actions": "Converge concurrent expansion on one destination",
+      "expected": "Concurrent same-membership expansions return one usable destination without duplicates or partial history",
+      "tier": "B",
+      "priority": "P0"
+    },
+    {
+      "id": "FR-NDL-29",
+      "title": "Recover history copy after a database write failure",
+      "actions": "Recover history copy after a database write failure",
+      "expected": "Fault returns bounded error; after fixture fault removed, retry returns complete intended history without duplicates; source unchanged",
+      "tier": "B",
+      "priority": "P0"
+    },
+    {
+      "id": "FR-NDL-30",
+      "title": "Keep group participation distinct from accepted pair consent",
+      "actions": "Keep group participation distinct from accepted pair consent",
+      "expected": "Group membership alone cannot create an accepted one-to-one DM; no hidden pair channel appears",
+      "tier": "B",
+      "priority": "P0"
+    },
+    {
+      "id": "FR-NDL-31",
+      "title": "Classify and label Needls consistently",
+      "actions": "Classify and label Needls consistently",
+      "expected": "1:1, self notes and space channels excluded; 3+ members or server group flag included; custom names, stale single-peer names and fallback labels correct",
+      "tier": "F",
+      "priority": "P1"
+    },
+    {
+      "id": "FR-NDL-32",
+      "title": "Create group through real client repository",
+      "actions": "Create group through real client repository",
+      "expected": "Exact primary endpoint/body and parsed group identity/members; no fake server correctness claim",
+      "tier": "F",
+      "priority": "P1"
+    },
+    {
+      "id": "FR-NDL-33",
+      "title": "Use legacy creation alias only for not-found",
+      "actions": "Use legacy creation alias only for not-found",
+      "expected": "404 triggers exactly one alias call; validation/forbidden/server failures propagate without fallback mutations",
+      "tier": "F",
+      "priority": "P1"
+    },
+    {
+      "id": "FR-NDL-34",
+      "title": "Serialize all history modes and device midnight",
+      "actions": "Serialize all history modes and device midnight",
+      "expected": "All/today/none payloads preserved; only today includes UTC ISO representing local midnight; returned group parsed",
+      "tier": "F",
+      "priority": "P1"
+    },
+    {
+      "id": "FR-NDL-35",
+      "title": "Parse list detail member and rename contracts",
+      "actions": "Parse list detail member and rename contracts",
+      "expected": "Correct routes/bodies and typed results; malformed data raises a client error, never fabricated empty success",
+      "tier": "F",
+      "priority": "P1"
+    },
+    {
+      "id": "FR-NDL-36",
+      "title": "Separate Needl tab from Direct and space channels",
+      "actions": "Separate Needl tab from Direct and space channels",
+      "expected": "Only group DMs rendered under Needl with correct group identity, member count, draft preview and per-conversation unread badge; 1:1 stays Direct",
+      "tier": "F",
+      "priority": "P0"
+    },
+    {
+      "id": "FR-NDL-37",
+      "title": "Show Needl empty and error states with recovery",
+      "actions": "Show Needl empty and error states with recovery",
+      "expected": "Empty create CTA navigates to Start DM; repository failure shows error; refresh success restores correct group",
+      "tier": "F",
+      "priority": "P0"
+    },
+    {
+      "id": "FR-NDL-38",
+      "title": "Preload only distinct Vocle colleague suggestions",
+      "actions": "Preload only distinct Vocle colleague suggestions",
+      "expected": "Self/empty IDs excluded; repeated colleagues deduplicated; no device address-book dependency",
+      "tier": "F",
+      "priority": "P1"
+    },
+    {
+      "id": "FR-NDL-39",
+      "title": "Debounce name search and discard stale responses",
+      "actions": "Debounce name search and discard stale responses",
+      "expected": "Two-character Start DM query executes after controlled debounce; newer query results survive older response completion",
+      "tier": "F",
+      "priority": "P1"
+    },
+    {
+      "id": "FR-NDL-40",
+      "title": "Distinguish search failure and restore suggestions",
+      "actions": "Distinguish search failure and restore suggestions",
+      "expected": "Visible error on failure; clearing search restores known colleagues rather than stale failed results",
+      "tier": "F",
+      "priority": "P1"
+    },
+    {
+      "id": "FR-NDL-41",
+      "title": "Create Needl from exact selected colleagues",
+      "actions": "Create Needl from exact selected colleagues",
+      "expected": "Two selected colleague IDs submitted once; resulting group route uses returned ID; stale 1:1 response cannot navigate as Needl",
+      "tier": "F",
+      "priority": "P0"
+    },
+    {
+      "id": "FR-NDL-42",
+      "title": "Retain selected colleagues after create failure",
+      "actions": "Retain selected colleagues after create failure",
+      "expected": "Error visible; selected identities retained; retry succeeds; duplicate in-flight taps do not create extra requests",
+      "tier": "F",
+      "priority": "P0"
+    },
+    {
+      "id": "FR-NDL-43",
+      "title": "Create multiple Needls without selection leakage",
+      "actions": "Create multiple Needls without selection leakage",
+      "expected": "Fresh creation screen starts unselected; second selection submits a distinct exact set and opens its own returned group",
+      "tier": "F",
+      "priority": "P0"
+    },
+    {
+      "id": "FR-NDL-44",
+      "title": "Preload add-people suggestions safely",
+      "actions": "Preload add-people suggestions safely",
+      "expected": "Sorted distinct colleagues; exclude self/existing/empty IDs; suggestions render without typing",
+      "tier": "F",
+      "priority": "P1"
+    },
+    {
+      "id": "FR-NDL-45",
+      "title": "Discard stale add-people search responses",
+      "actions": "Discard stale add-people search responses",
+      "expected": "Controlled debounce and out-of-order completions keep only latest query results",
+      "tier": "F",
+      "priority": "P1"
+    },
+    {
+      "id": "FR-NDL-46",
+      "title": "Normalize add-people phone lookup and filter forbidden selections",
+      "actions": "Normalize add-people phone lookup and filter forbidden selections",
+      "expected": "Phone normalized correctly; self and existing members not selectable; eligible lookup result shown",
+      "tier": "F",
+      "priority": "P1"
+    },
+    {
+      "id": "FR-NDL-47",
+      "title": "Expose add-people search failures and recover",
+      "actions": "Expose add-people search failures and recover",
+      "expected": "Failure shown as error, not empty result; subsequent successful query restores choices",
+      "tier": "F",
+      "priority": "P1"
+    },
+    {
+      "id": "FR-NDL-48",
+      "title": "Maintain selected chips across queries",
+      "actions": "Maintain selected chips across queries",
+      "expected": "Selections retained while searching; deleting chip removes exact ID; empty selection disables submit",
+      "tier": "F",
+      "priority": "P1"
+    },
+    {
+      "id": "FR-NDL-49",
+      "title": "Select history options and cancel safely",
+      "actions": "Select history options and cancel safely",
+      "expected": "Default all; today/none map to correct expansion payload; cancel/dispose produces no mutation or dangling timer error",
+      "tier": "F",
+      "priority": "P1"
+    },
+    {
+      "id": "FR-NDL-50",
+      "title": "Recover add-people submission and block double taps",
+      "actions": "Recover add-people submission and block double taps",
+      "expected": "Failed expansion retains sheet/history/selection; pending submission disabled; one successful retry navigates to returned group",
+      "tier": "F",
+      "priority": "P0"
+    },
+    {
+      "id": "FR-NDL-51",
+      "title": "Cancel or save rename with bounded trimmed input",
+      "actions": "Cancel or save rename with bounded trimmed input",
+      "expected": "Cancel no API request; max 80 chars enforced; save trimmed name and correct group ID; success acknowledged",
+      "tier": "F",
+      "priority": "P1"
+    },
+    {
+      "id": "FR-NDL-52",
+      "title": "Show rename error without claiming success",
+      "actions": "Show rename error without claiming success",
+      "expected": "Server error visible; no success snackbar or false local title update; original group identity retained",
+      "tier": "F",
+      "priority": "P1"
+    },
+    {
+      "id": "FR-NDL-53",
+      "title": "Display Needl members in stable self-first order",
+      "actions": "Display Needl members in stable self-first order",
+      "expected": "Self first then case-insensitive name order; correct count/roles/presence; original members list not mutated",
+      "tier": "F",
+      "priority": "P1"
+    },
+    {
+      "id": "FR-NDL-54",
+      "title": "Render group chat identity and group-only menu",
+      "actions": "Render group chat identity and group-only menu",
+      "expected": "Needl title not overwritten by first peer; member count and rename/people options shown; sender identity rendered for group message",
+      "tier": "F",
+      "priority": "P0"
+    }
+  ]
+}

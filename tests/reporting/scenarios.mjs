@@ -17,7 +17,7 @@ export const fixtureProfiles = {
 const context = {
   AUTH: 'A doctor signs in or restores a session.', PRO: 'A doctor edits their profile and preferences.', DISC: 'A doctor looks for a colleague.',
   SPC: 'Doctors create and manage membership in a department space.', CH: 'Doctors access and manage the channels they are permitted to use.',
-  REQ: 'Doctors request permission to start a private conversation.', DM: 'Doctors exchange private or group conversations.', MSG: 'A doctor sends or changes a channel message.',
+  NDL: 'Doctors create, manage and communicate within a private Needl group conversation.', REQ: 'Doctors request permission to start a private conversation.', DM: 'Doctors exchange private or group conversations.', MSG: 'A doctor sends or changes a channel message.',
   THR: 'Doctors follow replies to a message and find them in Needl.', SOC: 'Doctors react, pin or acknowledge reading messages.',
   NOT: 'A doctor receives and manages personal notifications.', PUSH: 'A doctor receives an alert or manages notification registration.',
   RT: 'Doctors communicate while connections and presence change.', SRCH: 'A doctor searches for accessible colleagues and clinical collaboration resources.',

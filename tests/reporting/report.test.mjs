@@ -101,8 +101,8 @@ async function flutterAggregationFixture(action){
 }
 const fixture = () => ({ context: syntheticContext, execution: syntheticExecution(), sourceKind:'pr-head',scope:'backend-all',environmentContractVersion:1,targetSha:'a'.repeat(40),harnessSha:'b'.repeat(40),fingerprint:'c'.repeat(64),selectedIds:ids,results:ids.map((id,i)=>({id,status:statuses[i],durationMs:10+i,error:i?'Synthetic diagnostic\nnext line':'',verifiedSubassertions:i===4?['Safe subassertion recorded']:undefined})),tally:Object.fromEntries(statuses.map(s=>[s,1])) });
 
-test('all 187 scenarios have unique metadata, prerequisites and executable definitions',()=>{
-  assert.equal(metadata.length,187);assert.equal(new Set(metadata.map(c=>c.id)).size,187);
+test('all 241 scenarios have unique metadata, prerequisites and executable definitions',()=>{
+  assert.equal(metadata.length,241);assert.equal(new Set(metadata.map(c=>c.id)).size,241);
   for(const c of metadata){assert(c.scenario.includes(c.actions)||c.id==='message-requests-02'||c.id==='FR-REQ-05'||c.id==='FR-PUSH-05');assert(c.prerequisites.length>60);assert(c.steps.length);assert(c.expected);assert(c.definitions.length,c.id);assert(c.definitionFingerprint);}
 });
 test('all six classifications and original counts survive normalization',()=>{
@@ -140,14 +140,14 @@ test('HTML and Markdown safely handle hostile markup, multiline logs, and missin
  try{const f=fixture();f.results[1].error='</script><img src=x onerror="window.pwned=1"> & multi\nline [execute](javascript:alert(1))';const r=normalize(f,metadata);await writeReports(dir,r);const html=await readFile(join(dir,'vocle-regression-dashboard.html'),'utf8');assert(!html.includes('</script><img'));assert(html.includes('\\u003c/script'));assert(!/https?:\/\/.*(?:\.js|\.css)["']/.test(html));const md=await readFile(join(dir,'vocle-regression-detailed-report.md'),'utf8');assert(md.includes('&lt;img'));assert(md.includes('\\[execute\\]\\(javascript:alert\\(1\\)\\)'));assert(md.includes('UNKNOWN'));assert(junit(r).includes('vocle.status'));}finally{await rm(dir,{recursive:true,force:true});}
 });
 test('synthetic backend, Flutter, device and sanity formats preserve complete inventories',async()=>{
- for(const [suite,count] of [['backend',147],['flutter',32],['device',8],['sanity',48]]){
+ for(const [suite,count] of [['backend',177],['flutter',56],['device',8],['sanity',48]]){
   const input=await functionalInput(suite);const r=normalizeLocalFixture(input,metadata,{suite});assert.equal(r.results.length,count);assert.equal(r.recorded,count);assert.equal(Object.values(r.counts).reduce((a,b)=>a+b,0),count);
  }
 });
 
-test('large report is generated, deterministic and preserves 187 IDs',async()=>{
+test('large report is generated, deterministic and preserves 241 IDs',async()=>{
  const dir=await mkdtemp(join(tmpdir(),'vocle-large-report-'));
- try{const input={scope:'full',source:{sha:'a'.repeat(40),kind:'commit'},harness:{sha:'b'.repeat(40)},results:metadata.map(c=>({id:c.id,status:'PASS',executed:true,evidence:'x'.repeat(3000)}))};const r=normalizeLocalFixture(input,metadata,{suite:'developer'});await writeReports(dir,r);const a=await readFile(join(dir,'vocle-regression-results.json'),'utf8');await writeReports(dir,r);assert.equal(await readFile(join(dir,'vocle-regression-results.json'),'utf8'),a);assert.equal(JSON.parse(a).results.length,187);}finally{await rm(dir,{recursive:true,force:true});}
+ try{const input={scope:'full',source:{sha:'a'.repeat(40),kind:'commit'},harness:{sha:'b'.repeat(40)},results:metadata.map(c=>({id:c.id,status:'PASS',executed:true,evidence:'x'.repeat(3000)}))};const r=normalizeLocalFixture(input,metadata,{suite:'developer'});await writeReports(dir,r);const a=await readFile(join(dir,'vocle-regression-results.json'),'utf8');await writeReports(dir,r);assert.equal(await readFile(join(dir,'vocle-regression-results.json'),'utf8'),a);assert.equal(JSON.parse(a).results.length,241);}finally{await rm(dir,{recursive:true,force:true});}
 });
 test('publication excludes binaries/runtime and sanitizes raw logs without altering originals',async()=>{
  const dir=await mkdtemp(join(tmpdir(),'vocle-stage-test-'));
@@ -166,7 +166,7 @@ test('CLI optional history import completes without a circular top-level await',
  try{
   const input=join(dir,'synthetic-flutter.json');await writeFile(input,JSON.stringify(await functionalInput('flutter')));
   const out=execFileSync(process.execPath,[join(root,'tests/reporting/report.mjs'),'--suite','flutter','--input',input,'--output',dir,'--history','true'],{encoding:'utf8',timeout:10000,env:{...process.env,GITHUB_TOKEN:'',GITHUB_RUN_ID:''},windowsHide:true});
-  assert(JSON.parse(out).counts.PASS===6);assert((await readFile(join(dir,'vocle-regression-dashboard.html'))).length);
+  assert(JSON.parse(out).counts.PASS===10);assert((await readFile(join(dir,'vocle-regression-dashboard.html'))).length);
  }finally{await rm(dir,{recursive:true,force:true});}
 });
 test('a broken aggregate tally does not relabel an observed application FAIL as ERROR',async()=>{

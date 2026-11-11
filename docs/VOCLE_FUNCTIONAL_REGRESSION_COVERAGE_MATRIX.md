@@ -1,19 +1,19 @@
 # Vocle functional regression coverage matrix
 
-Coverage inventory; execution must be established by each current report. Hosted coverage is 187 total / 179 hosted / 8 LOCAL_ONLY; Android remains unexecuted SKIP in PR reports. Count unit = stable parent testcase ID, including boundary subchecks once. **23 feature modules, 6 cross-feature journey cases, 187 total cases = 48 retained sanity + 139 new.** Existing Flutter tests support several new scenarios but do not satisfy their complete integration contracts.
+Coverage inventory; execution must be established by each current report. Hosted coverage is 241 total / 233 hosted / 8 LOCAL_ONLY; Android remains unexecuted SKIP in PR reports. Count unit = stable parent testcase ID, including boundary subchecks once. **24 feature modules, 6 cross-feature journey cases, 241 total cases = 48 retained sanity + 193 new.** Existing Flutter tests support several new scenarios but do not satisfy their complete integration contracts.
 
 ## Reconciled totals
 
 | Distribution | Count |
 |---|---:|
-| P0 | 96 |
-| P1 | 81 |
+| P0 | 119 |
+| P1 | 112 |
 | P2 | 10 |
-| B: backend HTTP/DB/Socket/provider-contract | 147 |
-| F: Flutter model/widget/state integration | 32 |
+| B: backend HTTP/DB/Socket/provider-contract | 177 |
+| F: Flutter model/widget/state integration | 56 |
 | D: device/platform and UI journeys | 8 |
 | Retained sanity, all B/P0 | 48 |
-| New B / F / D | 99 / 32 / 8 |
+| New B / F / D | 129 / 56 / 8 |
 
 P0 assignment to retained sanity reflects its existing gating role; it does not imply a color or support feature is intrinsically as critical as a handoff. Each case has exactly one primary tier. Secondary observations (e.g. socket and persistence in one B case) do not add counts.
 
@@ -47,7 +47,8 @@ Existing cases that span features are assigned once to their primary module for 
 | Links/forward LINK | 0 | 4 | 4 | 0/3/1 | Forward payload, missing deep-link target, push routing, QR |
 | Runtime RUN | 1 | 3 | 4 | 3/1/0 | Process restart, DB outage, transport/parse recovery |
 | Cross-feature JRN (not a module) | 0 | 6 | 6 | 4/0/2 | Connected journeys below |
-| **Total** | **48** | **139** | **187** | **147/32/8** | Source-grounded design; not a passing coverage claim |
+| Needl group conversations NDL | 0 | 54 | 54 | 30/24/0 | Exact identity/participants, expansion/history, permission/recovery, hub/create/manage widgets and repository contracts; NDL-D1 undecided |
+| **Total** | **48** | **193** | **241** | **177/56/8** | Source-grounded design; not a passing coverage claim |
 
 ## Existing coverage quality and evidence
 
@@ -93,3 +94,8 @@ Local drafts and dashboard preferences have useful partial coverage. Critical Fl
 Q1–Q14 in the master plan map to explicit catalog rows. Highest priority decisions: preview/aggregate updates, conversation history graph, handoff audience/pagination, retry/partial-write semantics, media pipeline, socket convergence and account-local data. Preserve verified assertions while disputed subassertions remain NEEDS_DECISION. Do not claim full success with blocked or undecided cases.
 
 Unsupported roster/approval/ownership-transfer/calls/scheduled-send/synced-bookmarks features are exclusions, not covered scenarios. No estimate of 100% assurance is made. This matrix measures planned meaningful behavior coverage, not deployed behavior, branch coverage, or all possible concurrency schedules.
+
+
+## November Needl expansion
+
+The original 187 cases are frozen unchanged. FR-NDL-01..54 append 30 backend and 24 Flutter cases against upstream master 4c01dc2. See VOCLE_NEEDL_REGRESSION_PROGRESS.md for executable evidence and limits. This growth is not 241 passed: genuine failures remain, NDL-D1 is unresolved, and the original eight Android cases remain LOCAL_ONLY. Older inventory descriptions below/above are dated baseline research, not new execution claims.
