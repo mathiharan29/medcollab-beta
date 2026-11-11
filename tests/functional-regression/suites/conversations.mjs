@@ -1,11 +1,19 @@
 import assert from 'node:assert/strict';
 import { runModule } from '../src/module-runner.mjs';
 
+function expansionActivity(messages, added, history) {
+  const activity = messages.filter((item) => item.type === 'system' && item.content.systemEvent === 'member_added');
+  assert.equal(activity.length, 1, 'A new Needl should record exactly one member-added line');
+  assert.deepEqual(activity[0].content.targetUserIds.map(String), [added.userId]);
+  assert.ok(activity[0].content.text.includes(history));
+  return activity[0];
+}
+
 const cases = [{
   id: 'FR-DM-01', module: 'DM',
-  prerequisiteSeed: 'Accepted A/B request inserted directly for pair-delegation branch; no accept endpoint behavior credited',
+  prerequisiteSeed: 'Accepted A/B request inserted directly for pair-delegation and legacy DM adoption',
   run: async ({ identity, request, db }) => {
-    const a = await identity('A'), b = await identity('B'), c = await identity('C');
+    const a = await identity('A'), b = await identity('B'), c = await identity('C'), d = await identity('D');
     const space = (await request('/api/spaces', { method: 'POST', token: a.token, body: { name: 'Synthetic Group Alias', type: 'department' }, expectedStatus: 201 })).data.space;
     for (const person of [b, c]) await request('/api/spaces/join', { method: 'POST', token: person.token, body: { inviteCode: space.inviteCode } });
     const first = await request('/api/channels/dm/group', { method: 'POST', token: a.token, body: { userIds: [c.userId, b.userId, c.userId, a.userId] } });
@@ -15,17 +23,35 @@ const cases = [{
     assert.deepEqual(new Set(reopened.data.channel.members.map((member) => member._id || member)), new Set([a.userId, b.userId, c.userId]));
     const selfOnly = await request('/api/channels/dm/group', { method: 'POST', token: a.token, body: { userIds: [a.userId] }, expectedStatus: 400 });
     assert.equal(selfOnly.payload.success, false);
-    await db(async (connection) => {
-      const collection = connection.collection('messagerequests');
-      await collection.insertOne({ fromUserId: new connection.base.Types.ObjectId(a.userId), toUserId: new connection.base.Types.ObjectId(b.userId), status: 'accepted', createdAt: new Date(), updatedAt: new Date() });
+    await request('/api/message-requests', { method: 'POST', token: a.token, body: { toUserId: d.userId }, expectedStatus: 201 });
+    const strangerGroup = { userIds: [b.userId, d.userId] };
+    await request('/api/channels/dm/group', { method: 'POST', token: a.token, body: strangerGroup, expectedStatus: 403 });
+    const legacyId = await db(async (connection) => {
+      const objectId = (id) => new connection.base.Types.ObjectId(id);
+      const aId = objectId(a.userId), bId = objectId(b.userId), dId = objectId(d.userId);
+      const channels = connection.collection('channels');
+      assert.equal(await channels.countDocuments({ type: 'direct', members: dId }), 0);
+      await connection.collection('messagerequests').insertOne({ fromUserId: aId, toUserId: bId, status: 'accepted', createdAt: new Date(), updatedAt: new Date() });
+      const inserted = await channels.insertOne({ spaceId: null, type: 'direct', members: [aId, bId], createdBy: aId, isArchived: false, createdAt: new Date(), updatedAt: new Date() });
+      return String(inserted.insertedId);
     });
+    const path = `/api/channels/${legacyId}/messages`;
+    const historical = (await request(path, { method: 'POST', token: b.token, body: { content: { text: 'Synthetic legacy DM history' } }, expectedStatus: 201 })).data.message;
     const pair = await request('/api/channels/dm/group', { method: 'POST', token: a.token, body: { userIds: [b.userId] } });
     const direct = await request('/api/channels/dm', { method: 'POST', token: a.token, body: { userId: b.userId } });
-    assert.equal(pair.data.channel._id, direct.data.channel._id);
+    assert.equal(pair.data.channel._id, legacyId);
+    assert.equal(direct.data.channel._id, legacyId);
+    assert.deepEqual((await request(path, { token: a.token })).data.messages.map((item) => item._id), [historical._id]);
+    await request('/api/users/me', { method: 'PUT', token: d.token, body: { notifications: { allowGroupAddsFromAnyone: true } } });
+    const optedIn = (await request('/api/channels/dm/group', { method: 'POST', token: a.token, body: strangerGroup })).data.channel;
+    assert.deepEqual(new Set(optedIn.members.map((member) => member._id || member)), new Set([a.userId, b.userId, d.userId]));
     await db(async (connection) => {
       const groups = await connection.collection('channels').find({ spaceId: null, members: new connection.base.Types.ObjectId(a.userId) }).toArray();
-      assert.equal(groups.filter((item) => item.members.length === 3).length, 1);
-      assert.equal(groups.filter((item) => item.members.length === 2).length, 1);
+      assert.equal(groups.filter((item) => item.members.length === 3).length, 2);
+      const pairs = groups.filter((item) => item.members.length === 2);
+      assert.equal(pairs.length, 1);
+      assert.equal(String(pairs[0]._id), legacyId);
+      assert.ok(pairs[0].memberPairKey, 'Reopening the legacy pair must backfill its membership key');
     });
   },
 }, {
@@ -141,7 +167,9 @@ const cases = [{
     assert.deepEqual(new Set(expanded.data.channel.members.map((member) => member._id || member)), new Set([a.userId, b.userId, c.userId]));
     await db(async (connection) => {
       const source = await connection.collection('messages').find({ channelId: new connection.base.Types.ObjectId(sourceId) }).sort({ createdAt: 1 }).toArray();
-      const copies = await connection.collection('messages').find({ channelId: new connection.base.Types.ObjectId(destinationId) }).sort({ createdAt: 1 }).toArray();
+      const messages = await connection.collection('messages').find({ channelId: new connection.base.Types.ObjectId(destinationId) }).sort({ createdAt: 1 }).toArray();
+      const activity = expansionActivity(messages, c, "today's messages shared");
+      const copies = messages.filter((item) => !item._id.equals(activity._id));
       assert.deepEqual(source.map((item) => item.content.text), samples.map(([label]) => `synthetic today ${label}`));
       assert.deepEqual(copies.map((item) => item.content.text), ['synthetic today at', 'synthetic today after']);
       // Copied timestamps remain the original server-stored createdAt values.
@@ -172,17 +200,17 @@ const cases = [{
         createdAt: new Date(start + index * 1000), updatedAt: new Date(start + index * 1000),
       }));
       const inserted = await connection.collection('messages').insertMany(roots);
-      return {
-        sourceId: String(source.insertedId),
-        lastSourceId: String(inserted.insertedIds[501]),
-      };
+      assert.equal(inserted.insertedCount, 502);
+      return { sourceId: String(source.insertedId) };
     });
     const expanded = await request(`/api/channels/${fixture.sourceId}/expand`, { method: 'POST', token: a.token, body: { userIds: [c.userId], history: 'all' } });
     const destinationId = expanded.data.channel._id;
     assert.notEqual(destinationId, fixture.sourceId);
     await db(async (connection) => {
       const source = await connection.collection('messages').find({ channelId: new connection.base.Types.ObjectId(fixture.sourceId) }).sort({ createdAt: 1 }).toArray();
-      const copies = await connection.collection('messages').find({ channelId: new connection.base.Types.ObjectId(destinationId) }).sort({ createdAt: 1 }).toArray();
+      const messages = await connection.collection('messages').find({ channelId: new connection.base.Types.ObjectId(destinationId) }).sort({ createdAt: 1 }).toArray();
+      const activity = expansionActivity(messages, c, 'earlier messages shared');
+      const copies = messages.filter((item) => !item._id.equals(activity._id));
       assert.equal(source.length, 502);
       assert.equal(source.filter((item) => item.isDeleted).length, 1);
       // No 500-cap: every source root (including deleted) is copyable/scrollable.
@@ -193,9 +221,9 @@ const cases = [{
       assert.equal(copies[501].content.text, 'This message was deleted');
       assert.ok(copies.every((copy) => !source.some((original) => original._id.equals(copy._id))));
       const destination = await connection.collection('channels').findOne({ _id: new connection.base.Types.ObjectId(destinationId) });
-      assert.equal(String(destination.lastMessage.messageId), fixture.lastSourceId, 'Destination preview must point at the source message id');
-      assert.equal(destination.lastMessage.text, 'This message was deleted');
-      assert.ok(!copies.some((copy) => String(copy._id) === String(destination.lastMessage.messageId)));
+      assert.equal(String(destination.lastMessage.messageId), String(activity._id));
+      assert.equal(destination.lastMessage.type, 'system');
+      assert.equal(destination.lastMessage.text, activity.content.text);
       assert.deepEqual(new Set(destination.members.map(String)), new Set([a.userId, b.userId, c.userId]));
     });
   },
@@ -219,7 +247,9 @@ const cases = [{
     const destinationId = expanded.data.channel._id;
     const graph = await db(async (connection) => {
       const source = await connection.collection('messages').find({ channelId: new connection.base.Types.ObjectId(sourceId) }).toArray();
-      const copies = await connection.collection('messages').find({ channelId: new connection.base.Types.ObjectId(destinationId) }).toArray();
+      const messages = await connection.collection('messages').find({ channelId: new connection.base.Types.ObjectId(destinationId) }).toArray();
+      const activity = expansionActivity(messages, c, 'earlier messages shared');
+      const copies = messages.filter((item) => !item._id.equals(activity._id));
       assert.equal(source.length, 3);
       assert.equal(copies.length, 3);
       const byText = (list, text) => list.find((item) => item.content.text === text);
@@ -269,14 +299,16 @@ const cases = [{
     assert.equal(reopened.data.channel._id, destinationId);
     assert.deepEqual(new Set(reopened.data.channel.members.map((member) => member._id || member)), new Set([a.userId, b.userId, c.userId]));
     const destination = await request(`/api/channels/${destinationId}/messages`, { token: c.token });
-    assert.deepEqual(destination.data.messages.map((message) => message.content.text), ['synthetic source before expansion']);
+    const activity = expansionActivity(destination.data.messages, c, 'earlier messages shared');
+    assert.deepEqual(destination.data.messages.filter((message) => message._id !== activity._id).map((message) => message.content.text), ['synthetic source before expansion']);
     await db(async (connection) => {
       const source = await connection.collection('messages').find({ channelId: new connection.base.Types.ObjectId(sourceId) }).toArray();
       const copies = await connection.collection('messages').find({ channelId: new connection.base.Types.ObjectId(destinationId) }).toArray();
       assert.deepEqual(new Set(source.map((message) => String(message._id))), new Set([firstSource._id, secondSource._id]));
-      assert.equal(copies.length, 1);
-      assert.notEqual(String(copies[0]._id), firstSource._id);
-      assert.equal(copies[0].content.text, 'synthetic source before expansion');
+      assert.equal(copies.length, 2);
+      const copiedRoot = copies.find((message) => String(message._id) !== activity._id);
+      assert.notEqual(String(copiedRoot._id), firstSource._id);
+      assert.equal(copiedRoot.content.text, 'synthetic source before expansion');
       const groups = await connection.collection('channels').find({ type: 'direct', members: { $all: [a, b, c].map((person) => new connection.base.Types.ObjectId(person.userId)) }, isArchived: false }).toArray();
       assert.equal(groups.length, 1);
       assert.equal(String(groups[0]._id), destinationId);

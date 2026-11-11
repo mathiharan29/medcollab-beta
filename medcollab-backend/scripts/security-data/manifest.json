@@ -195,7 +195,7 @@
     {
       "caseId": "VOCLE-805",
       "name": "Editing a deleted message cannot restore stored text",
-      "expected": "Deleted message update is denied and placeholder content remains unchanged",
+      "expected": "Delete for everyone removes the row; a later edit is denied and recreates nothing",
       "scope": "HTTP",
       "sources": [
         "src/features/messages/message.model.js",

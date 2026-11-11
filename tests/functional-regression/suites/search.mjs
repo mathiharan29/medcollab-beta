@@ -83,7 +83,7 @@ const cases = [{
     assert.deepEqual(oneAfterArchive.data.messages.map((item) => item._id), [messageIds[50]]);
     assert.deepEqual(oneAfterArchive.data.attachments.map((item) => item._id), [attachmentIds[50]]);
     await db(async (connection) => {
-      assert.equal(await connection.collection('messages').countDocuments({ channelId: new connection.base.Types.ObjectId(channelId) }), 102);
+      assert.equal(await connection.collection('messages').countDocuments({ channelId: new connection.base.Types.ObjectId(channelId), type: { $in: ['text', 'document'] } }), 102);
       assert.equal((await connection.collection('channels').findOne({ _id: new connection.base.Types.ObjectId(archived._id) })).isArchived, true);
     });
   },

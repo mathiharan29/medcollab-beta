@@ -114,7 +114,7 @@ const cases = [{
       const inbox = await request('/api/notifications', { token: b.token });
       assert.deepEqual(inbox.data.notifications.map((item) => item.referenceId), [second._id], 'No automatic replay of the first failed notification is promised');
       await db(async (connection) => {
-        assert.equal(await connection.collection('messages').countDocuments({ channelId: new connection.base.Types.ObjectId(general) }), 2);
+        assert.equal(await connection.collection('messages').countDocuments({ channelId: new connection.base.Types.ObjectId(general), type: 'text' }), 2);
         assert.equal(await connection.collection('notifications').countDocuments({ referenceId: new connection.base.Types.ObjectId(second._id), userId: new connection.base.Types.ObjectId(b.userId) }), 1);
       });
     } finally { socket.disconnect(); }

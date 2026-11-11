@@ -136,8 +136,10 @@ async function run() {
       const [noneMessages, allMessages, sourceMessages] = await Promise.all([
         request(`/api/channels/${none._id}/messages`, { token: people.A.token }), request(`/api/channels/${all._id}/messages`, { token: people.A.token }), request(`/api/channels/${dm._id}/messages`, { token: people.A.token }),
       ]);
-      assert(none.members.length === 3 && expectSuccess(noneMessages, 'no-history results').messages.length === 0, 'No-history expansion copied messages.');
-      assert(all.members.length === 3 && expectSuccess(allMessages, 'all-history results').messages.some((message) => message.content.text === marker('expansion-source')), 'All-history expansion did not copy source content.');
+      const noHistory = expectSuccess(noneMessages, 'no-history results').messages;
+      const withHistory = expectSuccess(allMessages, 'all-history results').messages;
+      assert(none.members.length === 3 && noHistory.length === 1 && noHistory[0].type === 'system' && noHistory[0].content.systemEvent === 'member_added', 'No-history expansion should contain only the add-member activity line.');
+      assert(all.members.length === 3 && withHistory.some((message) => message.content.text === marker('expansion-source')) && withHistory.some((message) => message.type === 'system' && message.content.systemEvent === 'member_added'), 'All-history expansion did not retain source content and add-member activity.');
       assert(expectSuccess(sourceMessages, 'source history').messages.some((message) => message._id === sourceMessage._id), 'Expansion changed source conversation history.');
     }, Boolean(dm));
   } finally {

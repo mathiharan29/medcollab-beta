@@ -15,6 +15,8 @@ await runModule('profile', [{
     await request('/api/spaces', { token, expectedStatus: 403 });
     const changed = await request('/api/users/me', { method: 'PUT', token, body: { name: 'Dr Synthetic New', role: 'intern', institution: 'Synthetic Institute' } });
     assert.equal(changed.data.user.isOnboarded, true);
+    const assigned = changed.data.user.vocleUsername;
+    assert.equal(assigned, 'syntheticnew');
     const me = await request('/api/users/me', { token });
     assert.equal(me.data.user.name, 'Dr Synthetic New');
     assert.equal(me.data.user.isOnboarded, true);
@@ -24,10 +26,12 @@ await runModule('profile', [{
     const returning = await request('/api/auth/verify-otp', { method: 'POST', body: { phone, otp: await capturedOtp(inbox, phone) } });
     assert.equal(returning.data.isNewUser, false);
     assert.equal(returning.data.user._id, first.data.user._id);
+    assert.equal(returning.data.user.vocleUsername, assigned);
     await db(async (connection) => {
       const stored = await connection.collection('users').findOne({ phone });
       assert.equal(stored.name, 'Dr Synthetic New');
       assert.equal(stored.isOnboarded, true);
+      assert.equal(stored.vocleUsername, assigned);
     });
   },
 }, {
@@ -66,7 +70,7 @@ await runModule('profile', [{
   },
 }, {
   id: 'FR-PRO-04', module: 'PRO',
-  prerequisiteSeed: 'Existing A/B direct channel inserted directly to exercise profile projections; live direct-DM creation returns 500 on pinned upstream and is not credited here',
+  prerequisiteSeed: 'Existing A/B direct channel seeded to exercise profile projections independently of DM creation',
   run: async ({ identity, request, db }) => {
     const a = await identity('A'), b = await identity('B');
     const space = (await request('/api/spaces', { method: 'POST', token: a.token, body: { name: 'Synthetic Profile Projection', type: 'department' }, expectedStatus: 201 })).data.space;
@@ -100,6 +104,24 @@ await runModule('profile', [{
       for (const [field, value] of Object.entries(changed)) assert.equal(stored[field], value);
       const channel = await connection.collection('channels').findOne({ _id: new connection.base.Types.ObjectId(dmId) });
       assert.deepEqual(new Set(channel.members.map(String)), new Set([a.userId, b.userId]));
+    });
+    const available = async (token, username) => (await request(`/api/users/username-available?u=${encodeURIComponent(username)}`, { token })).data;
+    assert.equal((await available(a.token, ' @Synthetic_Peer ')).available, true);
+    assert.equal((await available(a.token, 'admin')).available, false);
+    const handle = await request('/api/users/me', { method: 'PUT', token: b.token, body: { vocleUsername: ' Synthetic_Peer ', avatarUrl: null } });
+    assert.equal(handle.data.user.vocleUsername, 'synthetic_peer');
+    assert.equal(handle.data.user.avatarUrl, null);
+    assert.equal((await available(a.token, '@SYNTHETIC_PEER')).available, false);
+    await request('/api/users/me', { method: 'PUT', token: a.token, body: { vocleUsername: 'synthetic_peer' }, expectedStatus: 409 });
+    const reload = (await request(`/api/users/${b.userId}`, { token: a.token })).data.user;
+    assert.equal(reload.vocleUsername, 'synthetic_peer');
+    assert.equal(reload.avatarUrl, null);
+    const membersAfterRemoval = (await request(`/api/channels/${dmId}/members`, { token: a.token })).data.members;
+    assert.equal(membersAfterRemoval.find((item) => item._id === b.userId).avatarUrl, null);
+    await db(async (connection) => {
+      const users = connection.collection('users');
+      assert.equal(await users.countDocuments({ vocleUsername: 'synthetic_peer' }), 1);
+      assert.equal((await users.findOne({ phone: b.phone })).avatarUrl, null);
     });
   },
 }, {
