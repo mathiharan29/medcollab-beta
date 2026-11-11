@@ -141,7 +141,7 @@
       "id": "FR-NDL-18",
       "title": "Omitted history creates a fresh conversation",
       "actions": "Omitted history creates a fresh conversation",
-      "expected": "No source messages copied when history omitted; new destination accepts independent subsequent messages",
+      "expected": "No source messages copied when history is omitted; the destination records member-added activity and accepts independent messages",
       "tier": "B",
       "priority": "P1"
     },
@@ -157,7 +157,7 @@
       "id": "FR-NDL-20",
       "title": "Handle today with no qualifying messages",
       "actions": "Handle today with no qualifying messages",
-      "expected": "Empty destination and absent preview; source history preserved; sending after expansion works",
+      "expected": "Destination contains only member-added activity with its matching preview; source history survives and new messages can be sent",
       "tier": "B",
       "priority": "P1"
     },
@@ -197,7 +197,7 @@
       "id": "FR-NDL-25",
       "title": "Edit and delete Needl messages with independent reload",
       "actions": "Edit and delete Needl messages with independent reload",
-      "expected": "Edited content and tombstone persist in the correct group; unrelated group messages remain intact",
+      "expected": "Edited content persists before delete-for-everyone; deleted message is absent from storage and participant history; unrelated group stays intact",
       "tier": "B",
       "priority": "P0"
     },
@@ -213,7 +213,7 @@
       "id": "FR-NDL-27",
       "title": "Restore Needl identity after backend restart",
       "actions": "Restore Needl identity after backend restart",
-      "expected": "Same group ID, title, members and message content survive restart against disposable DB",
+      "expected": "Same group ID, title, members, rename activity and message survive a backend restart against the disposable DB",
       "tier": "B",
       "priority": "P0"
     },
@@ -221,7 +221,7 @@
       "id": "FR-NDL-28",
       "title": "Converge concurrent expansion on one destination",
       "actions": "Converge concurrent expansion on one destination",
-      "expected": "Concurrent same-membership expansions return one usable destination without duplicates or partial history",
+      "expected": "Concurrent same-membership expansions return one usable destination with one activity line and complete, nonduplicated history",
       "tier": "B",
       "priority": "P0"
     },

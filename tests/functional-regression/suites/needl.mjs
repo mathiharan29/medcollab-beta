@@ -57,6 +57,19 @@ async function rows(c, id) {
       .toArray(),
   );
 }
+async function expandedHistory(c, f, channelId) {
+  const messages = await rows(c, channelId);
+  const activity = messages.filter((message) => message.type === "system");
+  assert.equal(activity.length, 1, "Expansion records one membership activity line");
+  const [added] = activity;
+  assert.equal(added.content.systemEvent, "member_added");
+  assert.equal(String(added.senderId), f.people.A.userId);
+  assert.deepEqual(added.content.targetUserIds.map(String), [f.people.D.userId]);
+  const channel = await stored(c, channelId);
+  assert.equal(String(channel.lastMessage.messageId), String(added._id));
+  assert.equal(channel.lastMessage.type, "system");
+  return messages.filter((message) => message.type !== "system");
+}
 async function seed(c, id, person, samples) {
   return c.db(async (db) => {
     const O = db.base.Types.ObjectId;
@@ -523,10 +536,12 @@ const cases = [
           body: { userIds: [f.people.D.userId] },
         })
       ).data.channel;
-      assert.equal((await rows(c, next._id)).length, 0);
-      await send(c, f, next._id);
+      assert.equal((await expandedHistory(c, f, next._id)).length, 0);
+      const sent = await send(c, f, next._id);
       assert.equal((await rows(c, g._id)).length, 1);
-      assert.equal((await rows(c, next._id)).length, 1);
+      const destination = await rows(c, next._id);
+      assert.equal(destination.length, 2);
+      assert.ok(destination.some((message) => String(message._id) === sent._id));
     },
   },
   {
@@ -549,7 +564,7 @@ const cases = [
           todayStart: new Date(boundary).toISOString(),
         })
       ).data.channel;
-      const copies = await rows(c, next._id);
+      const copies = await expandedHistory(c, f, next._id);
       assert.deepEqual(
         copies.map((m) => m.content.text),
         ["Boundary 1", "Boundary 2"],
@@ -575,10 +590,11 @@ const cases = [
           todayStart: "2026-11-03T00:00:00Z",
         })
       ).data.channel;
-      assert.equal((await rows(c, next._id)).length, 0);
-      assert.equal(next.lastMessage?.messageId || null, null);
-      await send(c, f, next._id);
-      assert.equal((await rows(c, next._id)).length, 1);
+      assert.equal((await expandedHistory(c, f, next._id)).length, 0);
+      const sent = await send(c, f, next._id);
+      const destination = await rows(c, next._id);
+      assert.equal(destination.length, 2);
+      assert.ok(destination.some((message) => String(message._id) === sent._id));
       assert.equal((await rows(c, g._id)).length, 1);
     },
   },
@@ -610,7 +626,7 @@ const cases = [
         },
       ]);
       const next = (await expand(c, f, g._id, ["D"], "all")).data.channel;
-      const copies = await rows(c, next._id);
+      const copies = await expandedHistory(c, f, next._id);
       assert.equal(copies.length, source.length);
       for (let i = 0; i < source.length; i++) {
         assert.notEqual(String(copies[i]._id), String(source[i]._id));
@@ -625,7 +641,6 @@ const cases = [
         for (const [key, value] of Object.entries(source[i].content))
           assert.deepEqual(copies[i].content[key], value);
       }
-      assert.equal(next.lastMessage.text, "This message was deleted");
       assert.deepEqual(
         (await rows(c, g._id)).map((m) => String(m._id)),
         source.map((m) => String(m._id)),
@@ -676,6 +691,7 @@ const cases = [
       const f = await fixture(c, ["A", "B", "C", "D", "E"]);
       const g = await f.create(),
         next = (await expand(c, f, g._id, ["D"])).data.channel;
+      assert.equal((await expandedHistory(c, f, next._id)).length, 0);
       const sockets = await Promise.all(
         ["D", "E"].map((l) => connectSocket(null, c.origin, f.people[l].token)),
       );
@@ -692,7 +708,9 @@ const cases = [
         assert.equal(((await event).message || (await event))._id, message._id);
         assert.equal(outsider.length, 0);
         assert.equal((await rows(c, g._id)).length, 0);
-        assert.equal((await rows(c, next._id)).length, 1);
+        const destination = await rows(c, next._id);
+        assert.equal(destination.length, 2);
+        assert.ok(destination.some((row) => String(row._id) === message._id));
         const notes = (
           await c.request("/api/notifications", { token: f.people.E.token })
         ).data.notifications;
@@ -746,13 +764,15 @@ const cases = [
         body: { content: { text: "Edited Needl note" } },
       });
       assert.equal((await rows(c, g._id))[0].content.text, "Edited Needl note");
-      await c.request(`/api/channels/${g._id}/messages/${sent._id}`, {
+      await c.request(`/api/channels/${g._id}/messages/${sent._id}?scope=everyone`, {
         method: "DELETE",
         token: f.people.A.token,
       });
-      const saved = (await rows(c, g._id))[0];
-      assert.equal(saved.isDeleted, true);
-      assert.equal(saved.content.text, "This message was deleted");
+      assert.equal((await rows(c, g._id)).length, 0);
+      const history = await c.request(`/api/channels/${g._id}/messages`, {
+        token: f.people.B.token,
+      });
+      assert.ok(!history.data.messages.some((message) => message._id === sent._id));
       assert.equal(
         (await rows(c, other._id))[0].content.text,
         "Other group survives",
@@ -811,7 +831,12 @@ const cases = [
       ).data.channel;
       assert.equal(detail.name, "Restart Needl");
       assert.deepEqual(members(detail), members(g));
-      assert.equal((await rows(c, g._id))[0]._id.toString(), m._id);
+      const persisted = await rows(c, g._id);
+      assert.deepEqual(
+        persisted.map((message) => [message.type, message.content.systemEvent]),
+        [["system", "group_renamed"], ["text", null]],
+      );
+      assert.equal(String(persisted[1]._id), m._id);
       assert.ok(
         (
           await c.request(`/api/channels/${g._id}/messages`, {
@@ -837,7 +862,7 @@ const cases = [
       );
       const ids = settled.map((r) => r.value.data.channel._id);
       assert.equal(new Set(ids).size, 1);
-      assert.equal((await rows(c, ids[0])).length, 1);
+      assert.equal((await expandedHistory(c, f, ids[0])).length, 1);
       const count = await c.db((db) =>
         db
           .collection("channels")

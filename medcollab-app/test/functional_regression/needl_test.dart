@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:medcollab_app/core/di/app_dependencies.dart';
 import 'package:medcollab_app/core/error/app_exception.dart';
 import 'package:medcollab_app/core/network/api_client.dart';
+import 'package:medcollab_app/core/network/shared_fetch.dart';
 import 'package:medcollab_app/core/presence/presence_cubit.dart';
 import 'package:medcollab_app/core/router/app_routes.dart';
 import 'package:medcollab_app/core/storage/secure_storage_service.dart';
@@ -199,6 +200,7 @@ void main() {
         socketClient: socket);
   });
   setUp(() {
+    SharedFetch.invalidateAll();
     transport.calls.clear();
     transport.handler = null;
     transport.dms = [
@@ -423,12 +425,14 @@ void main() {
     expect(find.byType(StartDmPage), findsOneWidget);
     transport.handler =
         (r) => r.path.endsWith('/channels/dm') ? reply({}, status: 500) : null;
+    SharedFetch.invalidateAll();
     await mount(t, const MessagesHubPage());
     await t.tap(find.text('Needl'));
     await t.pumpAndSettle();
     expect(find.text('Could not load Needls'), findsOneWidget);
     transport.handler = null;
     transport.dms = [group()];
+    SharedFetch.invalidateAll();
     await mount(t, const MessagesHubPage());
     await t.tap(find.text('Needl'));
     await t.pumpAndSettle();
@@ -445,6 +449,7 @@ void main() {
     expect(find.text('Doctor A'), findsNothing);
     expect(find.text('Doctor B'), findsOneWidget);
     expect(find.text('Doctor C'), findsOneWidget);
+    expect(find.text('Doctor D'), findsOneWidget);
     expect(transport.calls.any((r) => r.path.contains('contacts')), false);
   });
   testWidgets('FR-NDL-39 Start DM debounce and stale response ordering',
@@ -490,7 +495,9 @@ void main() {
     expect(find.text('Could not search colleagues'), findsOneWidget);
     await t.enterText(find.byType(TextField).first, '');
     await t.pumpAndSettle();
-    expect(find.text('Your Vocle colleagues'), findsOneWidget);
+    expect(find.text('People you chat with'), findsOneWidget);
+    expect(find.text('Doctor B'), findsOneWidget);
+    expect(find.text('Doctor C'), findsOneWidget);
     expect(find.text('Could not search colleagues'), findsNothing);
   });
   testWidgets('FR-NDL-41 exact selection and stale pair navigation guard',
