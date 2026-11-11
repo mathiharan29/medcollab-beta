@@ -59,7 +59,7 @@ All rows below: coverage **EXISTING**, tier **B**, priority **P0**, feasible usi
 | messaging-and-needl-02 | Send three roots; page limit=2 then before cursor; ordered roots have no overlap. |
 | messaging-and-needl-03 | Quote prior message via replyToId; assert mutation response replyTo ID/text; independent persistence is added in FR-MSG-03. |
 | messaging-and-needl-04 | Reply to root; immediately read root count/lastReply, thread and Needl; assert root/reply. This immediate read can race asynchronous updates. |
-| messaging-and-needl-05 | Subscribe, edit text, delete it; assert update/delete events and soft-deleted DB state. |
+| messaging-and-needl-05 | Subscribe, edit text, delete it; assert update/delete events and permanent removal from MongoDB. |
 | messaging-and-needl-06 | Toggle reaction on/off; pin/unpin; assert response reaction and pin arrays; independent persistence added under FR-SOC. |
 | messaging-and-needl-07 | Empty text fails; send normal-priority text in emergency channel; stored priority is emergency. |
 
@@ -74,7 +74,7 @@ All rows below: coverage **EXISTING**, tier **B**, priority **P0**, feasible usi
 | direct-and-group-conversations-02 | Send in accepted DM; recipient reads sender and lists peer/lastMessage. Historical BLOCKED. |
 | direct-and-group-conversations-03 | Mark peer message read twice; one readBy; disable receipts and mark another; no new receipt. Historical BLOCKED. |
 | direct-and-group-conversations-04 | Open self notes and send; create/reopen group with exact members; rename and assert membership/name. |
-| direct-and-group-conversations-05 | Expand independent source DMs with none/all; verify new membership, zero/copied history and unchanged sources. Historical BLOCKED. |
+| direct-and-group-conversations-05 | Expand a source DM to two Needls with none/all; verify added membership, the member-added activity line, zero/copied source history and unchanged source. |
 
 ### Handoffs — H; source tests/sanity/src/handoff-scenarios.js and B/features/handoffs
 
@@ -82,7 +82,7 @@ All rows below: coverage **EXISTING**, tier **B**, priority **P0**, feasible usi
 |---|---|
 | handoffs-01 | Create draft patient+attachment, edit summary, read; draft and attachment filename survive. |
 | handoffs-02 | Empty draft submit gives 400; delete disposable draft; subsequent detail gives 404. |
-| handoffs-03 | Submit populated draft; verify received list/space history, notification and submitted event; update/delete give 400. |
+| handoffs-03 | Submit populated draft; verify received list/space history, notification and submitted event; recipient edit/withdraw give 403. |
 | handoffs-04 | B acknowledges with note; verify status/time/note, sender notification and event; duplicate acknowledgement rejects. |
 | handoffs-05 | B adds note then reassigns to C; DB history has one entry and resets acknowledgement; C can acknowledge. |
 
@@ -130,10 +130,10 @@ U; dependency authenticated unonboarded A for first case. Sources B/features/use
 
 | ID | Title and actions | Expected result | Tier/priority | Coverage / question |
 |---|---|---|---|---|
-| FR-PRO-01 | Save name+role for new user, read me, access spaces, relogin | Onboarding persists and protected app routes become available; same ID | B/P0 | partial: authentication-and-profiles-05 |
+| FR-PRO-01 | Save name+role for new user, read me, access spaces, relogin | Onboarding persists and protected app routes become available; same ID and assigned Vocle username | B/P0 | partial: authentication-and-profiles-05 |
 | FR-PRO-02 | Update name at 2/100/101, bio 300/301, institution 200/201, pgYear 1/6/0/7, invalid role | Supported endpoints accept exact limits, reject out-of-range with unchanged profile | B/P1 | NEW |
 | FR-PRO-03 | Set mentions=false; separately set handoffs=false; GET and relogin | Partial preference updates retain both values and other defaults | B/P1 | NEW |
-| FR-PRO-04 | Change title/speciality/avatar/bio then view peer in DM and member list | Fresh populated views use updated fields; no assumption stored historical sender snapshots update | B/P1 | NEW |
+| FR-PRO-04 | Change title/speciality/avatar/bio; set username, reject a duplicate, remove avatar; reload peer views | Fresh projections reflect edits and avatar removal; normalized username is unique and reserved handles are unavailable | B/P1 | NEW |
 | FR-PRO-05 | Edit profile widget, cancel once; submit once with API error then success | Cancel no request; error retains inputs; successful reload renders saved profile | F/P1 | NEW |
 
 ### 3. Discovery/lookup
@@ -142,10 +142,10 @@ U plus pair acceptance and shared-space relationships independently prepared. So
 
 | ID | Title and actions | Expected result | Tier/priority | Coverage / question |
 |---|---|---|---|---|
-| FR-DISC-01 | Lookup self, shared-space B, stranger D opt-in, stranger E opt-out, accepted peer | Self canMessage/no request; shared space enables request rather than new DM; accepted peer opens DM; opt-in affects request eligibility | B/P0 | partial: search-01 |
-| FR-DISC-02 | Lookup valid absent phone and valid normalized variants; malformed input | Absent 404, malformed 400, equivalent supported formats resolve same ID | B/P1 | NEW |
-| FR-DISC-03 | Search name/title/speciality, mixed case, spaces and literal punctuation; q length 1/2; filter S2 | Short q rejected; trimmed literal case-insensitive matches; S2 filter intersects known users | B/P1 | NEW |
-| FR-DISC-04 | Search with 21 matching known users plus inactive/unonboarded fixture | At most 20 eligible results, no duplicates; inactive/incomplete omitted; do not assume unspecified order | B/P2 | NEW |
+| FR-DISC-01 | Lookup self, shared-space colleague, strangers and accepted peer by phone and relationship API | Both routes agree. Active doctors can receive requests by default; accepted peers can open a DM and strangers require consent | B/P0 | partial: search-01 |
+| FR-DISC-02 | Lookup absent/malformed/normalized phones; match a synthetic address book with duplicates and inactive entries | Lookup validates and normalizes; contact match dedupes, returns eligible profiles without raw profile phone fields, accepts up to 3000 entries and leaves inputs unpersisted | B/P1 | NEW |
+| FR-DISC-03 | Search name/username/speciality/institution; test short, mixed-case and literal queries, full/partial numbers and space filtering | Known doctors rank first; full phone can find a stranger; partial digits find known doctors; profile phone stays private; space filters apply | B/P1 | NEW |
+| FR-DISC-04 | Search with 26 eligible users plus inactive/unonboarded fixtures | At most 25 eligible unique results; inactive and incomplete users are omitted | B/P2 | NEW |
 
 ### 4. Spaces/invitations/membership
 
@@ -156,7 +156,7 @@ U/S2; admin role may be model-seeded because no promotion endpoint. Sources B/fe
 | FR-SPC-01 | Create name 2/100/101, description 300/301, invalid type; read valid detail | Valid values/defaults persisted; invalid creates leave no partial space/channels | B/P1 | NEW |
 | FR-SPC-02 | Preview/join lowercase invite; rotate; repeat preview for member | Case normalization works; alreadyMember true after join; new code usable | B/P1 | partial: spaces-and-invitations-02,-04 |
 | FR-SPC-03 | Set requireApproval; B joins twice; inspect requests and UI response | One pending request, no membership; UI must not assume channels/join success; approval completion unsupported | B/P1 | Q14 |
-| FR-SPC-04 | Owner/admin update settings; member tries rename/remove owner; reread | Supported admin actions persist; ordinary member rejected; owner remains | B/P1 | NEW |
+| FR-SPC-04 | Owner/admin update settings; member tries rename/remove/add; admin adds opted-in doctor | Privileges enforced; privacy blocks unsolicited adds by strangers; successful add persists once, exposes history, adds activity and alerts the doctor | B/P1 | NEW |
 | FR-SPC-05 | Set availability for members in distinct priority ranks; GET members | on_call before in_ot/on_rounds/in_icu before available before DND before off_duty; ties not specified | B/P2 | NEW |
 | FR-SPC-06 | B leaves/removal while online; reload spaces/search, sync rooms, reconnect | Lists no longer include S; room membership after sync reflects current DB; immediate eviction guarantee needs decision | B/P0 | Q10 |
 
@@ -178,8 +178,8 @@ U; D opt-in, E opt-out; fresh pair per terminal transition. Sources B/features/m
 
 | ID | Title and actions | Expected result | Tier/priority | Coverage / question |
 |---|---|---|---|---|
-| FR-REQ-01 | A requests D; D requests A before accepting; read both views | Same pending ID, incoming action accept_incoming; one record/count; peer and direction correct | B/P0 | partial: message-requests-01 |
-| FR-REQ-02 | Try self, missing target, already accepted peer, opt-out E | Specific ordinary business rejection; no pending request/count/notification increase | B/P1 | NEW |
+| FR-REQ-01 | A requests D with default settings; D requests A before accepting; read both views | Same pending ID, incoming action accept_incoming; one record/count; relationship reports correct direction; pending requests do not open DMs | B/P0 | partial: message-requests-01 |
+| FR-REQ-02 | Try self, missing target, already accepted peer and blocked pair | Specific rejection; block denies relationship request eligibility; no pending request/count/notification increase | B/P1 | NEW |
 | FR-REQ-03 | Intro lengths 0/280/281; list sent/received/all, pending/accepted/declined | Route validation limit enforced; exact intro and peer serialization; filter results/count independent of outgoing | B/P1 | NEW |
 | FR-REQ-04 | Recipient accepts/declines; repeat accept and opposite terminal action | Only first valid transition; persisted terminal state and count remain stable | B/P0 | partial: message-requests-02,-03 |
 | FR-REQ-05 | Interrupt accept after request state write via DB fault; reload request and DM; retry | Record partial accepted-without-DM possibility; desired recovery/atomicity must be agreed, never count initial 2xx alone | B/P0 | Q7 |
@@ -191,14 +191,14 @@ C plus F–K users eligible via shared S. Sources B/features/channels/channel.co
 
 | ID | Title and actions | Expected result | Tier/priority | Coverage / question |
 |---|---|---|---|---|
-| FR-DM-01 | Create group through both aliases with reordered/duplicate/self IDs; reopen | Exact deduplicated membership reuses group ID; one other delegates pair rules; self-only rejected | B/P0 | partial: direct-and-group-conversations-04 |
+| FR-DM-01 | Create/reopen group through both aliases; exercise legacy one-to-one DM and attempt to add a pending stranger | Exact membership reuses group ID; legacy pair keeps history and gains membership key; pending alone cannot add a stranger; explicit opt-in can | B/P0 | partial: direct-and-group-conversations-04 |
 | FR-DM-02 | Create with 8 then 9 distinct other users | 9 total accepted, 10 total rejected with no partial group | B/P1 | NEW |
 | FR-DM-03 | Rename to whitespace, 80 and 81 chars; GET from both members | Empty returns fallback display name, stored custom name trimmed/truncated to 80; members unchanged | B/P1 | partial: direct-and-group-conversations-04 |
 | FR-DM-04 | Send in two DMs in known sequence; GET list as each user | Most recent lastMessage first; peer is opposite user; self notes isSelfNotes=true and group isNeedl=true | B/P1 | partial: direct-and-group-conversations-02 |
-| FR-DM-05 | Expand today with messages before/at/after midnight, fixed server TZ | Current code selects >= server midnight; agree intended timezone before gate; source untouched | B/P1 | Q2 |
-| FR-DM-06 | Expand all with 501 roots plus deleted record; inspect destination IDs/preview | Characterize oldest-500 cap and excluded deleted records; require decision on cap and source-ID preview mismatch | B/P1 | Q2 |
-| FR-DM-07 | Expand with root+thread+quote; open copied thread/quote target | Source graph unchanged; destination graph behavior needs decision because threadId not copied and quote IDs reference source | B/P0 | Q2 |
-| FR-DM-08 | Expand to membership already existing; repeat and compare counts | Existing destination reused, no second history import; all source records retained | B/P1 | NEW |
+| FR-DM-05 | Expand today with messages before/at/after the supplied phone-local midnight | Copy at and after the cutoff with original timestamps; append one member-added activity line; source untouched | B/P1 | Q2 |
+| FR-DM-06 | Expand all with 501 roots plus legacy soft-deleted record; inspect destination IDs/preview | Copy all records to new IDs, including legacy placeholder; preview points to newly appended activity | B/P1 | Q2 |
+| FR-DM-07 | Expand with root+thread+quote; open copied thread and quote target | Source graph unchanged; destination thread and quote IDs remapped; append one member-added activity line | B/P0 | Q2 |
+| FR-DM-08 | Expand to membership already existing; repeat and compare counts | Existing destination reused without reimporting history or duplicating the activity line; source records retained | B/P1 | NEW |
 | FR-DM-09 | Concurrent pair/group reopen requests; inspect exact-membership records | Pair intent one conversation; group concurrency guarantee unresolved; classify target-specific failure without copying fork fix | B/P0 | Q7 |
 
 ### 8. Root messaging
@@ -211,8 +211,8 @@ C; sources B/features/messages/message.controller.js/model/routes; B/middleware/
 | FR-MSG-02 | Page roots with 0/1/100/101 limit, malformed before, empty and exact full final page | Invalid bounds rejected; hasMore uses extra row; no duplicate roots or thread leakage | B/P1 | partial: messaging-and-needl-02 |
 | FR-MSG-03 | Quote text >120 chars and image/document; read snapshot after reload | Correct source ID/sender/type and 120-char text or Photo/filename fallback | B/P1 | partial: messaging-and-needl-03 |
 | FR-MSG-04 | Edit text twice; attempt image edit; reload and observe event | Text isEdited/editedAt/content persisted; nontext edit 400; event identifies changed message | B/P1 | partial: messaging-and-needl-05 |
-| FR-MSG-05 | Edit/delete newest message; reload channel list, quote, search and chat | Message state verified; preview/snapshot propagation policy unresolved; capture mismatches | B/P0 | Q1 |
-| FR-MSG-06 | Delete older message as sender and space admin; reload DB and pages | Soft deletion, deletion placeholder text, cleared media/reactions and deleted event; unrelated messages intact | B/P1 | partial: messaging-and-needl-05 |
+| FR-MSG-05 | Edit/delete newest message; delete for self and clear chat; reload preview, quote, search, timeline and thread for both viewers | Edit preserves the quote snapshot; permanent delete updates it and the channel preview. Personal actions only change the caller's visible history, previews and search; new messages still arrive | B/P0 | Q1 |
+| FR-MSG-06 | Delete older messages as sender and space admin; exercise legacy DELETE, deny other sender and observe personal-room events | Permanent deletion removes rows, replies, related alerts and pins; unrelated messages and pins remain; clients receive correlated events | B/P1 | partial: messaging-and-needl-05 |
 | FR-MSG-07 | Send urgent in general and normal in emergency; reload message/notification | General preserves urgent; emergency overrides to emergency; notification priority follows | B/P0 | partial: messaging-and-needl-07 |
 | FR-MSG-08 | Commit send then drop response at proxy; reopen chat before manual resend | Fetch reveals committed record; automatic exactly-once resend not assumed; product decision on duplicate prevention | B/P0 | Q7 |
 
@@ -222,10 +222,10 @@ C with multiple roots/replies. Sources B/features/messages/message.controller.js
 
 | ID | Title and actions | Expected result | Tier/priority | Coverage / question |
 |---|---|---|---|---|
-| FR-THR-01 | A/B reply to one root; await side effects; reload root/thread/Needl | Count equals replies, lastReply correct sender/100-char preview, reply IDs not main roots | B/P0 | partial: messaging-and-needl-04 |
+| FR-THR-01 | A/B reply to one root; attempt replies to activity and nested replies; reload root/thread/Needl | Activity and nested replies rejected. Count equals persisted replies, lastReply correct sender/100-char preview, reply IDs stay out of root timeline | B/P0 | partial: messaging-and-needl-04 |
 | FR-THR-02 | Three replies, limit=2 then before oldest returned; include deleted reply | Ascending presentation within page; no overlap, correct hasMore; deleted omitted | B/P1 | NEW |
 | FR-THR-03 | Seed 41 active roots with distinct updatedAt; GET Needl, archive one channel | At most 40 newest qualifying roots; metadata channel/root IDs correct; archived excluded | B/P1 | NEW |
-| FR-THR-04 | Delete/edit most recent reply then read root and Needl | Thread content reflects action; aggregate correction policy Q1 required | B/P1 | Q1 |
+| FR-THR-04 | Edit and permanently delete the only reply; reload root/thread and Needl | Edited reply is shown; deletion removes reply row, resets aggregate and removes the empty thread from Needl | B/P1 | Q1 |
 | FR-THR-05 | Deliver same reply socket twice and then HTTP page in Flutter thread/root views | One rendered reply and one increment; refresh converges to server counts | F/P0 | NEW |
 
 ### 10. Reactions/pins/read receipts
@@ -235,7 +235,7 @@ C with six distinct live messages. Sources B/features/messages/message.model.js/
 | ID | Title and actions | Expected result | Tier/priority | Coverage / question |
 |---|---|---|---|---|
 | FR-SOC-01 | A and B toggle same emoji; A removes; B uses another; reread/events | One emoji per user; switching replaces B's prior emoji; removal leaves other users intact; event matches stored set | B/P1 | partial: messaging-and-needl-06 |
-| FR-SOC-02 | React to deleted message; submit invalid/empty emoji per route validation | Reject supported invalid forms and deleted reaction; old reactions unchanged | B/P1 | NEW |
+| FR-SOC-02 | Submit invalid/empty emoji, then react to a permanently deleted message | Invalid emoji leaves existing reactions unchanged; deleted target returns 404 and remains absent | B/P1 | NEW |
 | FR-SOC-03 | Pin five distinct; sixth rejected; unpin one then pin sixth; reload detail | At most five, populated message/sender and pinnedBy/time retained, freed slot reusable | B/P1 | partial: messaging-and-needl-06 |
 | FR-SOC-04 | Re-pin same ID below cap and at cap; unpin absent ID | Re-pin below cap returns 409; at cap returns 400 (cap checked first); absent unpin succeeds; cardinality unchanged | B/P2 | NEW |
 | FR-SOC-05 | B/C mark separate group-DM messages/read batches twice; opt out B for new record | One readBy per user/message, timestamps stable on duplicate, C independent; opt-out no added B receipt | B/P1 | partial: direct-and-group-conversations-03 |
@@ -250,7 +250,7 @@ H; sources B/features/handoffs/handoff.controller.js/model/routes; F/features/ha
 | FR-HOF-01 | Draft two patients; replace/edit/remove one with explicit IDs; change date/shift and reload | Remaining patient fields/tasks/flags/attachments exact, draft status and sender preserved | B/P0 | partial: handoffs-01 |
 | FR-HOF-02 | Missing bed/alias, bed 20/21, alias 100/101, notes 2000/2001, summary 2000/2001, invalid status/date/shift | Valid schema boundaries save; invalid reject without replacing previous draft | B/P1 | NEW |
 | FR-HOF-03 | Submit same populated draft concurrently twice, then acknowledge concurrently twice | One successful transition each, timestamps set once; exactly one transition notification/event by resource after quiescence | B/P0 | partial: handoffs-03,-04 |
-| FR-HOF-04 | Draft acknowledge/note/reassign; submit empty draft; attempt update/delete after submit | Invalid lifecycle operations rejected; no state or patient loss | B/P0 | partial: handoffs-02,-03 |
+| FR-HOF-04 | Check invalid draft transitions and recipient edits; creator edits an acknowledged handoff then withdraws it | Edit is audited, preserves patients, triggers re-acknowledgement and sends an alert; withdrawal retains audit data, hides views and alerts without an open link | B/P0 | partial: handoffs-02,-03 |
 | FR-HOF-05 | Read draft through received status filter/detail/space/search as B/member/admin | Record cross-view difference; Q3 decides accepted audience before gate | B/P0 | Q3 |
 | FR-HOF-06 | List sent/received/all by status, S/S2 and date with records at day boundaries | Correct participant/date filters; populated users; draft visibility handled under Q3 | B/P1 | NEW |
 | FR-HOF-07 | Page space history with out-of-order IDs vs shiftDate; limit=2 | Intended no missing/repeated items needs cursor/sort decision; save ordered IDs to demonstrate gap | B/P1 | Q4 |
@@ -269,8 +269,8 @@ M+C/H as needed; sources B/features/media/media.routes.js/controller; B/constant
 |---|---|---|---|---|
 | FR-MED-01 | Upload missing file, supported PNG/PDF/MP4, unsupported TXT/DOC, 25MiB/25MiB+1 file | Missing/unsupported/oversize reject; supported bytes/metadata retained; exact limit from MEDIA.MAX_FILE_SIZE_BYTES | B/P1 | partial: media-01,-02 |
 | FR-MED-02 | Upload octet-stream named .pdf/.mp4 then inspect returned metadata/open | Extension fallback accepted by filter; MIME-derived format mismatch characterized; Q5 decides normalized type contract | B/P1 | Q5 |
-| FR-MED-03 | Upload local PNG then use returned URL in image message | Current local URL rejected by send policy; Q5 must resolve full pipeline, never substitute inert URL and call E2E passed | B/P0 | Q5 |
-| FR-MED-04 | Upload video then submit type=video | Upload supported but validator rejects; Q5 required to enable successful send expectation | B/P1 | Q5 |
+| FR-MED-03 | Upload local PNG, send and independently fetch it, then delete for everyone | Stored message refers to downloadable local bytes; permanent deletion makes the attached file unavailable | B/P0 | Q5 |
+| FR-MED-04 | Upload and send video and synthetic audio; try invalid audio metadata | Video and voice note persist; receiver can fetch voice bytes and metadata; missing file, invalid duration or waveform are rejected | B/P1 | Q5 |
 | FR-MED-05 | Fake provider image/PDF/video upload responses and failure; inspect requests/output | image/raw/video resource type, folders, filename/size, thumbnail/delivery mapping; provider error returns upload failure, no message created | B/P1 | NEW |
 | FR-MED-06 | Upload avatar A, save profile URL, replace B; delete A and reload profile | Profile points to B; old-file lifecycle and dangling references Q6; no invented automatic deletion | B/P1 | Q6 |
 | FR-MED-07 | Delete referenced file and handoff-context/video file; reopen consuming view | Local bytes removed when supported; references not auto-cleared; Q6 defines retention/error UX and missing video destroy support | B/P1 | Q6 |
@@ -287,7 +287,7 @@ N; sources B/features/notifications/notification.controller.js/model; B/services
 | FR-NOT-03 | Seed read/unread types across 3 pages; query unreadOnly/type/limit/before | Filtered pages no overlap, correct hasMore; returned unreadCount is total user unread, not filtered page length | B/P1 | partial: notifications-03 |
 | FR-NOT-04 | Channel read with string/ObjectId metadata, unrelated channel, then repeat | Both representations read, unrelated unchanged, repeat modifiedCount=0; count reconciles | B/P1 | partial: notifications-03 |
 | FR-NOT-05 | Inject notification DB failure after successful send, restore; read message and perform new send | First message persists despite side-effect failure; next send notification works; no automatic replay promise | B/P1 | NEW |
-| FR-NOT-06 | Socket notification then HTTP refresh then mark unread/read in Flutter | Dedupe by ID, badge/list consistent; mutation failure restores or refreshes correct state | F/P0 | NEW |
+| FR-NOT-06 | Socket notification then HTTP refresh, toggle unread/read and open a grouped chat in Flutter | Dedupe by ID; badge/list agree; grouped read clears the chat once and preserves another chat; mutation failure preserves retryable state | F/P0 | NEW |
 
 ### 14. Push/device-token lifecycle
 

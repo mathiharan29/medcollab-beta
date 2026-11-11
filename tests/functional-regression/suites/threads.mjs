@@ -14,6 +14,9 @@ const cases = [{
   run: async ({ identity, request, db, origin }) => {
     const { people, channelId } = await spaceFixture(identity, request, 'Synthetic Thread Counts');
     const path = `/api/channels/${channelId}/messages`;
+    const activity = (await request(path, { token: people.A.token })).data.messages;
+    assert.deepEqual(activity.map((item) => item.type), ['system', 'system']);
+    await request(`${path}/${activity[0]._id}/reply`, { method: 'POST', token: people.B.token, body: { content: { text: 'Synthetic unsupported activity reply' } }, expectedStatus: 400 });
     const root = (await request(path, { method: 'POST', token: people.A.token, body: { content: { text: 'Synthetic thread root' } }, expectedStatus: 201 })).data.message;
     const sockets = { A: await connectSocket(null, origin, people.A.token), B: await connectSocket(null, origin, people.B.token) };
     try {
@@ -28,9 +31,10 @@ const cases = [{
         assert.equal(reply.threadId, root._id);
         assert.equal((await notification).referenceId, reply._id);
       }
+      await request(`${path}/${replies[0]._id}/reply`, { method: 'POST', token: people.A.token, body: { content: { text: 'Synthetic unsupported nested reply' } }, expectedStatus: 400 });
       const roots = await request(path, { token: people.B.token });
-      assert.deepEqual(roots.data.messages.map((item) => item._id), [root._id]);
-      const refreshed = roots.data.messages[0];
+      assert.deepEqual(roots.data.messages.map((item) => item._id), [...activity.map((item) => item._id), root._id]);
+      const refreshed = roots.data.messages.at(-1);
       assert.equal(refreshed.replyCount, 2);
       assert.equal(refreshed.lastReply.senderId, people.A.userId);
       assert.equal(refreshed.lastReply.text, 'Synthetic second reply with '.repeat(7).slice(0, 100));
@@ -43,7 +47,7 @@ const cases = [{
       assert.equal(entry.replyCount, 2);
       await db(async (connection) => {
         const saved = await connection.collection('messages').find({ channelId: new connection.base.Types.ObjectId(channelId) }).toArray();
-        assert.equal(saved.length, 3);
+        assert.equal(saved.length, 5);
         assert.equal(saved.find((item) => String(item._id) === root._id).replyCount, 2);
         assert.deepEqual(new Set(saved.filter((item) => item.threadId).map((item) => String(item._id))), new Set(replies.map((item) => item._id)));
       });
@@ -70,8 +74,7 @@ const cases = [{
     assert.equal(afterDelete.data.hasMore, false);
     await db(async (connection) => {
       const stored = await connection.collection('messages').findOne({ _id: new connection.base.Types.ObjectId(replies[1]._id) });
-      assert.equal(stored.isDeleted, true);
-      assert.equal(stored.content.text, 'This message was deleted');
+      assert.equal(stored, null);
     });
   },
 }, {
@@ -97,7 +100,7 @@ const cases = [{
     assert.ok(needl.data.threads.every((item) => item.channelId === channelId && item.spaceId === space._id && item.channelName === 'general'));
     assert.ok(!needl.data.threads.some((item) => item.rootMessageId === ids[41]));
     await db(async (connection) => {
-      assert.equal(await connection.collection('messages').countDocuments({ channelId: new connection.base.Types.ObjectId(channelId) }), 41);
+      assert.equal(await connection.collection('messages').countDocuments({ channelId: new connection.base.Types.ObjectId(channelId), replyCount: 1 }), 41);
       assert.equal((await connection.collection('channels').findOne({ _id: new connection.base.Types.ObjectId(archived._id) })).isArchived, true);
     });
   },
@@ -124,12 +127,12 @@ const cases = [{
       const needl = await request('/api/users/me/needl', { token: people.A.token });
       const entry = needl.data.threads.find((item) => item.rootMessageId === root._id);
       assert.equal(rootAfterEdit.replyCount, 1);
-      assert.equal(thread.data.rootMessage.replyCount, rootAfterEdit.replyCount);
-      assert.equal(entry?.replyCount, rootAfterEdit.replyCount);
+      assert.equal(thread.data.rootMessage.replyCount, 0);
+      assert.equal(thread.data.rootMessage.lastReply, null);
+      assert.equal(entry, undefined, 'A root with no replies no longer belongs in the Needl thread inbox');
       await db(async (connection) => {
         const saved = await connection.collection('messages').findOne({ _id: new connection.base.Types.ObjectId(reply._id) });
-        assert.equal(saved.isDeleted, true);
-        assert.equal(saved.isEdited, true);
+        assert.equal(saved, null);
       });
     } finally { listener.disconnect(); }
   },

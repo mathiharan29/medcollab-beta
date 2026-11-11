@@ -91,7 +91,7 @@ async function run() {
       await deletedEvent;
       const stored = await messageById(editable._id);
       assert(edited.isEdited === true && edited.content.text === marker('after-edit'), 'Edit was not persisted.');
-      assert(stored?.isDeleted === true, 'Delete was not a persisted soft deletion.');
+      assert(stored === null, 'Delete for everyone did not remove the message from storage.');
     });
 
     await scenario('messaging-and-needl-06', async () => {

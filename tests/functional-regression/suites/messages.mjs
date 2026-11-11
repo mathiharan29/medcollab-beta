@@ -11,6 +11,8 @@ const cases = [{
     const general = created.data.channels.find((channel) => channel.name === 'general');
     assert.ok(general?._id);
     const path = `/api/channels/${general._id}/messages`;
+    const initial = (await request(path, { token: a.token })).data.messages;
+    assert.deepEqual(initial.map((message) => message.type), ['system']);
     const invalid = [
       {}, { content: {} }, { content: { text: 42 } }, { content: { text: '  \n  ' } },
       { content: { text: `  ${'X'.repeat(4001)}  ` } },
@@ -25,12 +27,12 @@ const cases = [{
     const sent = await request(path, { method: 'POST', token: a.token, body: { content: { text: unicode } }, expectedStatus: 201 });
     assert.equal(sent.data.message.content.text, unicode);
     const reread = await request(path, { token: a.token });
-    assert.deepEqual(reread.data.messages.map((item) => item._id), [exact.data.message._id, sent.data.message._id]);
-    assert.deepEqual(reread.data.messages.map((item) => item.content.text), ['Y'.repeat(4000), unicode]);
+    assert.deepEqual(reread.data.messages.map((item) => item._id), [initial[0]._id, exact.data.message._id, sent.data.message._id]);
+    assert.deepEqual(reread.data.messages.slice(1).map((item) => item.content.text), ['Y'.repeat(4000), unicode]);
     await db(async (connection) => {
       const messages = await connection.collection('messages').find({ channelId: new connection.base.Types.ObjectId(general._id) }).toArray();
-      assert.equal(messages.length, 2, 'Invalid sends must not persist');
-      assert.deepEqual(new Set(messages.map((item) => String(item._id))), new Set([exact.data.message._id, sent.data.message._id]));
+      assert.equal(messages.length, 3, 'Invalid sends must not persist');
+      assert.deepEqual(new Set(messages.map((item) => String(item._id))), new Set([initial[0]._id, exact.data.message._id, sent.data.message._id]));
       assert.equal(messages.find((item) => String(item._id) === sent.data.message._id).content.text, unicode);
     });
     // Route validation counts trimmed characters; persistence must accept the
@@ -73,7 +75,7 @@ const cases = [{
       assert.equal(byId.get(quote._id).replyTo.text, quote.replyTo.text);
     }
     await db(async (connection) => {
-      const saved = await connection.collection('messages').find({ channelId: new connection.base.Types.ObjectId(channelId) }).toArray();
+      const saved = await connection.collection('messages').find({ channelId: new connection.base.Types.ObjectId(channelId), type: { $ne: 'system' } }).toArray();
       assert.equal(saved.length, 6);
       const byId = new Map(saved.map((message) => [String(message._id), message]));
       for (const [quote, root] of [[textQuote, textRoot], [imageQuote, imageRoot], [documentQuote, documentRoot]]) {
@@ -174,15 +176,71 @@ const cases = [{
       const saved = await connection.collection('messages').findOne({ _id: new connection.base.Types.ObjectId(root._id) });
       const savedNewest = await connection.collection('messages').findOne({ _id: new connection.base.Types.ObjectId(newest._id) });
       const savedQuote = await connection.collection('messages').findOne({ _id: new connection.base.Types.ObjectId(quote._id) });
-      assert.equal(saved.isDeleted, true);
-      assert.equal(saved.isEdited, true);
-      assert.equal(saved.content.text, 'This message was deleted');
-      assert.ok(saved.deletedAt instanceof Date);
-      assert.equal(savedNewest.isDeleted, true);
-      assert.equal(savedNewest.isEdited, true);
-      assert.equal(savedNewest.content.text, 'This message was deleted');
+      assert.equal(saved, null);
+      assert.equal(savedNewest, null);
       assert.equal(savedQuote.replyTo.text, 'This message was deleted');
     });
+    const latest = (await request(path, { method: 'POST', token: a.token, body: { content: { text: 'syntheticpersonalhide' } }, expectedStatus: 201 })).data.message;
+    const search = async (person, q) => (await request(`/api/search?q=${q}&type=messages`, { token: person.token })).data.messages.map((item) => item._id);
+    const preview = async (person) => {
+      const token = person.token;
+      const groupList = (await request('/api/spaces', { token })).data.spaces.find((space) => space._id === created.data.space._id);
+      const channelList = (await request(`/api/spaces/${created.data.space._id}/channels`, { token })).data.channels;
+      const findPreviewId = (channels) => channels.find((channel) => channel._id === channelId)?.lastMessage?.messageId ?? null;
+      return { groupList: findPreviewId(groupList.channels), channelList: findPreviewId(channelList) };
+    };
+    const hidePath = `${path}/${latest._id}?scope=me`;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const hidden = await request(hidePath, { method: 'DELETE', token: b.token });
+      assert.equal(hidden.data.scope, 'me');
+      assert.deepEqual(hidden.data.deletedIds, [latest._id]);
+    }
+    const senderView = (await request(path, { token: a.token })).data.messages;
+    assert.equal(senderView.at(-1)._id, latest._id);
+    assert.ok(!Object.hasOwn(senderView.at(-1), 'hiddenFor'));
+    assert.ok(!(await request(path, { token: b.token })).data.messages.some((item) => item._id === latest._id));
+    assert.deepEqual(await search(a, 'syntheticpersonalhide'), [latest._id]);
+    assert.deepEqual(await search(b, 'syntheticpersonalhide'), []);
+    assert.deepEqual(await preview(a), { groupList: latest._id, channelList: latest._id });
+    const afterHide = await preview(b);
+
+    const priorReply = (await request(`${path}/${quote._id}/reply`, { method: 'POST', token: a.token, body: { content: { text: 'syntheticpriorreply' } }, expectedStatus: 201 })).data.message;
+    const cleared = (await request(`${path}/clear`, { method: 'POST', token: b.token })).data;
+    assert.ok(Date.parse(cleared.clearedAt) >= Date.parse(priorReply.createdAt));
+    assert.deepEqual((await request(path, { token: b.token })).data.messages, []);
+    const afterClear = await preview(b);
+    assert.deepEqual(await search(b, 'syntheticpriorreply'), []);
+    assert.deepEqual(await search(a, 'syntheticpriorreply'), [priorReply._id]);
+    assert.equal((await request(path, { token: a.token })).data.messages.at(-1)._id, latest._id);
+    const fresh = (await request(path, { method: 'POST', token: a.token, body: { content: { text: 'syntheticafterclear' } }, expectedStatus: 201 })).data.message;
+    assert.deepEqual((await request(path, { token: b.token })).data.messages.map((item) => item._id), [fresh._id]);
+    assert.deepEqual(await preview(b), { groupList: fresh._id, channelList: fresh._id });
+    assert.deepEqual(await search(b, 'syntheticafterclear'), [fresh._id]);
+    await db(async (connection) => {
+      const objectId = (id) => new connection.base.Types.ObjectId(id);
+      const original = await connection.collection('messages').findOne({ _id: objectId(latest._id) });
+      assert.deepEqual(original.hiddenFor.map(String), [b.userId]);
+      assert.equal(original.content.text, 'syntheticpersonalhide');
+      const clears = await connection.collection('chatclears').find({ channelId: objectId(channelId) }).toArray();
+      assert.deepEqual(clears.map((item) => String(item.userId)), [b.userId]);
+      assert.equal(clears[0].clearedAt.toISOString(), cleared.clearedAt);
+    });
+    const threadPath = `${path}/${quote._id}/thread`;
+    assert.deepEqual((await request(threadPath, { token: a.token })).data.replies.map((item) => item._id), [priorReply._id]);
+    const threadAfterClear = await request(threadPath, { token: b.token }).catch((error) => {
+      if ([403, 404].includes(error.detail?.status)) return null;
+      throw error;
+    });
+    assert.deepEqual(threadAfterClear?.data.replies ?? [], []);
+    assert.deepEqual({
+      previewsAfterDeleteForMe: afterHide,
+      previewsAfterClearChat: afterClear,
+      preClearRootVisibleViaThread: threadAfterClear?.data.rootMessage?._id === quote._id,
+    }, {
+      previewsAfterDeleteForMe: { groupList: quote._id, channelList: quote._id },
+      previewsAfterClearChat: { groupList: null, channelList: null },
+      preClearRootVisibleViaThread: false,
+    }, 'Personal history must stay hidden in both preview lists and in a directly reopened thread');
   },
 }, {
   id: 'FR-MSG-06', module: 'MSG',
@@ -191,35 +249,44 @@ const cases = [{
     const created = await request('/api/spaces', { method: 'POST', token: a.token, body: { name: 'Synthetic Delete Lifecycle', type: 'department' }, expectedStatus: 201 });
     const channelId = created.data.channels.find((channel) => channel.name === 'general')._id;
     await request('/api/spaces/join', { method: 'POST', token: b.token, body: { inviteCode: created.data.space.inviteCode } });
+    // Listen from the personal room without opening the channel.
     const socket = await connectSocket(null, origin, b.token);
     try {
-      const joined = waitFor(socket, 'join_channel', (event) => event?.success === true && event.channelId === channelId);
-      socket.emit('join_channel', { channelId });
-      await joined;
       const path = `/api/channels/${channelId}/messages`;
+      const activity = (await request(path, { token: b.token })).data.messages;
+      assert.deepEqual(activity.map((message) => message.type), ['system', 'system']);
+      const textNotice = waitFor(socket, 'new_notification', (event) => event?.body === 'Synthetic deletion attachment');
       const media = (await request(path, { method: 'POST', token: b.token, body: { type: 'image', content: { mediaUrl: 'https://res.cloudinary.com/synthetic-test/delete-image.jpg', thumbnailUrl: 'https://res.cloudinary.com/synthetic-test/thumbnail.jpg', fileName: 'delete-image.jpg', mimeType: 'image/jpeg' } }, expectedStatus: 201 })).data.message;
-      const text = (await request(path, { method: 'POST', token: b.token, body: { content: { text: 'Synthetic older text' } }, expectedStatus: 201 })).data.message;
+      const text = (await request(path, { method: 'POST', token: a.token, body: { content: { text: 'Synthetic deletion attachment' } }, expectedStatus: 201 })).data.message;
+      assert.equal((await textNotice).metadata.messageId, text._id);
+      const reply = (await request(`${path}/${text._id}/reply`, { method: 'POST', token: b.token, body: { content: { text: 'Synthetic doomed thread reply' } }, expectedStatus: 201 })).data.message;
       const unrelated = (await request(path, { method: 'POST', token: a.token, body: { content: { text: 'Unrelated newest record' } }, expectedStatus: 201 })).data.message;
       await request(`${path}/${media._id}/react`, { method: 'POST', token: a.token, body: { emoji: '👍' } });
-      for (const [message, actor] of [[media, b], [text, a]]) {
-        const event = waitFor(socket, 'message_deleted', (payload) => payload?.messageId === message._id);
-        await request(`${path}/${message._id}`, { method: 'DELETE', token: actor.token });
-        assert.equal((await event).messageId, message._id);
+      await request(`/api/channels/${channelId}/pin/${text._id}`, { method: 'POST', token: a.token });
+      await request(`/api/channels/${channelId}/pin/${unrelated._id}`, { method: 'POST', token: a.token });
+      await request(`${path}/${text._id}?scope=everyone`, { method: 'DELETE', token: b.token, expectedStatus: 403 });
+      for (const [message, actor, scope, expectedIds] of [
+        [media, a, '?scope=everyone', [media._id]],
+        [text, a, '', [text._id, reply._id]],
+      ]) {
+        const events = Promise.all(expectedIds.map((id) => waitFor(socket, 'message_deleted', (payload) => payload?.messageId === id)));
+        const deleted = await request(`${path}/${message._id}${scope}`, { method: 'DELETE', token: actor.token });
+        assert.deepEqual(new Set(deleted.data.deletedIds), new Set(expectedIds));
+        for (const event of await events) assert.equal(event.channelId, channelId);
       }
+      await request(`${path}/${text._id}/thread`, { token: b.token, expectedStatus: 404 });
       const listed = await request(path, { token: b.token });
-      assert.deepEqual(listed.data.messages.map((message) => message._id), [unrelated._id], 'Deleted records must be omitted from root pages');
+      assert.deepEqual(listed.data.messages.map((message) => message._id), [...activity.map((item) => item._id), unrelated._id]);
       assert.equal(listed.data.messages.find((item) => item._id === unrelated._id).content.text, 'Unrelated newest record');
       await db(async (connection) => {
-        const saved = await connection.collection('messages').find({ _id: { $in: [media, text, unrelated].map((item) => new connection.base.Types.ObjectId(item._id)) } }).toArray();
-        assert.equal(saved.length, 3);
-        for (const item of saved.filter((row) => String(row._id) !== unrelated._id)) {
-          assert.equal(item.isDeleted, true);
-          assert.ok(item.deletedAt instanceof Date);
-          assert.equal(item.content.text, 'This message was deleted');
-          assert.equal(item.content.mediaUrl, null);
-          assert.equal(item.reactions.length, 0);
-        }
-        assert.equal(saved.find((row) => String(row._id) === unrelated._id).isDeleted, false);
+        const objectId = (id) => new connection.base.Types.ObjectId(id);
+        const doomed = [media, text, reply].map((item) => objectId(item._id));
+        const messages = connection.collection('messages');
+        assert.equal(await messages.countDocuments({ _id: { $in: doomed } }), 0);
+        assert.equal((await messages.findOne({ _id: objectId(unrelated._id) })).isDeleted, false);
+        assert.equal(await connection.collection('notifications').countDocuments({ referenceId: { $in: doomed } }), 0);
+        const channel = await connection.collection('channels').findOne({ _id: objectId(channelId) });
+        assert.deepEqual(channel.pinnedMessages.map((pin) => String(pin.messageId)), [unrelated._id]);
       });
     } finally { socket.disconnect(); }
   },
@@ -319,7 +386,8 @@ const cases = [{
   run: async ({ identity, request, db }) => {
     const a = await identity('A');
     const created = await request('/api/spaces', { method: 'POST', token: a.token, body: { name: 'Synthetic Root Cursor', type: 'department' }, expectedStatus: 201 });
-    const channelId = created.data.channels.find((channel) => channel.name === 'general')._id;
+    const channel = await request(`/api/spaces/${created.data.space._id}/channels`, { method: 'POST', token: a.token, body: { name: 'cursor-fixture' }, expectedStatus: 201 });
+    const channelId = channel.data.channel._id;
     const objectId = (connection, index) => new connection.base.Types.ObjectId(`6ac8f100000000000000${index.toString(16).padStart(4, '0')}`);
     const ids = Array.from({ length: 101 }, (_, index) => `6ac8f100000000000000${(index + 1).toString(16).padStart(4, '0')}`);
     await db(async (connection) => {

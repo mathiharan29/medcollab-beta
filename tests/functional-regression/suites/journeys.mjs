@@ -49,8 +49,10 @@ const cases = [{
       const spacesB = (await request('/api/spaces', { token: tokenB })).data.spaces;
       assert.ok(spacesB.some((item) => item._id === f.space._id));
       const messages = (await request(`/api/channels/${f.channelId}/messages`, { token: tokenB })).data.messages;
-      assert.deepEqual(new Set(messages.map((item) => item._id)), new Set([first._id, second._id]));
-      assert.deepEqual(new Set(messages.map((item) => item.content.text)), new Set(['Synthetic A to B integrated', 'Synthetic B to A integrated']));
+      assert.deepEqual(messages.filter((item) => item.type === 'system').map((item) => item.content.systemEvent), ['group_created', 'member_joined']);
+      const chat = messages.filter((item) => item.type !== 'system');
+      assert.deepEqual(new Set(chat.map((item) => item._id)), new Set([first._id, second._id]));
+      assert.deepEqual(new Set(chat.map((item) => item.content.text)), new Set(['Synthetic A to B integrated', 'Synthetic B to A integrated']));
       const detail = (await request(`/api/handoffs/${draft._id}`, { token: tokenB })).data.handoff;
       assert.equal(detail.status, 'acknowledged');
       assert.equal(detail.patients[0].clinicalAlias, 'Synthetic integrated patient');
@@ -60,7 +62,7 @@ const cases = [{
       assert.ok(receiverInbox.some((item) => item.referenceId === draft._id && item.type === 'handoff_received'));
       await db(async (connection) => {
         const id = (value) => new connection.base.Types.ObjectId(value);
-        assert.equal(await connection.collection('messages').countDocuments({ channelId: id(f.channelId) }), 2, 'Handoff lifecycle must not be credited as an invented system message');
+        assert.equal(await connection.collection('messages').countDocuments({ channelId: id(f.channelId) }), 4, 'Only the two membership activity lines and two sent messages should persist');
         assert.equal(await connection.collection('handoffs').countDocuments({ _id: id(draft._id), status: 'acknowledged' }), 1);
         const stored = await connection.collection('spaces').findOne({ _id: id(f.space._id) });
         assert.deepEqual(new Set(stored.members.map((item) => String(item.userId))), new Set([f.A.userId, f.B.userId]));
@@ -159,10 +161,9 @@ const cases = [{
 }, {
   id: 'FR-JRN-04', module: 'JRN', timeoutMs: 30000,
   run: async ({ identity, request, db, origin }) => {
-    // Dedicated labels: reused A/B from earlier journey cases still share other
-    // spaces, so presence probes would false-fail eviction for this space only.
-    const a = await identity('J4A');
-    const b = await identity('J4B');
+    // Dedicated identities avoid shared rooms from the other journeys.
+    const a = await identity('I');
+    const b = await identity('J');
     const created = await request('/api/spaces', { method: 'POST', token: a.token, body: { name: 'Synthetic Leave Rejoin Journey', type: 'department' }, expectedStatus: 201 });
     await request('/api/spaces/join', { method: 'POST', token: b.token, body: { inviteCode: created.data.space.inviteCode } });
     const f = {
