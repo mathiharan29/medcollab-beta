@@ -346,7 +346,7 @@ F0/D0; sources F/features/auth/presentation/bloc/auth_bloc.dart; F/core/router/a
 |---|---|---|---|---|
 | FR-NAV-01 | Launch no session, valid incomplete session, valid onboarded session | Login/profile setup/home respectively, no transient wrong destination; stored identity loaded | F/P0 | partial: widget_test.dart splash only |
 | FR-NAV-02 | HTTP 401 refresh success, failure, repeated 401 and concurrent requests | Success retries request with new token; failure clears session; bounded retry desired, recursion/concurrency behavior recorded for clarification | F/P0 | Q7 |
-| FR-NAV-03 | Switch tabs, open nested detail, Back repeatedly | Detail then documented tab history restored; no duplicate route stack or lost selected tab | F/P1 | NEW |
+| FR-NAV-03 | Open a chat from Messages and press system Back | The app returns directly to Home and displays Home content, per REQ 3 | F/P1 | NEW |
 | FR-NAV-04 | Device background, offline, foreground, restore network | Resume invokes connection restoration; current chat can refetch; input survives supported draft storage | D/P0 | NEW |
 | FR-NAV-05 | Device force-stop/relaunch with session then logout and relaunch | Secure session restoration routes correctly; logout removes local session even if API logout errors | D/P0 | NEW |
 
@@ -437,3 +437,65 @@ U+C+H through public APIs for B; D0 uses actual UI and local backend. Dependenci
 ## Guardrails for implementation
 
 Do not treat question-marked rows as expected failures or accept source bugs as desired contracts. Split verified subassertions from unresolved ones in reports, keeping this stable parent ID. Preserve the 48 existing IDs and existing failure gates. Existing Flutter unit coverage is credited as partial, not as completed widget/device proof. No route count, successful upload alone, or healthy backend proves a mobile workflow.
+
+
+### 25. Needl group conversations — latest master expansion
+
+Sources: backend channels routes/controller, channelAccess, knownUsers, messaging/socket handlers; Flutter ChannelRepository, ChannelModel, MessagesHubPage, StartDmPage, needl_manage_sheets.dart and ChannelChatPage. Baseline source 4c01dc24247aa95a73e286a2b42c7f2f81257c7a. The older Threads/Needl inbox remains separate; all original IDs and assertions are retained. Prior October manual Needl bullets are addressed here. Fixtures C/F0, synthetic only.
+
+| ID | Title and actions | Expected result | Tier/priority | Coverage / question |
+|---|---|---|---|---|
+| FR-NDL-01 | Create separate Needls with overlapping member sets | Different exact member sets return distinct IDs; repeating either intent reuses only its own group; DB memberships remain exact | B/P0 | NEW |
+| FR-NDL-02 | Reject malformed group creation on both route aliases | Missing, empty, nonarray, malformed or object-shaped user IDs return validation errors without channel creation | B/P0 | NEW |
+| FR-NDL-03 | Reject nonexistent participant without partial Needl | 404 and unchanged channels/messages; previously valid participants do not create a partial group | B/P1 | NEW |
+| FR-NDL-04 | Respect unrelated colleague request opt-out | 403 and no new group when any selected outsider disallows message requests | B/P1 | NEW |
+| FR-NDL-05 | List Needls for every member and exclude outsiders | All members independently retrieve the same ID and exact membership; unrelated doctor never lists it | B/P0 | NEW |
+| FR-NDL-06 | Deny outsider detail and members access | Detail and member endpoints deny nonmembers without exposing group data or changing persistence | B/P0 | NEW |
+| FR-NDL-07 | Deny outsider rename without changing name | 403; all members and DB retain prior title and membership | B/P1 | NEW |
+| FR-NDL-08 | Ignore membership and identity mass assignment on rename | Only name changes; members, type, owner, pair key and space binding remain unchanged | B/P1 | NEW |
+| FR-NDL-09 | Project group members without private credential fields | Exact IDs and public profile fields; no phone, OTP, refresh or device credentials returned | B/P1 | NEW |
+| FR-NDL-10 | Verify archived Needl read-only behavior and record expansion policy | Archived groups disappear from lists; authorized historical detail is readable and message sends denied; whether expansion is permitted requires NDL-D1 | B/P0 | NEW |
+| FR-NDL-11 | Validate expansion payload before writes | Invalid history, IDs, date, offset and empty input rejected; source and destination resources unchanged | B/P1 | NEW |
+| FR-NDL-12 | Reject missing or space-channel expansion source | Missing source 404; ordinary space channel 400; no hidden direct conversation created | B/P1 | NEW |
+| FR-NDL-13 | Deny outsider expansion of a private Needl | 403 with no source mutation, copied messages or new destination | B/P0 | NEW |
+| FR-NDL-14 | Reject additions containing only existing participants | 400 for self or existing-only selection; duplicates do not produce an empty or duplicate expansion | B/P1 | NEW |
+| FR-NDL-15 | Reject nonexistent or ineligible new participant atomically | 404/403 before destination or history writes; source membership/content preserved | B/P1 | NEW |
+| FR-NDL-16 | Normalize mixed existing and duplicate new participants | Destination contains each old/new person once; source remains separate and unchanged | B/P1 | NEW |
+| FR-NDL-17 | Enforce expansion nine-person boundary | Expansion to nine succeeds; tenth rejected without partial group or source membership changes | B/P0 | NEW |
+| FR-NDL-18 | Omitted history creates a fresh conversation | No source messages copied when history omitted; new destination accepts independent subsequent messages | B/P1 | NEW |
+| FR-NDL-19 | Copy today using explicit phone-local midnight | Before boundary excluded; exact boundary and later timestamps included unchanged; source rows unchanged | B/P1 | NEW |
+| FR-NDL-20 | Handle today with no qualifying messages | Empty destination and absent preview; source history preserved; sending after expansion works | B/P1 | NEW |
+| FR-NDL-21 | Copy heterogeneous history and deletion state | Text/media/mentions/priority/sender/timestamps and deleted placeholders copied with new IDs; source untouched | B/P1 | NEW |
+| FR-NDL-22 | Deliver Needl messages to all participants | Subscribe before send; each participant receives correlated message ID; DB and independent reads agree | B/P0 | NEW |
+| FR-NDL-23 | Keep expanded conversation traffic out of original and outsider audiences | New member receives destination message; notifications belong only to destination participants; source history and outsider inbox unchanged | B/P0 | NEW |
+| FR-NDL-24 | Require authentication for all Needl endpoints | Create/list/detail/members/rename/expand/message actions reject anonymous requests without writes | B/P0 | NEW |
+| FR-NDL-25 | Edit and delete Needl messages with independent reload | Edited content and tombstone persist in the correct group; unrelated group messages remain intact | B/P0 | NEW |
+| FR-NDL-26 | Persist group pins and per-member receipts | Group member pin/unpin and read receipts persist; outsider actions denied; exact referenced message retained | B/P0 | NEW |
+| FR-NDL-27 | Restore Needl identity after backend restart | Same group ID, title, members and message content survive restart against disposable DB | B/P0 | NEW |
+| FR-NDL-28 | Converge concurrent expansion on one destination | Concurrent same-membership expansions return one usable destination without duplicates or partial history | B/P0 | NEW |
+| FR-NDL-29 | Recover history copy after a database write failure | Fault returns bounded error; after fixture fault removed, retry returns complete intended history without duplicates; source unchanged | B/P0 | NEW |
+| FR-NDL-30 | Keep group participation distinct from accepted pair consent | Group membership alone cannot create an accepted one-to-one DM; no hidden pair channel appears | B/P0 | NEW |
+| FR-NDL-31 | Classify and label Needls consistently | 1:1, self notes and space channels excluded; 3+ members or server group flag included; custom names, stale single-peer names and fallback labels correct | F/P1 | NEW |
+| FR-NDL-32 | Create group through real client repository | Exact primary endpoint/body and parsed group identity/members; no fake server correctness claim | F/P1 | NEW |
+| FR-NDL-33 | Use legacy creation alias only for not-found | 404 triggers exactly one alias call; validation/forbidden/server failures propagate without fallback mutations | F/P1 | NEW |
+| FR-NDL-34 | Serialize all history modes and device midnight | All/today/none payloads preserved; only today includes UTC ISO representing local midnight; returned group parsed | F/P1 | NEW |
+| FR-NDL-35 | Parse list detail member and rename contracts | Correct routes/bodies and typed results; malformed data raises a client error, never fabricated empty success | F/P1 | NEW |
+| FR-NDL-36 | Separate Needl tab from Direct and space channels | Only group DMs rendered under Needl with correct group identity, member count, draft preview and per-conversation unread badge; 1:1 stays Direct | F/P0 | NEW |
+| FR-NDL-37 | Show Needl empty and error states with recovery | Empty create CTA navigates to Start DM; repository failure shows error; refresh success restores correct group | F/P0 | NEW |
+| FR-NDL-38 | Preload only distinct Vocle colleague suggestions | Self/empty IDs excluded; repeated colleagues deduplicated; no device address-book dependency | F/P1 | NEW |
+| FR-NDL-39 | Debounce name search and discard stale responses | Two-character Start DM query executes after controlled debounce; newer query results survive older response completion | F/P1 | NEW |
+| FR-NDL-40 | Distinguish search failure and restore suggestions | Visible error on failure; clearing search restores known colleagues rather than stale failed results | F/P1 | NEW |
+| FR-NDL-41 | Create Needl from exact selected colleagues | Two selected colleague IDs submitted once; resulting group route uses returned ID; stale 1:1 response cannot navigate as Needl | F/P0 | NEW |
+| FR-NDL-42 | Retain selected colleagues after create failure | Error visible; selected identities retained; retry succeeds; duplicate in-flight taps do not create extra requests | F/P0 | NEW |
+| FR-NDL-43 | Create multiple Needls without selection leakage | Fresh creation screen starts unselected; second selection submits a distinct exact set and opens its own returned group | F/P0 | NEW |
+| FR-NDL-44 | Preload add-people suggestions safely | Sorted distinct colleagues; exclude self/existing/empty IDs; suggestions render without typing | F/P1 | NEW |
+| FR-NDL-45 | Discard stale add-people search responses | Controlled debounce and out-of-order completions keep only latest query results | F/P1 | NEW |
+| FR-NDL-46 | Normalize add-people phone lookup and filter forbidden selections | Phone normalized correctly; self and existing members not selectable; eligible lookup result shown | F/P1 | NEW |
+| FR-NDL-47 | Expose add-people search failures and recover | Failure shown as error, not empty result; subsequent successful query restores choices | F/P1 | NEW |
+| FR-NDL-48 | Maintain selected chips across queries | Selections retained while searching; deleting chip removes exact ID; empty selection disables submit | F/P1 | NEW |
+| FR-NDL-49 | Select history options and cancel safely | Default all; today/none map to correct expansion payload; cancel/dispose produces no mutation or dangling timer error | F/P1 | NEW |
+| FR-NDL-50 | Recover add-people submission and block double taps | Failed expansion retains sheet/history/selection; pending submission disabled; one successful retry navigates to returned group | F/P0 | NEW |
+| FR-NDL-51 | Cancel or save rename with bounded trimmed input | Cancel no API request; max 80 chars enforced; save trimmed name and correct group ID; success acknowledged | F/P1 | NEW |
+| FR-NDL-52 | Show rename error without claiming success | Server error visible; no success snackbar or false local title update; original group identity retained | F/P1 | NEW |
+| FR-NDL-53 | Display Needl members in stable self-first order | Self first then case-insensitive name order; correct count/roles/presence; original members list not mutated | F/P1 | NEW |
+| FR-NDL-54 | Render group chat identity and group-only menu | Needl title not overwritten by first peer; member count and rename/people options shown; sender identity rendered for group message | F/P0 | NEW |

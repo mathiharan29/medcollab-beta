@@ -289,7 +289,7 @@ jobs:
           fi
           cat "$VOCLE_FLUTTER_OUTPUT/report.md" >> "$GITHUB_STEP_SUMMARY"
           node tests/developer-workflow/qa.mjs "$VOCLE_FLUTTER_OUTPUT/report.json" "$VOCLE_FLUTTER_OUTPUT"
-          node -e 'const r=require(process.argv[1]); if (!r.complete || r.implementedAndExecuted !== 32) process.exit(1)' "$VOCLE_FLUTTER_OUTPUT/report.json"
+          node -e 'const r=require(process.argv[1]); if (!r.complete || r.implementedAndExecuted !== 56) process.exit(1)' "$VOCLE_FLUTTER_OUTPUT/report.json"
           echo "catalog_exit=${CATALOG_EXIT:-missing}; retained_exit=${RETAINED_EXIT:-missing}" >> "$GITHUB_STEP_SUMMARY"
       - name: Generate detailed offline Flutter dashboard even after setup failure
         if: always()
@@ -329,7 +329,7 @@ jobs:
           test "$ARTIFACT_RESULT" = success
           test "$CATALOG_EXIT" = 0
           test "$RETAINED_EXIT" = 0
-          node -e 'const r=require(process.argv[1]); if (!r.fullSuccess || !r.complete || r.counts.PASS !== 32) process.exit(1)' "$VOCLE_FLUTTER_OUTPUT/report.json"
+          node -e 'const r=require(process.argv[1]); if (!r.fullSuccess || !r.complete || r.counts.PASS !== 56) process.exit(1)' "$VOCLE_FLUTTER_OUTPUT/report.json"
 
   summary:
     name: Summary
@@ -392,7 +392,7 @@ jobs:
           EXECUTE_RESULT: ${{ needs.execute.result }}
           FLUTTER_RESULT: ${{ needs.flutter.result }}
         run: |
-          echo 'Functional catalog: 187 total / 179 hosted / 8 LOCAL_ONLY' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Functional catalog: 241 total / 233 hosted / 8 LOCAL_ONLY' >> "$GITHUB_STEP_SUMMARY"
           test "$DETECT_RESULT" = success
           test "$EXECUTE_RESULT" = success
           test "$FLUTTER_RESULT" = success

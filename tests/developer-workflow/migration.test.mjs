@@ -13,7 +13,7 @@ test('workflow entry points and suite ownership require complete PR execution wi
   const reusable=['vocle-sanity.yml','vocle-security-environment-test.yml','vocle-reporting.yml'];
   const directory=join(root,'.github/workflows');
   for(const file of await readdir(directory)){
-    const text=await readFile(join(directory,file),'utf8'),events=text.split('on:\n')[1].split('permissions:')[0];
+    const text=(await readFile(join(directory,file),'utf8')).replaceAll('\r\n','\n'),events=text.split('on:\n')[1].split('permissions:')[0];
     assert(!/^  (push|schedule):/m.test(events));assert(!events.includes('paths:'));assert(!text.includes('pull_request_target'));assert(text.includes('cancel-in-progress: false'));
     if(reusable.includes(file)){assert(events.includes('workflow_call:'));assert(!events.includes('pull_request:'));assert(!events.includes('workflow_dispatch:'));}
     else if(file==='vocle-cloudinary-security.yml')assert(events.includes('workflow_dispatch:'));
@@ -28,16 +28,16 @@ test('workflow entry points and suite ownership require complete PR execution wi
   const developer=await readFile(join(directory,'vocle-developer-qa.yml'),'utf8');assert.equal((developer.match(/uses: .\/.github\/workflows\/vocle-security-environment-test.yml/g)||[]).length,1);
   for(const file of await readdir(directory)){const text=await readFile(join(directory,file),'utf8');assert(!text.includes('uses: ./.github/workflows/vocle-sanity.yml'));}
 });
-test('hosted Android inventory is local-only SKIP; 179 hosted passes never become 187 executed passes',async()=>{
+test('hosted Android inventory is local-only SKIP; 233 hosted passes never become 241 executed passes',async()=>{
   const metadata=await scenarioMetadata(root);
   const hosted=normalize({scope:'full',results:metadata.filter(c=>c.tier!=='D').map(c=>({id:c.id,status:'PASS',executed:true}))},metadata,{suite:'developer'});
   const rows=addLocalOnlyAndroid(hosted.results,metadata,hosted.source,hosted.harness);
-  assert.equal(rows.length,187);assert.equal(rows.filter(r=>r.executed).length,179);assert.equal(rows.filter(r=>r.status==='PASS').length,179);
+  assert.equal(rows.length,241);assert.equal(rows.filter(r=>r.executed).length,233);assert.equal(rows.filter(r=>r.status==='PASS').length,233);
   assert.equal(rows.filter(r=>r.executionMode==='LOCAL_ONLY'&&r.status==='SKIP'&&!r.executed).length,8);
   assert.throws(()=>addLocalOnlyAndroid(rows,metadata,hosted.source,hosted.harness),/cannot be relabeled/);
-  assert.equal(normalize({},metadata,{suite:'backend'}).counts.ERROR,147);
-  assert.equal(normalize({},metadata,{suite:'flutter'}).counts.ERROR,32);
-  assert(summary(hosted).includes('187 total / 179 hosted / 8 LOCAL_ONLY'));
+  assert.equal(normalize({},metadata,{suite:'backend'}).counts.ERROR,177);
+  assert.equal(normalize({},metadata,{suite:'flutter'}).counts.ERROR,56);
+  assert(summary(hosted).includes('241 total / 233 hosted / 8 LOCAL_ONLY'));
   const old=process.env.GITHUB_RUN_ID;process.env.GITHUB_RUN_ID='42';
   try{assert.throws(()=>normalize({},metadata,{suite:'device'}),/LOCAL_ONLY/);}finally{if(old===undefined)delete process.env.GITHUB_RUN_ID;else process.env.GITHUB_RUN_ID=old;}
 });
