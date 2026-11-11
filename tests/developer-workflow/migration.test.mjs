@@ -9,15 +9,15 @@ import { normalize, root, summary } from '../reporting/report.mjs';
 import { scenarioMetadata } from '../reporting/scenarios.mjs';
 import { loadPreviousCatalog, validateCoverage } from './coverage-policy.mjs';
 
-test('workflow entry points and suite ownership require complete PR execution with cleanup-safe concurrency',async()=>{
+test('workflow entry points support complete PR and manual execution with cleanup-safe concurrency',async()=>{
   const reusable=['vocle-sanity.yml','vocle-security-environment-test.yml','vocle-reporting.yml'];
   const directory=join(root,'.github/workflows');
   for(const file of await readdir(directory)){
-    const text=await readFile(join(directory,file),'utf8'),events=text.split('on:\n')[1].split('permissions:')[0];
+    const text=(await readFile(join(directory,file),'utf8')).replaceAll('\r\n','\n'),events=text.split('on:\n')[1].split('permissions:')[0];
     assert(!/^  (push|schedule):/m.test(events));assert(!events.includes('paths:'));assert(!text.includes('pull_request_target'));assert(text.includes('cancel-in-progress: false'));
-    if(reusable.includes(file)){assert(events.includes('workflow_call:'));assert(!events.includes('pull_request:'));assert(!events.includes('workflow_dispatch:'));}
+    if(reusable.includes(file)){assert(events.includes('workflow_call:'));assert(!events.includes('pull_request:'));assert.equal(events.includes('workflow_dispatch:'),file==='vocle-sanity.yml');}
     else if(file==='vocle-cloudinary-security.yml')assert(events.includes('workflow_dispatch:'));
-    else {assert(events.includes('branches: [master]'));assert(events.includes('types: [opened, reopened, ready_for_review, synchronize]'));assert(!events.includes('workflow_dispatch:'));assert(text.includes('QA_HEAD_REPOSITORY'));}
+    else {assert(events.includes('branches: [master]'));assert(events.includes('types: [opened, reopened, ready_for_review, synchronize]'));assert(events.includes('workflow_dispatch:'));assert(text.includes('QA_HEAD_REPOSITORY'));}
     for(const checkout of text.split(/uses: actions\/checkout@/).slice(1)){
       const config=checkout.split(/\n      - /)[0];assert(config.includes('persist-credentials: false'));assert(config.includes('github.event.pull_request.head.sha || github.sha'));
     }
