@@ -462,17 +462,17 @@ Sources: backend channels routes/controller, channelAccess, knownUsers, messagin
 | FR-NDL-15 | Reject nonexistent or ineligible new participant atomically | 404/403 before destination or history writes; source membership/content preserved | B/P1 | NEW |
 | FR-NDL-16 | Normalize mixed existing and duplicate new participants | Destination contains each old/new person once; source remains separate and unchanged | B/P1 | NEW |
 | FR-NDL-17 | Enforce expansion nine-person boundary | Expansion to nine succeeds; tenth rejected without partial group or source membership changes | B/P0 | NEW |
-| FR-NDL-18 | Omitted history creates a fresh conversation | No source messages copied when history omitted; new destination accepts independent subsequent messages | B/P1 | NEW |
+| FR-NDL-18 | Omitted history creates a fresh conversation | No source messages copied when history is omitted; the destination records member-added activity and accepts independent messages | B/P1 | NEW |
 | FR-NDL-19 | Copy today using explicit phone-local midnight | Before boundary excluded; exact boundary and later timestamps included unchanged; source rows unchanged | B/P1 | NEW |
-| FR-NDL-20 | Handle today with no qualifying messages | Empty destination and absent preview; source history preserved; sending after expansion works | B/P1 | NEW |
+| FR-NDL-20 | Handle today with no qualifying messages | Destination contains only member-added activity with its matching preview; source history survives and new messages can be sent | B/P1 | NEW |
 | FR-NDL-21 | Copy heterogeneous history and deletion state | Text/media/mentions/priority/sender/timestamps and deleted placeholders copied with new IDs; source untouched | B/P1 | NEW |
 | FR-NDL-22 | Deliver Needl messages to all participants | Subscribe before send; each participant receives correlated message ID; DB and independent reads agree | B/P0 | NEW |
 | FR-NDL-23 | Keep expanded conversation traffic out of original and outsider audiences | New member receives destination message; notifications belong only to destination participants; source history and outsider inbox unchanged | B/P0 | NEW |
 | FR-NDL-24 | Require authentication for all Needl endpoints | Create/list/detail/members/rename/expand/message actions reject anonymous requests without writes | B/P0 | NEW |
-| FR-NDL-25 | Edit and delete Needl messages with independent reload | Edited content and tombstone persist in the correct group; unrelated group messages remain intact | B/P0 | NEW |
+| FR-NDL-25 | Edit and delete Needl messages with independent reload | Edited content persists before delete-for-everyone; deleted message is absent from storage and participant history; unrelated group stays intact | B/P0 | NEW |
 | FR-NDL-26 | Persist group pins and per-member receipts | Group member pin/unpin and read receipts persist; outsider actions denied; exact referenced message retained | B/P0 | NEW |
-| FR-NDL-27 | Restore Needl identity after backend restart | Same group ID, title, members and message content survive restart against disposable DB | B/P0 | NEW |
-| FR-NDL-28 | Converge concurrent expansion on one destination | Concurrent same-membership expansions return one usable destination without duplicates or partial history | B/P0 | NEW |
+| FR-NDL-27 | Restore Needl identity after backend restart | Same group ID, title, members, rename activity and message survive a backend restart against the disposable DB | B/P0 | NEW |
+| FR-NDL-28 | Converge concurrent expansion on one destination | Concurrent same-membership expansions return one usable destination with one activity line and complete, nonduplicated history | B/P0 | NEW |
 | FR-NDL-29 | Recover history copy after a database write failure | Fault returns bounded error; after fixture fault removed, retry returns complete intended history without duplicates; source unchanged | B/P0 | NEW |
 | FR-NDL-30 | Keep group participation distinct from accepted pair consent | Group membership alone cannot create an accepted one-to-one DM; no hidden pair channel appears | B/P0 | NEW |
 | FR-NDL-31 | Classify and label Needls consistently | 1:1, self notes and space channels excluded; 3+ members or server group flag included; custom names, stale single-peer names and fallback labels correct | F/P1 | NEW |
