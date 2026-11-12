@@ -1,0 +1,929 @@
+{
+  "phases": [
+    [
+      0,
+      "FOUNDATION",
+      "Freeze source, contracts, decisions and case ownership",
+      [],
+      [],
+      [
+        "B",
+        "D",
+        "M",
+        "N"
+      ],
+      "docs/performance/architecture.md; docs/performance/decisions.md; tests/performance/catalog.json",
+      "Freeze 45 original IDs and 87 feature-route registrations; record product/source conflicts; create operation-to-case source map and stale-reference ledger.",
+      "No framework installation, scenarios, workflows, or execution.",
+      "M"
+    ],
+    [
+      1,
+      "HARNESS-CONTRACTS",
+      "Build shared harness interfaces and isolation contracts",
+      [],
+      [
+        0
+      ],
+      [
+        "E",
+        "I",
+        "J"
+      ],
+      "tests/performance/package.json; tests/performance/package-lock.json; tests/performance/schemas/; tests/performance/lib/; tests/performance/config/; tests/performance/reporting/schema.json",
+      "Implement finite-budget validation, owned-resource journal, provenance, action ledger, status model, deterministic seed interface and report envelope; choose exact locked Artillery version in implementation review.",
+      "No application startup or dependency installation unless separately authorized; no provider or target traffic.",
+      "L"
+    ],
+    [
+      2,
+      "HTTP-AUTHENTICATION",
+      "Implement HTTP baseline, login, refresh and limiter scenarios",
+      [
+        "PERF-API-001",
+        "PERF-AUTH-001",
+        "PERF-AUTH-002",
+        "PERF-AUTH-003"
+      ],
+      [
+        1
+      ],
+      [
+        "C2"
+      ],
+      "tests/performance/scenarios/http/; tests/performance/scenarios/auth/; tests/performance/providers/msg91/; tests/performance/oracles/auth/",
+      "Create route-template adapters with real auth; preserve bcrypt and OTP claim work; separate widget and server OTP; model IP/user limiter keys and refresh concurrency; expose device-registration fixtures.",
+      "Do not implement receiver cohort here or fake OTP computation in login performance cases.",
+      "M"
+    ],
+    [
+      3,
+      "SOCKET-COHORTS",
+      "Implement persistent receiver cohorts and fan-out accounting",
+      [
+        "SCALE-RT-001",
+        "SCALE-RT-002"
+      ],
+      [
+        2
+      ],
+      [
+        "C8"
+      ],
+      "tests/performance/lib/socket-cohort.mjs; tests/performance/lib/message-ledger.mjs; tests/performance/scenarios/realtime/connections.mjs; tests/performance/scenarios/realtime/fanout.mjs",
+      "Use socket.io-client 4.8.3; listeners precede traffic; separate transport/app/channel readiness; allocate unique user/device actors; record duplicates and expected audience; initialize recovery offsets.",
+      "No invented send_message handler or delivery acknowledgement; no distributed capacity claim.",
+      "L"
+    ],
+    [
+      4,
+      "NOTIFICATIONS",
+      "Implement notification amplification and inbox correctness",
+      [
+        "PERF-NOT-001",
+        "PERF-NOT-002"
+      ],
+      [
+        3
+      ],
+      [
+        "C6",
+        "C9"
+      ],
+      "tests/performance/providers/fcm/; tests/performance/scenarios/notifications/; tests/performance/oracles/notifications/",
+      "Build provider outcome ledger and eligibility oracle; handle viewing suppression, emergency/preferences, quiet hours, 0/1/5 tokens, stale-token cleanup and read/count convergence.",
+      "No real FCM fan-out; provider acceptance is not device receipt.",
+      "L"
+    ],
+    [
+      5,
+      "MESSAGING",
+      "Implement message, thread, retry and mutation scenarios",
+      [
+        "PERF-MSG-001",
+        "PERF-MSG-002",
+        "PERF-MSG-003",
+        "PERF-MSG-004"
+      ],
+      [
+        4
+      ],
+      [
+        "C5",
+        "C8"
+      ],
+      "tests/performance/scenarios/messages/; tests/performance/oracles/messages/; tests/performance/faults/response-loss-contract.mjs",
+      "Drive sends by HTTP, correlate by returned/persisted ID, exercise hot channels/roots and post-response debt; implement identical-content ambiguity and mutation state machines.",
+      "Do not add an application idempotency key or silently fix counters; runtime fault activation comes later.",
+      "XL"
+    ],
+    [
+      6,
+      "PRESENCE-RECOVERY",
+      "Implement presence, typing and recovery scenarios",
+      [
+        "SCALE-RT-003",
+        "SCALE-RT-004",
+        "SCALE-RT-005"
+      ],
+      [
+        5
+      ],
+      [
+        "C8",
+        "C9"
+      ],
+      "tests/performance/scenarios/realtime/presence.mjs; tests/performance/scenarios/realtime/typing.mjs; tests/performance/scenarios/realtime/recovery.mjs; tests/performance/oracles/rooms.mjs",
+      "Model overlapping spaces, devices, 60-second typing cache, two-minute recovery, expiry/revocation and duplicate readiness/sync; distinguish recovery from socket replacement.",
+      "Membership mutation ownership stays Phase 07/08; do not assume cache eviction or auth on recovered sockets.",
+      "L"
+    ],
+    [
+      "07A",
+      "REQUESTS-CONVERSATIONS",
+      "Implement consent and unique conversation creation",
+      [
+        "PERF-SOC-001",
+        "PERF-SOC-002"
+      ],
+      [
+        6
+      ],
+      [
+        "C4",
+        "C6"
+      ],
+      "tests/performance/lib/barrier.mjs; tests/performance/scenarios/social/requests.mjs; tests/performance/scenarios/social/conversations.mjs; tests/performance/oracles/social/",
+      "Implement bounded barrier rounds, pending-request races, accept/decline races, accepted-without-DM retry and membership-key uniqueness including aliases/self notes.",
+      "No production mutations, no artificial 500-message copy cap, no unrelated app remediation.",
+      "L"
+    ],
+    [
+      "07B",
+      "HISTORY-EXPANSION",
+      "Implement full-history copy and partial-expansion scenarios",
+      [
+        "PERF-SOC-003"
+      ],
+      [
+        "07A"
+      ],
+      [
+        "C4"
+      ],
+      "tests/performance/scenarios/social/expansion.mjs; tests/performance/data/conversation-graphs.mjs; tests/performance/oracles/copy-graph.mjs",
+      "Implement none/today/all selections, copied graph mapping, deleted/media fixtures, timezone boundaries, concurrent expansion and partial-copy oracle.",
+      "No production mutations, no artificial 500-message copy cap, no unrelated app remediation.",
+      "L"
+    ],
+    [
+      "07C",
+      "SPACES-PINS",
+      "Implement membership, invitation and pin races",
+      [
+        "PERF-SOC-004",
+        "PERF-SOC-005"
+      ],
+      [
+        "07B"
+      ],
+      [
+        "C3",
+        "C4"
+      ],
+      "tests/performance/scenarios/social/spaces.mjs; tests/performance/scenarios/social/pins.mjs; tests/performance/oracles/membership.mjs",
+      "Implement distinct/same-user join and approve races, invite regeneration, channel naming and pin cap with fresh per-round entities.",
+      "No production mutations, no artificial 500-message copy cap, no unrelated app remediation.",
+      "L"
+    ],
+    [
+      8,
+      "MEMBERSHIP-EVICTION",
+      "Implement membership/archive changes during live traffic",
+      [
+        "SCALE-RT-006"
+      ],
+      [
+        "07C"
+      ],
+      [
+        "C3",
+        "C4",
+        "C8"
+      ],
+      "tests/performance/scenarios/realtime/membership-eviction.mjs; tests/performance/oracles/access-timeline.mjs",
+      "Combine Phase 07 mutations with Phase 03 cohort and Phase 06 recovery; capture DB mutation completion, space/channel rooms and subsequent delivery on all devices.",
+      "No rewrite of access policy; cross-node topology execution waits for Phase 19.",
+      "M"
+    ],
+    [
+      9,
+      "HANDOFFS",
+      "Implement shift-change lifecycle and transition races",
+      [
+        "PERF-HAND-001",
+        "PERF-HAND-002"
+      ],
+      [
+        8
+      ],
+      [
+        "C6"
+      ],
+      "tests/performance/scenarios/handoffs/; tests/performance/oracles/handoff-state.mjs; tests/performance/data/handoffs.mjs",
+      "Implement synthetic patient documents, transition matrix, notes/reassignment races, author-only policy conflict and per-transition event/notification ledger.",
+      "No real patient data; no assumed system chat message from an unused helper.",
+      "L"
+    ],
+    [
+      10,
+      "DATABASE-GROWTH",
+      "Implement dataset growth, query/pool and TTL experiments",
+      [
+        "PERF-DATA-001",
+        "PERF-DATA-002",
+        "PERF-DATA-003"
+      ],
+      [
+        9
+      ],
+      [
+        "B6",
+        "C9"
+      ],
+      "tests/performance/data/; tests/performance/db/explain.mjs; tests/performance/telemetry/mongo.mjs; tests/performance/scenarios/database/",
+      "Version S/M/L fixtures and indexes; distinguish current indexes from experimental candidates; sample query plans outside timing; measure ten-pool contention and retention with TTL enabled.",
+      "No shared DB index mutation, no actual restart or execution; media-dependent cleanup checks wait for Phase 12.",
+      "L"
+    ],
+    [
+      11,
+      "DISCOVERY-OPERATIONS",
+      "Implement search, Needl, lists and admin/support interference",
+      [
+        "PERF-SEARCH-001",
+        "PERF-SEARCH-002",
+        "PERF-OPS-001"
+      ],
+      [
+        10
+      ],
+      [
+        "C2",
+        "C7"
+      ],
+      "tests/performance/scenarios/search/; tests/performance/scenarios/lists/; tests/performance/scenarios/operations/; tests/performance/data/search-corpus.mjs",
+      "Vary selectivity and accessible graph size; preserve no-result searches, sequential Needl access, unpaginated lists, deep admin skip and three retention cohorts; overlay low-volume admin traffic.",
+      "Do not use admin infrastructure estimates as telemetry or invent list pagination.",
+      "L"
+    ],
+    [
+      12,
+      "MEDIA",
+      "Implement upload, delivery, deletion and avatar scenarios",
+      [
+        "PERF-MED-001",
+        "PERF-MED-002"
+      ],
+      [
+        11
+      ],
+      [
+        "C6"
+      ],
+      "tests/performance/data/media/; tests/performance/providers/cloudinary/; tests/performance/scenarios/media/; tests/performance/oracles/media.mjs",
+      "Use synthetic bounded fixtures and provider stream double; cover 50 MiB backend versus 25 MiB client; upload memory, local sync disk path, three-type deletion and attachment scans.",
+      "No actual provider calls, remote fixture download, or package setup; E1 fixture cap 1 MiB.",
+      "L"
+    ],
+    [
+      13,
+      "MIXED-LOAD",
+      "Compose personas and sustained normal-load scenarios",
+      [
+        "PERF-MIX-001",
+        "LOAD-SYS-001"
+      ],
+      [
+        12
+      ],
+      [
+        "E"
+      ],
+      "tests/performance/workloads/; tests/performance/scenarios/mixed/; tests/performance/config/personas.json; tests/performance/config/normal-load.json",
+      "Compose existing adapters into causal multi-user journeys; keep independent connections, active actors and arrivals; forecast fan-out/bytes and maintain full correctness ledger.",
+      "No new duplicate case implementations; usage mix remains hypothesis.",
+      "L"
+    ],
+    [
+      14,
+      "RESILIENCE",
+      "Implement owned dependency/process failure scenarios",
+      [
+        "RES-DATA-001",
+        "RES-SYS-001",
+        "RES-SYS-002"
+      ],
+      [
+        13
+      ],
+      [
+        "B4",
+        "B5",
+        "C9"
+      ],
+      "tests/performance/faults/; tests/performance/supervisor/; tests/performance/scenarios/resilience/; tests/performance/providers/fault-modes/",
+      "Develop reversible scoped fault controls with journal and watchdog; DB path/restart, graceful/abrupt backend exit and provider delay/rejection/reset; reconcile ambiguous commits and deferred loss.",
+      "No fault execution in Codex Cloud; no application crash hook inserted without separate scope approval.",
+      "XL"
+    ],
+    [
+      15,
+      "NETWORK-SLOW-CONSUMERS",
+      "Implement transport impairment and slow-receiver scenarios",
+      [
+        "SCALE-RT-007",
+        "NET-SYS-001"
+      ],
+      [
+        14
+      ],
+      [
+        "C8"
+      ],
+      "tests/performance/faults/network-contract.mjs; tests/performance/config/network-profiles.json; tests/performance/scenarios/network/",
+      "Define RTT/jitter/loss/bandwidth and disconnect profiles; throttle subset of receivers; preserve normal-user observers, bounded buffers and recovery timelines.",
+      "Do not configure host networking during development; no claim proxy impairment equals radio behavior.",
+      "L"
+    ],
+    [
+      16,
+      "STRESS-SPIKE-SOAK",
+      "Implement saturation, bursts and long-running stability envelopes",
+      [
+        "STRESS-SYS-001",
+        "SPIKE-SYS-001",
+        "SOAK-SYS-001"
+      ],
+      [
+        15
+      ],
+      [
+        "E",
+        "I"
+      ],
+      "tests/performance/workloads/stress.json; tests/performance/workloads/spike.json; tests/performance/workloads/soak.json; tests/performance/lib/watchdog.mjs; tests/performance/analysis/resource-drift.mjs",
+      "Reuse scenarios with bounded staircase, peak and soak profiles; record unfinished work, resource slopes and recovery; separate dataset growth from leaks.",
+      "No heavy execution, unbounded escalation, or automatic PR load.",
+      "L"
+    ],
+    [
+      17,
+      "REPORTING-REGRESSION",
+      "Implement statistical comparison and evidence reports",
+      [
+        "REG-SYS-001"
+      ],
+      [
+        16
+      ],
+      [
+        "I",
+        "O"
+      ],
+      "tests/performance/analysis/; tests/performance/reporting/; tests/performance/baseline-manifests/",
+      "Merge histograms correctly, retain errors/timeouts/censoring, compare paired repeated runs with noise/clock uncertainty, produce sanitized JSON/JUnit/offline HTML and provenance.",
+      "Never create real baselines from synthetic examples; no percentile averaging or pass on missing cases.",
+      "L"
+    ],
+    [
+      18,
+      "GITHUB-ACTIONS",
+      "Implement separate validation and authorized orchestration design",
+      [],
+      [
+        17
+      ],
+      [
+        "K"
+      ],
+      ".github/workflows/vocle-performance-validate.yml; .github/workflows/vocle-performance-characterize.yml; .github/workflows/vocle-performance-dedicated.yml; .github/workflows/vocle-performance-provider-sandbox.yml; tests/performance/ci/",
+      "Future implementation only: static PR validation, manual characterization, protected dedicated runs, separate sandbox, finite inputs, environment lease, always-report and reliable failure propagation.",
+      "This package creates no workflow; future agent must not execute workflows, alter existing assertions or provide an arbitrary target URL.",
+      "M"
+    ],
+    [
+      19,
+      "ADVANCED-SCALING",
+      "Implement vertical and cross-instance scaling scenarios",
+      [
+        "SCALE-SYS-001",
+        "SCALE-SYS-002"
+      ],
+      [
+        18
+      ],
+      [
+        "B",
+        "D"
+      ],
+      "tests/performance/distributed/; tests/performance/infra-manifests/; tests/performance/scenarios/scaling/",
+      "Define fixed-resource variants, worker partitions and clock/ledger merge; prove cross-node correctness before load; document adapter/shared-state prerequisites without implementing product architecture.",
+      "No assumed clustering; no cloud provisioning or durable queue/adapter changes in test implementation.",
+      "XL"
+    ],
+    [
+      20,
+      "MOBILE-PERFORMANCE",
+      "Implement device performance and lifecycle observers",
+      [
+        "MOBILE-SYS-001"
+      ],
+      [
+        19
+      ],
+      [
+        "B4",
+        "C9"
+      ],
+      "medcollab-app/integration_test/performance/; medcollab-app/test_driver/performance_driver.dart; tests/performance/device/",
+      "Add new performance-only device instrumentation for frame timing, parsing, memory, cache cleanup, actual reconnect traffic and media UI; consume shared ledger and profiles.",
+      "Do not modify existing integration-test assertions, launch emulator/Flutter, or run device/load tests in Codex Cloud.",
+      "L"
+    ]
+  ],
+  "steps": {
+    "PERF-API-001": [
+      "Build one variant per operation ID in the 87-route inventory, including the group-DM alias; classify public, authenticated, onboarded and platform-admin identities.",
+      "Prepare isolated mutation fixtures and capture the expected response envelope, status, result IDs and DB delta before measuring each variant.",
+      "Schedule B samples separately by route template; keep user activity writes and response serialization in scope; collect operation counts without combining unrelated percentiles.",
+      "Drain and reconcile mutation state, pagination and provider journal; retain expected rejection variants separately from successful requests."
+    ],
+    "PERF-AUTH-001": [
+      "Seed distinct existing users and an absent contested phone; configure provider success, response rejection and transport-error modes.",
+      "Implement actual OTP issuance/hash and atomic claim; obtain synthetic OTP only through owned provider capture, never bypass the measured verification path.",
+      "Barrier concurrent first-account creation and repeated OTP claims; separately drive independent widget/server-OTP arrivals within authentic limiter constraints.",
+      "Compare users, claims, token issuance and provider attempts; include the failure boundary after OTP claim but before completed account creation."
+    ],
+    "PERF-AUTH-002": [
+      "Allocate one identity to 1/2/3 device actors with independent sockets and tokens; record initial token array.",
+      "Coordinate simultaneous protected HTTP calls around expiry, concurrent registrations exceeding five distinct tokens, and one-device logout.",
+      "Observe HTTP refresh coalescing separately from socket recovery refreshes; keep one device connected while another disconnects; include account deactivation.",
+      "Reconcile token deduplication/cap, presence and retry outcomes; label active-socket revocation semantics as decision-dependent."
+    ],
+    "PERF-AUTH-003": [
+      "Represent controlled source IP and authenticated user IDs as distinct dimensions; retain production-mode global limiter behavior.",
+      "Schedule bounded requests at window edges for global, OTP, shared-IP auth and per-user upload limits; never spoof headers to evade policy.",
+      "Count 429 admission separately from service failures and verify accepted requests resume after the applicable window.",
+      "Record configuration and any isolated ceiling variant explicitly; do not use NODE_ENV=test results as deployed policy capacity."
+    ],
+    "SCALE-RT-001": [
+      "Allocate actor/device/space memberships; register authenticated, join_channel, error and disconnect observers before connecting.",
+      "Measure connection attempt, transport connect, authenticated and channel-ready timestamps independently.",
+      "Hold idle connections at fixed population while varying new arrivals; separately vary memberships per actor and devices per user.",
+      "Reconcile ready/live/disconnected sockets and memory after disconnect; invalidate any run whose generator cannot maintain requested starts."
+    ],
+    "SCALE-RT-002": [
+      "Create DM, nine-member direct group, public space and private/admin audiences; precompute eligible devices and viewer state.",
+      "Start observers and await application/channel readiness; send through HTTP at constant message rate while varying audience, then reverse the independent variable.",
+      "Capture all event copies including channel-room and user-room duplicates; correlate events that precede HTTP response.",
+      "Compare unique delivery coverage with expected recipients and DB IDs, recording first and last recipient latency and unauthorized deliveries."
+    ],
+    "PERF-NOT-001": [
+      "Generate viewing/non-viewing/offline recipient states with 0/1/5 synthetic device tokens, quiet-hour preferences and ordinary/emergency/mention triggers.",
+      "Run the real notification service against a boundary double with explicit delay, temporary-error and stale-token outcomes.",
+      "Record per-recipient persistence, user-room event and per-token provider outcome; do not infer completion from bulk Promise settlement.",
+      "Reconcile eligibility and stale-token cleanup after drain; ensure a caught error cannot produce a successful provider result."
+    ],
+    "PERF-NOT-002": [
+      "Seed inboxes with controlled unread ratios, types and channel metadata including legacy string/ObjectId forms.",
+      "During bounded new arrivals, barrier read-all, channel clear, individual read/unread and deletion operations.",
+      "Traverse cursor pages and retain the separate times of list and unread-count reads rather than demanding an atomic snapshot.",
+      "After drain reconcile owner-scoped remaining records and counts, measuring examined/modified documents and count convergence."
+    ],
+    "PERF-MSG-001": [
+      "Create equal-volume hot-channel and distributed-channel variants with matched payloads, audience and provider mode.",
+      "Send open arrivals through POST messages while recording scheduled/request/response and received/persisted IDs.",
+      "Observe post-response thread/notification debt independently of HTTP throughput; stop arrivals before checking final preview.",
+      "Reconcile successful sends with DB and recipient ledger, preserving ambiguous failed responses for investigation rather than assuming no write."
+    ],
+    "PERF-MSG-002": [
+      "Seed roots with quotes and controlled reply histories; compare one root with many roots under equal arrivals.",
+      "Barrier replies and then schedule sustained independent reply arrivals; query pages while writes continue using a defined traversal boundary.",
+      "Drain deferred aggregate writes and compare reply IDs/count/lastReply; apply the product exception for counts after deletion.",
+      "Measure root contention and page coverage without conflating temporary aggregate lag with permanent inconsistency."
+    ],
+    "PERF-MSG-003": [
+      "Create both unique-marked messages and intentional identical-content logical actions on one/multiple devices.",
+      "Arrange controlled response loss after persistence; independently record server DB state and delivered events before a bounded manual retry.",
+      "Deliver duplicate room/user events and test the actual client reconciliation separately from protocol-only receivers.",
+      "Compare logical actions, HTTP attempts, persisted IDs and rendered results; report lack of idempotency as a gap rather than introducing a test-only server key."
+    ],
+    "PERF-MSG-004": [
+      "Allocate fresh shared message, quoted references, channel latest-preview state and direct/group receipt fixtures per race round.",
+      "Run separate barriers for reactions, edit/delete, latest-delete/new-send and overlapping read batches; do not combine all races into an uninterpretable case.",
+      "Collect each successful/rejected operation and post-drain DB state, observing update/delete events independently.",
+      "Check duplicate readBy users, receipt opt-out, group rejection, deleted quote text and lost successful updates against the approved conflict policy."
+    ],
+    "SCALE-RT-003": [
+      "Construct overlapping spaces and multiple devices; record unique members and expected per-space presence audience.",
+      "Drive explicit sync and actual client-style ready/resume sequences while recording requests and events per logical sync.",
+      "Race REST/socket availability changes and disconnect one then the last device; retain status/note/until values.",
+      "Reconcile presence/room snapshots and final user state; measure duplicated snapshot work rather than assuming a single sync per connect."
+    ],
+    "SCALE-RT-004": [
+      "Create a hot channel plus bounded fresh-channel sequence and a membership change fixture.",
+      "Issue realistic typing start/stop bursts, then repeat around the 60-second cache age; include abandoned typing for client expiry.",
+      "Track distinct cache keys, DB lookups, event copies, memory and normal message latency across churn and post-drain.",
+      "Assert intended audience and UI stop/expiry separately; document stale-cache or retained-memory behavior without pretending an eviction sweep exists."
+    ],
+    "SCALE-RT-005": [
+      "Connect and receive at least one event to initialize recovery offset; record identity, rooms and recovery eligibility.",
+      "Inject unexpected transport loss below and above two minutes, and a separate explicit-disconnect/socket-replacement variant.",
+      "During selected outages expire credentials, deactivate account or change membership; restore transport and distinguish replay from fresh HTTP synchronization.",
+      "Reconcile replay IDs, restored listeners, authorization and catch-up completeness; do not apply recovery expectations to an ineligible replacement socket."
+    ],
+    "PERF-SOC-001": [
+      "Create shared-space/allowed-stranger pairs, opposing pending requests and accepted relationships.",
+      "Barrier duplicate and opposing creates and accept/decline; capture request state and synchronous notification outcomes.",
+      "Use a scoped diagnostic boundary to interrupt after accepted save and before DM upsert, then exercise the existing acceptance retry.",
+      "Reconcile request uniqueness, terminal state, one DM and notification count; retain partial-state recovery results."
+    ],
+    "PERF-SOC-002": [
+      "Prepare permitted membership sets in different orders, two aliases and a self-note identity with required indexes present.",
+      "Barrier equivalent creates through both group aliases and direct/self-note paths.",
+      "Record success/conflict/duplicate-key responses and enumerate resulting membership keys and members.",
+      "Assert one channel per required membership and no over-limit group; report collision response behavior separately from database uniqueness."
+    ],
+    "PERF-SOC-003": [
+      "Build graph fixtures with roots, replies, quotes, deleted messages and media metadata across phone-local midnight.",
+      "Expand none/today/all with explicit todayStart and controlled fallback timezone variants; compute expected source selection and destination remapping.",
+      "Barrier same-destination expansion and inject a bounded partial-copy interruption in a separate diagnostic variant; overlay ordinary messaging only in E2.",
+      "Verify copies/references/completeness and the permitted source preview ID; measure peak memory and remove only destination-owned copies."
+    ],
+    "PERF-SOC-004": [
+      "Build independent and hot spaces including approval-required state, existing members, pending users and unique invite codes.",
+      "Barrier same/distinct joins, approvals, settings changes and invite regeneration; separately race same-name channel creation.",
+      "Collect member/pending arrays and join events after each round, with fresh fixtures to avoid accumulated state hiding races.",
+      "Assert no duplicate/lost successful members, correct pending removal and contract-specific invite behavior; identify undefined name conflict policy."
+    ],
+    "PERF-SOC-005": [
+      "Create a channel with four pins and separate candidate messages; snapshot order and IDs.",
+      "Barrier fifth/sixth pin, duplicate pin and pin/unpin variants separately.",
+      "Read back populated pins after all operations settle and associate each response with its mutation.",
+      "Check five-pin cap, uniqueness and preservation of unrelated successful pins; reset channel per round."
+    ],
+    "SCALE-RT-006": [
+      "Place every test device in both space and channel rooms; start timestamped bounded traffic and presence observers.",
+      "Execute approval/join/removal/leave/archive separately, capturing authoritative mutation completion.",
+      "Reconnect selected devices after revocation and repeat with a recovered socket; later E3 variant splits devices across instances.",
+      "Check late unauthorized events, immediate presence eviction, disabled writing and the distinction between cached history and fresh reads."
+    ],
+    "PERF-HAND-001": [
+      "Seed sender/recipient spaces and synthetic patient/task/attachment data with known visibility.",
+      "Schedule causal draft/edit/submit/read/acknowledge journeys and an independently capped shift-change burst.",
+      "Record state transition, event, inbox persistence and provider outcome without assuming an unused helper creates chat messages.",
+      "Reconcile visibility and unique transitions, including the documented author-only/admin implementation conflict."
+    ],
+    "PERF-HAND-002": [
+      "Generate fresh draft/submitted/acknowledged handoffs with sender and multiple eligible assignees.",
+      "Run isolated barriers for edit/submit, delete/submit, submit/submit, ack/ack, ack/reassign and notes/reassignment.",
+      "Capture successful transitions, assignment history, notes and notification ledger after drain.",
+      "Check wrong-assignee acknowledgement, submitted-record deletion and lost notes; block undefined winner-policy threshold rather than weakening invariants."
+    ],
+    "PERF-DATA-001": [
+      "Build versioned S/M/L snapshots and verify actual indexes against declarations before sampling.",
+      "Select representative feed/thread/inbox/handoff/DM/admin queries; collect executionStats outside timed windows.",
+      "Hold offered load fixed across one-dimension growth; compare candidate indexes only on separate owned database variants.",
+      "Check identical results/cursor coverage and record scan/sort/I/O/write-cost/storage tradeoffs, including regex limitations."
+    ],
+    "PERF-DATA-002": [
+      "Fix backend pool at its observed ten connections; prepare same-user and many-user read/write/mixed variants.",
+      "Drive controlled arrivals competing across auth activity writes, messages and notification fan-out.",
+      "Collect checkout waiting/failure and deferred work; isolate DB network delay as a separate variant rather than changing pool and network together.",
+      "Reconcile accepted writes and post-load drain, attributing saturation only if generator resources remain valid."
+    ],
+    "PERF-DATA-003": [
+      "Create controlled expiring OTP/inbox cohorts plus retained/deleted messages and owned media manifests.",
+      "Keep TTL enabled and observe foreground traffic as expiry becomes eligible; separate fixed-data soak from deliberate growth.",
+      "Measure deletion timing, storage/index growth, orphan assets and counter discrepancy without assuming immediate TTL removal.",
+      "Verify eligible-only cleanup and reconcile media with Phase 12 oracle; do not interpret soft-delete as disk reclamation."
+    ],
+    "RES-DATA-001": [
+      "Establish stable accepted-work ledger and known DB topology/owned volume.",
+      "Interrupt DB path or restart the owned DB; replica failover is a distinct E3 variant.",
+      "Restore dependency within fault budget; compare health HTTP 200 with actual usable business operations.",
+      "Classify committed/rejected/ambiguous writes, loss/duplicates and recovery; retain RTO/RPO as product decisions."
+    ],
+    "PERF-SEARCH-001": [
+      "Generate common, rare and miss terms, phone variants, institution normalization variants and accessible/forbidden graphs.",
+      "Run messages/attachments/doctors/channels/handoffs/all separately with equal offered load and result-selectivity records.",
+      "Vary total users versus accessible channels independently, observing known-user scan and sequential category queries.",
+      "Assert scope/caps and report scan amplification; do not propose a normal B-tree as an assumed regex cure."
+    ],
+    "PERF-SEARCH-002": [
+      "Prepare independent growth axes for spaces, channels, DMs, members and personal handoffs per user.",
+      "Drive list/Needl/dashboard requests including reconnect/resume bursts with the actual unpaginated routes.",
+      "Record query count, response bytes, population cost and heap plus capped Needl probes/results.",
+      "Verify visible records without inventing pagination/truncation; pass rendering evidence to Phase 20 rather than claiming UI performance."
+    ],
+    "PERF-OPS-001": [
+      "Seed known signup/retention cohorts, support history and deep user-page positions; provision synthetic allowlisted admins.",
+      "Overlay one/two admin actors and bounded support submissions on stable messaging.",
+      "Measure count/aggregation/cohort/skip work and simultaneous ordinary-user tails.",
+      "Reconcile returned analytics with fixtures and exclude hard-coded infrastructure estimates from resource metrics."
+    ],
+    "PERF-MED-001": [
+      "Create deterministic valid media bytes at size classes, with separate just-over-backend-limit and client-limit variants.",
+      "Upload by actual multipart file/context into real Multer path and controlled Cloudinary/local fallback mode.",
+      "Step parallel transfers 1/2/4 under byte/memory budgets and downstream delay while observing normal messages.",
+      "Reconcile successful assets and counter increments, failures and RSS/external memory; use at most 1 MiB fixtures in E1."
+    ],
+    "PERF-MED-002": [
+      "Create owned files, known attachment references and replaceable avatars with redirect-safe URL manifests.",
+      "Measure warm/cold fetches separately from upload, then concurrent fetch/delete and avatar replacements.",
+      "Observe image/raw/video deletion attempts and attachment regex cleanup under growth or provider failure.",
+      "Verify owned deletion/reference behavior/orphans and preserve cleanup failure separately from profile success; no unallowlisted fetch."
+    ],
+    "PERF-MIX-001": [
+      "Allocate persona actors, skewed channels, viewing states, consent and handoff relationships from deterministic data.",
+      "Compose join/approve, lookup/request/accept, messages/threads/media, handoff/inbox and reconnect journeys through existing adapters.",
+      "Schedule independent arrivals and think-time distributions while tracking each journey's causal IDs and total amplification.",
+      "Drain and reconcile terminal business state and recipient coverage; preserve per-feature metrics rather than one overall pass."
+    ],
+    "LOAD-SYS-001": [
+      "Load the versioned hypothesis persona mix and S then M manifests with separate persistent connections and active users.",
+      "Perform L ramp/warm-up/steady/drain under finite signed budgets on separated generator/SUT/DB.",
+      "Observe completed useful work and pending debt at stable offered rate, including quiet actors and ordinary-user fairness.",
+      "Reconcile all component ledgers; report unknown product load target and baseline thresholds without inventing normal capacity."
+    ],
+    "STRESS-SYS-001": [
+      "Select one established stable dimension: HTTP, messages, connections or fan-out; hold other dimensions and data fixed.",
+      "Apply T stages of 25% increases, at most six, with watchdog and finite total-work caps.",
+      "Identify first resource/debt/latency instability while validating generator headroom, then reduce load.",
+      "Verify recovery and retained correctness; label failure threshold separately from sustainable capacity."
+    ],
+    "SPIKE-SYS-001": [
+      "Establish base workload and normal-user observers; select login, connection, message or sync spike independently.",
+      "Apply bounded P peak initially no more than twice demonstrated stable rate; respect IP/user limiter behavior.",
+      "Track admitted/completed/censored operations and ordinary-user tails during peak and recovery.",
+      "Reconcile work and time-to-stability; combine spike types only after independent variants are interpretable."
+    ],
+    "SOAK-SYS-001": [
+      "Choose fixed-data and controlled-growth variants with known session/channel churn and media budget.",
+      "Run Z first-pass two-hour profile; eight-hour profile is separately authorized, never an automatic continuation.",
+      "Collect memory/handles/sockets/cache/GC/DB-growth trends with periodic bounded correctness observations.",
+      "Stop arrivals, drain and inspect retention/recovery; separate intentional retained data from unexplained leaks."
+    ],
+    "SCALE-SYS-001": [
+      "Freeze workload/source/data/DB/generator; enumerate one-at-a-time CPU or memory allocation variants.",
+      "Repeat L/T identically on each resource manifest without simultaneously changing process count or database.",
+      "Compare correct useful throughput, latency and bottleneck migration with repeated-run variance.",
+      "Report efficiency and single-JS-event-loop limitations; do not assume extra CPU yields linear speedup."
+    ],
+    "SCALE-SYS-002": [
+      "Define two-node routing and identify which node owns each sender/receiver/device and HTTP request.",
+      "First test cross-node message/presence/room eviction/recovery/rate-limiter behavior with low traffic.",
+      "Stop scalability certification on correctness failure; document missing adapter/shared state as product prerequisites.",
+      "Only after correctness passes, repeat fixed-data L/T with calibrated workers and globally reconciled recipients; record adapter recovery semantics."
+    ],
+    "RES-SYS-001": [
+      "Start owned backend and persistent owned DB in authorized environment with active message/notification/expansion ledgers.",
+      "Apply separate graceful SIGTERM and abrupt stop, targeting known operation stages only where observable.",
+      "Restart and observe reconnect, DB state, copied graphs and usable service rather than health alone.",
+      "Count unfinished/lost side effects and ambiguous commits; check forced-exit timeout and restoration/cleanup journal."
+    ],
+    "RES-SYS-002": [
+      "Configure provider-boundary doubles for independent MSG91, FCM and Cloudinary success/slow/reject/reset/timeout variants.",
+      "Establish F steady state then change only one provider mode within a finite fault window.",
+      "Measure provider attempt multiplicity, HTTP outcomes, in-flight work, buffers and caught failures.",
+      "Restore mode and reconcile notification/assets/auth outcomes; no real-provider failure injection."
+    ],
+    "NET-SYS-001": [
+      "Define explicit endpoint-scoped RTT/jitter/loss/bandwidth profiles and deterministic impairment schedule.",
+      "Apply one dimension first, then selected combinations; distinguish proxy path from physical-device radio behavior.",
+      "Observe actual retry/backoff, reconnect/replacement, upload progress and message reconciliation under F/L.",
+      "Restore connectivity, reconcile duplicates/loss and record clock uncertainty and censored outcomes."
+    ],
+    "MOBILE-SYS-001": [
+      "Select physical Android device/OS and profile/release build; bind to isolated environment and synthetic identity.",
+      "Automate cold/warm chat opening, history/list growth, media view, resume/reconnect and account switching.",
+      "Capture frame timing, parsing/UI-ready times, Dart/native memory and actual emitted HTTP/socket work.",
+      "Verify per-account cache cleanup and rendered logical messages; compare only like device/build/network baselines."
+    ],
+    "REG-SYS-001": [
+      "Require immutable baseline/candidate manifests with identical data, indexes, runtime/resources and workload.",
+      "Schedule paired repeated experiments in randomized/alternating order only in authorized execution environment.",
+      "Merge compatible histograms with counts, retain failures/timeouts and compute run-level or block-bootstrap uncertainty.",
+      "Reject invalid generator/infrastructure/correctness runs; apply approved material/noise thresholds or report BASELINE_REQUIRED rather than pass."
+    ],
+    "SCALE-RT-007": [
+      "Allocate normal and deliberately slow recipients in shared channels with separate expected-delivery sets.",
+      "Use a scoped proxy/network throttle or paused receiving transport; keep open message arrivals bounded and unchanged.",
+      "Measure normal-recipient tails, slow-client disconnections, retained outbound/recovery work and memory; stop before budget exhaustion.",
+      "Restore consumers, reconcile delivery/replay and drain; state that no application backpressure policy was observed and leave desired policy open."
+    ]
+  },
+  "deps": {
+    "PERF-API-001": [],
+    "PERF-AUTH-001": [
+      "PERF-API-001"
+    ],
+    "PERF-AUTH-002": [
+      "PERF-API-001",
+      "SCALE-RT-001"
+    ],
+    "PERF-AUTH-003": [
+      "PERF-AUTH-001",
+      "PERF-AUTH-002"
+    ],
+    "SCALE-RT-001": [
+      "PERF-AUTH-001"
+    ],
+    "SCALE-RT-002": [
+      "SCALE-RT-001"
+    ],
+    "PERF-NOT-001": [
+      "SCALE-RT-002"
+    ],
+    "PERF-NOT-002": [
+      "PERF-NOT-001",
+      "PERF-DATA-001"
+    ],
+    "PERF-MSG-001": [
+      "PERF-API-001",
+      "SCALE-RT-002",
+      "PERF-NOT-001"
+    ],
+    "PERF-MSG-002": [
+      "PERF-MSG-001"
+    ],
+    "PERF-MSG-003": [
+      "PERF-MSG-001",
+      "SCALE-RT-002"
+    ],
+    "PERF-MSG-004": [
+      "PERF-MSG-001",
+      "PERF-MSG-002"
+    ],
+    "SCALE-RT-003": [
+      "SCALE-RT-001",
+      "PERF-AUTH-002"
+    ],
+    "SCALE-RT-004": [
+      "SCALE-RT-001",
+      "SCALE-RT-003"
+    ],
+    "SCALE-RT-005": [
+      "SCALE-RT-002",
+      "SCALE-RT-003",
+      "PERF-AUTH-002"
+    ],
+    "SCALE-RT-006": [
+      "SCALE-RT-002",
+      "SCALE-RT-003",
+      "SCALE-RT-005",
+      "PERF-SOC-004"
+    ],
+    "SCALE-RT-007": [
+      "SCALE-RT-002"
+    ],
+    "PERF-SOC-001": [
+      "PERF-API-001",
+      "PERF-NOT-001"
+    ],
+    "PERF-SOC-002": [
+      "PERF-SOC-001"
+    ],
+    "PERF-SOC-003": [
+      "PERF-SOC-002",
+      "PERF-DATA-001"
+    ],
+    "PERF-SOC-004": [
+      "PERF-API-001",
+      "SCALE-RT-003"
+    ],
+    "PERF-SOC-005": [
+      "PERF-API-001"
+    ],
+    "PERF-HAND-001": [
+      "PERF-API-001",
+      "PERF-NOT-001",
+      "SCALE-RT-002"
+    ],
+    "PERF-HAND-002": [
+      "PERF-HAND-001"
+    ],
+    "PERF-DATA-001": [
+      "PERF-API-001"
+    ],
+    "PERF-DATA-002": [
+      "PERF-MSG-001",
+      "PERF-NOT-001",
+      "PERF-DATA-001"
+    ],
+    "PERF-DATA-003": [
+      "PERF-DATA-001",
+      "PERF-NOT-002",
+      "PERF-MED-002"
+    ],
+    "RES-DATA-001": [
+      "PERF-DATA-002",
+      "PERF-MSG-001"
+    ],
+    "PERF-SEARCH-001": [
+      "PERF-DATA-001"
+    ],
+    "PERF-SEARCH-002": [
+      "PERF-DATA-001",
+      "SCALE-RT-003"
+    ],
+    "PERF-MED-001": [
+      "PERF-API-001",
+      "PERF-MSG-001"
+    ],
+    "PERF-MED-002": [
+      "PERF-MED-001",
+      "PERF-DATA-001"
+    ],
+    "PERF-OPS-001": [
+      "PERF-DATA-001",
+      "PERF-MSG-001"
+    ],
+    "PERF-MIX-001": [
+      "PERF-MSG-001",
+      "PERF-MSG-002",
+      "PERF-SOC-001",
+      "PERF-SOC-002",
+      "PERF-SOC-004",
+      "PERF-HAND-001",
+      "PERF-NOT-001",
+      "PERF-NOT-002",
+      "PERF-MED-001",
+      "PERF-SEARCH-001",
+      "PERF-SEARCH-002",
+      "SCALE-RT-005"
+    ],
+    "LOAD-SYS-001": [
+      "PERF-MIX-001"
+    ],
+    "STRESS-SYS-001": [
+      "LOAD-SYS-001"
+    ],
+    "SPIKE-SYS-001": [
+      "PERF-AUTH-003",
+      "SCALE-RT-003",
+      "LOAD-SYS-001"
+    ],
+    "SOAK-SYS-001": [
+      "LOAD-SYS-001",
+      "SCALE-RT-004",
+      "PERF-DATA-003"
+    ],
+    "SCALE-SYS-001": [
+      "STRESS-SYS-001"
+    ],
+    "SCALE-SYS-002": [
+      "SCALE-RT-005",
+      "SCALE-RT-006",
+      "PERF-MSG-001"
+    ],
+    "RES-SYS-001": [
+      "PERF-MSG-003",
+      "PERF-SOC-003"
+    ],
+    "RES-SYS-002": [
+      "PERF-AUTH-001",
+      "PERF-NOT-001",
+      "PERF-MED-001"
+    ],
+    "NET-SYS-001": [
+      "SCALE-RT-005",
+      "PERF-MSG-003"
+    ],
+    "MOBILE-SYS-001": [
+      "NET-SYS-001",
+      "PERF-SEARCH-002",
+      "PERF-MED-002"
+    ],
+    "REG-SYS-001": [
+      "PERF-API-001",
+      "PERF-MSG-001",
+      "SCALE-RT-002",
+      "LOAD-SYS-001"
+    ]
+  },
+  "sysTitles": {
+    "LOAD-SYS-001": "Sustained normal-load stability",
+    "STRESS-SYS-001": "Saturation and failure thresholds",
+    "SPIKE-SYS-001": "Shift-change demand spikes",
+    "SOAK-SYS-001": "Long-running resource stability",
+    "SCALE-SYS-001": "Vertical scalability",
+    "SCALE-SYS-002": "Horizontal correctness and scalability",
+    "RES-SYS-001": "Backend restart and shutdown",
+    "RES-SYS-002": "Provider degradation",
+    "NET-SYS-001": "Network impairment",
+    "MOBILE-SYS-001": "Client performance and lifecycle",
+    "REG-SYS-001": "Performance regression comparison"
+  }
+}

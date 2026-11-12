@@ -1,0 +1,3 @@
+* text eol=lf
+# Preserve the supplied plan bytes, including its original CRLF line endings.
+plan/** -text

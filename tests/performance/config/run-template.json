@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "runId": "synthetic-template",
+  "authorizationRef": "REQUIRES-EXTERNAL-AUTHORIZATION",
+  "repository": "mathiharan29/medcollab-beta",
+  "sourceSha": "4c01dc24247aa95a73e286a2b42c7f2f81257c7a",
+  "harnessSha": "7b065078d93045ff8a1a01801ce2258236411a85",
+  "caseIds": [
+    "PERF-API-001"
+  ],
+  "variants": [
+    {
+      "caseId": "PERF-API-001",
+      "id": "REQUIRES-PHASE-02-REGISTRATION"
+    }
+  ],
+  "environment": {
+    "class": "E1",
+    "id": "REQUIRES-ISOLATED-ENVIRONMENT",
+    "topologyHash": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "target": {
+    "serviceId": "REQUIRES-ALLOWLIST",
+    "url": "http://127.0.0.1:5000",
+    "addresses": [
+      "127.0.0.1"
+    ],
+    "redirects": false
+  },
+  "workload": {
+    "profile": "B",
+    "seed": "synthetic-seed-v1",
+    "distributionVersion": "hypothesis-v1",
+    "syntheticAccounts": 1
+  },
+  "data": {
+    "datasetVersion": "synthetic-v1",
+    "manifestHash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "indexManifestHash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "seed": "synthetic-seed-v1"
+  },
+  "providers": {
+    "msg91": {
+      "mode": "double",
+      "budget": 0,
+      "egress": false
+    },
+    "fcm": {
+      "mode": "double",
+      "budget": 0,
+      "egress": false
+    },
+    "cloudinary": {
+      "mode": "double",
+      "budget": 0,
+      "egress": false
+    }
+  },
+  "budgets": {
+    "persistentConnections": 0,
+    "newConnectionsPerSecond": 0,
+    "httpStartsPerSecond": 0,
+    "messageStartsPerSecond": 0,
+    "eventStartsPerSecond": 0,
+    "outboundDeliveries": 0,
+    "concurrentUploads": 0,
+    "maxUploadBytes": 0,
+    "bytesTransferred": 0,
+    "totalRequests": 0,
+    "totalMessages": 0,
+    "totalEvents": 0,
+    "databaseGrowthBytes": 0,
+    "providerCalls": 0,
+    "elapsedMs": 6000,
+    "generatorMemoryBytes": 67108864,
+    "sutMemoryBytes": 67108864,
+    "diskReserveBytes": 67108864,
+    "cpuPercent": 50,
+    "costCeiling": 0,
+    "currency": "USD"
+  },
+  "deadlines": {
+    "setupMs": 1000,
+    "operationMs": 1000,
+    "observationMs": 1000,
+    "drainMs": 1000,
+    "cleanupMs": 1000,
+    "totalMs": 6000
+  },
+  "instrumentation": {
+    "mode": "external",
+    "version": "v1",
+    "overheadEvidence": null
+  },
+  "limiter": {
+    "nodeEnv": "production",
+    "settingsHash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "measurementMode": "deployment-policy"
+  },
+  "baseline": null,
+  "thresholds": null,
+  "ledgerLimits": {
+    "maxActions": 100,
+    "maxStages": 1000,
+    "maxBytes": 1048576
+  },
+  "journalLimits": {
+    "maxEntries": 1000,
+    "maxBytes": 1048576,
+    "cleanupAttempts": 2
+  },
+  "executionAuthorized": false
+}

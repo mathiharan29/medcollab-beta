@@ -1,0 +1,2657 @@
+{
+  "schemaVersion": 1,
+  "repository": "mathiharan29/medcollab-beta",
+  "sourceSha": "4c01dc24247aa95a73e286a2b42c7f2f81257c7a",
+  "featureRouteCount": 87,
+  "operationCount": 124,
+  "selectionPolicy": "Mapping is traceability only, never execution authorization. Aliases share a case, but retain distinct operation IDs. System cases compose dependency closure. DEV routes are fixture-only.",
+  "operations": [
+    {
+      "id": "OP-AUTH-01",
+      "kind": "feature-route",
+      "method": "POST",
+      "path": "/api/auth/request-otp",
+      "router": "router",
+      "mountVariable": "authRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/auth/auth.routes.js",
+        "line": 47
+      },
+      "handler": "requestOtp",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/auth/auth.controller.js",
+          "line": 53
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-AUTH-001",
+        "RES-SYS-002"
+      ],
+      "inventoryEvidence": "bcrypt/provider/phone races; high; AUTH-001, RES-002"
+    },
+    {
+      "id": "OP-AUTH-02",
+      "kind": "feature-route",
+      "method": "POST",
+      "path": "/api/auth/verify-otp",
+      "router": "router",
+      "mountVariable": "authRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/auth/auth.routes.js",
+        "line": 63
+      },
+      "handler": "verifyOtp",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/auth/auth.controller.js",
+          "line": 74
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-AUTH-001"
+      ],
+      "inventoryEvidence": "OTP claim, user create race; high; AUTH-001"
+    },
+    {
+      "id": "OP-AUTH-03",
+      "kind": "feature-route",
+      "method": "POST",
+      "path": "/api/auth/verify-msg91-token",
+      "router": "router",
+      "mountVariable": "authRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/auth/auth.routes.js",
+        "line": 71
+      },
+      "handler": "verifyMsg91Token",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/auth/auth.controller.js",
+          "line": 99
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-AUTH-001"
+      ],
+      "inventoryEvidence": "provider latency/fallback; high; AUTH-001"
+    },
+    {
+      "id": "OP-AUTH-04",
+      "kind": "feature-route",
+      "method": "POST",
+      "path": "/api/auth/refresh",
+      "router": "router",
+      "mountVariable": "authRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/auth/auth.routes.js",
+        "line": 89
+      },
+      "handler": "refreshToken",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/auth/auth.controller.js",
+          "line": 141
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-AUTH-002",
+        "PERF-AUTH-003"
+      ],
+      "inventoryEvidence": "IP limiter, synchronized expiry; high; AUTH-002/003"
+    },
+    {
+      "id": "OP-AUTH-05",
+      "kind": "feature-route",
+      "method": "POST",
+      "path": "/api/auth/logout",
+      "router": "router",
+      "mountVariable": "authRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/auth/auth.routes.js",
+        "line": 102
+      },
+      "handler": "logout",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/auth/auth.controller.js",
+          "line": 173
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-AUTH-002"
+      ],
+      "inventoryEvidence": "device cleanup; medium; AUTH-002"
+    },
+    {
+      "id": "OP-USER-01",
+      "kind": "feature-route",
+      "method": "GET",
+      "path": "/api/users/me",
+      "router": "router",
+      "mountVariable": "userRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/users/user.routes.js",
+        "line": 41
+      },
+      "handler": "getMe",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/users/user.controller.js",
+          "line": 51
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001"
+      ],
+      "inventoryEvidence": "additional user read; medium; API-001"
+    },
+    {
+      "id": "OP-USER-02",
+      "kind": "feature-route",
+      "method": "PUT",
+      "path": "/api/users/me",
+      "router": "router",
+      "mountVariable": "userRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/users/user.routes.js",
+        "line": 55
+      },
+      "handler": "updateMe",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/users/user.controller.js",
+          "line": 62
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-MED-002"
+      ],
+      "inventoryEvidence": "preference lost updates; avatar deletion wait; medium/high; API-001, MED-002"
+    },
+    {
+      "id": "OP-USER-03",
+      "kind": "feature-route",
+      "method": "PUT",
+      "path": "/api/users/me/availability",
+      "router": "router",
+      "mountVariable": "userRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/users/user.routes.js",
+        "line": 66
+      },
+      "handler": "updateAvailability",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/users/user.controller.js",
+          "line": 124
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "SCALE-RT-003"
+      ],
+      "inventoryEvidence": "spaces-per-user amplification; high; RT-003"
+    },
+    {
+      "id": "OP-USER-04",
+      "kind": "feature-route",
+      "method": "PUT",
+      "path": "/api/users/me/fcm-token",
+      "router": "router",
+      "mountVariable": "userRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/users/user.routes.js",
+        "line": 78
+      },
+      "handler": "registerFcmToken",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/users/user.controller.js",
+          "line": 174
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-AUTH-002"
+      ],
+      "inventoryEvidence": "same-user concurrent saves; medium; AUTH-002"
+    },
+    {
+      "id": "OP-USER-05",
+      "kind": "feature-route",
+      "method": "GET",
+      "path": "/api/users/search",
+      "router": "router",
+      "mountVariable": "userRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/users/user.routes.js",
+        "line": 99
+      },
+      "handler": "searchUsers",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/users/user.controller.js",
+          "line": 196
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-SEARCH-001"
+      ],
+      "inventoryEvidence": "known-user scan/regex; high; SEARCH-001"
+    },
+    {
+      "id": "OP-USER-06",
+      "kind": "feature-route",
+      "method": "GET",
+      "path": "/api/users/lookup",
+      "router": "router",
+      "mountVariable": "userRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/users/user.routes.js",
+        "line": 106
+      },
+      "handler": "lookupByPhone",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/users/user.controller.js",
+          "line": 256
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-SEARCH-001"
+      ],
+      "inventoryEvidence": "repeated relationship queries; medium/high; SEARCH-001"
+    },
+    {
+      "id": "OP-USER-07",
+      "kind": "feature-route",
+      "method": "GET",
+      "path": "/api/users/:id",
+      "router": "router",
+      "mountVariable": "userRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/users/user.routes.js",
+        "line": 119
+      },
+      "handler": "getUserById",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/users/user.controller.js",
+          "line": 185
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001"
+      ],
+      "inventoryEvidence": "lookup/activity-write overhead; medium; API-001"
+    },
+    {
+      "id": "OP-USER-08",
+      "kind": "feature-route",
+      "method": "GET",
+      "path": "/api/users/me/needl",
+      "router": "router",
+      "mountVariable": "userRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/users/user.routes.js",
+        "line": 43
+      },
+      "handler": "getNeedl",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/users/user.controller.js",
+          "line": 347
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-SEARCH-002"
+      ],
+      "inventoryEvidence": "sequential channel access; high; SEARCH-002"
+    },
+    {
+      "id": "OP-SPC-01",
+      "kind": "feature-route",
+      "method": "POST",
+      "path": "/api/spaces",
+      "router": "router",
+      "mountVariable": "spaceRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/spaces/space.routes.js",
+        "line": 43
+      },
+      "handler": "createSpace",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/spaces/space.controller.js",
+          "line": 52
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-SOC-004"
+      ],
+      "inventoryEvidence": "multi-write setup, code uniqueness; medium; SOC-004"
+    },
+    {
+      "id": "OP-SPC-02",
+      "kind": "feature-route",
+      "method": "GET",
+      "path": "/api/spaces",
+      "router": "router",
+      "mountVariable": "spaceRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/spaces/space.routes.js",
+        "line": 56
+      },
+      "handler": "getMySpaces",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/spaces/space.controller.js",
+          "line": 82
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-SEARCH-002"
+      ],
+      "inventoryEvidence": "spaces/channels per user; high; SEARCH-002"
+    },
+    {
+      "id": "OP-SPC-03",
+      "kind": "feature-route",
+      "method": "POST",
+      "path": "/api/spaces/join",
+      "router": "router",
+      "mountVariable": "spaceRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/spaces/space.routes.js",
+        "line": 69
+      },
+      "handler": "joinSpace",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/spaces/space.controller.js",
+          "line": 149
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-SOC-004",
+        "SCALE-RT-006"
+      ],
+      "inventoryEvidence": "hot arrays, socket scan; high; SOC-004, RT-006"
+    },
+    {
+      "id": "OP-SPC-04",
+      "kind": "feature-route",
+      "method": "GET",
+      "path": "/api/spaces/invite/:code",
+      "router": "router",
+      "mountVariable": "spaceRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/spaces/space.routes.js",
+        "line": 78
+      },
+      "handler": "previewInvite",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/spaces/space.controller.js",
+          "line": 269
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001"
+      ],
+      "inventoryEvidence": "invite lookup; low; API-001"
+    },
+    {
+      "id": "OP-SPC-05",
+      "kind": "feature-route",
+      "method": "GET",
+      "path": "/api/spaces/:id",
+      "router": "router",
+      "mountVariable": "spaceRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/spaces/space.routes.js",
+        "line": 91
+      },
+      "handler": "getSpaceById",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/spaces/space.controller.js",
+          "line": 120
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-SEARCH-002"
+      ],
+      "inventoryEvidence": "embedded members and channels; medium; SEARCH-002"
+    },
+    {
+      "id": "OP-SPC-06",
+      "kind": "feature-route",
+      "method": "PUT",
+      "path": "/api/spaces/:id",
+      "router": "router",
+      "mountVariable": "spaceRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/spaces/space.routes.js",
+        "line": 99
+      },
+      "handler": "updateSpace",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/spaces/space.controller.js",
+          "line": 317
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-SOC-004"
+      ],
+      "inventoryEvidence": "same-space concurrent edits; medium; SOC-004"
+    },
+    {
+      "id": "OP-SPC-07",
+      "kind": "feature-route",
+      "method": "POST",
+      "path": "/api/spaces/:id/invite",
+      "router": "router",
+      "mountVariable": "spaceRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/spaces/space.routes.js",
+        "line": 109
+      },
+      "handler": "regenerateInviteCode",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/spaces/space.controller.js",
+          "line": 299
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-SOC-004"
+      ],
+      "inventoryEvidence": "join/regeneration race; medium; SOC-004"
+    },
+    {
+      "id": "OP-SPC-08",
+      "kind": "feature-route",
+      "method": "GET",
+      "path": "/api/spaces/:id/members",
+      "router": "router",
+      "mountVariable": "spaceRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/spaces/space.routes.js",
+        "line": 119
+      },
+      "handler": "getMembers",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/spaces/space.controller.js",
+          "line": 335
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-SEARCH-002"
+      ],
+      "inventoryEvidence": "membership cardinality; high; SEARCH-002"
+    },
+    {
+      "id": "OP-SPC-09",
+      "kind": "feature-route",
+      "method": "GET",
+      "path": "/api/spaces/:id/pending",
+      "router": "router",
+      "mountVariable": "spaceRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/spaces/space.routes.js",
+        "line": 126
+      },
+      "handler": "getPendingJoins",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/spaces/space.controller.js",
+          "line": 447
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-SOC-004"
+      ],
+      "inventoryEvidence": "pending-list size; medium; SOC-004"
+    },
+    {
+      "id": "OP-SPC-10",
+      "kind": "feature-route",
+      "method": "POST",
+      "path": "/api/spaces/:id/pending/:userId/approve",
+      "router": "router",
+      "mountVariable": "spaceRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/spaces/space.routes.js",
+        "line": 133
+      },
+      "handler": "approveJoinRequest",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/spaces/space.controller.js",
+          "line": 218
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-SOC-004",
+        "SCALE-RT-006"
+      ],
+      "inventoryEvidence": "approval race; high; SOC-004, RT-006"
+    },
+    {
+      "id": "OP-SPC-11",
+      "kind": "feature-route",
+      "method": "DELETE",
+      "path": "/api/spaces/:id/members/:userId",
+      "router": "router",
+      "mountVariable": "spaceRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/spaces/space.routes.js",
+        "line": 147
+      },
+      "handler": "removeMember",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/spaces/space.controller.js",
+          "line": 374
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "SCALE-RT-006"
+      ],
+      "inventoryEvidence": "socket count and concurrent sends; high; RT-006"
+    },
+    {
+      "id": "OP-SPC-12",
+      "kind": "feature-route",
+      "method": "POST",
+      "path": "/api/spaces/:id/leave",
+      "router": "router",
+      "mountVariable": "spaceRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/spaces/space.routes.js",
+        "line": 161
+      },
+      "handler": "leaveSpace",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/spaces/space.controller.js",
+          "line": 400
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "SCALE-RT-006"
+      ],
+      "inventoryEvidence": "same shared state; high; RT-006"
+    },
+    {
+      "id": "OP-CH-01",
+      "kind": "feature-route",
+      "method": "POST",
+      "path": "/api/spaces/:spaceId/channels",
+      "router": "spaceChannelRouter",
+      "mountVariable": "spaceChannelRouter",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/channels/channel.routes.js",
+        "line": 47
+      },
+      "handler": "createChannel",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/channels/channel.controller.js",
+          "line": 15
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-SOC-004"
+      ],
+      "inventoryEvidence": "check-then-create name race; medium; SOC-004"
+    },
+    {
+      "id": "OP-CH-02",
+      "kind": "feature-route",
+      "method": "GET",
+      "path": "/api/spaces/:spaceId/channels",
+      "router": "spaceChannelRouter",
+      "mountVariable": "spaceChannelRouter",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/channels/channel.routes.js",
+        "line": 58
+      },
+      "handler": "getSpaceChannels",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/channels/channel.controller.js",
+          "line": 44
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-SEARCH-002"
+      ],
+      "inventoryEvidence": "unpaginated list; medium; SEARCH-002"
+    },
+    {
+      "id": "OP-CH-03",
+      "kind": "feature-route",
+      "method": "GET",
+      "path": "/api/channels/dm",
+      "router": "channelRouter",
+      "mountVariable": "channelRouter",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/channels/channel.routes.js",
+        "line": 70
+      },
+      "handler": "getMyDMs",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/channels/channel.controller.js",
+          "line": 219
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-SEARCH-002",
+        "PERF-DATA-001"
+      ],
+      "inventoryEvidence": "unpaginated/populated/sorted; high; SEARCH-002"
+    },
+    {
+      "id": "OP-CH-04",
+      "kind": "feature-route",
+      "method": "POST",
+      "path": "/api/channels/dm",
+      "router": "channelRouter",
+      "mountVariable": "channelRouter",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/channels/channel.routes.js",
+        "line": 81
+      },
+      "handler": "createOrGetDM",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/channels/channel.controller.js",
+          "line": 241
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-SOC-002"
+      ],
+      "inventoryEvidence": "unique index/upsert/self-notes race; high; SOC-002"
+    },
+    {
+      "id": "OP-CH-05",
+      "kind": "feature-route",
+      "method": "POST",
+      "path": "/api/channels/dm/group",
+      "router": "channelRouter",
+      "mountVariable": "channelRouter",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/channels/channel.routes.js",
+        "line": 90
+      },
+      "handler": "createGroupDM",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/channels/channel.controller.js",
+          "line": 325
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-SOC-002"
+      ],
+      "inventoryEvidence": "sequential permission checks; high; SOC-002"
+    },
+    {
+      "id": "OP-CH-06",
+      "kind": "feature-route",
+      "method": "POST",
+      "path": "/api/channels/group-dm",
+      "router": "channelRouter",
+      "mountVariable": "channelRouter",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/channels/channel.routes.js",
+        "line": 101
+      },
+      "handler": "createGroupDM",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/channels/channel.controller.js",
+          "line": 325
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-SOC-002"
+      ],
+      "inventoryEvidence": "same risk; same case, alias coverage only",
+      "aliasOf": "OP-CH-05"
+    },
+    {
+      "id": "OP-CH-07",
+      "kind": "feature-route",
+      "method": "POST",
+      "path": "/api/channels/:id/expand",
+      "router": "channelRouter",
+      "mountVariable": "channelRouter",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/channels/channel.routes.js",
+        "line": 115
+      },
+      "handler": "expandDM",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/channels/channel.controller.js",
+          "line": 423
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-SOC-003"
+      ],
+      "inventoryEvidence": "history-sized memory/write amplification; critical; SOC-003"
+    },
+    {
+      "id": "OP-CH-08",
+      "kind": "feature-route",
+      "method": "GET",
+      "path": "/api/channels/:id",
+      "router": "channelRouter",
+      "mountVariable": "channelRouter",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/channels/channel.routes.js",
+        "line": 138
+      },
+      "handler": "getChannelById",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/channels/channel.controller.js",
+          "line": 67
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001"
+      ],
+      "inventoryEvidence": "members/pins population; medium; API-001"
+    },
+    {
+      "id": "OP-CH-09",
+      "kind": "feature-route",
+      "method": "PUT",
+      "path": "/api/channels/:id",
+      "router": "channelRouter",
+      "mountVariable": "channelRouter",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/channels/channel.routes.js",
+        "line": 145
+      },
+      "handler": "updateChannel",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/channels/channel.controller.js",
+          "line": 98
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-SOC-004"
+      ],
+      "inventoryEvidence": "concurrent rename/policy; medium; SOC-004"
+    },
+    {
+      "id": "OP-CH-10",
+      "kind": "feature-route",
+      "method": "DELETE",
+      "path": "/api/channels/:id",
+      "router": "channelRouter",
+      "mountVariable": "channelRouter",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/channels/channel.routes.js",
+        "line": 155
+      },
+      "handler": "archiveChannel",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/channels/channel.controller.js",
+          "line": 146
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "SCALE-RT-006"
+      ],
+      "inventoryEvidence": "send/archive race; high; RT-006"
+    },
+    {
+      "id": "OP-CH-11",
+      "kind": "feature-route",
+      "method": "GET",
+      "path": "/api/channels/:id/members",
+      "router": "channelRouter",
+      "mountVariable": "channelRouter",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/channels/channel.routes.js",
+        "line": 162
+      },
+      "handler": "getChannelMembers",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/channels/channel.controller.js",
+          "line": 629
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-SEARCH-002"
+      ],
+      "inventoryEvidence": "membership size; medium; SEARCH-002"
+    },
+    {
+      "id": "OP-CH-12",
+      "kind": "feature-route",
+      "method": "POST",
+      "path": "/api/channels/:id/pin/:messageId",
+      "router": "channelRouter",
+      "mountVariable": "channelRouter",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/channels/channel.routes.js",
+        "line": 169
+      },
+      "handler": "pinMessage",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/channels/channel.controller.js",
+          "line": 661
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-SOC-005"
+      ],
+      "inventoryEvidence": "concurrent cap/duplicate race; high; SOC-005"
+    },
+    {
+      "id": "OP-CH-13",
+      "kind": "feature-route",
+      "method": "DELETE",
+      "path": "/api/channels/:id/pin/:messageId",
+      "router": "channelRouter",
+      "mountVariable": "channelRouter",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/channels/channel.routes.js",
+        "line": 181
+      },
+      "handler": "unpinMessage",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/channels/channel.controller.js",
+          "line": 695
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-SOC-005"
+      ],
+      "inventoryEvidence": "concurrent array replacement; medium; SOC-005"
+    },
+    {
+      "id": "OP-MSG-01",
+      "kind": "feature-route",
+      "method": "GET",
+      "path": "/api/channels/:channelId/messages",
+      "router": "router",
+      "mountVariable": "messageRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/messages/message.routes.js",
+        "line": 60
+      },
+      "handler": "getMessages",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/messages/message.controller.js",
+          "line": 49
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-DATA-001"
+      ],
+      "inventoryEvidence": "history/index/population; high; API-001, DATA-001"
+    },
+    {
+      "id": "OP-MSG-02",
+      "kind": "feature-route",
+      "method": "POST",
+      "path": "/api/channels/:channelId/messages",
+      "router": "router",
+      "mountVariable": "messageRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/messages/message.routes.js",
+        "line": 92
+      },
+      "handler": "sendMessage",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/messages/message.controller.js",
+          "line": 92
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-MSG-001",
+        "SCALE-RT-002",
+        "PERF-NOT-001",
+        "PERF-MSG-003"
+      ],
+      "inventoryEvidence": "hot preview/fan-out; critical; MSG-001, RT-002, NOT-001"
+    },
+    {
+      "id": "OP-MSG-03",
+      "kind": "feature-route",
+      "method": "GET",
+      "path": "/api/channels/:channelId/messages/:id/thread",
+      "router": "router",
+      "mountVariable": "messageRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/messages/message.routes.js",
+        "line": 102
+      },
+      "handler": "getThread",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/messages/message.controller.js",
+          "line": 295
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-MSG-002",
+        "PERF-DATA-001"
+      ],
+      "inventoryEvidence": "thread size/index; high; MSG-002"
+    },
+    {
+      "id": "OP-MSG-04",
+      "kind": "feature-route",
+      "method": "POST",
+      "path": "/api/channels/:channelId/messages/:id/reply",
+      "router": "router",
+      "mountVariable": "messageRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/messages/message.routes.js",
+        "line": 121
+      },
+      "handler": "replyToThread",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/messages/message.controller.js",
+          "line": 336
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-MSG-002"
+      ],
+      "inventoryEvidence": "hot root aggregate; high; MSG-002"
+    },
+    {
+      "id": "OP-MSG-05",
+      "kind": "feature-route",
+      "method": "PUT",
+      "path": "/api/channels/:channelId/messages/:id",
+      "router": "router",
+      "mountVariable": "messageRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/messages/message.routes.js",
+        "line": 140
+      },
+      "handler": "editMessage",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/messages/message.controller.js",
+          "line": 345
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-MSG-004"
+      ],
+      "inventoryEvidence": "same-message edits; high; MSG-004"
+    },
+    {
+      "id": "OP-MSG-06",
+      "kind": "feature-route",
+      "method": "DELETE",
+      "path": "/api/channels/:channelId/messages/:id",
+      "router": "router",
+      "mountVariable": "messageRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/messages/message.routes.js",
+        "line": 162
+      },
+      "handler": "deleteMessage",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/messages/message.controller.js",
+          "line": 377
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-MSG-004"
+      ],
+      "inventoryEvidence": "references and concurrent sends; high; MSG-004"
+    },
+    {
+      "id": "OP-MSG-07",
+      "kind": "feature-route",
+      "method": "POST",
+      "path": "/api/channels/:channelId/messages/:id/react",
+      "router": "router",
+      "mountVariable": "messageRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/messages/message.routes.js",
+        "line": 175
+      },
+      "handler": "toggleReaction",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/messages/message.controller.js",
+          "line": 440
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-MSG-004"
+      ],
+      "inventoryEvidence": "read-modify-save contention; high; MSG-004"
+    },
+    {
+      "id": "OP-MSG-08",
+      "kind": "feature-route",
+      "method": "POST",
+      "path": "/api/channels/:channelId/messages/read",
+      "router": "router",
+      "mountVariable": "messageRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/messages/message.routes.js",
+        "line": 195
+      },
+      "handler": "markAsRead",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/messages/message.controller.js",
+          "line": 463
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-MSG-004"
+      ],
+      "inventoryEvidence": "batch size/hot documents; high; MSG-004"
+    },
+    {
+      "id": "OP-REQ-01",
+      "kind": "feature-route",
+      "method": "GET",
+      "path": "/api/message-requests/pending-count",
+      "router": "router",
+      "mountVariable": "messageRequestRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/message-requests/messageRequest.routes.js",
+        "line": 12
+      },
+      "handler": "pendingCount",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/message-requests/messageRequest.controller.js",
+          "line": 185
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-SOC-001"
+      ],
+      "inventoryEvidence": "count growth; SOC-001"
+    },
+    {
+      "id": "OP-REQ-02",
+      "kind": "feature-route",
+      "method": "GET",
+      "path": "/api/message-requests",
+      "router": "router",
+      "mountVariable": "messageRequestRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/message-requests/messageRequest.routes.js",
+        "line": 14
+      },
+      "handler": "listRequests",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/message-requests/messageRequest.controller.js",
+          "line": 145
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-SOC-001"
+      ],
+      "inventoryEvidence": "sorted query/population; SOC-001"
+    },
+    {
+      "id": "OP-REQ-03",
+      "kind": "feature-route",
+      "method": "POST",
+      "path": "/api/message-requests",
+      "router": "router",
+      "mountVariable": "messageRequestRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/message-requests/messageRequest.routes.js",
+        "line": 16
+      },
+      "handler": "createRequest",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/message-requests/messageRequest.controller.js",
+          "line": 52
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-SOC-001"
+      ],
+      "inventoryEvidence": "duplicate pending race/provider coupling; high; SOC-001"
+    },
+    {
+      "id": "OP-REQ-04",
+      "kind": "feature-route",
+      "method": "POST",
+      "path": "/api/message-requests/:id/accept",
+      "router": "router",
+      "mountVariable": "messageRequestRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/message-requests/messageRequest.routes.js",
+        "line": 30
+      },
+      "handler": "acceptRequest",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/message-requests/messageRequest.controller.js",
+          "line": 197
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-SOC-001"
+      ],
+      "inventoryEvidence": "partial commit/retry; high; SOC-001"
+    },
+    {
+      "id": "OP-REQ-05",
+      "kind": "feature-route",
+      "method": "POST",
+      "path": "/api/message-requests/:id/decline",
+      "router": "router",
+      "mountVariable": "messageRequestRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/message-requests/messageRequest.routes.js",
+        "line": 36
+      },
+      "handler": "declineRequest",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/message-requests/messageRequest.controller.js",
+          "line": 299
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-SOC-001"
+      ],
+      "inventoryEvidence": "accept/decline race; high; SOC-001"
+    },
+    {
+      "id": "OP-HND-01",
+      "kind": "feature-route",
+      "method": "POST",
+      "path": "/api/handoffs",
+      "router": "handoffRouter",
+      "mountVariable": "handoffRouter",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/handoffs/handoff.routes.js",
+        "line": 66
+      },
+      "handler": "createHandoff",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/handoffs/handoff.controller.js",
+          "line": 56
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-HAND-001"
+      ],
+      "inventoryEvidence": "document size; HAND-001"
+    },
+    {
+      "id": "OP-HND-02",
+      "kind": "feature-route",
+      "method": "GET",
+      "path": "/api/handoffs",
+      "router": "handoffRouter",
+      "mountVariable": "handoffRouter",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/handoffs/handoff.routes.js",
+        "line": 83
+      },
+      "handler": "getMyHandoffs",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/handoffs/handoff.controller.js",
+          "line": 94
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-SEARCH-002",
+        "PERF-HAND-001"
+      ],
+      "inventoryEvidence": "high; SEARCH-002"
+    },
+    {
+      "id": "OP-HND-03",
+      "kind": "feature-route",
+      "method": "GET",
+      "path": "/api/handoffs/:id",
+      "router": "handoffRouter",
+      "mountVariable": "handoffRouter",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/handoffs/handoff.routes.js",
+        "line": 93
+      },
+      "handler": "getHandoffById",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/handoffs/handoff.controller.js",
+          "line": 149
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-HAND-001"
+      ],
+      "inventoryEvidence": "nested notes/patients; HAND-001"
+    },
+    {
+      "id": "OP-HND-04",
+      "kind": "feature-route",
+      "method": "PUT",
+      "path": "/api/handoffs/:id",
+      "router": "handoffRouter",
+      "mountVariable": "handoffRouter",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/handoffs/handoff.routes.js",
+        "line": 104
+      },
+      "handler": "updateHandoff",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/handoffs/handoff.controller.js",
+          "line": 192
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-HAND-002"
+      ],
+      "inventoryEvidence": "edit/submit race; high; HAND-002"
+    },
+    {
+      "id": "OP-HND-05",
+      "kind": "feature-route",
+      "method": "POST",
+      "path": "/api/handoffs/:id/submit",
+      "router": "handoffRouter",
+      "mountVariable": "handoffRouter",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/handoffs/handoff.routes.js",
+        "line": 119
+      },
+      "handler": "submitHandoff",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/handoffs/handoff.controller.js",
+          "line": 215
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-HAND-001",
+        "PERF-HAND-002"
+      ],
+      "inventoryEvidence": "high; HAND-001/002"
+    },
+    {
+      "id": "OP-HND-06",
+      "kind": "feature-route",
+      "method": "POST",
+      "path": "/api/handoffs/:id/acknowledge",
+      "router": "handoffRouter",
+      "mountVariable": "handoffRouter",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/handoffs/handoff.routes.js",
+        "line": 137
+      },
+      "handler": "acknowledgeHandoff",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/handoffs/handoff.controller.js",
+          "line": 277
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-HAND-002",
+        "PERF-HAND-001"
+      ],
+      "inventoryEvidence": "high; HAND-002"
+    },
+    {
+      "id": "OP-HND-07",
+      "kind": "feature-route",
+      "method": "POST",
+      "path": "/api/handoffs/:id/notes",
+      "router": "handoffRouter",
+      "mountVariable": "handoffRouter",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/handoffs/handoff.routes.js",
+        "line": 148
+      },
+      "handler": "addHandoffNote",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/handoffs/handoff.controller.js",
+          "line": 329
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-HAND-002"
+      ],
+      "inventoryEvidence": "hot array; HAND-002"
+    },
+    {
+      "id": "OP-HND-08",
+      "kind": "feature-route",
+      "method": "POST",
+      "path": "/api/handoffs/:id/reassign",
+      "router": "handoffRouter",
+      "mountVariable": "handoffRouter",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/handoffs/handoff.routes.js",
+        "line": 160
+      },
+      "handler": "reassignHandoff",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/handoffs/handoff.controller.js",
+          "line": 382
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-HAND-002"
+      ],
+      "inventoryEvidence": "competing assignments; high; HAND-002"
+    },
+    {
+      "id": "OP-HND-09",
+      "kind": "feature-route",
+      "method": "DELETE",
+      "path": "/api/handoffs/:id",
+      "router": "handoffRouter",
+      "mountVariable": "handoffRouter",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/handoffs/handoff.routes.js",
+        "line": 179
+      },
+      "handler": "deleteHandoff",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/handoffs/handoff.controller.js",
+          "line": 469
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-HAND-002"
+      ],
+      "inventoryEvidence": "delete/submit race; HAND-002"
+    },
+    {
+      "id": "OP-HND-10",
+      "kind": "feature-route",
+      "method": "GET",
+      "path": "/api/spaces/:spaceId/handoffs",
+      "router": "spaceHandoffRouter",
+      "mountVariable": "spaceHandoffRouter",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/handoffs/handoff.routes.js",
+        "line": 200
+      },
+      "handler": "getSpaceHandoffs",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/handoffs/handoff.controller.js",
+          "line": 487
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-DATA-001",
+        "PERF-HAND-001"
+      ],
+      "inventoryEvidence": "compound cursor/growth; DATA-001"
+    },
+    {
+      "id": "OP-NOT-01",
+      "kind": "feature-route",
+      "method": "GET",
+      "path": "/api/notifications",
+      "router": "router",
+      "mountVariable": "notificationRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/notifications/notification.routes.js",
+        "line": 54
+      },
+      "handler": "getNotifications",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/notifications/notification.controller.js",
+          "line": 14
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-NOT-002",
+        "PERF-DATA-001"
+      ],
+      "inventoryEvidence": "high; NOT-002"
+    },
+    {
+      "id": "OP-NOT-02",
+      "kind": "feature-route",
+      "method": "GET",
+      "path": "/api/notifications/unread-count",
+      "router": "router",
+      "mountVariable": "notificationRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/notifications/notification.routes.js",
+        "line": 68
+      },
+      "handler": "getUnreadCount",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/notifications/notification.controller.js",
+          "line": 46
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-NOT-002"
+      ],
+      "inventoryEvidence": "write/read competition; NOT-002"
+    },
+    {
+      "id": "OP-NOT-03",
+      "kind": "feature-route",
+      "method": "PUT",
+      "path": "/api/notifications/read-all",
+      "router": "router",
+      "mountVariable": "notificationRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/notifications/notification.routes.js",
+        "line": 80
+      },
+      "handler": "markAllAsRead",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/notifications/notification.controller.js",
+          "line": 71
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-NOT-002"
+      ],
+      "inventoryEvidence": "inbox size; NOT-002"
+    },
+    {
+      "id": "OP-NOT-04",
+      "kind": "feature-route",
+      "method": "PUT",
+      "path": "/api/notifications/read-by-channel/:channelId",
+      "router": "router",
+      "mountVariable": "notificationRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/notifications/notification.routes.js",
+        "line": 86
+      },
+      "handler": "markReadByChannel",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/notifications/notification.controller.js",
+          "line": 100
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-NOT-002"
+      ],
+      "inventoryEvidence": "metadata filter; NOT-002"
+    },
+    {
+      "id": "OP-NOT-05",
+      "kind": "feature-route",
+      "method": "PUT",
+      "path": "/api/notifications/:id/read",
+      "router": "router",
+      "mountVariable": "notificationRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/notifications/notification.routes.js",
+        "line": 101
+      },
+      "handler": "markAsRead",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/notifications/notification.controller.js",
+          "line": 55
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-NOT-002"
+      ],
+      "inventoryEvidence": "concurrent state toggles; NOT-002"
+    },
+    {
+      "id": "OP-NOT-06",
+      "kind": "feature-route",
+      "method": "PUT",
+      "path": "/api/notifications/:id/unread",
+      "router": "router",
+      "mountVariable": "notificationRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/notifications/notification.routes.js",
+        "line": 108
+      },
+      "handler": "markAsUnread",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/notifications/notification.controller.js",
+          "line": 82
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-NOT-002"
+      ],
+      "inventoryEvidence": "same; NOT-002"
+    },
+    {
+      "id": "OP-NOT-07",
+      "kind": "feature-route",
+      "method": "DELETE",
+      "path": "/api/notifications/:id",
+      "router": "router",
+      "mountVariable": "notificationRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/notifications/notification.routes.js",
+        "line": 115
+      },
+      "handler": "deleteNotification",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/notifications/notification.controller.js",
+          "line": 142
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-NOT-002"
+      ],
+      "inventoryEvidence": "concurrent delivery/read; NOT-002"
+    },
+    {
+      "id": "OP-SRC-01",
+      "kind": "feature-route",
+      "method": "GET",
+      "path": "/api/search",
+      "router": "router",
+      "mountVariable": "searchRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/search/search.routes.js",
+        "line": 14
+      },
+      "handler": "globalSearch",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/search/search.controller.js",
+          "line": 46
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-SEARCH-001"
+      ],
+      "inventoryEvidence": "regex/cardinality; high; SEARCH-001"
+    },
+    {
+      "id": "OP-MED-01",
+      "kind": "feature-route",
+      "method": "POST",
+      "path": "/api/media/upload",
+      "router": "router",
+      "mountVariable": "mediaRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/media/media.routes.js",
+        "line": 108
+      },
+      "handler": "uploadFile",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/media/media.controller.js",
+          "line": 34
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-MED-001"
+      ],
+      "inventoryEvidence": "50 MiB buffer/provider/disk; critical; MED-001"
+    },
+    {
+      "id": "OP-MED-02",
+      "kind": "feature-route",
+      "method": "DELETE",
+      "path": "/api/media/:publicId",
+      "router": "router",
+      "mountVariable": "mediaRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/media/media.routes.js",
+        "line": 131
+      },
+      "handler": "deleteFile",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/media/media.controller.js",
+          "line": 238
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-MED-002"
+      ],
+      "inventoryEvidence": "provider retries and regex scan; high; MED-002"
+    },
+    {
+      "id": "OP-ADM-01",
+      "kind": "feature-route",
+      "method": "GET",
+      "path": "/api/admin/me",
+      "router": "router",
+      "mountVariable": "adminRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/admin/admin.routes.js",
+        "line": 18
+      },
+      "handler": "getAdminMe",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/admin/admin.controller.js",
+          "line": 306
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-OPS-001"
+      ]
+    },
+    {
+      "id": "OP-ADM-02",
+      "kind": "feature-route",
+      "method": "GET",
+      "path": "/api/admin/overview",
+      "router": "router",
+      "mountVariable": "adminRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/admin/admin.routes.js",
+        "line": 19
+      },
+      "handler": "getOverview",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/admin/admin.controller.js",
+          "line": 34
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-OPS-001"
+      ]
+    },
+    {
+      "id": "OP-ADM-03",
+      "kind": "feature-route",
+      "method": "GET",
+      "path": "/api/admin/users",
+      "router": "router",
+      "mountVariable": "adminRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/admin/admin.routes.js",
+        "line": 20
+      },
+      "handler": "listUsers",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/admin/admin.controller.js",
+          "line": 112
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-OPS-001",
+        "PERF-DATA-001"
+      ]
+    },
+    {
+      "id": "OP-ADM-04",
+      "kind": "feature-route",
+      "method": "GET",
+      "path": "/api/admin/growth",
+      "router": "router",
+      "mountVariable": "adminRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/admin/admin.routes.js",
+        "line": 21
+      },
+      "handler": "getGrowth",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/admin/admin.controller.js",
+          "line": 320
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-OPS-001"
+      ]
+    },
+    {
+      "id": "OP-ADM-05",
+      "kind": "feature-route",
+      "method": "GET",
+      "path": "/api/admin/retention",
+      "router": "router",
+      "mountVariable": "adminRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/admin/admin.routes.js",
+        "line": 22
+      },
+      "handler": "getRetention",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/admin/admin.controller.js",
+          "line": 362
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-OPS-001"
+      ]
+    },
+    {
+      "id": "OP-ADM-06",
+      "kind": "feature-route",
+      "method": "GET",
+      "path": "/api/admin/infrastructure",
+      "router": "router",
+      "mountVariable": "adminRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/admin/admin.routes.js",
+        "line": 23
+      },
+      "handler": "getInfrastructure",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/admin/admin.controller.js",
+          "line": 421
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-OPS-001"
+      ]
+    },
+    {
+      "id": "OP-ADM-07",
+      "kind": "feature-route",
+      "method": "GET",
+      "path": "/api/admin/support",
+      "router": "router",
+      "mountVariable": "adminRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/admin/admin.routes.js",
+        "line": 24
+      },
+      "handler": "listSupportTickets",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/admin/admin.controller.js",
+          "line": 518
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-OPS-001"
+      ]
+    },
+    {
+      "id": "OP-ADM-08",
+      "kind": "feature-route",
+      "method": "GET",
+      "path": "/api/admin/users/:id",
+      "router": "router",
+      "mountVariable": "adminRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/admin/admin.routes.js",
+        "line": 26
+      },
+      "handler": "getUser",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/admin/admin.controller.js",
+          "line": 206
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-OPS-001"
+      ]
+    },
+    {
+      "id": "OP-ADM-09",
+      "kind": "feature-route",
+      "method": "PUT",
+      "path": "/api/admin/users/:id/verify",
+      "router": "router",
+      "mountVariable": "adminRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/admin/admin.routes.js",
+        "line": 28
+      },
+      "handler": "setDoctorVerification",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/admin/admin.controller.js",
+          "line": 255
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-OPS-001",
+        "PERF-AUTH-002",
+        "SCALE-RT-005"
+      ]
+    },
+    {
+      "id": "OP-ADM-10",
+      "kind": "feature-route",
+      "method": "PUT",
+      "path": "/api/admin/users/:id/deactivate",
+      "router": "router",
+      "mountVariable": "adminRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/admin/admin.routes.js",
+        "line": 39
+      },
+      "handler": "setUserActive",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/admin/admin.controller.js",
+          "line": 281
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-OPS-001",
+        "PERF-AUTH-002",
+        "SCALE-RT-005"
+      ]
+    },
+    {
+      "id": "OP-SUP-01",
+      "kind": "feature-route",
+      "method": "POST",
+      "path": "/api/support/bug",
+      "router": "router",
+      "mountVariable": "supportRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/support/support.routes.js",
+        "line": 13
+      },
+      "handler": "createBug",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/support/support.controller.js",
+          "line": 45
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-OPS-001"
+      ]
+    },
+    {
+      "id": "OP-SUP-02",
+      "kind": "feature-route",
+      "method": "POST",
+      "path": "/api/support/feature",
+      "router": "router",
+      "mountVariable": "supportRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/support/support.routes.js",
+        "line": 19
+      },
+      "handler": "createFeature",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/support/support.controller.js",
+          "line": 67
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-OPS-001"
+      ]
+    },
+    {
+      "id": "OP-SUP-03",
+      "kind": "feature-route",
+      "method": "POST",
+      "path": "/api/support/feedback",
+      "router": "router",
+      "mountVariable": "supportRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/support/support.routes.js",
+        "line": 25
+      },
+      "handler": "createFeedback",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/support/support.controller.js",
+          "line": 89
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "PERF-OPS-001"
+      ]
+    },
+    {
+      "id": "OP-DEV-01",
+      "kind": "feature-route",
+      "method": "POST",
+      "path": "/api/dev/seed-notifications",
+      "router": "router",
+      "mountVariable": "devRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/dev/dev.routes.js",
+        "line": 47
+      },
+      "handler": "inline",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/dev/dev.routes.js",
+          "line": 47
+        }
+      ],
+      "caseIds": [],
+      "exclusion": {
+        "reason": "Developer fixture utilities are excluded from representative business load; retained in the 87-route denominator.",
+        "ownerPhase": "02",
+        "runtimeSelection": "FORBIDDEN_AS_USER_WORKLOAD"
+      }
+    },
+    {
+      "id": "OP-DEV-02",
+      "kind": "feature-route",
+      "method": "POST",
+      "path": "/api/dev/seed-conversation",
+      "router": "router",
+      "mountVariable": "devRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/dev/dev.routes.js",
+        "line": 105
+      },
+      "handler": "inline",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/dev/dev.routes.js",
+          "line": 105
+        }
+      ],
+      "caseIds": [],
+      "exclusion": {
+        "reason": "Developer fixture utilities are excluded from representative business load; retained in the 87-route denominator.",
+        "ownerPhase": "02",
+        "runtimeSelection": "FORBIDDEN_AS_USER_WORKLOAD"
+      }
+    },
+    {
+      "id": "OP-DEV-03",
+      "kind": "feature-route",
+      "method": "POST",
+      "path": "/api/dev/seed-handoff",
+      "router": "router",
+      "mountVariable": "devRoutes",
+      "routeRef": {
+        "path": "medcollab-backend/src/features/dev/dev.routes.js",
+        "line": 156
+      },
+      "handler": "inline",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/dev/dev.routes.js",
+          "line": 156
+        }
+      ],
+      "caseIds": [],
+      "exclusion": {
+        "reason": "Developer fixture utilities are excluded from representative business load; retained in the 87-route denominator.",
+        "ownerPhase": "02",
+        "runtimeSelection": "FORBIDDEN_AS_USER_WORKLOAD"
+      }
+    },
+    {
+      "id": "OP-SYS-01",
+      "kind": "platform",
+      "method": "GET",
+      "path": "/",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/app.js",
+          "line": 128
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "RES-SYS-001"
+      ]
+    },
+    {
+      "id": "OP-SYS-02",
+      "kind": "platform",
+      "method": "GET",
+      "path": "/health",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/app.js",
+          "line": 142
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "RES-SYS-001",
+        "RES-DATA-001"
+      ]
+    },
+    {
+      "id": "OP-SYS-03",
+      "kind": "platform",
+      "method": "GET",
+      "path": "/api",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/app.js",
+          "line": 273
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001",
+        "RES-SYS-001"
+      ]
+    },
+    {
+      "id": "OP-SYS-04",
+      "kind": "platform",
+      "method": "GET",
+      "path": "/join/:code",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/app.js",
+          "line": 164
+        }
+      ],
+      "caseIds": [
+        "PERF-API-001"
+      ]
+    },
+    {
+      "id": "OP-SYS-05",
+      "kind": "platform",
+      "method": "STATIC",
+      "path": "/uploads/*",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/app.js",
+          "line": 208
+        }
+      ],
+      "caseIds": [
+        "PERF-MED-002"
+      ]
+    },
+    {
+      "id": "OP-SYS-06",
+      "kind": "platform",
+      "method": "STATIC",
+      "path": "/admin/*",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/app.js",
+          "line": 227
+        }
+      ],
+      "caseIds": [
+        "PERF-OPS-001"
+      ]
+    },
+    {
+      "id": "OP-RT-01",
+      "kind": "realtime",
+      "event": "connect/authenticated",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/socket/index.js",
+          "line": 93
+        }
+      ],
+      "caseIds": [
+        "SCALE-RT-001"
+      ]
+    },
+    {
+      "id": "OP-RT-02",
+      "kind": "realtime",
+      "event": "join_channel",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/socket/handlers/message.handler.js",
+          "line": 62
+        }
+      ],
+      "caseIds": [
+        "SCALE-RT-001",
+        "SCALE-RT-006"
+      ]
+    },
+    {
+      "id": "OP-RT-03",
+      "kind": "realtime",
+      "event": "leave_channel",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/socket/handlers/message.handler.js",
+          "line": 92
+        }
+      ],
+      "caseIds": [
+        "SCALE-RT-003",
+        "SCALE-RT-006"
+      ]
+    },
+    {
+      "id": "OP-RT-04",
+      "kind": "realtime",
+      "event": "sync_space_rooms",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/socket/handlers/space.handler.js",
+          "line": 15
+        }
+      ],
+      "caseIds": [
+        "SCALE-RT-003",
+        "SPIKE-SYS-001"
+      ]
+    },
+    {
+      "id": "OP-RT-05",
+      "kind": "realtime",
+      "event": "typing_start",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/socket/handlers/message.handler.js",
+          "line": 111
+        }
+      ],
+      "caseIds": [
+        "SCALE-RT-004"
+      ]
+    },
+    {
+      "id": "OP-RT-06",
+      "kind": "realtime",
+      "event": "typing_stop",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/socket/handlers/message.handler.js",
+          "line": 135
+        }
+      ],
+      "caseIds": [
+        "SCALE-RT-004"
+      ]
+    },
+    {
+      "id": "OP-RT-07",
+      "kind": "realtime",
+      "event": "user_typing",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/socket/handlers/message.handler.js",
+          "line": 120
+        }
+      ],
+      "caseIds": [
+        "SCALE-RT-004",
+        "SCALE-RT-007"
+      ]
+    },
+    {
+      "id": "OP-RT-08",
+      "kind": "realtime",
+      "event": "user_stopped_typing",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/socket/handlers/message.handler.js",
+          "line": 143
+        }
+      ],
+      "caseIds": [
+        "SCALE-RT-004",
+        "SCALE-RT-007"
+      ]
+    },
+    {
+      "id": "OP-RT-09",
+      "kind": "realtime",
+      "event": "update_availability",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/socket/handlers/presence.handler.js",
+          "line": 78
+        }
+      ],
+      "caseIds": [
+        "SCALE-RT-003"
+      ]
+    },
+    {
+      "id": "OP-RT-10",
+      "kind": "realtime",
+      "event": "presence_update",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/socket/handlers/presence.handler.js",
+          "line": 150
+        }
+      ],
+      "caseIds": [
+        "SCALE-RT-003"
+      ]
+    },
+    {
+      "id": "OP-RT-11",
+      "kind": "realtime",
+      "event": "new_message",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/socket/index.js",
+          "line": 198
+        }
+      ],
+      "caseIds": [
+        "SCALE-RT-002",
+        "PERF-MSG-003"
+      ]
+    },
+    {
+      "id": "OP-RT-12",
+      "kind": "realtime",
+      "event": "message_updated",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/socket/index.js",
+          "line": 238
+        }
+      ],
+      "caseIds": [
+        "PERF-MSG-004"
+      ]
+    },
+    {
+      "id": "OP-RT-13",
+      "kind": "realtime",
+      "event": "message_deleted",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/socket/index.js",
+          "line": 247
+        }
+      ],
+      "caseIds": [
+        "PERF-MSG-004"
+      ]
+    },
+    {
+      "id": "OP-RT-14",
+      "kind": "realtime",
+      "event": "new_notification",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/socket/index.js",
+          "line": 257
+        }
+      ],
+      "caseIds": [
+        "PERF-NOT-001",
+        "PERF-NOT-002"
+      ]
+    },
+    {
+      "id": "OP-RT-15",
+      "kind": "realtime",
+      "event": "handoff_submitted",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/handoffs/handoff.controller.js",
+          "line": 244
+        }
+      ],
+      "caseIds": [
+        "PERF-HAND-001",
+        "PERF-HAND-002"
+      ]
+    },
+    {
+      "id": "OP-RT-16",
+      "kind": "realtime",
+      "event": "handoff_acknowledged",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/handoffs/handoff.controller.js",
+          "line": 304
+        }
+      ],
+      "caseIds": [
+        "PERF-HAND-001",
+        "PERF-HAND-002"
+      ]
+    },
+    {
+      "id": "OP-RT-17",
+      "kind": "realtime",
+      "event": "handoff_note_added",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/handoffs/handoff.controller.js",
+          "line": 369
+        }
+      ],
+      "caseIds": [
+        "PERF-HAND-001",
+        "PERF-HAND-002"
+      ]
+    },
+    {
+      "id": "OP-RT-18",
+      "kind": "realtime",
+      "event": "handoff_reassigned",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/handoffs/handoff.controller.js",
+          "line": 444
+        }
+      ],
+      "caseIds": [
+        "PERF-HAND-001",
+        "PERF-HAND-002"
+      ]
+    },
+    {
+      "id": "OP-RT-19",
+      "kind": "realtime",
+      "event": "space_member_joined",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/spaces/space.controller.js",
+          "line": 201
+        }
+      ],
+      "caseIds": [
+        "SCALE-RT-006"
+      ]
+    },
+    {
+      "id": "OP-RT-20",
+      "kind": "realtime",
+      "event": "space_member_left",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/spaces/space.controller.js",
+          "line": 424
+        }
+      ],
+      "caseIds": [
+        "SCALE-RT-006"
+      ]
+    },
+    {
+      "id": "OP-RT-21",
+      "kind": "realtime",
+      "event": "disconnect",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/socket/handlers/presence.handler.js",
+          "line": 120
+        }
+      ],
+      "caseIds": [
+        "SCALE-RT-003",
+        "SOAK-SYS-001"
+      ]
+    },
+    {
+      "id": "OP-RT-22",
+      "kind": "realtime",
+      "event": "recovery",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/socket/index.js",
+          "line": 83
+        }
+      ],
+      "caseIds": [
+        "SCALE-RT-005"
+      ]
+    },
+    {
+      "id": "OP-RT-23",
+      "kind": "realtime",
+      "event": "error",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/socket/index.js",
+          "line": 165
+        }
+      ],
+      "caseIds": [
+        "SCALE-RT-001",
+        "SCALE-RT-002",
+        "SCALE-RT-003",
+        "SCALE-RT-004",
+        "SCALE-RT-005",
+        "SCALE-RT-006",
+        "SCALE-RT-007"
+      ]
+    },
+    {
+      "id": "OP-BG-01",
+      "kind": "background",
+      "name": "Per-authenticated-request lastSeenAt write",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/middleware/auth.js",
+          "line": 77
+        }
+      ],
+      "caseIds": [
+        "PERF-DATA-002",
+        "RES-DATA-001"
+      ]
+    },
+    {
+      "id": "OP-BG-02",
+      "kind": "background",
+      "name": "Post-send emit/thread/notification chain",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/messages/message.controller.js",
+          "line": 208
+        }
+      ],
+      "caseIds": [
+        "PERF-MSG-001",
+        "RES-SYS-001",
+        "RES-DATA-001"
+      ]
+    },
+    {
+      "id": "OP-BG-03",
+      "kind": "background",
+      "name": "Post-handoff notification",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/handoffs/handoff.controller.js",
+          "line": 264
+        }
+      ],
+      "caseIds": [
+        "PERF-HAND-001",
+        "RES-SYS-001"
+      ]
+    },
+    {
+      "id": "OP-BG-04",
+      "kind": "background",
+      "name": "FCM invalid-token cleanup",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/services/notification.service.js",
+          "line": 44
+        }
+      ],
+      "caseIds": [
+        "PERF-NOT-001",
+        "PERF-AUTH-002"
+      ]
+    },
+    {
+      "id": "OP-BG-05",
+      "kind": "background",
+      "name": "Upload storage counter increment",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/media/media.controller.js",
+          "line": 34
+        }
+      ],
+      "caseIds": [
+        "PERF-MED-001"
+      ]
+    },
+    {
+      "id": "OP-BG-06",
+      "kind": "background",
+      "name": "OTP and notification TTL",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/features/auth/otp.model.js",
+          "line": 70
+        }
+      ],
+      "caseIds": [
+        "PERF-DATA-003"
+      ]
+    },
+    {
+      "id": "OP-BG-07",
+      "kind": "background",
+      "name": "Recovery packet/session retention",
+      "sourceRefs": [
+        {
+          "path": "medcollab-backend/src/socket/index.js",
+          "line": 83
+        }
+      ],
+      "caseIds": [
+        "SCALE-RT-005",
+        "SOAK-SYS-001"
+      ]
+    },
+    {
+      "id": "OP-BG-08",
+      "kind": "background",
+      "name": "Mobile retry/rejoin/sync/read-clear actions",
+      "sourceRefs": [
+        {
+          "path": "medcollab-app/lib/core/socket/socket_client.dart",
+          "line": 239
+        }
+      ],
+      "caseIds": [
+        "NET-SYS-001",
+        "MOBILE-SYS-001"
+      ]
+    }
+  ]
+}

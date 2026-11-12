@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "investigationSha": "4c01dc24247aa95a73e286a2b42c7f2f81257c7a",
+  "sourceSha": "4c01dc24247aa95a73e286a2b42c7f2f81257c7a",
+  "checkedOn": "2026-10-28",
+  "comparison": "IDENTICAL",
+  "changedPaths": [],
+  "entries": [],
+  "policy": "Append drift entries with old/new source refs, affected cases/operations, owner and disposition. Never silently rewrite the frozen plan. Hash mismatch is a static failure requiring review, not permission to regenerate expected evidence."
+}

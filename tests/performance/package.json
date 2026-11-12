@@ -1,0 +1,11 @@
+{
+  "name": "vocle-performance",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Phase 01 shared contracts; no workload entry point or execution authorization",
+  "engines": { "node": ">=22.20.0 <25" },
+  "exports": { ".": "./lib/index.mjs" },
+  "scripts": { "validate:static": "node validate-foundation.mjs && node validate-harness.mjs" },
+  "dependencies": { "artillery": "2.0.34", "socket.io-client": "4.8.3" }
+}
