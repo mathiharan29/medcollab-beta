@@ -18,7 +18,7 @@ const attempts = [];
 for (const [name, source, module] of [['sanity', 'src/sanity-adapter.mjs', null], ...Object.entries(suiteFiles).map(([prefix, file]) => [file, `suites/${file}.mjs`, prefix])]) {
   if (module && !selected.some((item) => item.coverage === 'NEW' && item.module === module)) continue;
   const env = { ...process.env, VOCLE_RUN_ID: runId, VOCLE_TARGET_DIR: target, VOCLE_OUTPUT_DIR: output, VOCLE_CASE_IDS: newIds.join(',') };
-  const child = spawnSync(process.execPath, [join(harnessRoot, source)], { cwd: harnessRoot, env, encoding: 'utf8', timeout: 240000, maxBuffer: 10 * 1024 * 1024 });
+  const child = spawnSync(process.execPath, [join(harnessRoot, source)], { cwd: harnessRoot, env, encoding: 'utf8', timeout: module === 'NDL' ? 480000 : 240000, maxBuffer: 10 * 1024 * 1024 });
   await writeFile(join(diagnostics, `${name}.log`), `${child.stdout || ''}${child.stderr || ''}`);
   attempts.push({ name, module, exitCode: child.status, signal: child.signal, spawnError: child.error?.message || null });
   console.log(`${name}: exit ${child.status ?? 'none'}${child.error ? ` (${child.error.message})` : ''}`);

@@ -2,7 +2,13 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-export const users = Object.freeze(Object.fromEntries(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'].map((label, index) => [label, { phone: `+120255501${String(index + 1).padStart(2, '0')}`, name: `Dr Synthetic ${label}` }])));
+// Journey 4 needs identities that share no spaces with earlier journey cases.
+// Keep the existing A..K phone assignments stable when appending fixtures.
+export const users = Object.freeze(Object.fromEntries(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'J4A', 'J4B'].map((label, index) => [label, { phone: `+120255501${String(index + 1).padStart(2, '0')}`, name: `Dr Synthetic ${label}` }])));
+
+export class FixtureError extends Error {
+  constructor(message) { super(message); this.name = 'FixtureError'; }
+}
 
 export async function capturedOtp(inboxDirectory, phone) {
   const entries = (await readFile(join(inboxDirectory, 'msg91-inbox.ndjson'), 'utf8')).trim().split(/\r?\n/).filter(Boolean).map((line) => JSON.parse(line));
@@ -13,7 +19,7 @@ export async function capturedOtp(inboxDirectory, phone) {
 
 export async function createIdentity(request, inboxDirectory, label) {
   const user = users[label];
-  if (!user) throw new Error(`Unknown synthetic user ${label}`);
+  if (!user) throw new FixtureError(`Unknown synthetic user ${label}`);
   await request('/api/auth/request-otp', { method: 'POST', body: { phone: user.phone } });
   const verification = await request('/api/auth/verify-otp', { method: 'POST', body: { phone: user.phone, otp: await capturedOtp(inboxDirectory, user.phone) } });
   assert.equal(verification.payload.success, true);
