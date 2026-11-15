@@ -469,7 +469,9 @@
           ${stat('Onboarded', u ? `${u.onboarded}/${u.total}` : '—')}
           ${stat('@usernames', u?.withUsername)}
           ${stat('Msg requests', state.overview?.messageRequests?.pending, 'Pending stranger DMs')}
+          ${stat('Voice notes', state.overview?.messages?.voiceNotes)}
           ${stat('Videos', state.overview?.messages?.videos)}
+          ${stat('Handoff voice', h?.withVoiceNote ?? '—')}
           ${stat('Media tracked', infraOverview ? `${infraOverview.storageUsedMb} MB` : '—', 'Sum of uploads since tracking started')}
         </section>
         <section class="phase2-grid">
