@@ -1,5 +1,6 @@
 name: Vocle Developer QA Integration
 on:
+  workflow_dispatch:
   pull_request:
     branches: [master]
     types: [opened, reopened, ready_for_review, synchronize]
@@ -23,19 +24,27 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     steps:
-      - name: Validate supported PR context
+      - name: Validate supported PR or manual context
         working-directory: ${{ github.workspace }}
         shell: bash
         env:
           QA_REPOSITORY: ${{ github.repository }}
           QA_EVENT: ${{ github.event_name }}
+          QA_REF: ${{ github.ref }}
+          QA_SHA: ${{ github.sha }}
           QA_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
           QA_BASE_REF: ${{ github.event.pull_request.base.ref }}
         run: |
+          set -euo pipefail
           test "$QA_REPOSITORY" = mathiharan29/medcollab-beta
-          test "$QA_EVENT" = pull_request
-          test "$QA_HEAD_REPOSITORY" = mathiharan29/medcollab-beta
-          test "$QA_BASE_REF" = master
+          if [ "$QA_EVENT" = pull_request ]; then
+            test "$QA_HEAD_REPOSITORY" = mathiharan29/medcollab-beta
+            test "$QA_BASE_REF" = master
+          else
+            test "$QA_EVENT" = workflow_dispatch
+            [[ "$QA_REF" == refs/heads/?* ]]
+            [[ "$QA_SHA" =~ ^[0-9a-f]{40}$ ]]
+          fi
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -48,7 +57,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Evidence, comparison, ownership and coverage contracts
-        run: node --test tests/developer-workflow/workflow.test.mjs tests/developer-workflow/process.test.mjs tests/developer-workflow/cloudinary-local.test.cjs tests/developer-workflow/cloudinary-evidence.test.mjs
+        run: node --test tests/developer-workflow/workflow.test.mjs tests/developer-workflow/process.test.mjs tests/developer-workflow/cloudinary-local.test.cjs tests/developer-workflow/cloudinary-evidence.test.mjs tests/developer-workflow/migration.test.mjs tests/developer-workflow/manual-workflows.test.mjs
       - name: Python disposable-session contracts
         run: python -B -m unittest discover -s tests/developer-workflow -p 'test_*.py' -v
       - name: Detailed report normalization and escaping contracts

@@ -151,7 +151,7 @@ void main() {
   });
   tearDown(() => h.router.dispose());
 
-  testWidgets('back from a chat goes to Messages, then Home', (tester) async {
+  testWidgets('FR-NAV-03: back from a chat goes to Messages, then Home', (tester) async {
     await tester.pumpWidget(h.app());
     await tester.pumpAndSettle();
     await tester.tap(find.text('Messages'));
