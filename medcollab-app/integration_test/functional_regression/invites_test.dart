@@ -101,7 +101,11 @@ void main() {
         final raw = index == 1
             ? invite['code'] as String
             : 'https://vocle.synthetic.invalid/join/${invite['code']}';
-        await tester.enterText(find.byType(TextField), raw);
+        final inviteField = find.byWidgetPredicate((widget) =>
+            widget is TextField &&
+            widget.decoration?.labelText == 'Invite code or link');
+        expect(inviteField, findsOneWidget);
+        await tester.enterText(inviteField, raw);
         await tester.tap(find.text('Continue'));
       }
       await until(
