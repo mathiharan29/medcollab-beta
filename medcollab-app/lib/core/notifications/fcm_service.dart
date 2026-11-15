@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' show DartPluginRegistrant;
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -26,12 +27,30 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await GroupedMessageNotification.showFromRemote(message);
 }
 
+/// Inline Reply / Mark as read from the shade. Android runs this in the
+/// notification plugin's own background isolate — ALWAYS, even while the
+/// app is open. Plugins written in Dart (shared_preferences, the
+/// notifications plugin itself) are not registered there until
+/// [DartPluginRegistrant.ensureInitialized]; without it the re-post that
+/// ends the reply spinner threw, so the reply looked stuck forever
+/// (beta 11-14, issue 7).
 @pragma('vm:entry-point')
-void onBackgroundNotificationResponse(NotificationResponse response) {
-  if (response.actionId == 'reply' ||
-      response.actionId == NotificationReplySender.markReadAction) {
-    unawaited(NotificationReplySender.send(response));
+Future<void> onBackgroundNotificationResponse(
+  NotificationResponse response,
+) async {
+  if (response.actionId != NotificationReplySender.replyAction &&
+      response.actionId != NotificationReplySender.markReadAction) {
+    return;
   }
+  try {
+    WidgetsFlutterBinding.ensureInitialized();
+    DartPluginRegistrant.ensureInitialized();
+    await _ensureLocalNotifications();
+  } catch (e) {
+    debugPrint('Shade action: isolate setup failed: $e');
+  }
+  final outcome = await NotificationReplySender.send(response);
+  debugPrint('SHADE_REPLY_${outcome.name.toUpperCase()}');
 }
 
 Future<void> _ensureLocalNotifications() async {
@@ -46,9 +65,11 @@ Future<void> _ensureLocalNotifications() async {
 }
 
 void _onLocalNotificationResponse(NotificationResponse response) {
-  if (response.actionId == 'reply' ||
+  if (response.actionId == NotificationReplySender.replyAction ||
       response.actionId == NotificationReplySender.markReadAction) {
-    unawaited(NotificationReplySender.send(response));
+    unawaited(NotificationReplySender.send(response).then((outcome) {
+      debugPrint('SHADE_REPLY_${outcome.name.toUpperCase()}');
+    }));
     return;
   }
   final raw = response.payload;

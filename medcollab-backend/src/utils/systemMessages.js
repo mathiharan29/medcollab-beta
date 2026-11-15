@@ -22,6 +22,8 @@ const SYSTEM_EVENTS = {
   MEMBER_LEFT: 'member_left',
   GROUP_RENAMED: 'group_renamed',
   CHANNEL_RENAMED: 'channel_renamed',
+  // Needl gained people → a new Needl; the old one points to it.
+  NEEDL_CONTINUED: 'needl_continued',
 };
 
 /** "Dr Asha Rao" — title + name, never empty. */
@@ -77,6 +79,7 @@ async function postSystemMessage({
   text,
   targetUserIds = [],
   notifyUserIds = [],
+  movedToChannelId = undefined,
 }) {
   if (!channel || !actor) return null;
   try {
@@ -89,6 +92,7 @@ async function postSystemMessage({
         text: text.slice(0, 4000),
         systemEvent: event,
         targetUserIds,
+        ...(movedToChannelId ? { movedToChannelId } : {}),
       },
     });
     await message.populate('senderId', 'name displayTitle role avatarUrl');

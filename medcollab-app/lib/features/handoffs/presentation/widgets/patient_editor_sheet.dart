@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
 import 'package:medcollab_app/core/di/app_dependencies.dart';
 import 'package:medcollab_app/features/handoffs/data/models/handoff_patient_model.dart';
+import 'package:medcollab_app/features/handoffs/data/models/handoff_voice_note.dart';
+import 'package:medcollab_app/features/handoffs/presentation/widgets/handoff_voice_note_field.dart';
 import 'package:medcollab_app/features/media/data/services/media_picker_service.dart';
 import 'package:medcollab_app/features/handoffs/presentation/utils/handoff_priority_colors.dart';
 
@@ -85,6 +87,9 @@ class _PatientEditorSheetState extends State<PatientEditorSheet> {
     ...?widget.initial?.attachments,
   ];
   bool _uploading = false;
+  // Spoken handover for this patient (issue 5).
+  late HandoffVoiceNote? _voiceNote = widget.initial?.voiceNote;
+  bool _voiceBusy = false;
 
   Future<PickedAttachment?> _defaultPick(BuildContext context) async {
     final picker = MediaPickerService();
@@ -195,8 +200,10 @@ class _PatientEditorSheetState extends State<PatientEditorSheet> {
   }
 
   void _save() {
-    if (_uploading) {
-      _snack('Wait for the attachment to finish uploading');
+    if (_uploading || _voiceBusy) {
+      _snack(_voiceBusy
+          ? 'Wait for the voice note to finish'
+          : 'Wait for the attachment to finish uploading');
       return;
     }
     final bed = _bedController.text.trim();
@@ -263,6 +270,7 @@ class _PatientEditorSheetState extends State<PatientEditorSheet> {
         pendingTasks: tasks,
         isFlagged: _isFlagged,
         attachments: List.unmodifiable(_attachments),
+        voiceNote: _voiceNote,
       ),
     );
   }
@@ -441,6 +449,16 @@ class _PatientEditorSheetState extends State<PatientEditorSheet> {
               ],
             ),
             const SizedBox(height: 12),
+            HandoffVoiceNoteField(
+              key: const Key('patient-voice-note'),
+              value: _voiceNote,
+              playbackId: 'patient-${widget.initial?.id ?? 'new'}',
+              label: 'Voice note for this patient',
+              hint: 'Optional — say what the next doctor must know.',
+              onChanged: (v) => setState(() => _voiceNote = v),
+              onBusyChanged: (b) => setState(() => _voiceBusy = b),
+            ),
+            const SizedBox(height: 12),
             TextField(
               controller: _notesController,
               decoration: const InputDecoration(
@@ -456,7 +474,7 @@ class _PatientEditorSheetState extends State<PatientEditorSheet> {
             ),
             const SizedBox(height: 16),
             FilledButton(
-              onPressed: _uploading ? null : _save,
+              onPressed: _uploading || _voiceBusy ? null : _save,
               child: Text(widget.initial == null ? 'Add' : 'Save'),
             ),
           ],

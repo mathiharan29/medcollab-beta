@@ -95,7 +95,8 @@ const globalSearch = asyncHandler(async (req, res) => {
         ...personal,
         // Activity lines ("X added Y") are not searchable content.
         type: { $ne: MESSAGE_TYPES.SYSTEM },
-        'content.text': regex,
+        // Voice messages are found by their transcript too (issue 13).
+        $and: [{ $or: [{ 'content.text': regex }, { 'content.transcript': regex }] }],
       })
         .populate('senderId', 'name displayTitle role avatarUrl')
         .sort({ createdAt: -1 })

@@ -113,7 +113,7 @@ Future<void> showPeerProfileCard(
                 child: FilledButton(
                   style: FilledButton.styleFrom(
                     minimumSize: const Size(0, 48),
-                    backgroundColor: AppColors.navyPrimary,
+                    backgroundColor: AppColors.actionFill,
                   ),
                   onPressed: () => Navigator.of(dialogContext).pop(),
                   child: const Text('Done'),

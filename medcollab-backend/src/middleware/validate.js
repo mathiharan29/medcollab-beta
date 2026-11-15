@@ -168,6 +168,18 @@ const validateSendMessage = [
       }
       return true;
     }),
+  // Needl Voice (issue 13): audio may carry a transcript / its status.
+  body('content.transcript')
+    .optional({ nullable: true })
+    .custom((value, { req }) => {
+      if ((req.body?.type || 'text') !== 'audio') throw new Error('Only voice messages have transcripts');
+      if (typeof value !== 'string' || value.length > 8000) throw new Error('Invalid transcript');
+      return true;
+    }),
+  body('content.transcriptStatus')
+    .optional({ nullable: true })
+    .isIn(['pending', 'done', 'unavailable']).withMessage('Invalid transcript status'),
+  body('content.voiceMode').optional({ nullable: true }).isBoolean(),
   body('content.text').custom((value, { req }) => {
     const type = req.body?.type || 'text';
     if (type === 'text') {

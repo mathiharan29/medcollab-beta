@@ -61,6 +61,10 @@ abstract final class AppRoutes {
 
   static String dmPath(String channelId) => '/dm/$channelId';
 
+  /// Needl Voice (issue 13): voice-first view of any chat.
+  static const String needlVoice = '/voice/:channelId';
+  static String needlVoicePath(String channelId) => '/voice/$channelId';
+
   static String dmThreadPath(String channelId, String messageId) =>
       '/dm/$channelId/threads/$messageId';
 

@@ -1,6 +1,7 @@
-// REQ 3: system back from anywhere inside the app goes to Home (popups
-// close first; Home asks before exiting). Supersedes FR-NAV-03, which
-// walked back through tab visit history.
+// Back (beta 11-14, supersedes REQ 3's "always Home"): system back / edge
+// swipe moves ONE level up — chat → Messages, settings page → Profile,
+// thread → chat; a main tab → Home; Home asks before exiting. Popups close
+// first; dirty screens can veto.
 // REQ 8: main tabs can be swiped; inner tabs swipe first and hand off to
 // the neighbouring main tab at their edge; tab state is preserved.
 import 'package:flutter/material.dart';
@@ -51,6 +52,7 @@ class _Harness {
                   BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
                   BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Messages'),
                   BottomNavigationBarItem(icon: Icon(Icons.swap_horiz), label: 'Handoffs'),
+                  BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
                 ],
               ),
             );
@@ -85,10 +87,33 @@ class _Harness {
               routes: [GoRoute(path: AppRoutes.handoffs,
                   builder: (_, __) => const Center(child: Text('HANDOFFS PAGE')))],
             ),
+            StatefulShellBranch(
+              observers: [popups.createObserver()],
+              routes: [GoRoute(path: AppRoutes.profile,
+                  builder: (context, _) => Center(child: FilledButton(
+                        onPressed: () => context.push(AppRoutes.notificationSettings),
+                        child: const Text('PROFILE PAGE'),
+                      )))],
+            ),
           ],
         ),
         GoRoute(path: '/chat',
             builder: (_, __) => const Scaffold(body: Center(child: Text('CHAT PAGE')))),
+        GoRoute(path: AppRoutes.notificationSettings,
+            builder: (context, _) => Scaffold(body: Center(child: FilledButton(
+                  onPressed: () => context.push(AppRoutes.editProfile),
+                  child: const Text('SETTINGS PAGE'),
+                )))),
+        GoRoute(path: AppRoutes.editProfile,
+            builder: (_, __) => const Scaffold(body: Center(child: Text('EDIT PAGE')))),
+        GoRoute(path: AppRoutes.dm,
+            builder: (context, s) => Scaffold(body: Center(child: FilledButton(
+                  onPressed: () => context.push(
+                      AppRoutes.dmThreadPath(s.pathParameters['channelId']!, 'm1')),
+                  child: const Text('DM PAGE'),
+                )))),
+        GoRoute(path: AppRoutes.dmThread,
+            builder: (_, __) => const Scaffold(body: Center(child: Text('THREAD PAGE')))),
       ],
     );
   }
@@ -126,7 +151,7 @@ void main() {
   });
   tearDown(() => h.router.dispose());
 
-  testWidgets('REQ 3: back from a chat goes straight to Home', (tester) async {
+  testWidgets('back from a chat goes to Messages, then Home', (tester) async {
     await tester.pumpWidget(h.app());
     await tester.pumpAndSettle();
     await tester.tap(find.text('Messages'));
@@ -136,9 +161,90 @@ void main() {
     expect(h.path, '/chat');
 
     await _back(tester);
-    expect(h.path, AppRoutes.home,
-        reason: 'not back to the Messages tab — Home');
-    expect(find.text('Home taps 0'), findsOneWidget);
+    expect(h.path, AppRoutes.messages, reason: 'one level up: chat home');
+    expect(find.text('DIRECT PAGE'), findsOneWidget,
+        reason: 'same inner tab (Direct) as before opening the chat');
+
+    await _back(tester);
+    expect(h.path, AppRoutes.home);
+  });
+
+  testWidgets('settings: sub-page → parent page → Profile → Home',
+      (tester) async {
+    await tester.pumpWidget(h.app());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Profile'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('PROFILE PAGE'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('SETTINGS PAGE'));
+    await tester.pumpAndSettle();
+    expect(h.path, AppRoutes.editProfile);
+
+    await _back(tester);
+    expect(h.path, AppRoutes.notificationSettings);
+    await _back(tester);
+    expect(h.path, AppRoutes.profile);
+    await _back(tester);
+    expect(h.path, AppRoutes.home);
+  });
+
+  testWidgets('thread → its chat → Messages → Home', (tester) async {
+    await tester.pumpWidget(h.app());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Messages'));
+    await tester.pumpAndSettle();
+    h.router.push(AppRoutes.dmPath('c1'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('DM PAGE'));
+    await tester.pumpAndSettle();
+    expect(h.path, AppRoutes.dmThreadPath('c1', 'm1'));
+
+    await _back(tester);
+    expect(h.path, AppRoutes.dmPath('c1'));
+    await _back(tester);
+    expect(h.path, AppRoutes.messages);
+    await _back(tester);
+    expect(h.path, AppRoutes.home);
+  });
+
+  testWidgets('chat opened from a notification (nothing below) → Messages → Home',
+      (tester) async {
+    await tester.pumpWidget(h.app());
+    await tester.pumpAndSettle();
+    h.router.go(AppRoutes.dmThreadPath('c9', 'm1'));
+    await tester.pumpAndSettle();
+    expect(h.router.canPop(), isFalse);
+
+    await _back(tester);
+    expect(h.path, AppRoutes.dmPath('c9'));
+    await _back(tester);
+    expect(h.path, AppRoutes.messages);
+    await _back(tester);
+    expect(h.path, AppRoutes.home);
+  });
+
+  test('logicalParentOf maps every deep screen one level up', () {
+    expect(logicalParentOf('/dm/a'), AppRoutes.messages);
+    expect(logicalParentOf('/dm/new'), AppRoutes.messages);
+    expect(logicalParentOf('/dm/a/threads/m'), '/dm/a');
+    expect(logicalParentOf('/spaces/s/channels/c'), AppRoutes.messages);
+    expect(logicalParentOf('/spaces/s/channels/c/threads/m'), '/spaces/s/channels/c');
+    expect(logicalParentOf('/spaces/s/handoffs/h/edit'), '/spaces/s/handoffs/h');
+    expect(logicalParentOf('/spaces/s/handoffs/h'), AppRoutes.handoffs);
+    expect(logicalParentOf('/spaces/s/handoffs/create'), '/spaces/s/handoffs');
+    expect(logicalParentOf('/spaces/s/handoffs'), '/spaces/s');
+    expect(logicalParentOf('/spaces/s/members'), '/spaces/s');
+    expect(logicalParentOf('/spaces/s'), AppRoutes.messages);
+    expect(logicalParentOf('/profile/edit'), AppRoutes.profile);
+    expect(logicalParentOf('/notifications/settings'), AppRoutes.profile);
+    expect(logicalParentOf('/bookmarks'), AppRoutes.profile);
+    expect(logicalParentOf('/help'), AppRoutes.profile);
+    expect(logicalParentOf('/links/c/x/m/y'), AppRoutes.messages);
+    expect(logicalParentOf('/search'), AppRoutes.home);
+    for (final tab in AppRoutes.shellPaths) {
+      expect(logicalParentOf(tab), isNull);
+    }
   });
 
   testWidgets('REQ 3: back from another tab goes Home; Home asks before exit',
@@ -205,7 +311,7 @@ void main() {
     BackGuard.unregister(guard);
   });
 
-  testWidgets('REQ 3: popup closes first, then back goes Home', (tester) async {
+  testWidgets('popup closes first, then back goes Home', (tester) async {
     await tester.pumpWidget(h.app());
     await tester.pumpAndSettle();
     await tester.tap(find.text('Handoffs'));

@@ -408,10 +408,14 @@ class ProfilePage extends StatelessWidget {
       // so it must follow the live bottomSheetTheme (a colour captured at
       // open left white-on-white text after picking Dark).
       shape: const RoundedRectangleBorder(borderRadius: AppRadius.sheet),
+      // 3 modes + 5 colours are taller than the default 9/16 sheet cap:
+      // the colour list was cut off (RenderFlex overflow, found on device).
+      isScrollControlled: true,
       builder: (ctx) => SafeArea(
         child: BlocBuilder<ThemeModeCubit, ThemeSettingsState>(
           bloc: cubit,
-          builder: (ctx, themeState) => Column(
+          builder: (ctx, themeState) => SingleChildScrollView(
+           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Padding(
@@ -469,6 +473,7 @@ class ProfilePage extends StatelessWidget {
                 ),
               const SizedBox(height: 8),
             ],
+           ),
           ),
         ),
       ),
@@ -672,7 +677,7 @@ class _ProfileHeader extends StatelessWidget {
           .copyWith(statusBarColor: Colors.transparent),
       child: Container(
         width: double.infinity,
-        color: AppColors.navyPrimary,
+        color: AppColors.chrome,
         padding: EdgeInsets.fromLTRB(16, top + 20, 16, 28),
         child: Column(
           children: [
@@ -703,14 +708,14 @@ class _ProfileHeader extends StatelessWidget {
                         color: AppColors.tealPrimary,
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: AppColors.navyPrimary,
+                          color: AppColors.chrome,
                           width: 2,
                         ),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.camera_alt_rounded,
                         size: 14,
-                        color: AppColors.navyPrimary,
+                        color: AppColors.chrome,
                       ),
                     ),
                 ],

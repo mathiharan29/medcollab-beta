@@ -151,6 +151,24 @@ router.put(
 );
 
 /**
+ * @route   PATCH /api/channels/:channelId/messages/:id/transcript
+ * @desc    Needl Voice (issue 13): the sender's phone attaches the on-device
+ *          transcript of its own voice message (or marks it unavailable).
+ * @body    { transcript?: string (≤ 8000), status: 'done' | 'unavailable' }
+ */
+router.patch(
+  '/:id/transcript',
+  validateMongoId('id'),
+  [
+    body('status').isIn(['done', 'unavailable']).withMessage('status must be done or unavailable'),
+    body('transcript').optional({ nullable: true }).isString()
+      .isLength({ max: 8000 }).withMessage('Transcript cannot exceed 8000 characters'),
+    handleValidationErrors,
+  ],
+  messageController.setTranscript
+);
+
+/**
  * @route   POST /api/channels/:channelId/messages/clear
  * @desc    Clear chat for the caller only (messages up to now are hidden)
  */

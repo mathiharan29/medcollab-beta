@@ -38,24 +38,30 @@ class NotificationBadgeCubit extends Cubit<int> with SafeEmit<int> {
     if (channelId != null &&
         ActiveChatTracker.instance.isViewing(channelId)) {
       // Doctor already has the chat open — clear matching Alerts server-side.
-      unawaited(_clearWhileViewing(channelId));
+      markChatRead(channelId);
     }
     // Otherwise NavBadgesCubit (also subscribed) refreshes the count;
     // fetching here too doubled every unread-count request.
   }
 
-  Future<void> _clearWhileViewing(String channelId) async {
-    try {
-      final count = await _repository.markReadByChannel(channelId);
-      emit(count);
-    } catch (_) {
-      await refresh();
-    }
+  /// Clears a chat's alerts on the server; the badge takes the server's
+  /// count from that same response (authoritative, after the change).
+  void markChatRead(String channelId) {
+    unawaited(() async {
+      try {
+        final count = await _repository.markReadByChannel(channelId);
+        emit(count);
+      } catch (_) {
+        await refresh();
+      }
+    }());
   }
 
   Future<void> refresh() async {
     try {
+      final epoch = _repository.readEpoch;
       final count = await _repository.getUnreadCount();
+      if (epoch != _repository.readEpoch) return; // a newer change won
       emit(count);
     } catch (_) {}
   }

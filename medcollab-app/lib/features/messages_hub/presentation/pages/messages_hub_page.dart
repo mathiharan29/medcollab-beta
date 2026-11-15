@@ -32,6 +32,16 @@ import 'package:medcollab_app/shared/presentation/widgets/error_banner.dart';
 import 'package:medcollab_app/shared/presentation/widgets/group_row.dart';
 import 'package:medcollab_app/shared/presentation/widgets/subgroup_row.dart';
 
+/// Parts of the hub that reload independently (issue 2).
+enum _Part {
+  spaces,
+  dms,
+  requests,
+  unread;
+
+  static const all = {spaces, dms, requests, unread};
+}
+
 /// Messages hub: Group → subgroups, plus Direct (brief SCREEN 2–3).
 class MessagesHubPage extends StatefulWidget {
   const MessagesHubPage({super.key});
@@ -63,40 +73,77 @@ class _MessagesHubPageState extends State<MessagesHubPage>
     // stale until an app restart (sanity F1).
     final socket = AppDependencies.instance.socketClient;
     _refreshSubs.addAll([
-      HubRefreshSignal.stream.listen((_) => _scheduleRefresh()),
-      socket
-          .onMapEvent(SocketEvents.newMessage)
-          .listen((_) => _scheduleRefresh()),
-      socket
-          .onMapEvent(SocketEvents.newNotification)
-          .listen((_) => _scheduleRefresh()),
+      HubRefreshSignal.stream.listen((_) => _scheduleRefresh(_Part.all)),
+      // Alerts read (chat opened, notification shade, Alerts tab): the
+      // per-chat unread counts here come from the same alerts.
+      AppDependencies.instance.notificationBadgeCubit.stream
+          .listen((_) => _scheduleRefresh({_Part.unread})),
+      // Issue 2: refresh only what an event changes. Every message used to
+      // re-fetch groups, DMs, requests and alerts together — four requests
+      // competing with the chat the doctor was opening.
+      socket.onMapEvent(SocketEvents.newMessage).listen((m) {
+        final space = m['spaceId']?.toString() ?? '';
+        final isGroup = space.isNotEmpty && space != 'null';
+        _scheduleRefresh({isGroup ? _Part.spaces : _Part.dms, _Part.unread});
+      }),
+      socket.onMapEvent(SocketEvents.newNotification).listen((n) {
+        final type = n['type']?.toString() ?? '';
+        _scheduleRefresh({
+          _Part.unread,
+          if (type.contains('request')) ...{_Part.requests, _Part.dms},
+          if (type.contains('invite') || type.contains('space')) _Part.spaces,
+        });
+      }),
       socket
           .onMapEvent(SocketEvents.spaceMemberJoined)
-          .listen((_) => _scheduleRefresh()),
+          .listen((_) => _scheduleRefresh({_Part.spaces})),
       socket
           .onMapEvent(SocketEvents.spaceMemberLeft)
-          .listen((_) => _scheduleRefresh()),
+          .listen((_) => _scheduleRefresh({_Part.spaces})),
     ]);
   }
 
-  /// Coalesces bursts (e.g. several messages arriving) into one reload.
-  void _scheduleRefresh() {
+  final Set<_Part> _pending = {};
+
+  /// Coalesces bursts (e.g. several messages arriving) into one reload of
+  /// just the parts they touched.
+  void _scheduleRefresh(Set<_Part> parts) {
+    _pending.addAll(parts);
     _refreshDebounce?.cancel();
     _refreshDebounce = Timer(const Duration(milliseconds: 350), () {
-      if (mounted) _reload();
+      if (!mounted) return;
+      final parts = Set.of(_pending);
+      _pending.clear();
+      _reload(parts);
     });
   }
 
-  void _reload() {
+  void _reload([Set<_Part> parts = _Part.all]) {
+    final deps = AppDependencies.instance;
     setState(() {
-      _spacesFuture = AppDependencies.instance.spaceRepository.getMySpaces();
-      _dmsFuture = AppDependencies.instance.channelRepository.getMyDMs();
-      _pendingRequestsFuture = AppDependencies.instance.messageRequestRepository
-          .listRequests(direction: 'received', status: 'pending')
-          .catchError((_) => <MessageRequestModel>[]);
-      _draftIdsFuture =
-          AppDependencies.instance.draftMessageService.draftChannelIds();
-      _unreadByChannelFuture = _loadUnreadByChannel();
+      if (parts.contains(_Part.spaces)) {
+        _spacesFuture = deps.spaceRepository.getMySpaces();
+        // Warm the newest group chats so they open instantly (issue 2).
+        unawaited(_spacesFuture.then((spaces) => deps.chatPrefetcher.warm(
+              spaces.expand((s) => s.channels),
+              max: 4,
+            )).catchError((_) {}));
+      }
+      if (parts.contains(_Part.dms)) {
+        _dmsFuture = deps.channelRepository.getMyDMs();
+        unawaited(_dmsFuture
+            .then((dms) => deps.chatPrefetcher.warm(dms))
+            .catchError((_) {}));
+      }
+      if (parts.contains(_Part.requests)) {
+        _pendingRequestsFuture = deps.messageRequestRepository
+            .listRequests(direction: 'received', status: 'pending')
+            .catchError((_) => <MessageRequestModel>[]);
+      }
+      _draftIdsFuture = deps.draftMessageService.draftChannelIds();
+      if (parts.contains(_Part.unread)) {
+        _unreadByChannelFuture = _loadUnreadByChannel();
+      }
     });
   }
 

@@ -23,7 +23,26 @@ class SpaceRepository extends BaseRepository {
               parseNestedList(json, 'spaces', SpaceModel.fromJson),
         ),
       ),
-    ).then(List.of);
+    ).then((spaces) {
+      _lastKnown = List.unmodifiable(spaces);
+      return List.of(spaces);
+    });
+  }
+
+  List<SpaceModel>? _lastKnown;
+
+  /// The space from the last [getMySpaces] (names change rarely). Opening a
+  /// group chat used to download every group just to label the "recent"
+  /// entry (issue 2); this answers from memory and only fetches if unknown.
+  Future<SpaceModel?> spaceById(String spaceId) async {
+    SpaceModel? find(List<SpaceModel>? list) {
+      for (final s in list ?? const <SpaceModel>[]) {
+        if (s.id == spaceId) return s;
+      }
+      return null;
+    }
+
+    return find(_lastKnown) ?? find(await getMySpaces());
   }
 
   /// `POST /api/spaces`

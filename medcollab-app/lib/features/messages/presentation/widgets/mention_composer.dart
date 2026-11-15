@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:medcollab_app/core/constants/app_enums.dart';
 import 'package:medcollab_app/core/theme/app_colors.dart';
+import 'package:medcollab_app/core/theme/app_text_styles.dart';
 import 'package:medcollab_app/core/utils/mention_utils.dart';
 import 'package:medcollab_app/features/auth/data/models/user_model.dart';
 import 'package:medcollab_app/features/messages/presentation/widgets/message_widgets.dart';
+import 'package:medcollab_app/shared/presentation/widgets/app_avatar.dart';
 
 /// Message composer with @mention autocomplete for clinical teams.
 class MentionAwareComposer extends StatefulWidget {
@@ -82,23 +85,17 @@ class _MentionAwareComposerState extends State<MentionAwareComposer> {
       if (_suggestions.isNotEmpty) setState(() => _suggestions = const []);
       return;
     }
-    final q = query.toLowerCase().trim();
-    final selfId = widget.excludeSelfId;
-    final matches = widget.mentionCandidates
-        .where((u) {
-          if (u.id.isEmpty) return false;
-          if (selfId != null && selfId.isNotEmpty && u.id == selfId) {
-            return false;
-          }
-          if (q.isEmpty) return true;
-          final name = u.name?.toLowerCase() ?? '';
-          final display = u.displayName.toLowerCase();
-          return name.contains(q) || display.contains(q);
-        })
-        .take(6)
-        .toList();
-    setState(() => _suggestions = matches);
+    setState(() {
+      _query = query.trim();
+      _suggestions = rankMentionCandidates(
+        widget.mentionCandidates,
+        _query,
+        excludeSelfId: widget.excludeSelfId,
+      );
+    });
   }
+
+  String _query = '';
 
   /// Drop picked IDs whose `@name` token was deleted from the composer.
   void _prunePickedMentions() {
@@ -155,9 +152,22 @@ class _MentionAwareComposerState extends State<MentionAwareComposer> {
       excludeUserId: widget.excludeSelfId,
     );
 
+    // Two doctors can share a name ("@Asha Rao"): when one of them was
+    // picked from the list, the text match must not also notify the other.
+    String token(UserModel u) =>
+        ((u.name ?? '').trim().isNotEmpty ? u.name! : u.displayName)
+            .trim()
+            .toLowerCase();
+    final pickedTokens = {
+      for (final c in widget.mentionCandidates)
+        if (fromPicks.contains(c.id)) token(c),
+    };
     final merged = <String>{
       ...fromPicks,
-      ...fromText,
+      for (final id in fromText)
+        if (!pickedTokens.contains(token(widget.mentionCandidates
+            .firstWhere((c) => c.id == id, orElse: () => UserModel(id: id)))))
+          id,
     };
     if (widget.excludeSelfId != null && widget.excludeSelfId!.isNotEmpty) {
       merged.remove(widget.excludeSelfId);
@@ -198,28 +208,10 @@ class _MentionAwareComposerState extends State<MentionAwareComposer> {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (_suggestions.isNotEmpty)
-          Material(
-            elevation: 2,
-            color: AppColors.surface,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: _suggestions.length,
-              itemBuilder: (context, index) {
-                final user = _suggestions[index];
-                return ListTile(
-                  dense: true,
-                  leading: CircleAvatar(
-                    radius: 14,
-                    child: Text(
-                      (user.name ?? 'D').substring(0, 1).toUpperCase(),
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  ),
-                  title: Text(user.displayName),
-                  onTap: () => _insertMention(user),
-                );
-              },
-            ),
+          MentionSuggestionPanel(
+            users: _suggestions,
+            query: _query,
+            onPick: _insertMention,
           ),
         MessageComposer(
           controller: widget.controller,
@@ -231,9 +223,222 @@ class _MentionAwareComposerState extends State<MentionAwareComposer> {
           onPickCamera: widget.onPickCamera,
           onPickDocument: widget.onPickDocument,
           onRecordVoice: widget.onRecordVoice,
-          hintText: 'Message… @ to mention',
+          hintText: 'Message',
         ),
       ],
+    );
+  }
+}
+
+/// Mention suggestions for [query] (text after `@`), best first:
+/// name / @username starting with it, then a later word starting with it,
+/// then anything containing it. One row per person; self excluded.
+List<UserModel> rankMentionCandidates(
+  List<UserModel> candidates,
+  String query, {
+  String? excludeSelfId,
+  int limit = 8,
+}) {
+  final q = query.toLowerCase().trim();
+  final seen = <String>{};
+  final scored = <(int, String, UserModel)>[];
+  for (final u in candidates) {
+    if (u.id.isEmpty || !seen.add(u.id)) continue;
+    if (excludeSelfId != null && excludeSelfId.isNotEmpty && u.id == excludeSelfId) {
+      continue;
+    }
+    final name = (u.name ?? '').toLowerCase();
+    final display = u.displayName.toLowerCase();
+    final handle = (u.vocleUsername ?? '').toLowerCase();
+    int? score;
+    if (q.isEmpty) {
+      score = 3;
+    } else if (name.startsWith(q) || display.startsWith(q) || handle.startsWith(q)) {
+      score = 0;
+    } else if (RegExp('(^|\\s)${RegExp.escape(q)}').hasMatch(display)) {
+      score = 1;
+    } else if (display.contains(q) || handle.contains(q)) {
+      score = 2;
+    }
+    if (score != null) scored.add((score, display, u));
+  }
+  scored.sort((a, b) {
+    final s = a.$1.compareTo(b.$1);
+    return s != 0 ? s : a.$2.compareTo(b.$2);
+  });
+  return [for (final s in scored.take(limit)) s.$3];
+}
+
+/// Second line under a suggestion: "@asharao · Cardiology · PG Resident".
+String mentionSubtitle(UserModel u) {
+  final parts = <String>[
+    if ((u.vocleUsername ?? '').trim().isNotEmpty) '@${u.vocleUsername!.trim()}',
+    if ((u.speciality ?? '').trim().isNotEmpty) u.speciality!.trim(),
+    if (u.role != UserRole.other) u.role.label,
+  ];
+  return parts.join(' · ');
+}
+
+/// Stable, distinct avatar colour per person (same doctor = same colour
+/// everywhere), from a palette readable with white initials in both themes.
+Color mentionAvatarColor(String userId) {
+  const palette = <Color>[
+    Color(0xFF0E7C6B), Color(0xFF2563EB), Color(0xFF7C3AED), Color(0xFFDB2777),
+    Color(0xFFEA580C), Color(0xFF0891B2), Color(0xFF4D7C0F), Color(0xFFB45309),
+  ];
+  var h = 0;
+  for (final c in userId.codeUnits) {
+    h = (h * 31 + c) & 0x7fffffff;
+  }
+  return palette[h % palette.length];
+}
+
+/// Floating card above the composer listing people to @mention
+/// (beta 11-14, issue 9): photo / coloured initials, name with the typed
+/// part highlighted, and @username · speciality · role so two doctors
+/// with the same name are easy to tell apart.
+class MentionSuggestionPanel extends StatelessWidget {
+  const MentionSuggestionPanel({
+    required this.users,
+    required this.query,
+    required this.onPick,
+    super.key,
+  });
+
+  final List<UserModel> users;
+  final String query;
+  final ValueChanged<UserModel> onPick;
+
+  static const rowHeight = 56.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final maxRows = users.length.clamp(1, 4);
+    return Padding(
+      key: const Key('mention-suggestions'),
+      padding: const EdgeInsets.fromLTRB(8, 0, 8, 6),
+      child: Material(
+        color: AppColors.surfaceCard,
+        elevation: 6,
+        shadowColor: Colors.black.withValues(alpha: AppColors.isDark ? 0.6 : 0.18),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(color: AppColors.borderDefault, width: 0.5),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 4),
+              child: Text(
+                'MENTION SOMEONE',
+                style: AppTextStyles.sectionLabel,
+              ),
+            ),
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: rowHeight * maxRows + 4),
+              child: ListView.separated(
+                shrinkWrap: true,
+                padding: const EdgeInsets.only(bottom: 4),
+                itemCount: users.length,
+                separatorBuilder: (_, __) => Divider(
+                  height: 1,
+                  indent: 62,
+                  color: AppColors.borderLight,
+                ),
+                itemBuilder: (context, i) => _MentionRow(
+                  user: users[i],
+                  query: query,
+                  onTap: () => onPick(users[i]),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MentionRow extends StatelessWidget {
+  const _MentionRow({required this.user, required this.query, required this.onTap});
+
+  final UserModel user;
+  final String query;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final subtitle = mentionSubtitle(user);
+    final name = user.displayName;
+    final base = AppTextStyles.cardTitle.copyWith(
+      fontSize: 14,
+      fontWeight: FontWeight.w600,
+      color: AppColors.textPrimary,
+    );
+    final spans = <TextSpan>[];
+    final q = query.trim().toLowerCase();
+    final at = q.isEmpty ? -1 : name.toLowerCase().indexOf(q);
+    if (at < 0) {
+      spans.add(TextSpan(text: name));
+    } else {
+      spans
+        ..add(TextSpan(text: name.substring(0, at)))
+        ..add(TextSpan(
+          text: name.substring(at, at + q.length),
+          style: const TextStyle(color: AppColors.tealDark),
+        ))
+        ..add(TextSpan(text: name.substring(at + q.length)));
+    }
+    return InkWell(
+      key: Key('mention-row-${user.id}'),
+      onTap: onTap,
+      child: SizedBox(
+        height: MentionSuggestionPanel.rowHeight,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: Row(
+            children: [
+              AppAvatar(
+                name: name,
+                imageUrl: user.avatarUrl,
+                size: 36,
+                backgroundColor: mentionAvatarColor(user.id),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text.rich(
+                      TextSpan(children: spans),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: base,
+                    ),
+                    if (subtitle.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.textSecondary,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Icon(Icons.alternate_email_rounded, size: 16, color: AppColors.textMuted),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

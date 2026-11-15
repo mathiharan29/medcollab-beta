@@ -9,10 +9,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Chat themes (REQ 2 / feedback #4): background + your own bubble colour,
 /// quiet clinical colours; the default adds a faint medical doodle.
 enum ChatWallpaper {
-  doodle('doodle', 'Vocle', Color(0xFFEFF3F1), Color(0xFF0B1A2E),
-      Color(0xFF0D1B3E), Color(0xFF0E5A52)),
-  plain('plain', 'Plain', Color(0xFFF4F6F8), Color(0xFF0A1428),
-      Color(0xFF0D1B3E), Color(0xFF0E5A52)),
+  // Dark: neutral near-black like the rest of the dark theme (issue 1 —
+  // was navy), sent bubbles match AppColorsDark.bubbleMine.
+  doodle('doodle', 'Vocle', Color(0xFFEFF3F1), Color(0xFF0B0F12),
+      Color(0xFF0D1B3E), Color(0xFF005C4B)),
+  plain('plain', 'Plain', Color(0xFFF4F6F8), Color(0xFF0F1113),
+      Color(0xFF0D1B3E), Color(0xFF005C4B)),
   mint('mint', 'Mint', Color(0xFFDDF1EA), Color(0xFF0D2B26),
       Color(0xFF0F766E), Color(0xFF0F766E)),
   sky('sky', 'Sky', Color(0xFFDDEBF7), Color(0xFF0E2238),

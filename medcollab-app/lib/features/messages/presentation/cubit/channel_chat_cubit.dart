@@ -113,26 +113,37 @@ class ChannelChatCubit extends Cubit<ChannelChatState> with SafeEmit<ChannelChat
     }
   }
 
+  /// Loads in flight, each recording what changed live while it ran.
+  final List<_LiveChanges> _openLoads = [];
+
   Future<void> loadMessages({bool silent = false}) async {
     if (isClosed) return;
     if (!silent) {
       emit(state.copyWith(isLoading: true, error: null));
     }
+    final live = _LiveChanges();
+    _openLoads.add(live);
     try {
-      final page = await _messageRepository.getMessages(channelId);
+      final fetched = await _messageRepository.getMessages(channelId);
       if (isClosed) return;
+      // The snapshot was taken when the request started. A message that
+      // arrived live meanwhile (e.g. sent just as the chat opened) used to
+      // vanish when it replaced the list, and one deleted meanwhile came
+      // back. Keep what changed live meanwhile.
+      final messages = _withLiveChanges(fetched.messages, live);
       emit(
         state.copyWith(
-          messages: page.messages,
-          hasMore: page.hasMore,
+          messages: messages,
+          hasMore: fetched.hasMore,
           isLoading: false,
         ),
       );
       ChatTranscriptCache.save(
         channelId,
-        page.messages,
-        hasMore: page.hasMore,
+        messages,
+        hasMore: fetched.hasMore,
       );
+      final page = fetched;
       _socketClient.joinChannel(channelId);
       unawaited(_markMessagesRead(page.messages));
       unawaited(_markChannelNotificationsRead());
@@ -140,6 +151,35 @@ class ChannelChatCubit extends Cubit<ChannelChatState> with SafeEmit<ChannelChat
       if (isClosed) return;
       _markReadOnlyForAccessError(e);
       emit(state.copyWith(isLoading: false, error: e.message));
+    } finally {
+      _openLoads.remove(live);
+    }
+  }
+
+  List<MessageModel> _withLiveChanges(
+      List<MessageModel> fetched, _LiveChanges live) {
+    final result = live.removed.isEmpty
+        ? List<MessageModel>.from(fetched)
+        : fetched.where((m) => !live.removed.contains(m.id)).toList();
+    final ids = {for (final m in result) m.id};
+    // Only what was added while this load ran (live arrivals, and sends /
+    // placeholders started meanwhile). Older placeholders — e.g. a failed
+    // send restored from the transcript cache — follow the server as before.
+    final keep = state.messages
+        .where((m) => !ids.contains(m.id) && live.added.contains(m.id));
+    if (keep.isEmpty) return result;
+    return [...result, ...keep]..sort(_compareByCreatedAt);
+  }
+
+  void _noteLiveAdd(String id) {
+    for (final l in _openLoads) {
+      l.added.add(id);
+    }
+  }
+
+  void _noteLiveRemove(String id) {
+    for (final l in _openLoads) {
+      l.removed.add(id);
     }
   }
 
@@ -603,6 +643,8 @@ class ChannelChatCubit extends Cubit<ChannelChatState> with SafeEmit<ChannelChat
       final messageId =
           data['messageId']?.toString() ?? data['_id']?.toString() ?? '';
       if (messageId.isEmpty) return;
+      // A load in flight may still hold it: don't let it come back.
+      _noteLiveRemove(messageId);
       final index = state.messages.indexWhere((m) => m.id == messageId);
       if (index < 0) {
         // Not in the main timeline (e.g. a thread reply, or another chat —
@@ -637,6 +679,7 @@ class ChannelChatCubit extends Cubit<ChannelChatState> with SafeEmit<ChannelChat
     updated.removeWhere((m) => m.id == tempId || m.id == message.id);
     updated.add(message);
     updated.sort(_compareByCreatedAt);
+    _noteLiveAdd(message.id);
 
     final localMedia = Map<String, List<int>>.from(state.localMediaByMessageId);
     final bytes = localMedia.remove(tempId);
@@ -752,6 +795,7 @@ class ChannelChatCubit extends Cubit<ChannelChatState> with SafeEmit<ChannelChat
     if (existing >= 0) {
       updated[existing] = message;
     } else {
+      _noteLiveAdd(message.id);
       updated.add(message);
       updated.sort(_compareByCreatedAt);
     }
@@ -802,4 +846,10 @@ class ChannelChatCubit extends Cubit<ChannelChatState> with SafeEmit<ChannelChat
     _memberLeftSub?.cancel();
     return super.close();
   }
+}
+
+/// What changed live while one [ChannelChatCubit.loadMessages] ran.
+class _LiveChanges {
+  final Set<String> added = {};
+  final Set<String> removed = {};
 }

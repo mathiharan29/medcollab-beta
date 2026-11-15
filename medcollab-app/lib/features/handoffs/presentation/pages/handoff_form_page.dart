@@ -13,6 +13,7 @@ import 'package:medcollab_app/features/handoffs/data/models/handoff_patient_mode
 import 'package:medcollab_app/features/handoffs/presentation/cubit/handoff_form_cubit.dart';
 import 'package:medcollab_app/features/handoffs/presentation/utils/handoff_doctor_options.dart';
 import 'package:medcollab_app/features/handoffs/presentation/widgets/handoff_widgets.dart';
+import 'package:medcollab_app/features/handoffs/presentation/widgets/handoff_voice_note_field.dart';
 import 'package:medcollab_app/features/handoffs/presentation/widgets/patient_editor_sheet.dart';
 import 'package:medcollab_app/features/members/data/models/space_member_model.dart';
 import 'package:medcollab_app/features/spaces/data/models/space_model.dart';
@@ -233,7 +234,7 @@ class _HandoffFormBodyState extends State<_HandoffFormBody> {
               bloc: _cubit,
               builder: (context, state) {
                 return TextButton(
-                  onPressed: state.isSaving
+                  onPressed: state.isSaving || state.isUploading
                       ? null
                       : () async {
                           final result = await _cubit.submit();
@@ -266,7 +267,41 @@ class _HandoffFormBodyState extends State<_HandoffFormBody> {
             return ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                if (state.error != null)
+                if (state.conflict)
+                  Container(
+                    key: const Key('handoff-conflict'),
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.statusWarnTint,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.sync_problem_rounded,
+                            color: AppColors.statusWarning),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'This handoff was changed on another device. '
+                            'Reload to see the latest version before editing.',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(color: AppColors.textPrimary),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () async {
+                            await _cubit.reloadLatest();
+                            _summaryController.text = _cubit.state.shiftSummary;
+                          },
+                          child: const Text('Reload'),
+                        ),
+                      ],
+                    ),
+                  )
+                else if (state.error != null)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: ErrorBanner(message: state.error!),
@@ -399,6 +434,20 @@ class _HandoffFormBodyState extends State<_HandoffFormBody> {
                   maxLength: 2000,
                   onChanged: _cubit.setShiftSummary,
                 ),
+                const SizedBox(height: 8),
+                // Spoken shift handover (issue 5).
+                HandoffVoiceNoteField(
+                  key: const Key('shift-voice-note'),
+                  value: state.voiceNote,
+                  playbackId: 'handoff-shift-${state.handoffId ?? 'new'}',
+                  label: 'Voice handover (optional)',
+                  hint: 'Up to 5 minutes. The receiver can play it any time.',
+                  onChanged: (v) => v == null
+                      ? _cubit.removeVoiceNote()
+                      : _cubit.setVoiceNote(v),
+                  onBusyChanged: (busy) =>
+                      busy ? _cubit.uploadStarted() : _cubit.uploadFinished(),
+                ),
                 const SizedBox(height: 20),
                 Row(
                   children: [
@@ -442,7 +491,7 @@ class _HandoffFormBodyState extends State<_HandoffFormBody> {
                 const SizedBox(height: 24),
                 if (state.isSent)
                   FilledButton(
-                    onPressed: state.isSaving
+                    onPressed: state.isSaving || state.isUploading
                         ? null
                         : () async {
                             final result = await _cubit.saveChanges();
@@ -458,7 +507,7 @@ class _HandoffFormBodyState extends State<_HandoffFormBody> {
                   )
                 else
                   OutlinedButton(
-                    onPressed: state.isSaving
+                    onPressed: state.isSaving || state.isUploading
                         ? null
                         : () async {
                             final result = await _cubit.saveDraft();

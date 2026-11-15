@@ -121,6 +121,9 @@ app.use(express.json({ limit: '10mb' }));
 // Parse URL-encoded bodies (for any form submissions)
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Gzip JSON responses (issue 2: lists were sent uncompressed over mobile).
+app.use(require('./middleware/jsonGzip').jsonGzip);
+
 // ── Health Check ──────────────────────────────────────────────────────────────
 /**
  * Root — browsers hitting the Railway domain see a helpful response (not 404).
@@ -270,6 +273,8 @@ app.use('/api/dev', devRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/message-requests', messageRequestRoutes);
 app.use('/api/admin', adminRoutes);
+// Voice bot (issue 14): propose-only; disabled unless ANTHROPIC_API_KEY is set.
+app.use('/api/assistant', require('./features/assistant/assistant.routes'));
 
 // ── API Info Route ────────────────────────────────────────────────────────────
 app.get('/api', (req, res) => {

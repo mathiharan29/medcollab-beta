@@ -1,3 +1,6 @@
+import 'package:medcollab_app/core/chat/chat_prefetcher.dart';
+import 'package:medcollab_app/core/speech/speech_service.dart';
+import 'package:medcollab_app/features/voice_bot/data/voice_bot_repository.dart';
 import 'package:medcollab_app/core/auth/msg91_otp_service.dart';
 import 'package:medcollab_app/core/config/env_config.dart';
 import 'package:medcollab_app/core/network/api_client.dart';
@@ -41,6 +44,10 @@ class AppDependencies {
   late final UserRepository userRepository;
   late final SpaceRepository spaceRepository;
   late final MessageRepository messageRepository;
+  late final ChatPrefetcher chatPrefetcher;
+  // Issues 13/14: on-device speech + the voice bot's server half.
+  late final SpeechService speechService;
+  late final AssistantRepository assistantRepository;
   late final MessageRequestRepository messageRequestRepository;
   late final ThreadRepository threadRepository;
   late final MediaRepository mediaRepository;
@@ -85,6 +92,9 @@ class AppDependencies {
     userRepository = UserRepository(apiClient: apiClient);
     spaceRepository = SpaceRepository(apiClient: apiClient);
     messageRepository = MessageRepository(apiClient: apiClient);
+    chatPrefetcher = ChatPrefetcher(messageRepository);
+    speechService = PlatformSpeechService();
+    assistantRepository = AssistantRepository(apiClient: apiClient);
     messageRequestRepository = MessageRequestRepository(apiClient: apiClient);
     threadRepository = ThreadRepository(apiClient: apiClient);
     mediaRepository = MediaRepository(apiClient: apiClient);

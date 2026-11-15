@@ -65,7 +65,7 @@ class HandoffFilterPill extends StatelessWidget {
         // Navy on the dark navy page was nearly invisible; teal in dark mode
         // matches the dark-theme primary buttons.
         color: selected
-            ? (AppColors.isDark ? AppColors.tealDark : AppColors.navyPrimary)
+            ? AppColors.actionFill
             : AppColors.surfaceCard,
         borderRadius: AppRadius.pill,
         child: InkWell(

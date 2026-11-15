@@ -4,6 +4,7 @@ import 'package:medcollab_app/core/constants/app_enums.dart';
 import 'package:medcollab_app/features/auth/data/models/user_model.dart';
 import 'package:medcollab_app/features/handoffs/data/models/handoff_assignment_entry.dart';
 import 'package:medcollab_app/features/handoffs/data/models/handoff_patient_model.dart';
+import 'package:medcollab_app/features/handoffs/data/models/handoff_voice_note.dart';
 import 'package:medcollab_app/features/handoffs/data/models/handoff_write_back_note.dart';
 
 /// Clinical shift handoff — maps to backend `Handoff` document.
@@ -26,6 +27,8 @@ class HandoffModel extends Equatable {
     this.assignmentHistory = const [],
     this.createdAt,
     this.updatedAt,
+    this.voiceNote,
+    this.contentVersion = 0,
   });
 
   factory HandoffModel.fromJson(Map<String, dynamic> json) {
@@ -70,6 +73,8 @@ class HandoffModel extends Equatable {
       updatedAt: json['updatedAt'] != null
           ? DateTime.tryParse(json['updatedAt'].toString())
           : null,
+      voiceNote: HandoffVoiceNote.fromJson(json['voiceNote']),
+      contentVersion: (json['contentVersion'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -90,6 +95,13 @@ class HandoffModel extends Equatable {
   final List<HandoffAssignmentEntry> assignmentHistory;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+
+  /// Spoken summary of the whole shift (issue 5).
+  final HandoffVoiceNote? voiceNote;
+
+  /// Server content version this copy was loaded at; sent back with edits
+  /// so a stale edit is refused instead of overwriting a newer one.
+  final int contentVersion;
 
   /// True when [userId] reassigned this handoff (assignment history or a
   /// `reassign` write-back note authored by them).
@@ -152,6 +164,9 @@ class HandoffModel extends Equatable {
     List<HandoffAssignmentEntry>? assignmentHistory,
     DateTime? createdAt,
     DateTime? updatedAt,
+    HandoffVoiceNote? voiceNote,
+    bool clearVoiceNote = false,
+    int? contentVersion,
   }) {
     return HandoffModel(
       id: id ?? this.id,
@@ -171,6 +186,8 @@ class HandoffModel extends Equatable {
       assignmentHistory: assignmentHistory ?? this.assignmentHistory,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      voiceNote: clearVoiceNote ? null : (voiceNote ?? this.voiceNote),
+      contentVersion: contentVersion ?? this.contentVersion,
     );
   }
 
@@ -193,5 +210,7 @@ class HandoffModel extends Equatable {
         assignmentHistory,
         createdAt,
         updatedAt,
+        voiceNote,
+        contentVersion,
       ];
 }

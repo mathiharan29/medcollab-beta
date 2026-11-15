@@ -8,14 +8,76 @@ import 'package:medcollab_app/core/router/popup_route_tracker.dart';
 import 'package:medcollab_app/core/router/shell_tab_history.dart';
 import 'package:medcollab_app/core/router/app_routes.dart';
 
-/// Central Android system-back handling for [GoRouter] (REQ 3).
+/// Logical parent of a screen that was opened without a page below it
+/// (notification tap, deep link, `go`). Null for shell tabs.
 ///
-/// Signed-in rules, in order:
+/// Mirrors how the screens are reached in the UI, so back always moves ONE
+/// level up: thread → its chat → Messages → Home.
+String? logicalParentOf(String location) {
+  final s = Uri.parse(location).pathSegments;
+  if (s.isEmpty) return null;
+  if (AppRoutes.shellPaths.contains(location)) return null;
+  switch (s.first) {
+    case 'dm':
+      // /dm/:id/threads/:mid → /dm/:id ; /dm/:id and /dm/new → Messages
+      if (s.length >= 4 && s[2] == 'threads') return AppRoutes.dmPath(s[1]);
+      return AppRoutes.messages;
+    case 'spaces':
+      if (s.length == 1) return AppRoutes.messages;
+      final space = s[1];
+      if (s.length == 2) return AppRoutes.messages;
+      switch (s[2]) {
+        case 'channels':
+          if (s.length >= 6 && s[4] == 'threads') {
+            return AppRoutes.channelPath(space, s[3]);
+          }
+          return AppRoutes.messages;
+        case 'handoffs':
+          if (s.length == 3) return AppRoutes.spaceDetailPath(space);
+          if (s.length >= 5 && s[4] == 'edit') {
+            return AppRoutes.spaceHandoffDetailPath(space, s[3]);
+          }
+          if (s[3] == 'create') return AppRoutes.spaceHandoffsPath(space);
+          // A handoff opened from a notification → the Handoffs tab.
+          return AppRoutes.handoffs;
+        default: // members, …
+          return AppRoutes.spaceDetailPath(space);
+      }
+    case 'profile': // /profile/edit
+    case 'bookmarks':
+    case 'help':
+    case 'report-bug':
+    case 'feature-request':
+    case 'feedback':
+    case 'contact':
+    case 'privacy':
+    case 'terms':
+    case 'developer':
+      return AppRoutes.profile;
+    case 'notifications': // /notifications/settings
+      return AppRoutes.profile;
+    case 'voice': // Needl Voice opened without its chat below it
+    case 'links':
+    case 'join':
+    case 'join-scan':
+      return AppRoutes.messages;
+    default:
+      return AppRoutes.home;
+  }
+}
+
+/// Central Android system-back handling for [GoRouter].
+///
+/// Signed-in rules, in order (beta 11-14: back is ONE level, never a jump):
 /// 1. An open dialog / sheet / menu closes first (REQ 1).
 /// 2. A screen with unsaved changes may ask to discard them ([BackGuard]).
-/// 3. On Home: a second back within 2s exits the app.
-/// 4. Anywhere else — another tab, a chat, a thread, settings, a form —
-///    back goes straight to Home.
+/// 3. A pushed screen pops to the screen below it (chat → Messages,
+///    Profile › Edit → Profile, thread → chat). The page's own PopScope is
+///    respected.
+/// 4. A screen with nothing below it (opened from a notification / link)
+///    goes to its [logicalParentOf].
+/// 5. Another main tab → Home.
+/// 6. On Home: a second back within 2s exits the app.
 ///
 /// Sign-in screens keep the platform default: pop if there is something to
 /// pop, otherwise exit.
@@ -128,8 +190,17 @@ class _AppNavigationBackHandlerState extends State<AppNavigationBackHandler>
       // Leaving somewhere else disarms "back again to exit": the next back
       // on Home must prompt again, never close the app silently.
       _lastExitAttempt = null;
-      ShellTabHistory.resetToHome();
-      router.go(AppRoutes.home);
+
+      // 3. One level up when there is a page below.
+      if (router.canPop()) {
+        final popped = await router.routerDelegate.popRoute();
+        if (popped) return true;
+      }
+
+      // 4./5. Opened without a parent below it, or a non-Home tab.
+      final parent = logicalParentOf(location) ?? AppRoutes.home;
+      if (parent == AppRoutes.home) ShellTabHistory.resetToHome();
+      router.go(parent);
       return true;
     } finally {
       _handling = false;

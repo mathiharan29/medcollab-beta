@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
+import 'package:medcollab_app/features/handoffs/data/models/handoff_voice_note.dart';
 import 'package:medcollab_app/core/error/app_exception.dart';
 import 'package:medcollab_app/features/auth/data/models/user_model.dart';
 import 'package:medcollab_app/features/handoffs/data/models/handoff_model.dart';
@@ -52,6 +53,7 @@ class _FakeHandoffRepository extends HandoffRepository {
     required ShiftType shiftType,
     List<HandoffPatientModel> patients = const [],
     String shiftSummary = '',
+    HandoffVoiceNote? voiceNote,
   }) async {
     createCalls++;
     expect(spaceId, 'space-synthetic-1');
@@ -69,6 +71,9 @@ class _FakeHandoffRepository extends HandoffRepository {
     ShiftType? shiftType,
     List<HandoffPatientModel>? patients,
     String? shiftSummary,
+    HandoffVoiceNote? voiceNote,
+    bool setVoiceNote = false,
+    int? baseContentVersion,
   }) async {
     updateCalls++;
     updatedIds.add(handoffId);

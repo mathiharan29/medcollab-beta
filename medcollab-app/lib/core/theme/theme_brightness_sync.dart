@@ -51,7 +51,7 @@ class ThemeBrightnessSync extends StatelessWidget {
     SystemChrome.setSystemUIOverlayStyle(
       SystemUiOverlayStyle(
         systemNavigationBarColor:
-            dark ? AppColorsDark.backgroundApp : AppColorsLight.navyPrimary,
+            dark ? AppColorsDark.chrome : AppColorsLight.navyPrimary,
         systemNavigationBarIconBrightness: Brightness.light,
       ),
     );

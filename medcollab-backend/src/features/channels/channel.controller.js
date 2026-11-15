@@ -90,6 +90,11 @@ const getChannelById = asyncHandler(async (req, res) => {
     channel = enrichDM(channel, req.user._id);
   }
 
+  // Pinned bar and preview follow this user's delete-for-me / clear chat.
+  const { personalizePinned, personalizeLastMessages } = require('../../utils/personalLastMessage');
+  channel = await personalizePinned(channel, req.user._id);
+  [channel] = await personalizeLastMessages([channel], req.user._id);
+
   return respond.ok(res, 'Channel fetched', { channel });
 });
 
@@ -669,6 +674,23 @@ const expandDM = asyncHandler(async (req, res) => {
     notifyUserIds: memberIds,
   });
 
+  // Members still looking at the OLD conversation must learn about it live
+  // (beta 11-14, issue 8): a line there that opens the new Needl.
+  if (channel._id.toString() !== source._id.toString()) {
+    const addedUsers = newUsers.length
+      ? newUsers
+      : await User.find({ _id: { $in: uniqueNew } }).select('name displayTitle').lean();
+    await sysMsg.postSystemMessage({
+      channel: source,
+      actor: req.user,
+      event: sysMsg.SYSTEM_EVENTS.NEEDL_CONTINUED,
+      text: `${sysMsg.personName(req.user)} added ${sysMsg.joinNames(addedUsers.map(sysMsg.personName))} · chat continues in the new Needl`,
+      targetUserIds: uniqueNew,
+      notifyUserIds: (source.members || []).map((m) => m.toString()),
+      movedToChannelId: channel._id,
+    });
+  }
+
   const populated = await Channel.findById(channel._id)
     .populate(
       'members',
@@ -694,7 +716,8 @@ const getChannelMembers = asyncHandler(async (req, res) => {
   const channel = access.channel;
   const User = require('../users/user.model');
   const users = await User.find({ _id: { $in: channel.members } })
-    .select('name displayTitle role speciality avatarUrl availability')
+    // vocleUsername tells same-name doctors apart in @mention suggestions.
+    .select('name displayTitle role speciality avatarUrl availability vocleUsername')
     .lean();
 
   return respond.ok(res, 'Members fetched', { members: users });

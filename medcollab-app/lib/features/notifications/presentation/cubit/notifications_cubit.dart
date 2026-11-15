@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:medcollab_app/core/chat/active_chat_tracker.dart';
 import 'package:medcollab_app/core/state/safe_emit.dart';
 import 'package:medcollab_app/core/constants/socket_events.dart';
 import 'package:medcollab_app/core/error/app_exception.dart';
@@ -9,6 +10,7 @@ import 'package:medcollab_app/core/socket/socket_client.dart';
 import 'package:medcollab_app/features/notifications/data/models/notification_model.dart';
 import 'package:medcollab_app/features/notifications/data/repositories/notification_repository.dart';
 import 'package:medcollab_app/features/notifications/presentation/cubit/notification_badge_cubit.dart';
+import 'package:medcollab_app/features/notifications/presentation/utils/notification_unread_utils.dart';
 
 enum NotificationFilter {
   all,
@@ -107,7 +109,13 @@ class NotificationsCubit extends Cubit<NotificationsState> with SafeEmit<Notific
   Future<void> load() async {
     emit(state.copyWith(isLoading: true, error: null));
     try {
-      final page = await _repository.getNotifications(limit: 50);
+      final epoch = _repository.readEpoch;
+      final page =
+          viewingChatAsRead(await _repository.getNotifications(limit: 50));
+      if (epoch != _repository.readEpoch) {
+        // Something was marked read meanwhile; this page may be older.
+        return load();
+      }
       emit(
         state.copyWith(
           isLoading: false,
@@ -126,7 +134,10 @@ class NotificationsCubit extends Cubit<NotificationsState> with SafeEmit<Notific
 
   Future<void> loadSilent() async {
     try {
-      final page = await _repository.getNotifications(limit: 50);
+      final epoch = _repository.readEpoch;
+      final page =
+          viewingChatAsRead(await _repository.getNotifications(limit: 50));
+      if (epoch != _repository.readEpoch) return loadSilent();
       emit(
         state.copyWith(
           isLoading: false,
@@ -146,7 +157,14 @@ class NotificationsCubit extends Cubit<NotificationsState> with SafeEmit<Notific
 
   void _onSocketNotification(Map<String, dynamic> data) {
     try {
-      final incoming = AppNotificationModel.fromJson(data);
+      var incoming = AppNotificationModel.fromJson(data);
+      // A message for the chat on screen is read as it arrives (the badge
+      // cubit clears it on the server). Counting it here raced that clear
+      // and left the Alerts badge one too high.
+      if (!incoming.read &&
+          ActiveChatTracker.instance.isViewing(incoming.metadata.channelId)) {
+        incoming = _withRead(incoming, true);
+      }
       final exists = state.notifications.any((n) => n.id == incoming.id);
       if (exists) {
         _badgeCubit.refresh();
@@ -163,7 +181,7 @@ class NotificationsCubit extends Cubit<NotificationsState> with SafeEmit<Notific
           isLoading: false,
         ),
       );
-      _badgeCubit.setCount(unread);
+      if (!incoming.read) _badgeCubit.setCount(unread);
     } catch (_) {
       // Fallback: refresh from API if payload shape differs.
       load();

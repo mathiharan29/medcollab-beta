@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
+import 'package:medcollab_app/features/voice_bot/presentation/voice_bot_launcher.dart';
 import 'package:medcollab_app/core/di/app_dependencies.dart';
 import 'package:medcollab_app/core/router/app_routes.dart';
 import 'package:medcollab_app/core/theme/app_colors.dart';
@@ -301,7 +302,7 @@ class _Header extends StatelessWidget {
         statusBarColor: Colors.transparent,
       ),
       child: Container(
-        color: AppColors.navyPrimary,
+        color: AppColors.chrome,
         padding: EdgeInsets.fromLTRB(
           AppGaps.screenH,
           topPadding + 20,
@@ -343,6 +344,20 @@ class _Header extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
+                // Voice assistant (issue 14).
+                IconButton(
+                  key: const Key('open-voice-bot'),
+                  tooltip: 'Voice assistant',
+                  onPressed: () => openVoiceBot(context),
+                  padding: EdgeInsets.zero,
+                  constraints:
+                      const BoxConstraints(minWidth: 36, minHeight: 36),
+                  icon: const Icon(
+                    Icons.mic_rounded,
+                    color: AppColors.tealPrimary,
+                    size: 20,
+                  ),
+                ),
                 IconButton(
                   tooltip: 'Search',
                   onPressed: () => context.push(AppRoutes.search),

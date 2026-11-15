@@ -122,7 +122,10 @@ const getMySpaces = asyncHandler(async (req, res) => {
     myRole: s.members.find((m) => m.userId.toString() === req.user._id.toString())?.role,
   }));
 
-  return respond.ok(res, 'Spaces fetched', { spaces: result });
+  // Group-list previews follow this user's delete-for-me / clear chat.
+  const { personalizeSpaceChannels } = require('../../utils/personalLastMessage');
+  const personal = await personalizeSpaceChannels(result, req.user._id);
+  return respond.ok(res, 'Spaces fetched', { spaces: personal });
 });
 
 /**
@@ -141,11 +144,15 @@ const getSpaceById = asyncHandler(async (req, res) => {
   );
   if (!isMember) return respond.forbidden(res, 'You are not a member of this space');
 
-  const channels = await Channel.find(
-    accessibleChannelFilter(req.user._id, { spaceId: space._id }),
-  )
-    .sort({ position: 1 })
-    .lean();
+  const { personalizeLastMessages } = require('../../utils/personalLastMessage');
+  const channels = await personalizeLastMessages(
+    await Channel.find(
+      accessibleChannelFilter(req.user._id, { spaceId: space._id }),
+    )
+      .sort({ position: 1 })
+      .lean(),
+    req.user._id,
+  );
 
   const myRole = space.members.find(
     (m) => m.userId.toString() === req.user._id.toString()
@@ -379,7 +386,8 @@ const getMembers = asyncHandler(async (req, res) => {
   const memberIds = space.members.map((m) => m.userId);
 
   const users = await User.find({ _id: { $in: memberIds } })
-    .select('name displayTitle role speciality avatarUrl availability lastSeenAt')
+    // vocleUsername tells same-name doctors apart in @mention suggestions.
+    .select('name displayTitle role speciality avatarUrl availability lastSeenAt vocleUsername')
     .lean();
 
   // Merge space role into user objects

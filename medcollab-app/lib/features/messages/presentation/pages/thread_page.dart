@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:medcollab_app/core/di/app_dependencies.dart';
 import 'package:medcollab_app/core/theme/app_colors.dart';
 import 'package:medcollab_app/core/theme/app_spacing.dart';
+import 'package:medcollab_app/core/theme/app_text_styles.dart';
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:medcollab_app/features/media/data/services/media_picker_service.dart';
 import 'package:medcollab_app/features/messages/data/models/message_model.dart';
@@ -195,6 +196,19 @@ class _ThreadPageState extends State<ThreadPage> {
                         );
                       }
 
+                      if (state.unavailable) {
+                        return Center(
+                          key: const Key('thread-unavailable'),
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Text(
+                              'This message is no longer available.',
+                              textAlign: TextAlign.center,
+                              style: AppTextStyles.body,
+                            ),
+                          ),
+                        );
+                      }
                       final root = state.rootMessage ?? widget.initialRoot;
                       if (root == null) {
                         return const Center(child: Text('Thread not found'));
@@ -261,8 +275,10 @@ class _ThreadPageState extends State<ThreadPage> {
                   buildWhen: (p, n) =>
                       p.isSending != n.isSending ||
                       p.isUploading != n.isUploading ||
-                      p.typingUserNames != n.typingUserNames,
+                      p.typingUserNames != n.typingUserNames ||
+                      p.unavailable != n.unavailable,
                   builder: (context, state) {
+                    if (state.unavailable) return const SizedBox.shrink();
                     final cubit = context.read<ThreadCubit>();
                     return Column(
                       mainAxisSize: MainAxisSize.min,
@@ -292,7 +308,7 @@ class _ThreadPageState extends State<ThreadPage> {
                           onTyping: _handleTyping,
                           child: MessageComposer(
                             controller: _textController,
-                            hintText: 'Reply in thread…',
+                            hintText: 'Reply',
                             // Never block typing while something sends/uploads (beta feedback).
                             isBusy: false,
                             onSend: (text) async {

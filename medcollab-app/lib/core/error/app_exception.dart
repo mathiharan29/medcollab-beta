@@ -31,6 +31,12 @@ final class NotFoundException extends AppException {
   const NotFoundException([super.message = 'Resource not found']);
 }
 
+/// HTTP 409 — e.g. the handoff was changed on another device since this
+/// copy was loaded (issue 5). Reload before editing again.
+final class ConflictException extends AppException {
+  const ConflictException([super.message = 'Changed elsewhere — reload']);
+}
+
 final class ServerException extends AppException {
   const ServerException([super.message = 'Server error. Please try again.']);
 }

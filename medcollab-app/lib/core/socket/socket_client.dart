@@ -166,8 +166,12 @@ class SocketClient {
     _emit(SocketEvents.syncSpaceRooms, {});
   }
 
-  void emitTypingStart(String channelId) {
-    _emit(SocketEvents.typingStart, {'channelId': channelId});
+  /// [kind] `voice` = "is recording…" (Needl Voice, issue 13).
+  void emitTypingStart(String channelId, {String? kind}) {
+    _emit(SocketEvents.typingStart, {
+      'channelId': channelId,
+      if (kind != null) 'kind': kind,
+    });
   }
 
   void emitTypingStop(String channelId) {

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:medcollab_app/core/constants/api_endpoints.dart';
 import 'package:medcollab_app/features/notifications/data/models/notification_model.dart';
 import 'package:medcollab_app/shared/data/repositories/base_repository.dart';
@@ -44,6 +45,14 @@ class NotificationRepository extends BaseRepository {
   NotificationsPageResult? _recent;
   DateTime? _recentAt;
 
+  /// Bumped before AND after every read-state change (mark read / unread /
+  /// all / by chat / delete). A fetch whose epoch changed while it was in
+  /// flight may predate the change and must not be shown or cached — it
+  /// used to put the old count back on the Alerts badge after reading a
+  /// chat (beta 11-14, issue 6).
+  int _readEpoch = 0;
+  int get readEpoch => _readEpoch;
+
   Future<NotificationsPageResult> getRecentNotificationsShared() {
     final cached = _recent;
     final at = _recentAt;
@@ -52,17 +61,40 @@ class NotificationRepository extends BaseRepository {
         DateTime.now().difference(at) < _recentTtl) {
       return Future.value(cached);
     }
-    return _recentInFlight ??= getNotifications(limit: _recentLimit)
-        .then((page) {
-      _recent = page;
-      _recentAt = DateTime.now();
+    final pending = _recentInFlight;
+    if (pending != null) return pending;
+    final epoch = _readEpoch;
+    final future = getNotifications(limit: _recentLimit).then((page) {
+      if (epoch == _readEpoch) {
+        _recent = page;
+        _recentAt = DateTime.now();
+      }
       return page;
-    }).whenComplete(() => _recentInFlight = null);
+    });
+    _recentInFlight = future;
+    future.whenComplete(() {
+      if (identical(_recentInFlight, future)) _recentInFlight = null;
+    }).ignore();
+    return future;
   }
 
   void _invalidateRecent() {
+    _readEpoch++;
     _recent = null;
     _recentAt = null;
+    // Never hand a request started before this change to a later caller.
+    _recentInFlight = null;
+  }
+
+  /// The server's alerts changed (a `new_notification` arrived). The shared
+  /// list cached a moment ago — or still in flight — predates it: a burst
+  /// of messages within its 1.5 s reuse window left the Alerts badge on the
+  /// old count until the next event (issue 6, found on device).
+  void serverChanged() => _invalidateRecent();
+
+  Future<T> _readChange<T>(Future<T> Function() write) {
+    _invalidateRecent();
+    return write().whenComplete(_invalidateRecent);
   }
 
   Future<int> getUnreadCount() {
@@ -74,40 +106,40 @@ class NotificationRepository extends BaseRepository {
     );
   }
 
-  Future<void> markAsRead(String notificationId) {
-    _invalidateRecent();
-    return executeVoid(
-      () => apiClient.put(ApiEndpoints.markNotificationRead(notificationId)),
-    );
-  }
+  Future<void> markAsRead(String notificationId) => _readChange(
+        () => executeVoid(
+          () => apiClient.put(ApiEndpoints.markNotificationRead(notificationId)),
+        ),
+      );
 
-  Future<void> markAsUnread(String notificationId) {
-    _invalidateRecent();
-    return executeVoid(
-      () => apiClient.put(ApiEndpoints.markNotificationUnread(notificationId)),
-    );
-  }
+  Future<void> markAsUnread(String notificationId) => _readChange(
+        () => executeVoid(
+          () =>
+              apiClient.put(ApiEndpoints.markNotificationUnread(notificationId)),
+        ),
+      );
 
-  Future<void> markAllAsRead() {
-    _invalidateRecent();
-    return executeVoid(() => apiClient.put(ApiEndpoints.markAllRead));
-  }
+  Future<void> markAllAsRead() => _readChange(
+        () => executeVoid(() => apiClient.put(ApiEndpoints.markAllRead)),
+      );
 
-  /// Mark all unread alerts for a channel as read (when the doctor opens that chat).
-  Future<int> markReadByChannel(String channelId) {
-    _invalidateRecent();
-    return execute(
-      () => apiClient.put(
-        ApiEndpoints.markNotificationsReadByChannel(channelId),
-        parser: (json) => (json['unreadCount'] as num?)?.toInt() ?? 0,
-      ),
-    );
-  }
+  /// Mark all unread alerts for a channel as read (when the doctor opens that
+  /// chat). Returns the server's unread count after the change.
+  Future<int> markReadByChannel(String channelId) =>
+      _readChange(() => putReadByChannel(channelId));
 
-  Future<void> deleteNotification(String notificationId) {
-    _invalidateRecent();
-    return executeVoid(
-      () => apiClient.delete(ApiEndpoints.notificationById(notificationId)),
-    );
-  }
+  /// The HTTP call behind [markReadByChannel] (overridden in tests).
+  @protected
+  Future<int> putReadByChannel(String channelId) => execute(
+        () => apiClient.put(
+          ApiEndpoints.markNotificationsReadByChannel(channelId),
+          parser: (json) => (json['unreadCount'] as num?)?.toInt() ?? 0,
+        ),
+      );
+
+  Future<void> deleteNotification(String notificationId) => _readChange(
+        () => executeVoid(
+          () => apiClient.delete(ApiEndpoints.notificationById(notificationId)),
+        ),
+      );
 }

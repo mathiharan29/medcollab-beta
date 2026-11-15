@@ -6,6 +6,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
+import 'package:medcollab_app/core/constants/socket_events.dart';
+import 'package:medcollab_app/core/router/dm_navigation.dart';
 import 'package:medcollab_app/core/di/app_dependencies.dart';
 import 'package:medcollab_app/core/error/app_exception.dart';
 import 'package:medcollab_app/core/realtime/hub_refresh_signal.dart';
@@ -33,6 +35,7 @@ import 'package:medcollab_app/features/messages/presentation/widgets/peer_profil
 import 'package:medcollab_app/features/media/data/services/document_open_service.dart';
 import 'package:medcollab_app/features/spaces/data/models/channel_model.dart';
 import 'package:medcollab_app/features/messages/presentation/widgets/needl_manage_sheets.dart';
+import 'package:medcollab_app/features/needl_voice/presentation/needl_voice_page.dart';
 import 'package:medcollab_app/features/messages/presentation/widgets/forward_message_sheet.dart';
 import 'package:medcollab_app/shared/presentation/widgets/chat_network_image.dart';
 import 'package:medcollab_app/shared/presentation/widgets/app_avatar.dart';
@@ -92,6 +95,7 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
     _textController.addListener(_onDraftChanged);
     _loadChannelContext();
     _loadDraft();
+    _listenForMembershipChanges();
   }
 
   void _onDraftChanged() {
@@ -197,23 +201,24 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
       final detail = await detailFuture;
       final fetched = detail.channel;
       if (!_isDm) {
-        final spaces = await deps.spaceRepository.getMySpaces();
-        final space = spaces.where((s) => s.id == widget.spaceId).firstOrNull;
-        final spaceName = space?.name ?? '';
-        if (spaceName.isNotEmpty) {
-          await deps.recentItemsService.recordChannelVisit(
-            spaceId: widget.spaceId!,
-            channelId: widget.channelId,
-            channelName: widget.channel?.name ?? fetched.name,
-            spaceName: spaceName,
-          );
-        }
+        // Header + pins first; the "recent" bookkeeping must not delay them.
         if (mounted) {
           setState(() {
             _pinnedMessages = detail.pinnedMessages;
             _resolvedChannel = widget.channel ?? fetched;
           });
         }
+        unawaited(() async {
+          final space = await deps.spaceRepository.spaceById(widget.spaceId!);
+          final spaceName = space?.name ?? '';
+          if (spaceName.isEmpty) return;
+          await deps.recentItemsService.recordChannelVisit(
+            spaceId: widget.spaceId!,
+            channelId: widget.channelId,
+            channelName: widget.channel?.name ?? fetched.name,
+            spaceName: spaceName,
+          );
+        }().catchError((_) {}));
       } else if (mounted) {
         UserModel? peer = fetched.peer;
         peer ??= fetched.members.where((m) => m.id != selfId).firstOrNull;
@@ -235,6 +240,38 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
         setState(() => _resolvedChannel = widget.channel);
       }
     }
+  }
+
+  Timer? _contextReloadDebounce;
+  StreamSubscription<Map<String, dynamic>>? _memberJoinedSub;
+  StreamSubscription<Map<String, dynamic>>? _memberLeftSub;
+
+  /// Coalesces bursts (several people added at once) into one reload.
+  void _scheduleContextReload() {
+    _contextReloadDebounce?.cancel();
+    _contextReloadDebounce = Timer(const Duration(milliseconds: 250), () {
+      if (mounted) unawaited(_loadChannelContext());
+    });
+  }
+
+  /// Group chats: membership changes arrive as space events too (join via
+  /// invite / approval have no activity line in every channel).
+  void _listenForMembershipChanges() {
+    final sid = widget.spaceId;
+    if (sid == null || sid.isEmpty) return;
+    final socket = AppDependencies.instance.socketClient;
+    bool mine(Map<String, dynamic> e) => e['spaceId']?.toString() == sid;
+    _memberJoinedSub = socket
+        .onMapEvent(SocketEvents.spaceMemberJoined)
+        .listen((e) => mine(e) ? _scheduleContextReload() : null);
+    _memberLeftSub = socket
+        .onMapEvent(SocketEvents.spaceMemberLeft)
+        .listen((e) => mine(e) ? _scheduleContextReload() : null);
+  }
+
+  void _openContinuedNeedl(String channelId) {
+    if (!mounted || channelId == widget.channelId) return;
+    openDmChat(context, channelId: channelId, replace: true);
   }
 
   Future<void> _refreshPinnedMessages() async {
@@ -355,6 +392,9 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
 
   @override
   void dispose() {
+    _contextReloadDebounce?.cancel();
+    unawaited(_memberJoinedSub?.cancel());
+    unawaited(_memberLeftSub?.cancel());
     _draftDebounce?.cancel();
     _typingStopDebounce?.cancel();
     _highlightClearTimer?.cancel();
@@ -740,7 +780,7 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
           return Scaffold(
             backgroundColor: AppColors.backgroundApp,
             appBar: AppBar(
-              backgroundColor: AppColors.navyPrimary,
+              backgroundColor: AppColors.chrome,
               foregroundColor: AppColors.textOnDark,
               elevation: 0,
               scrolledUnderElevation: 0,
@@ -841,6 +881,16 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
                 ),
               ),
               actions: [
+                // Needl Voice (issue 13): talk instead of type.
+                IconButton(
+                  key: const Key('open-needl-voice'),
+                  tooltip: 'Needl Voice',
+                  icon: const Icon(Icons.graphic_eq_rounded, color: AppColors.tealPrimary),
+                  onPressed: () => context.push(
+                    AppRoutes.needlVoicePath(widget.channelId),
+                    extra: NeedlVoiceArgs(title: title, subtitle: subtitle),
+                  ),
+                ),
                 PopupMenuButton<String>(
                   icon: const Icon(
                     Icons.more_vert,
@@ -1035,15 +1085,16 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
                       final firstPaint =
                           _lastMessageCount == 0 && state.messages.isNotEmpty;
                       _lastMessageCount = state.messages.length;
-                      // Someone renamed the Needl / channel: refresh the
-                      // header for everyone, not only the renamer.
+                      // Any activity line (added / removed / left / renamed /
+                      // continued) changes who is here: refresh the header,
+                      // member list and @mention people right away, for
+                      // everyone — not only whoever made the change
+                      // (beta 11-14, issue 8).
                       if (grew &&
                           !firstPaint &&
                           state.messages.isNotEmpty &&
-                          state.messages.last.type == MessageType.system &&
-                          (state.messages.last.content.text ?? '')
-                              .contains('name to "')) {
-                        unawaited(_loadChannelContext());
+                          state.messages.last.type == MessageType.system) {
+                        _scheduleContextReload();
                       }
                       if (firstPaint) {
                         _scrollToBottom(force: true);
@@ -1110,6 +1161,19 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
                                             key: GlobalObjectKey(message.id),
                                             text: message.content.text ?? '',
                                             time: message.createdAt,
+                                            actionLabel: message.content
+                                                        .movedToChannelId !=
+                                                    null
+                                                ? 'Open new Needl'
+                                                : null,
+                                            onAction: message.content
+                                                        .movedToChannelId ==
+                                                    null
+                                                ? null
+                                                : () => _openContinuedNeedl(
+                                                      message.content
+                                                          .movedToChannelId!,
+                                                    ),
                                           ),
                                         ChatMessageItem(
                                           :final message,
@@ -1263,28 +1327,10 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
                           ListenableBuilder(
                             listenable: _voice,
                             builder: (context, composer) => _voice.isRecording
-                                ? SafeArea(
-                                    top: false,
-                                    child: Container(
-                                      margin: const EdgeInsets.fromLTRB(
-                                          8, 4, 8, 6),
-                                      padding: const EdgeInsets.all(4),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.surfaceCard,
-                                        borderRadius:
-                                            BorderRadius.circular(28),
-                                        border: Border.all(
-                                          color: AppColors.borderDefault,
-                                          width: 0.5,
-                                        ),
-                                      ),
-                                      child: VoiceRecordingBar(
-                                        controller: _voice,
-                                        onCancel: () => _voice.cancel(),
-                                        onSend: () =>
-                                            _finishVoiceNote(context),
-                                      ),
-                                    ),
+                                ? VoiceRecordingBar(
+                                    controller: _voice,
+                                    onCancel: () => _voice.cancel(),
+                                    onSend: () => _finishVoiceNote(context),
                                   )
                                 : composer!,
                             child: _TypingBinder(

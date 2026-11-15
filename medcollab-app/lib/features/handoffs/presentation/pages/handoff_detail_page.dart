@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
+import 'package:medcollab_app/features/handoffs/presentation/widgets/handoff_voice_note_field.dart';
 import 'package:medcollab_app/core/di/app_dependencies.dart';
 import 'package:medcollab_app/core/error/app_exception.dart';
 import 'package:medcollab_app/core/router/app_routes.dart';
@@ -448,7 +449,7 @@ class _HandoffDetailPageState extends State<HandoffDetailPage> {
           return Scaffold(
             backgroundColor: AppColors.backgroundApp,
             appBar: AppBar(
-              backgroundColor: AppColors.navyPrimary,
+              backgroundColor: AppColors.chrome,
               foregroundColor: AppColors.textOnDark,
               leading: IconButton(
                 tooltip: 'Back',
@@ -493,7 +494,7 @@ class _HandoffDetailPageState extends State<HandoffDetailPage> {
           return Scaffold(
             backgroundColor: AppColors.backgroundApp,
             appBar: AppBar(
-              backgroundColor: AppColors.navyPrimary,
+              backgroundColor: AppColors.chrome,
               foregroundColor: AppColors.textOnDark,
               leading: IconButton(
                 tooltip: 'Back',
@@ -560,7 +561,7 @@ class _HandoffDetailPageState extends State<HandoffDetailPage> {
             children: [
               Container(
                 width: double.infinity,
-                color: AppColors.navyPrimary,
+                color: AppColors.chrome,
                 child: SafeArea(
                   bottom: false,
                   child: Padding(
@@ -889,6 +890,17 @@ class _MetaCard extends StatelessWidget {
           if (handoff.shiftSummary.isNotEmpty) ...[
             Divider(height: 1, color: AppColors.borderLight),
             _MetaRow(label: 'Summary', value: handoff.shiftSummary),
+          ],
+          if (handoff.voiceNote != null) ...[
+            Divider(height: 1, color: AppColors.borderLight),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+              child: HandoffVoiceNotePlayer(
+                note: handoff.voiceNote!,
+                playbackId: 'handoff-shift-${handoff.id}',
+                label: 'VOICE HANDOVER',
+              ),
+            ),
           ],
         ],
       ),

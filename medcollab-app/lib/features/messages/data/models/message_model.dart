@@ -19,6 +19,11 @@ class MessageContent extends Equatable {
     this.height,
     this.durationMs,
     this.waveform = const [],
+    this.systemEvent,
+    this.movedToChannelId,
+    this.transcript,
+    this.transcriptStatus,
+    this.voiceMode,
   });
 
   factory MessageContent.fromJson(Map<String, dynamic> json) {
@@ -39,6 +44,11 @@ class MessageContent extends Equatable {
               .map((n) => n.toInt().clamp(0, 100))
               .toList()
           : const [],
+      systemEvent: json['systemEvent'] as String?,
+      movedToChannelId: _stringOrNull(json['movedToChannelId']),
+      transcript: _stringOrNull(json['transcript']),
+      transcriptStatus: json['transcriptStatus'] as String?,
+      voiceMode: json['voiceMode'] as bool?,
     );
   }
 
@@ -64,6 +74,22 @@ class MessageContent extends Equatable {
   /// Voice note loudness bars, 0–100 (REQ 12).
   final List<int> waveform;
 
+  /// Activity lines: `member_added`, `member_left`, `group_renamed`,
+  /// `needl_continued`, … (server-generated only).
+  final String? systemEvent;
+
+  /// `needl_continued`: the Needl that now includes the added people.
+  final String? movedToChannelId;
+
+  /// Needl Voice (issue 13): on-device transcript of a voice message.
+  final String? transcript;
+
+  /// pending | done | unavailable
+  final String? transcriptStatus;
+
+  /// Sent from the Needl Voice screen.
+  final bool? voiceMode;
+
   bool get hasMedia => mediaUrl != null && mediaUrl!.isNotEmpty;
 
   Map<String, dynamic> toJson() => {
@@ -77,12 +103,17 @@ class MessageContent extends Equatable {
         if (height != null) 'height': height,
         if (durationMs != null) 'durationMs': durationMs,
         if (waveform.isNotEmpty) 'waveform': waveform,
+        // systemEvent / movedToChannelId are server-only: never sent.
+        if (transcript != null) 'transcript': transcript,
+        if (transcriptStatus != null) 'transcriptStatus': transcriptStatus,
+        if (voiceMode != null) 'voiceMode': voiceMode,
       };
 
   @override
   List<Object?> get props =>
       [text, mediaUrl, thumbnailUrl, fileName, fileSize, mimeType, width, height,
-       durationMs, waveform];
+       durationMs, waveform, systemEvent, movedToChannelId, transcript,
+       transcriptStatus, voiceMode];
 }
 
 class MessageModel extends Equatable {

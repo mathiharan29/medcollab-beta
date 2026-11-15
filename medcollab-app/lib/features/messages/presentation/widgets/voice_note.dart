@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:medcollab_app/core/theme/app_colors.dart';
 import 'package:medcollab_app/core/theme/app_text_styles.dart';
+import 'package:medcollab_app/features/messages/presentation/widgets/composer_parts.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 
@@ -67,7 +68,23 @@ abstract class VoiceRecorderEngine {
   Future<void> dispose();
 }
 
+/// Recording formats.
+enum VoiceRecordFormat {
+  /// Chat voice notes: AAC-LC mono 32 kbps (~240 KB per minute).
+  aac,
+
+  /// Needl Voice (issue 13): 16 kHz mono PCM16 WAV — what Android's
+  /// on-device recognizer transcribes (~1.9 MB per minute; clips ≤ 2 min).
+  wav16k;
+
+  String get extension => this == aac ? 'm4a' : 'wav';
+  String get mimeType => this == aac ? 'audio/mp4' : 'audio/wav';
+}
+
 class RecordPluginEngine implements VoiceRecorderEngine {
+  RecordPluginEngine({this.format = VoiceRecordFormat.aac});
+
+  final VoiceRecordFormat format;
   final AudioRecorder _rec = AudioRecorder();
 
   @override
@@ -75,13 +92,18 @@ class RecordPluginEngine implements VoiceRecorderEngine {
 
   @override
   Future<void> start(String path) => _rec.start(
-        // AAC-LC mono 32 kbps: clear speech, ~240 KB per minute.
-        const RecordConfig(
-          encoder: AudioEncoder.aacLc,
-          bitRate: 32000,
-          sampleRate: 22050,
-          numChannels: 1,
-        ),
+        format == VoiceRecordFormat.wav16k
+            ? const RecordConfig(
+                encoder: AudioEncoder.wav,
+                sampleRate: 16000,
+                numChannels: 1,
+              )
+            : const RecordConfig(
+                encoder: AudioEncoder.aacLc,
+                bitRate: 32000,
+                sampleRate: 22050,
+                numChannels: 1,
+              ),
         path: path,
       );
 
@@ -107,15 +129,26 @@ class VoiceRecorderController extends ChangeNotifier {
   VoiceRecorderController({
     VoiceRecorderEngine? engine,
     Future<String> Function()? tempDir,
-  })  : _engine = engine ?? RecordPluginEngine(),
+    this.maxDuration = defaultMaxDuration,
+    DateTime Function()? clock,
+    this.format = VoiceRecordFormat.aac,
+  })  : _clock = clock ?? DateTime.now,
+        _engine = engine ?? RecordPluginEngine(format: format),
         _tempDir = tempDir ??
             (() async => (await getTemporaryDirectory()).path);
 
   final VoiceRecorderEngine _engine;
   final Future<String> Function() _tempDir;
+  final DateTime Function() _clock;
 
-  static const maxDuration = Duration(minutes: 15);
+  /// Chat voice notes: 15 min. Handoff voice notes pass 5 min (server cap).
+  static const defaultMaxDuration = Duration(minutes: 15);
   static const minDuration = Duration(milliseconds: 700);
+
+  /// Recording stops on its own at this length ([onAutoStop]).
+  final Duration maxDuration;
+
+  final VoiceRecordFormat format;
 
   VoiceRecorderStatus status = VoiceRecorderStatus.idle;
   Duration elapsed = Duration.zero;
@@ -142,18 +175,18 @@ class VoiceRecorderController extends ChangeNotifier {
     }
     final dir = await _tempDir();
     _path =
-        '$dir${Platform.pathSeparator}voice-${DateTime.now().millisecondsSinceEpoch}.m4a';
+        '$dir${Platform.pathSeparator}voice-${DateTime.now().millisecondsSinceEpoch}.${format.extension}';
     await _engine.start(_path!);
     _levels.clear();
     elapsed = Duration.zero;
-    _startedAt = DateTime.now();
+    _startedAt = _clock();
     status = VoiceRecorderStatus.recording;
     _ampSub = _engine.amplitudeDbfs().listen((db) {
       _levels.add(levelFromDbfs(db));
       _notify();
     });
     _ticker = Timer.periodic(const Duration(milliseconds: 200), (_) {
-      elapsed = DateTime.now().difference(_startedAt!);
+      elapsed = _clock().difference(_startedAt!);
       if (elapsed >= maxDuration) {
         unawaited(stop().then((r) {
           if (r != null) onAutoStop?.call(r);
@@ -168,7 +201,7 @@ class VoiceRecorderController extends ChangeNotifier {
   /// Stops and returns the note, or null if it was too short to keep.
   Future<VoiceNoteRecording?> stop() async {
     if (!isRecording) return null;
-    final duration = DateTime.now().difference(_startedAt!);
+    final duration = _clock().difference(_startedAt!);
     _teardown();
     final path = await _engine.stop() ?? _path;
     status = VoiceRecorderStatus.idle;
@@ -185,7 +218,8 @@ class VoiceRecorderController extends ChangeNotifier {
       bytes: bytes,
       duration: duration,
       waveform: downsampleWaveform(_levels),
-      fileName: 'voice-${DateTime.now().millisecondsSinceEpoch}.m4a',
+      fileName: 'voice-${DateTime.now().millisecondsSinceEpoch}.${format.extension}',
+      mimeType: format.mimeType,
     );
   }
 
@@ -258,55 +292,53 @@ class VoiceRecordingBar extends StatelessWidget {
         final shown = levels.length > 48
             ? levels.sublist(levels.length - 48)
             : levels;
-        return Row(
-          children: [
-            IconButton(
-              tooltip: 'Cancel voice message',
-              onPressed: onCancel,
-              icon: Icon(Icons.delete_outline, color: AppColors.statusError),
-            ),
-            const _BlinkingDot(),
-            const SizedBox(width: 8),
-            Text(
-              formatVoiceDuration(controller.elapsed),
-              style: AppTextStyles.body.copyWith(
-                fontFeatures: const [FontFeature.tabularFigures()],
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: SizedBox(
-                height: 28,
-                child: CustomPaint(
-                  painter: WaveformPainter(
-                    levels: shown,
-                    progress: 1,
-                    played: AppColors.tealDark,
-                    remaining: AppColors.tealDark,
-                    alignEnd: true,
+        // Same pill + round button as the text composer (issue 4), so the
+        // bar does not jump when recording starts or stops.
+        return ComposerShell(
+          pill: SizedBox(
+            height: ComposerMetrics.bar,
+            child: Row(
+              children: [
+                ComposerIconButton(
+                  icon: Icons.delete_outline_rounded,
+                  tooltip: 'Cancel voice message',
+                  color: AppColors.statusError,
+                  onPressed: onCancel,
+                ),
+                const _BlinkingDot(),
+                const SizedBox(width: 8),
+                Text(
+                  formatVoiceDuration(controller.elapsed),
+                  style: AppTextStyles.body.copyWith(
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                    color: AppColors.textPrimary,
+                    fontSize: 15,
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Semantics(
-              button: true,
-              label: 'Send voice message',
-              child: Material(
-                color: AppColors.tealPrimary,
-                shape: const CircleBorder(),
-                child: InkWell(
-                  customBorder: const CircleBorder(),
-                  onTap: onSend,
-                  child: const Padding(
-                    padding: EdgeInsets.all(10),
-                    child: Icon(Icons.send_rounded, color: Colors.white, size: 22),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: SizedBox(
+                    height: 28,
+                    child: CustomPaint(
+                      painter: WaveformPainter(
+                        levels: shown,
+                        progress: 1,
+                        played: AppColors.tealDark,
+                        remaining: AppColors.tealDark,
+                        alignEnd: true,
+                      ),
+                    ),
                   ),
                 ),
-              ),
+                const SizedBox(width: 14),
+              ],
             ),
-          ],
+          ),
+          action: ComposerRoundButton(
+            icon: Icons.send_rounded,
+            semanticLabel: 'Send voice message',
+            onTap: onSend,
+          ),
         );
       },
     );

@@ -168,8 +168,8 @@ void main() {
     await tester.pumpAndSettle(const Duration(milliseconds: 100));
     await _step(tester, 'open_thread',
         () => _tap(tester, find.text('Reply in thread')),
-        find.widgetWithText(TextField, 'Reply in thread…'));
-    await _setText(tester, find.widgetWithText(TextField, 'Reply in thread…'), 'Calcium gluconate given');
+        find.widgetWithText(TextField, 'Reply'));
+    await _setText(tester, find.widgetWithText(TextField, 'Reply'), 'Calcium gluconate given');
     await _step(tester, 'send_thread_reply',
         () => _tap(tester, find.byIcon(Icons.send_rounded)), _text(r'^Calcium gluconate given$'));
 

@@ -15,6 +15,7 @@
 
 const Message = require('./message.model');
 const ChatClear = require('./chatClear.model');
+const { personalizeThreadSummaries } = require('../../utils/personalLastMessage');
 const Notification = require('../notifications/notification.model');
 const Channel = require('../channels/channel.model');
 const Space = require('../spaces/space.model');
@@ -150,6 +151,9 @@ const getMessages = asyncHandler(async (req, res) => {
     });
   }
 
+  // "N replies" must not count replies this user deleted for themselves.
+  messages = await personalizeThreadSummaries(messages, req.user._id);
+
   // Return in ascending order (oldest → newest) for natural chat rendering
   messages.reverse();
 
@@ -180,10 +184,19 @@ const sendMessage = asyncHandler(async (req, res) => {
   } = req.body;
 
   // Persist trimmed text so route length checks match Mongo maxlength.
+  // Server-only fields (activity lines) can never come from a client.
+  const {
+    systemEvent: _se, targetUserIds: _tu, movedToChannelId: _mv, ...clientContent
+  } = rawContent || {};
+  if (type !== MESSAGE_TYPES.AUDIO) {
+    delete clientContent.transcript;
+    delete clientContent.transcriptStatus;
+    delete clientContent.voiceMode;
+  }
   const content =
-    rawContent && typeof rawContent.text === 'string'
-      ? { ...rawContent, text: rawContent.text.trim() }
-      : rawContent;
+    rawContent && typeof clientContent.text === 'string'
+      ? { ...clientContent, text: clientContent.text.trim() }
+      : rawContent ? clientContent : rawContent;
 
   // Validate media URLs point to trusted domains or this server's uploads.
   if (content?.mediaUrl) {
@@ -379,13 +392,22 @@ const getThread = asyncHandler(async (req, res) => {
   const access = await resolveChannelAccess(req, res);
   if (!access) return;
 
-  const rootMessage = await Message.findById(req.params.id)
+  const visibility = await personalVisibility(req.user._id, access.channel._id);
+
+  // The root obeys the same per-user rules as the timeline: a root this
+  // user deleted for themselves, or one from before their Clear chat, is
+  // "not found" for them — opening the thread directly must not reveal it.
+  let rootMessage = await Message.findOne({
+    _id: req.params.id,
+    ...visibility,
+  })
     .populate('senderId', 'name displayTitle role avatarUrl')
     .select('-hiddenFor')
     .lean();
 
   if (!rootMessage) return respond.notFound(res, 'Message not found');
   if (!assertMessageInChannel(rootMessage, req.params.channelId, res)) return;
+  [rootMessage] = await personalizeThreadSummaries([rootMessage], req.user._id);
 
   const limit = Math.min(parseInt(req.query.limit) || 50, 100);
   const before = req.query.before;
@@ -397,7 +419,7 @@ const getThread = asyncHandler(async (req, res) => {
       { threadId: rootMessage._id.toString() },
     ],
     isDeleted: false,
-    ...(await personalVisibility(req.user._id, access.channel._id)),
+    ...visibility,
   };
   if (before) threadQuery._id = { $lt: before };
 
@@ -584,6 +606,34 @@ const deleteMessage = asyncHandler(async (req, res) => {
 });
 
 /**
+ * PATCH /api/channels/:channelId/messages/:id/transcript
+ * Needl Voice (issue 13): transcripts are made on the sender's phone (the
+ * audio never goes to a speech service from the server) and attached here.
+ */
+const setTranscript = asyncHandler(async (req, res) => {
+  const access = await resolveChannelAccess(req, res);
+  if (!access) return;
+  const message = await Message.findById(req.params.id);
+  if (!message) return respond.notFound(res, 'Message not found');
+  if (!assertMessageInChannel(message, req.params.channelId, res)) return;
+  if (message.senderId.toString() !== req.user._id.toString()) {
+    return respond.forbidden(res, 'Only the sender can add a transcript');
+  }
+  if (message.type !== MESSAGE_TYPES.AUDIO) {
+    return respond.badRequest(res, 'Only voice messages have transcripts');
+  }
+  const status = req.body.status;
+  const text = status === 'done' ? String(req.body.transcript || '').trim() : '';
+  message.content.transcript = text || undefined;
+  message.content.transcriptStatus = status === 'done' && !text ? 'unavailable' : status;
+  message.markModified('content');
+  await message.save();
+
+  emitMessageUpdated(req.params.channelId, message._id, { content: message.content });
+  return respond.ok(res, 'Transcript saved', { message });
+});
+
+/**
  * POST /api/channels/:channelId/messages/clear
  * "Clear chat" for the caller only; new messages still arrive.
  */
@@ -662,5 +712,5 @@ const markAsRead = asyncHandler(async (req, res) => {
 module.exports = {
   getMessages, sendMessage, getThread, replyToThread,
   editMessage, deleteMessage, toggleReaction, markAsRead, clearChat,
-  personalVisibility,
+  setTranscript, personalVisibility,
 };

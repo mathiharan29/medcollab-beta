@@ -30,10 +30,16 @@ class GroupedMessageNotification {
     );
   }
 
+  /// Posts (or re-posts) a chat's conversation notification.
+  ///
+  /// [outgoing]: [body] is the doctor's own reply — shown as "You", like
+  /// WhatsApp. An empty [body] re-posts the conversation unchanged (ends
+  /// Android's inline-reply spinner).
   static Future<void> show({
     required String title,
     required String body,
     required Map<String, dynamic> data,
+    bool outgoing = false,
   }) async {
     final type = data['type']?.toString() ?? '';
     final emergency = type.toLowerCase().contains('emergency');
@@ -42,7 +48,15 @@ class GroupedMessageNotification {
         ? channelKey
         : 'solo-${DateTime.now().millisecondsSinceEpoch}';
 
-    final lines = await _appendLine(groupKey, body);
+    List<_Line> lines;
+    try {
+      lines = await _appendLine(groupKey, body, mine: outgoing);
+    } catch (_) {
+      // Storage unavailable (e.g. background isolate trouble): still post.
+      lines = body.trim().isEmpty
+          ? const []
+          : [_Line(body.trim(), DateTime.now().millisecondsSinceEpoch, mine: outgoing)];
+    }
     final id = _idFor(groupKey);
 
     final person = Person(name: title, key: groupKey);
@@ -55,7 +69,8 @@ class GroupedMessageNotification {
           Message(
             line.text,
             DateTime.fromMillisecondsSinceEpoch(line.at),
-            person,
+            // null person = the device user ("You").
+            line.mine ? null : person,
           ),
       ],
     );
@@ -82,7 +97,7 @@ class GroupedMessageNotification {
     await plugin.show(
       id,
       title,
-      lines.isEmpty ? body : lines.last.text,
+      lines.isEmpty ? (body.isEmpty ? title : body) : lines.last.text,
       NotificationDetails(
         android: AndroidNotificationDetails(
           emergency ? 'emergency' : 'messages',
@@ -133,9 +148,12 @@ class GroupedMessageNotification {
 
   static int _idFor(String key) => key.hashCode & 0x7fffffff;
 
-  static Future<List<_Line>> _appendLine(String key, String text) async {
+  static Future<List<_Line>> _appendLine(
+    String key,
+    String text, {
+    bool mine = false,
+  }) async {
     final trimmed = text.trim();
-    if (trimmed.isEmpty) return const [];
     final prefs = await SharedPreferences.getInstance();
     final stored = prefs.getString('$_prefsPrefix$key');
     final lines = <_Line>[];
@@ -150,6 +168,7 @@ class GroupedMessageNotification {
                   item['text']?.toString() ?? '',
                   (item['at'] as num?)?.toInt() ??
                       DateTime.now().millisecondsSinceEpoch,
+                  mine: item['mine'] == true,
                 ),
               );
             }
@@ -157,14 +176,16 @@ class GroupedMessageNotification {
         }
       } catch (_) {}
     }
-    lines.add(_Line(trimmed, DateTime.now().millisecondsSinceEpoch));
+    if (trimmed.isEmpty) return lines; // re-post as is
+    lines.add(_Line(trimmed, DateTime.now().millisecondsSinceEpoch, mine: mine));
     final kept = lines.length > _maxLines
         ? lines.sublist(lines.length - _maxLines)
         : lines;
     await prefs.setString(
       '$_prefsPrefix$key',
       jsonEncode([
-        for (final line in kept) {'text': line.text, 'at': line.at},
+        for (final line in kept)
+          {'text': line.text, 'at': line.at, if (line.mine) 'mine': true},
       ]),
     );
     return kept;
@@ -172,7 +193,8 @@ class GroupedMessageNotification {
 }
 
 class _Line {
-  const _Line(this.text, this.at);
+  const _Line(this.text, this.at, {this.mine = false});
   final String text;
   final int at;
+  final bool mine;
 }

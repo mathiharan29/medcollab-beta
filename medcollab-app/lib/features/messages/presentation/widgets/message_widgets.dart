@@ -13,6 +13,7 @@ import 'package:medcollab_app/features/messages/data/models/message_model.dart';
 import 'package:medcollab_app/features/messages/data/models/message_reply_to.dart';
 import 'package:medcollab_app/features/messages/presentation/utils/message_list_utils.dart';
 import 'package:medcollab_app/features/messages/presentation/widgets/chat_wallpaper.dart';
+import 'package:medcollab_app/features/messages/presentation/widgets/composer_parts.dart';
 import 'package:medcollab_app/features/messages/presentation/widgets/emoji_picker.dart';
 import 'package:medcollab_app/features/messages/presentation/widgets/read_receipt_footer.dart';
 import 'package:medcollab_app/features/messages/presentation/widgets/voice_note.dart';
@@ -29,7 +30,7 @@ class MessageComposer extends StatelessWidget {
     this.onPickGallery,
     this.onPickCamera,
     this.onPickDocument,
-    this.hintText = 'Message…',
+    this.hintText = 'Message',
     this.isBusy = false,
     this.showTopBorder = true,
     this.onRecordVoice,
@@ -110,156 +111,88 @@ class MessageComposer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canAttach =
-        onPickGallery != null || onPickDocument != null || onPickCamera != null;
+    final canAttach = onPickGallery != null || onPickDocument != null;
+    final canCamera = onPickCamera != null && !kIsWeb;
 
-    // Floating pill (WhatsApp-style): transparent outer bar, no full-bleed
-    // top border. [showTopBorder] is kept for call-site compatibility.
-    return Container(
-      color: Colors.transparent,
-      child: SafeArea(
-        top: false,
-        child: Container(
-          margin: const EdgeInsets.fromLTRB(8, 4, 8, 6),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceCard,
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: AppColors.borderDefault, width: 0.5),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          padding: const EdgeInsets.fromLTRB(4, 4, 4, 4),
-          child: Row(
+    // WhatsApp layout: [😊  Message…  📎 📷]  (●)
+    // Every icon is a 48×48 target with a 24 px glyph on the bottom line;
+    // the round send / mic button sits outside the pill.
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: controller,
+      builder: (context, value, _) {
+        final empty = value.text.trim().isEmpty;
+        final showMic = onRecordVoice != null && empty;
+        return ComposerShell(
+          pill: Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              if (canAttach)
-                IconButton(
-                  tooltip: 'Attach',
-                  onPressed: isBusy ? null : () => _showAttachMenu(context),
-                  icon: const Icon(Icons.add_circle_outline, size: 26),
-                  color: AppColors.tealDark,
-                  padding: const EdgeInsets.all(8),
-                  constraints:
-                      const BoxConstraints(minWidth: 44, minHeight: 44),
-                ),
+              ComposerIconButton(
+                icon: Icons.emoji_emotions_outlined,
+                tooltip: 'Emoji',
+                onPressed: isBusy ? null : () => _showEmojiPicker(context),
+              ),
               Expanded(
-                child: Container(
-                  constraints: const BoxConstraints(minHeight: 44),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: controller,
-                          focusNode: focusNode,
-                          minLines: 1,
-                          maxLines: 6,
-                          textCapitalization: TextCapitalization.sentences,
-                          enabled: !isBusy,
-                          keyboardType: TextInputType.multiline,
-                          textInputAction: TextInputAction.newline,
-                          style: AppTextStyles.body.copyWith(
-                            color: AppColors.textPrimary,
-                            fontSize: 15,
-                            height: 1.35,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: hintText,
-                            hintStyle: AppTextStyles.body.copyWith(
-                              color: AppColors.textMuted,
-                              fontSize: 15,
-                            ),
-                            border: InputBorder.none,
-                            enabledBorder: InputBorder.none,
-                            focusedBorder: InputBorder.none,
-                            isDense: true,
-                            contentPadding: const EdgeInsets.fromLTRB(
-                              16,
-                              12,
-                              4,
-                              12,
-                            ),
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        tooltip: 'Emoji',
-                        onPressed:
-                            isBusy ? null : () => _showEmojiPicker(context),
-                        icon:
-                            const Icon(Icons.emoji_emotions_outlined, size: 22),
-                        color: AppColors.textSecondary,
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    ],
+                child: TextField(
+                  key: const Key('composer-field'),
+                  controller: controller,
+                  focusNode: focusNode,
+                  minLines: 1,
+                  maxLines: 6,
+                  textCapitalization: TextCapitalization.sentences,
+                  enabled: !isBusy,
+                  keyboardType: TextInputType.multiline,
+                  textInputAction: TextInputAction.newline,
+                  cursorColor: AppColors.tealDark,
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.textPrimary,
+                    fontSize: ComposerMetrics.textSize,
+                    height: ComposerMetrics.textHeight,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: hintText,
+                    hintMaxLines: 1,
+                    hintStyle: AppTextStyles.body.copyWith(
+                      color: AppColors.textMuted,
+                      fontSize: ComposerMetrics.textSize,
+                      height: ComposerMetrics.textHeight,
+                    ),
+                    filled: false,
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    disabledBorder: InputBorder.none,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 13),
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              // Empty box → mic (voice note, REQ 12); text → send.
-              ValueListenableBuilder<TextEditingValue>(
-                valueListenable: controller,
-                builder: (context, value, _) {
-                  final showMic =
-                      onRecordVoice != null && value.text.trim().isEmpty;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 2),
-                    child: Semantics(
-                      // F6: icon-only buttons need a spoken label.
-                      button: true,
-                      label: showMic ? 'Record voice message' : 'Send message',
-                      child: Tooltip(
-                        message: showMic ? 'Record voice message' : 'Send',
-                        child: Material(
-                          // Navy on light; brand teal on dark, where navy
-                          // vanished into the composer (REQ 6).
-                          color: (AppColors.isDark
-                                  ? AppColors.tealDark
-                                  : AppColors.navyPrimary)
-                              .withValues(alpha: isBusy ? 0.5 : 1),
-                          shape: const CircleBorder(),
-                          child: InkWell(
-                            customBorder: const CircleBorder(),
-                            onTap: isBusy
-                                ? null
-                                : showMic
-                                    ? onRecordVoice
-                                    : () => onSend(controller.text),
-                            child: SizedBox(
-                              width: 44,
-                              height: 44,
-                              child: isBusy
-                                  ? const Padding(
-                                      padding: EdgeInsets.all(12),
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                  : Icon(
-                                      showMic
-                                          ? Icons.mic_rounded
-                                          : Icons.send_rounded,
-                                      size: showMic ? 24 : 20,
-                                      color: Colors.white,
-                                    ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
+              if (canAttach)
+                ComposerIconButton(
+                  icon: Icons.attach_file_rounded,
+                  turns: -0.125,
+                  tooltip: 'Attach',
+                  onPressed: isBusy ? null : () => _showAttachMenu(context),
+                ),
+              // Camera shortcut while the box is empty (as in WhatsApp).
+              if (canCamera && empty)
+                ComposerIconButton(
+                  icon: Icons.photo_camera_outlined,
+                  tooltip: 'Camera',
+                  onPressed: isBusy ? null : onPickCamera,
+                ),
+              if (!(canCamera && empty)) const SizedBox(width: 4),
             ],
           ),
-        ),
-      ),
+          // Empty box → mic (voice note, REQ 12); text → send.
+          action: ComposerRoundButton(
+            icon: showMic ? Icons.mic_rounded : Icons.send_rounded,
+            // F6: icon-only buttons need a spoken label.
+            semanticLabel: showMic ? 'Record voice message' : 'Send message',
+            busy: isBusy,
+            onTap: showMic ? onRecordVoice : () => onSend(controller.text),
+          ),
+        );
+      },
     );
   }
 }
@@ -291,22 +224,36 @@ class DateSeparatorChip extends StatelessWidget {
 /// Group activity line — "Dr Asha Rao added Dr Vikram Shah" (REQ 2).
 /// Centred, muted and not a bubble, like WhatsApp; no long-press actions.
 class SystemEventChip extends StatelessWidget {
-  const SystemEventChip({required this.text, this.time, super.key});
+  const SystemEventChip({
+    required this.text,
+    this.time,
+    this.actionLabel,
+    this.onAction,
+    super.key,
+  });
 
   final String text;
   final DateTime? time;
 
+  /// e.g. "Open new Needl" on a `needl_continued` line.
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
   @override
   Widget build(BuildContext context) {
     final at = time?.toLocal();
+    final action = actionLabel;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 24),
       child: Center(
         child: Semantics(
-          label: 'Group update: $text',
+          label: 'Group update: $text${action != null ? '. $action' : ''}',
+          button: onAction != null,
           // Read once, not label + text.
           excludeSemantics: true,
-          child: Container(
+          child: GestureDetector(
+           onTap: onAction,
+           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color: AppColors.isDark
@@ -325,6 +272,14 @@ class SystemEventChip extends StatelessWidget {
                           '  ${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(at))}',
                       style: AppTextStyles.timestamp,
                     ),
+                  if (action != null)
+                    TextSpan(
+                      text: '\n$action ›',
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.tealDark,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                 ],
               ),
               textAlign: TextAlign.center,
@@ -333,6 +288,7 @@ class SystemEventChip extends StatelessWidget {
                 fontWeight: FontWeight.w500,
               ),
             ),
+          ),
           ),
         ),
       ),

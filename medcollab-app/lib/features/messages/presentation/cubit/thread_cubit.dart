@@ -77,6 +77,10 @@ class ThreadCubit extends Cubit<ThreadState> with SafeEmit<ThreadState> {
           isLoading: false,
         ),
       );
+    } on NotFoundException {
+      // Deleted for this user, before their Clear chat, or gone: drop the
+      // root passed in from the chat too, never show it from cache.
+      emit(const ThreadState(unavailable: true));
     } on AppException catch (e) {
       emit(state.copyWith(isLoading: false, error: e.message));
     }

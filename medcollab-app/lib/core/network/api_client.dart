@@ -250,6 +250,9 @@ class ApiClient {
         if (status == 404) {
           return NotFoundException(apiResponse.message);
         }
+        if (status == 409) {
+          return ConflictException(apiResponse.message);
+        }
         if (status == 400 || status == 422) {
           return ValidationException(
             apiResponse.message,

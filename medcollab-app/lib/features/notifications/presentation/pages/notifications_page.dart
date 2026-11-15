@@ -238,7 +238,7 @@ class _FilterPill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: selected
-          ? (AppColors.isDark ? AppColors.tealDark : AppColors.navyPrimary)
+          ? AppColors.actionFill
           : AppColors.surfaceCard,
       borderRadius: AppRadius.pill,
       child: InkWell(

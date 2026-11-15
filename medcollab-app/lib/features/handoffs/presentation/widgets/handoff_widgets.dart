@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
+import 'package:medcollab_app/features/handoffs/presentation/widgets/handoff_voice_note_field.dart';
 import 'package:medcollab_app/core/theme/app_colors.dart';
 import 'package:medcollab_app/core/theme/app_radius.dart';
 import 'package:medcollab_app/core/theme/app_text_styles.dart';
@@ -165,6 +166,14 @@ class HandoffPatientCard extends StatelessWidget {
                   ],
                 ),
               ),
+            ),
+          ],
+          if (patient.voiceNote != null) ...[
+            const SizedBox(height: 12),
+            HandoffVoiceNotePlayer(
+              note: patient.voiceNote!,
+              playbackId: 'patient-${patient.id ?? patient.bedNumber}',
+              label: 'VOICE NOTE',
             ),
           ],
           if (patient.attachments.isNotEmpty) ...[

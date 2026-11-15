@@ -87,6 +87,22 @@ const contentSchema = new mongoose.Schema(
 
     // For type: system (REQ 2) — what happened and to whom.
     systemEvent: { type: String, default: null },
+    // Needl Voice (issue 13): on-device transcript of an audio message,
+    // written by the sender's phone after recording.
+    transcript: { type: String, maxlength: 8000, default: undefined },
+    transcriptStatus: {
+      type: String,
+      enum: ['pending', 'done', 'unavailable'],
+      default: undefined,
+    },
+    // Sent from the voice-first Needl Voice screen (shown with a mic badge).
+    voiceMode: { type: Boolean, default: undefined },
+    // needl_continued: the conversation that continues with the new people.
+    movedToChannelId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Channel',
+      default: undefined,
+    },
     targetUserIds: {
       type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
       default: undefined,
@@ -253,6 +269,11 @@ const messageSchema = new mongoose.Schema(
 // ── Indexes ───────────────────────────────────────────────────────────────────
 // Primary query: fetch messages in a channel, newest first, cursor-based
 messageSchema.index({ channelId: 1, createdAt: -1 });
+
+// Timeline / thread pages: filter by channel + thread, newest first by _id
+// (getMessages / getThread). Without it MongoDB sorted every message of the
+// chat in memory on each open (issue 2).
+messageSchema.index({ channelId: 1, threadId: 1, _id: -1 });
 
 // Thread query: fetch all replies to a root message
 messageSchema.index({ threadId: 1, createdAt: 1 });

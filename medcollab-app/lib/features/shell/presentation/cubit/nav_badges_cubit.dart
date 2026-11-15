@@ -55,7 +55,10 @@ class NavBadgesCubit extends Cubit<NavBadgesState> with SafeEmit<NavBadgesState>
     });
     _socketSub = _socketClient
         .onMapEvent(SocketEvents.newNotification)
-        .listen((_) => refresh());
+        .listen((_) {
+      _notificationRepository.serverChanged();
+      refresh();
+    });
     _connectionSub = _socketClient.connectionStream.listen((connected) {
       if (connected) refresh();
     });
@@ -111,8 +114,15 @@ class NavBadgesCubit extends Cubit<NavBadgesState> with SafeEmit<NavBadgesState>
     try {
       // One shared request gives both the unread count and the recent list
       // (REQ 13: was a separate unread-count call plus a 50-item fetch).
-      final page =
-          await _notificationRepository.getRecentNotificationsShared();
+      final epoch = _notificationRepository.readEpoch;
+      final page = viewingChatAsRead(
+          await _notificationRepository.getRecentNotificationsShared());
+      if (_notificationRepository.readEpoch != epoch) {
+        // Alerts were marked read while this was in flight: its count may
+        // predate that (badge stuck at the old number). Fetch again.
+        _refreshAgain = true;
+        return;
+      }
       final alerts = page.unreadCount;
       _notificationBadgeCubit.setCount(alerts);
       final messagesDot = hasUnreadChatNotifications(page.notifications);

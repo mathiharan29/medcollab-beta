@@ -78,6 +78,47 @@ class MessageRepository extends BaseRepository {
     );
   }
 
+  /// Needl Voice (issue 13): a voice clip whose transcript follows later
+  /// (made on this phone, attached with [setTranscript]).
+  Future<MessageModel> sendVoiceMessage({
+    required String channelId,
+    required MediaUploadResult upload,
+    required int durationMs,
+    List<int> waveform = const [],
+  }) {
+    return _sendMessage(
+      channelId: channelId,
+      type: MessageType.audio,
+      content: MessageContent(
+        mediaUrl: upload.url,
+        mimeType: upload.mimeType,
+        fileSize: upload.fileSize,
+        durationMs: durationMs,
+        waveform: waveform,
+        transcriptStatus: 'pending',
+        voiceMode: true,
+      ),
+    );
+  }
+
+  /// `PATCH …/messages/:id/transcript` — null/empty marks it unavailable.
+  Future<MessageModel> setTranscript({
+    required String channelId,
+    required String messageId,
+    String? transcript,
+  }) {
+    final text = transcript?.trim() ?? '';
+    return execute(
+      () => apiClient.patch(
+        '${ApiEndpoints.messageById(channelId, messageId)}/transcript',
+        data: text.isEmpty
+            ? {'status': 'unavailable'}
+            : {'status': 'done', 'transcript': text},
+        parser: (json) => parseNested(json, 'message', MessageModel.fromJson),
+      ),
+    );
+  }
+
   Future<MessageModel> _sendMessage({
     required String channelId,
     required MessageType type,

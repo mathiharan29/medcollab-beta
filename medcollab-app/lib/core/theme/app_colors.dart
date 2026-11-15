@@ -63,29 +63,35 @@ abstract final class AppColorsLight {
   static const Color shadow = Color(0x08000000);
 }
 
-/// Dark counterparts of the neutral tokens (REQ 6). Brand and semantic
-/// colours (teal, navy chrome, emergency red, status colours) are shared.
+/// Dark counterparts of the neutral tokens.
+///
+/// Neutral graphite (no navy cast), the way WhatsApp / Instagram / X dark
+/// modes look: near-black page, slightly lifted cards and headers, soft
+/// off-white text. Brand teal and semantic colours are shared with light.
 abstract final class AppColorsDark {
-  static const Color backgroundApp = Color(0xFF0A1428);
-  static const Color surfaceCard = Color(0xFF111F3D);
-  static const Color surfaceInput = Color(0xFF162952);
-  static const Color textPrimary = Color(0xFFE8EEF8);
-  static const Color textSecondary = Color(0xFFA8B4CC);
-  static const Color textMuted = Color(0xFF7A89A5);
-  static const Color borderDefault = Color(0xFF24365C);
-  static const Color borderLight = Color(0xFF1A2B4E);
-  static const Color borderStrong = Color(0xFF34497A);
-  static const Color tealTint = Color(0xFF0F3B44);
+  static const Color backgroundApp = Color(0xFF0F1113);
+  static const Color surfaceCard = Color(0xFF1A1D20);
+  static const Color surfaceInput = Color(0xFF24282C);
+  /// App bars, Home/Profile headers and the bottom bar.
+  static const Color chrome = Color(0xFF1A1D20);
+  static const Color textPrimary = Color(0xFFE9EDEF);
+  static const Color textSecondary = Color(0xFFAAB1B7);
+  static const Color textMuted = Color(0xFF7E868D);
+  static const Color borderDefault = Color(0xFF2E3134);
+  static const Color borderLight = Color(0xFF222629);
+  static const Color borderStrong = Color(0xFF3B4147);
+  static const Color tealTint = Color(0xFF103A35);
   static const Color onPrimaryContainer = Color(0xFFB8F2E9);
-  static const Color emergencyTint = Color(0xFF3B1620);
+  static const Color emergencyTint = Color(0xFF3A1A1C);
   static const Color emergencyBorder = Color(0xFF7F1D1D);
-  static const Color statusSuccTint = Color(0xFF0E3B2E);
-  static const Color statusWarnTint = Color(0xFF3D2E0B);
-  static const Color statusPendTint = Color(0xFF3D2410);
-  static const Color statusErrorTint = Color(0xFF3B1620);
-  static const Color statusNeutTint = Color(0xFF1E2A44);
+  static const Color statusSuccTint = Color(0xFF113528);
+  static const Color statusWarnTint = Color(0xFF3A2D10);
+  static const Color statusPendTint = Color(0xFF3A2614);
+  static const Color statusErrorTint = Color(0xFF3A1A1C);
+  static const Color statusNeutTint = Color(0xFF26292D);
   static const Color shadow = Color(0x33000000);
-  static const Color bubbleMine = Color(0xFF0E5A52);
+  /// Own bubble: deep teal-green (as WhatsApp dark), readable white text.
+  static const Color bubbleMine = Color(0xFF005C4B);
 }
 
 /// Vocle colour tokens that follow the active theme (REQ 6).
@@ -116,6 +122,14 @@ abstract final class AppColors {
   static const Color tealDark = AppColorsLight.tealDark;
   static Color get tealTint =>
       _dark ? AppColorsDark.tealTint : AppColorsLight.tealTint;
+
+  /// Header / app-bar / bottom-bar background: navy in light, graphite in
+  /// dark (navy chrome on a dark page looked off-brand and heavy).
+  static Color get chrome => _dark ? AppColorsDark.chrome : navyPrimary;
+
+  /// Filled primary action (selected pills, solid buttons): navy in light,
+  /// brand teal in dark where navy would vanish into the page.
+  static Color get actionFill => _dark ? tealDark : navyPrimary;
 
   // ── Surfaces ───────────────────────────────────────────────────────────
   static Color get backgroundApp =>
