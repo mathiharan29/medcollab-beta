@@ -1,21 +1,23 @@
 /**
  * Unit tests for known-user privacy helpers (no DB).
  */
+const assert = require('node:assert/strict');
+const { describe, test } = require('node:test');
 const {
   normalizeInstitution,
 } = require('../src/utils/knownUsers');
 
 describe('knownUsers.normalizeInstitution', () => {
   test('trims and lowercases', () => {
-    expect(normalizeInstitution('  AIIMS Delhi ')).toBe('aiims delhi');
+    assert.equal(normalizeInstitution('  AIIMS Delhi '), 'aiims delhi');
   });
 
   test('collapses whitespace', () => {
-    expect(normalizeInstitution('Apollo   Hospital')).toBe('apollo hospital');
+    assert.equal(normalizeInstitution('Apollo   Hospital'), 'apollo hospital');
   });
 
   test('empty for nullish', () => {
-    expect(normalizeInstitution(null)).toBe('');
-    expect(normalizeInstitution(undefined)).toBe('');
+    assert.equal(normalizeInstitution(null), '');
+    assert.equal(normalizeInstitution(undefined), '');
   });
 });

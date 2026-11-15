@@ -10,6 +10,8 @@ void main() {
   if (devicePhase == 'chat-journey') {
     deviceCase('FR-JRN-05', (tester) async {
       await initializeDevice();
+      // Notification permission is setup for this lifecycle journey.
+      await control('notification-permission', {'granted': true});
       await deviceStorage.clearAll();
       await launch(tester, session: 'A', currentChat: true);
       final f = await fixture();

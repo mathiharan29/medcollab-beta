@@ -17,7 +17,10 @@ if(flutter.source?.verified!==true||!flutter.complete||flutter.implementedAndExe
 const catalog=JSON.parse(await readFile(new URL('../catalog.json',import.meta.url))).cases;
 const selected=catalog.filter(c=>c.module==='NDL').map(c=>c.id);
 const rows=[...parts.flatMap(p=>p.results),...flutter.cases.filter(r=>r.id.startsWith('FR-NDL-'))];
-if(rows.length!==54||new Set(rows.map(r=>r.id)).size!==54||rows.some(r=>!selected.includes(r.id)))throw new Error('Missing, duplicate or unexpected Needl case evidence');
+const selectedSet = new Set(selected);
+if (rows.length !== selectedSet.size || new Set(rows.map(r => r.id)).size !== selectedSet.size || rows.some(r => !selectedSet.has(r.id))) {
+  throw new Error('Missing, duplicate or unexpected Needl case evidence');
+}
 const harnessSha=flutter.harnessSha,sourceSha=flutter.source.sha;
 if(parts.some(p=>p.harnessSha!==harnessSha||p.targetSha!==sourceSha))throw new Error('Mixed source/harness revisions: generate lane reports separately');
 inputs.push({path:resolve(flutterArg),sha256:createHash('sha256').update(bytes).digest('hex')});
@@ -27,6 +30,6 @@ const input={scope:'needl-functional-subset',source:{sha:sourceSha,kind:'commit'
 const {report}=await generate({inputObject:input,suite:'developer',output,artifact:'Needl local functional regression'});
 report.title='Vocle Needl functional regression';
 await (await import('../../reporting/report.mjs')).writeReports(output,report);
-await writeFile(join(output,'execution-inputs.json'),JSON.stringify({sourceSha,harnessSha,baselineApplicationSha:'4c01dc24247aa95a73e286a2b42c7f2f81257c7a',scope:input.scope,selected:54,counts,fullFlutterCounts:flutter.counts,backendCleanup:parts.map(p=>({selectedIds:p.selectedIds,...p.cleanup})),inputs},null,2)+'\n');
+await writeFile(join(output,'execution-inputs.json'),JSON.stringify({sourceSha,harnessSha,scope:input.scope,selected:selectedSet.size,counts,fullFlutterCounts:flutter.counts,backendCleanup:parts.map(p=>({selectedIds:p.selectedIds,...p.cleanup})),inputs},null,2)+'\n');
 console.log(JSON.stringify({scope:input.scope,sourceSha,harnessSha,counts,fullCatalogSuccessClaimed:false}));
 if(input.gate!=='PASS')process.exitCode=1;

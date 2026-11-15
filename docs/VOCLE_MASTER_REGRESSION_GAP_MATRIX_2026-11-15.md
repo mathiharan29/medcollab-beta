@@ -1,6 +1,6 @@
 # Vocle master regression coverage review
 
-Upstream baseline: `dc44c9e1083882d48881236811f4d4a6e9c90f26`. The latest feature changes since the prior catalog alignment are `9b6bb3c` (beta 11-14), `cee7899` (ops overview and feedback) and `dc44c9e` (ops voice usage). The merge commit is `5deefa2`. The catalog at the baseline had 187 IDs: 147 backend, 32 Flutter and 8 Android.
+The upstream baseline is `dc44c9e1083882d48881236811f4d4a6e9c90f26`. The latest feature changes since the prior catalog alignment are `9b6bb3c` (beta 11-14), `cee7899` (ops overview and feedback) and `dc44c9e` (ops voice usage). The merge commit is `5deefa2`. The baseline catalog had 187 IDs across 147 backend, 32 Flutter and 8 Android cases.
 
 [Needl PR #4](https://github.com/mathiharan29/medcollab-beta/pull/4) supplied 54 additional IDs, all preserved. GitHub showed it open and unmergeable. [Beta alignment PR #6](https://github.com/mathiharan29/medcollab-beta/pull/6) was open and supplied updated assertions under existing IDs. Its changes were applied first in the integration checkout, followed by both Needl commits. The navigation conflict kept the master contract of Back from chat to Messages, then Home. The catalog contract records the original ID order and a separate reviewed definition hash for the PR #6-aligned rows.
 

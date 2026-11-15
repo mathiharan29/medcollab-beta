@@ -10,6 +10,8 @@ void main() {
   if (devicePhase == 'resume') {
     deviceCase('FR-NAV-04', (tester) async {
       await initializeDevice();
+      // A first-launch permission dialog can remain above the relaunched app.
+      await control('notification-permission', {'granted': true});
       await deviceStorage.clearAll();
       await launch(tester, session: 'A', currentChat: true);
       final f = await fixture();
