@@ -8,6 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
 import 'package:medcollab_app/features/media/data/services/document_open_service.dart';
+import 'package:medcollab_app/features/messages/data/models/message_delivery_state.dart';
 import 'package:medcollab_app/features/messages/presentation/cubit/channel_chat_cubit.dart';
 import 'package:medcollab_app/features/messages/presentation/widgets/mention_composer.dart';
 import 'package:path_provider/path_provider.dart';
@@ -65,6 +66,7 @@ void main() {
     expect(afterCancel['messageCount'], before['messageCount']);
     final composer = tester.element(find.byType(MentionAwareComposer));
     final chat = composer.read<ChannelChatCubit>();
+    bool attachmentSettled() => !chat.state.isUploading && !chat.state.isSending;
     expect(chat.state.isSending, false);
 
     // PDF bytes are a complete synthetic document from the test-owned control
@@ -78,7 +80,7 @@ void main() {
     await until(
         tester,
         () =>
-            (!chat.state.isSending &&
+            (attachmentSettled() &&
                 chat.state.messages.any((message) =>
                     message.content.fileName == 'synthetic-device.pdf')) ||
             (chat.state.error != null && chat.state.error!.isNotEmpty),
@@ -93,7 +95,7 @@ void main() {
     await File(pngPath).writeAsBytes(png, flush: true);
     images.inputs.add(XFile(pngPath));
     await attach(tester, 'Photos & videos');
-    await until(tester, () => !chat.state.isSending && chat.state.messages.any(
+    await until(tester, () => attachmentSettled() && chat.state.messages.any(
         (message) => message.content.fileName == 'synthetic-device.png'), 'image send terminates',
         limit: const Duration(seconds: 90));
     expect(
@@ -118,7 +120,7 @@ void main() {
     await File(videoPath).writeAsBytes(video, flush: true);
     images.inputs.add(XFile(videoPath));
     await attach(tester, 'Photos & videos');
-    await until(tester, () => !chat.state.isSending && chat.state.messages.any(
+    await until(tester, () => attachmentSettled() && chat.state.messages.any(
         (message) => message.content.fileName == 'synthetic-device.mp4'), 'video send terminates',
         limit: const Duration(seconds: 90));
     await until(tester, () => find.text('synthetic-device.mp4').evaluate().isNotEmpty,
@@ -132,10 +134,16 @@ void main() {
         size: unsupported.length,
         bytes: unsupported));
     await attach(tester, 'Document / PDF');
-    await until(tester, () => !chat.state.isSending && chat.state.messages.any(
+    await until(tester, () => attachmentSettled() && chat.state.messages.any(
         (message) => message.content.fileName == 'synthetic-unsupported.txt'),
         'unsupported input does not hang the composer');
     expect(chat.state.error, isNotNull);
+    expect(
+        chat.state.messages
+            .singleWhere((message) =>
+                message.content.fileName == 'synthetic-unsupported.txt')
+            .deliveryState,
+        MessageDeliveryState.failed);
     expect(find.text('Failed to send'), findsWidgets);
     expect(
         (await storedMessages(channel)).where((message) =>
@@ -152,7 +160,7 @@ void main() {
     images.denied = false;
     images.inputs.add(XFile(pngPath));
     await attach(tester, 'Camera');
-    await until(tester, () => !chat.state.isSending,
+    await until(tester, attachmentSettled,
         'granted camera input is usable after denial');
     final delivered = await storedMessages(channel);
     observations.add(
