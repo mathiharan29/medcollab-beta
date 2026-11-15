@@ -295,6 +295,43 @@ tr.dim { opacity: 0.65; }
 .badge.warn { background: #78350f55; color: var(--warn); }
 .badge.bad { background: #7f1d1d55; color: var(--bad); }
 
+.admin-nav {
+  display: flex;
+  gap: 1rem;
+  padding: 0.6rem 1.25rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.admin-nav[hidden] { display: none; }
+.admin-nav a {
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.admin-nav a:hover { color: var(--accent); }
+.nav-count {
+  display: inline-block;
+  min-width: 1.2rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: #78350f55;
+  color: var(--warn);
+  font-size: 0.75rem;
+  text-align: center;
+}
+.nav-count:empty { display: none; }
+.ticket-desc {
+  max-width: 420px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
 .empty {
   text-align: center;
   color: var(--muted);

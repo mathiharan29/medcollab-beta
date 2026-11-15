@@ -147,6 +147,35 @@
     return err.message || 'Request failed';
   }
 
+  const AVAIL_LABELS = {
+    available: 'Available',
+    on_call: 'On call',
+    in_ot: 'In OT',
+    in_icu: 'In ICU',
+    on_rounds: 'On rounds',
+    off_duty: 'Off duty',
+    do_not_disturb: 'DND',
+    offline: 'Offline',
+  };
+
+  const ROLE_LABELS = {
+    mbbs_student: 'MBBS',
+    intern: 'Intern',
+    pg_resident: 'PG',
+    junior_consultant: 'Jr consultant',
+    consultant: 'Consultant',
+    nurse: 'Nurse',
+    other: 'Other',
+  };
+
+  function availabilityLabel(status) {
+    return AVAIL_LABELS[status] || status || '—';
+  }
+
+  function roleLabel(role) {
+    return ROLE_LABELS[role] || role || '—';
+  }
+
   function stat(label, value, hint) {
     return `<div class="stat">
       <div class="stat-value">${escapeHtml(value ?? '—')}</div>
@@ -261,9 +290,16 @@
             ? 'true'
             : '';
       const activeParam = state.filter === 'inactive' ? 'false' : '';
+      const onboardedParam =
+        state.filter === 'onboarded'
+          ? 'true'
+          : state.filter === 'not_onboarded'
+            ? 'false'
+            : '';
       const qs = new URLSearchParams();
       if (verifiedParam) qs.set('verified', verifiedParam);
       if (activeParam) qs.set('active', activeParam);
+      if (onboardedParam) qs.set('onboarded', onboardedParam);
       if (state.q.trim()) qs.set('q', state.q.trim());
       qs.set('limit', '100');
       state.supportError = '';
@@ -378,8 +414,22 @@
     const filters = [
       ['pending', 'Pending'],
       ['verified', 'Verified'],
+      ['onboarded', 'Onboarded'],
+      ['not_onboarded', 'Not onboarded'],
       ['all', 'All'],
       ['inactive', 'Inactive'],
+    ];
+    const conv = state.overview?.conversations;
+    const avail = state.overview?.availability || {};
+    const availOrder = [
+      'on_call',
+      'in_ot',
+      'in_icu',
+      'on_rounds',
+      'available',
+      'do_not_disturb',
+      'off_duty',
+      'offline',
     ];
     const connectBanner = isLocalApi
       ? `<p class="banner info">Connected to <strong>${escapeHtml(API_BASE)}</strong> — local API. Without Atlas <code>MONGODB_URI</code> this is an empty in-memory DB, not beta doctors. To see real Vocle users, point <code>config.js</code> at Railway after deploying admin routes. See <code>CONNECT.md</code>.</p>`
@@ -412,13 +462,35 @@
           ${stat('Active this week', u?.activeThisWeek)}
           ${stat('New this week', u?.newThisWeek)}
           ${stat('Pending verify', u?.pendingVerification)}
-          ${stat('Spaces', state.overview?.spaces?.total)}
           ${stat('Messages', state.overview?.messages?.total)}
           ${stat('Open feedback', state.overview?.support?.openTickets)}
           ${stat('Handoffs ack', h ? `${h.acknowledged}/${h.total}` : '—', h ? `${h.ackRatePercent}%` : undefined)}
+          ${stat('Write-backs', h?.withWriteBack ?? '—', 'Handoffs with a note after submit')}
+          ${stat('Onboarded', u ? `${u.onboarded}/${u.total}` : '—')}
+          ${stat('@usernames', u?.withUsername)}
+          ${stat('Msg requests', state.overview?.messageRequests?.pending, 'Pending stranger DMs')}
+          ${stat('Videos', state.overview?.messages?.videos)}
           ${stat('Media tracked', infraOverview ? `${infraOverview.storageUsedMb} MB` : '—', 'Sum of uploads since tracking started')}
         </section>
         <section class="phase2-grid">
+          <div class="panel">
+            <div class="panel-head"><h2>Conversations</h2></div>
+            <div class="stats compact">
+              ${stat('Needl', conv?.needls, 'Private group chat')}
+              ${stat('Direct', conv?.dms, '1:1')}
+              ${stat('Self notes', conv?.selfNotes)}
+              ${stat('Spaces', state.overview?.spaces?.total)}
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h2>Availability now</h2></div>
+            <div class="stats compact">
+              ${availOrder
+                .filter((key) => avail[key])
+                .map((key) => stat(availabilityLabel(key), avail[key]))
+                .join('') || '<p class="muted">No availability set yet.</p>'}
+            </div>
+          </div>
           <div class="panel">
             <div class="panel-head"><h2>Growth (30d)</h2></div>
             ${growthBars(state.growth?.series)}
@@ -453,7 +525,7 @@
                     `<button type="button" class="chip ${state.filter === key ? 'active' : ''}" data-filter="${key}">${label}</button>`
                 )
                 .join('')}
-              <input class="search" id="search" placeholder="Search name / phone / institution" value="${escapeHtml(state.q)}" />
+              <input class="search" id="search" placeholder="Search name / @username / phone / speciality" value="${escapeHtml(state.q)}" />
               <button type="button" class="ghost" id="refresh">Refresh</button>
             </div>
           </div>
@@ -461,21 +533,24 @@
             <table>
               <thead>
                 <tr>
-                  <th>Name</th><th>Role</th><th>Phone</th><th>Joined</th><th>Last seen</th>
+                  <th>Name</th><th>Role</th><th>Availability</th><th>Phone</th><th>Joined</th><th>Last seen</th>
                   <th>Msgs</th><th>Handoffs</th><th>Storage</th><th>Status</th><th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 ${
                   state.users.length === 0
-                    ? `<tr><td colspan="10" class="empty">No users match this filter.</td></tr>`
+                    ? `<tr><td colspan="11" class="empty">No users match this filter.</td></tr>`
                     : state.users
                         .map((row) => {
-                          const status = !row.isActive
-                            ? '<span class="badge bad">Deactivated</span>'
-                            : row.isVerifiedDoctor
-                              ? '<span class="badge ok">Doctor ✓</span>'
-                              : '<span class="badge warn">Pending</span>';
+                          const statusBits = [];
+                          if (!row.isActive) statusBits.push('<span class="badge bad">Deactivated</span>');
+                          else if (row.isVerifiedDoctor) statusBits.push('<span class="badge ok">Doctor ✓</span>');
+                          else statusBits.push('<span class="badge warn">Pending</span>');
+                          if (row.isOnboarded) statusBits.push('<span class="badge ok">Onboarded</span>');
+                          else statusBits.push('<span class="badge warn">Setup</span>');
+                          const status = statusBits.join(' ');
+                          const availStatus = row.availability?.status;
                           const actions = [];
                           if (row.isActive && !row.isVerifiedDoctor) {
                             actions.push(
@@ -497,12 +572,29 @@
                             );
                           }
                           return `<tr class="${row.isActive ? '' : 'dim'}">
-                            <td><strong>${escapeHtml(row.name || '—')}</strong>${
+                            <td><strong>${escapeHtml(
+                              [row.displayTitle, row.name].filter(Boolean).join(' ') || '—'
+                            )}</strong>${
+                              row.vocleUsername
+                                ? `<div class="muted mono">@${escapeHtml(row.vocleUsername)}</div>`
+                                : ''
+                            }${
+                              row.speciality
+                                ? `<div class="muted">${escapeHtml(row.speciality)}</div>`
+                                : ''
+                            }${
                               row.institution
                                 ? `<div class="muted">${escapeHtml(row.institution)}</div>`
                                 : ''
                             }</td>
-                            <td>${escapeHtml(row.role || '—')}</td>
+                            <td>${escapeHtml(roleLabel(row.role))}</td>
+                            <td>${
+                              availStatus
+                                ? `<span class="badge ${
+                                    availStatus === 'available' ? 'ok' : availStatus === 'do_not_disturb' || availStatus === 'offline' ? 'bad' : 'warn'
+                                  }">${escapeHtml(availabilityLabel(availStatus))}</span>`
+                                : '—'
+                            }</td>
                             <td class="mono">${escapeHtml(row.phone)}</td>
                             <td>${row.createdAt ? escapeHtml(new Date(row.createdAt).toLocaleDateString()) : '—'}<div class="muted">${escapeHtml(row.joinedVia || 'direct')}</div></td>
                             <td>${escapeHtml(formatRelative(row.lastSeenAt))}</td>

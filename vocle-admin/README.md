@@ -38,6 +38,8 @@ ADMIN_ALLOW_ANY_IN_DEV=true   # local only
 ## Phase 1 capabilities
 
 - Overview counts (users, spaces, messages, handoffs, storage tracked)
-- User table with last seen, message/handoff counts, joinedVia
+- App snapshot: Needl / 1:1 DMs / self-notes, @usernames, onboarded, availability, message requests, video, handoff write-backs
+- In-app feedback inbox
+- User table with last seen, @handle, availability, message/handoff counts, joinedVia
 - Verify / unverify doctor
 - Deactivate / reactivate account (`isActive`)

@@ -10,8 +10,15 @@ const User = require('../users/user.model');
 const Space = require('../spaces/space.model');
 const Message = require('../messages/message.model');
 const Handoff = require('../handoffs/handoff.model');
+const Channel = require('../channels/channel.model');
+const MessageRequest = require('../message-requests/messageRequest.model');
 const { SupportTicket } = require('../support/support.controller');
-const { HANDOFF_STATUS } = require('../../constants');
+const {
+  HANDOFF_STATUS,
+  CHANNEL_TYPES,
+  MESSAGE_TYPES,
+  MESSAGE_REQUEST_STATUS,
+} = require('../../constants');
 const { respond } = require('../../utils/apiResponse');
 const asyncHandler = require('../../utils/asyncHandler');
 const { isCloudinaryConfigured } = require('../../config/cloudinary');
@@ -43,12 +50,20 @@ const getOverview = asyncHandler(async (req, res) => {
     dormantUsers,
     pendingVerification,
     verifiedDoctors,
+    onboardedUsers,
+    notOnboardedUsers,
+    withUsername,
     totalSpaces,
     totalMessages,
+    videoMessages,
     totalHandoffs,
     acknowledgedHandoffs,
+    writeBackHandoffs,
     openTickets,
+    pendingMessageRequests,
     storageAgg,
+    conversationSizes,
+    availabilityRows,
   ] = await Promise.all([
     User.countDocuments({}),
     User.countDocuments({ isActive: true, lastSeenAt: { $gte: since } }),
@@ -60,13 +75,44 @@ const getOverview = asyncHandler(async (req, res) => {
     }),
     User.countDocuments({ isActive: true, isVerifiedDoctor: false }),
     User.countDocuments({ isVerifiedDoctor: true }),
+    User.countDocuments({ isActive: true, isOnboarded: true }),
+    User.countDocuments({ isActive: true, isOnboarded: false }),
+    User.countDocuments({
+      vocleUsername: { $exists: true, $nin: [null, ''] },
+    }),
     Space.countDocuments({ isActive: true }),
     Message.countDocuments({ deletedAt: null }),
+    Message.countDocuments({ deletedAt: null, type: MESSAGE_TYPES.VIDEO }),
     Handoff.countDocuments({ status: { $ne: HANDOFF_STATUS.DRAFT } }),
     Handoff.countDocuments({ status: HANDOFF_STATUS.ACKNOWLEDGED }),
+    Handoff.countDocuments({
+      status: { $ne: HANDOFF_STATUS.DRAFT },
+      'writeBackNotes.0': { $exists: true },
+    }),
     SupportTicket.countDocuments({ status: { $ne: 'closed' } }).catch(() => 0),
+    MessageRequest.countDocuments({
+      status: MESSAGE_REQUEST_STATUS.PENDING,
+    }).catch(() => 0),
     User.aggregate([
       { $group: { _id: null, bytes: { $sum: '$storageUsedBytes' } } },
+    ]),
+    Channel.aggregate([
+      { $match: { type: CHANNEL_TYPES.DIRECT, isArchived: { $ne: true } } },
+      {
+        $project: {
+          n: { $size: { $ifNull: ['$members', []] } },
+        },
+      },
+      { $group: { _id: '$n', count: { $sum: 1 } } },
+    ]),
+    User.aggregate([
+      { $match: { isActive: true } },
+      {
+        $group: {
+          _id: { $ifNull: ['$availability.status', 'offline'] },
+          count: { $sum: 1 },
+        },
+      },
     ]),
   ]);
 
@@ -75,6 +121,18 @@ const getOverview = asyncHandler(async (req, res) => {
     totalHandoffs > 0
       ? Math.round((acknowledgedHandoffs / totalHandoffs) * 100)
       : 0;
+
+  const conversations = { selfNotes: 0, dms: 0, needls: 0 };
+  for (const row of conversationSizes) {
+    if (row._id <= 1) conversations.selfNotes += row.count;
+    else if (row._id === 2) conversations.dms += row.count;
+    else conversations.needls += row.count;
+  }
+
+  const availability = {};
+  for (const row of availabilityRows) {
+    availability[row._id || 'unknown'] = row.count;
+  }
 
   return respond.ok(res, 'Admin overview', {
     users: {
@@ -85,14 +143,21 @@ const getOverview = asyncHandler(async (req, res) => {
       dormant14d: dormantUsers,
       pendingVerification,
       verifiedDoctors,
+      onboarded: onboardedUsers,
+      notOnboarded: notOnboardedUsers,
+      withUsername,
     },
+    conversations,
+    availability,
     spaces: { total: totalSpaces },
-    messages: { total: totalMessages },
+    messages: { total: totalMessages, videos: videoMessages },
     handoffs: {
       total: totalHandoffs,
       acknowledged: acknowledgedHandoffs,
       ackRatePercent: ackRate,
+      withWriteBack: writeBackHandoffs,
     },
+    messageRequests: { pending: pendingMessageRequests },
     support: { openTickets },
     infrastructure: {
       storageUsedBytes,
@@ -107,7 +172,8 @@ const getOverview = asyncHandler(async (req, res) => {
 
 /**
  * GET /api/admin/users
- * Query: q, verified (true|false|pending), active (true|false), limit, page
+ * Query: q, verified (true|false|pending), active (true|false),
+ *        onboarded (true|false), limit, page
  */
 const listUsers = asyncHandler(async (req, res) => {
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
@@ -116,6 +182,7 @@ const listUsers = asyncHandler(async (req, res) => {
   const q = String(req.query.q || '').trim();
   const verified = String(req.query.verified || '').toLowerCase();
   const active = String(req.query.active || '').toLowerCase();
+  const onboarded = String(req.query.onboarded || '').toLowerCase();
 
   const filter = {};
   if (q) {
@@ -124,6 +191,8 @@ const listUsers = asyncHandler(async (req, res) => {
       { name: { $regex: safe, $options: 'i' } },
       { phone: { $regex: safe, $options: 'i' } },
       { institution: { $regex: safe, $options: 'i' } },
+      { vocleUsername: { $regex: safe, $options: 'i' } },
+      { speciality: { $regex: safe, $options: 'i' } },
     ];
   }
   if (verified === 'true' || verified === 'verified') {
@@ -137,13 +206,15 @@ const listUsers = asyncHandler(async (req, res) => {
   }
   if (active === 'true') filter.isActive = true;
   if (active === 'false') filter.isActive = false;
+  if (onboarded === 'true') filter.isOnboarded = true;
+  if (onboarded === 'false') filter.isOnboarded = false;
 
   const [users, total] = await Promise.all([
     User.find(filter)
       .select(
         'name phone displayTitle role speciality institution city avatarUrl ' +
-          'isVerified isVerifiedDoctor verifiedAt verifiedBy isOnboarded isActive ' +
-          'joinedVia storageUsedBytes lastSeenAt createdAt updatedAt'
+          'vocleUsername availability isVerified isVerifiedDoctor verifiedAt verifiedBy ' +
+          'isOnboarded isActive joinedVia storageUsedBytes lastSeenAt createdAt updatedAt'
       )
       .sort({ createdAt: -1 })
       .skip(skip)
