@@ -1,12 +1,11 @@
 # Functional regression decision ledger
 
-Founder decisions recorded in `docs/PRODUCT_DECISIONS_2026-10-25.md`.
-Executable cases assert the decided contracts below; ledger status is RESOLVED.
+Founder decisions are recorded in `docs/PRODUCT_DECISIONS_2026-10-25.md`. The later release contracts for message deletion and Needl activity are recorded in `docs/FIX_CHECKLIST_2026-11-08.md`.
 
 | Question | Decision needed | Status | Safe verified scope pending decision |
 |---|---|---|---|
-| Q1 | Whether edit/delete changes channel preview, quote snapshots and thread aggregates | RESOLVED | Quote preview stays on edit; delete shows “This message was deleted”; channel last-message updates on delete; reply count may stay. |
-| Q2 | Expanded conversation copy graph, 500-item cap, timezone and source references | RESOLVED | Phone local `todayStart`; no 500-cap on expand all; remap thread/quote ids; destination preview may keep source messageId. |
+| Q1 | Whether edit/delete changes channel preview, quote snapshots and thread aggregates | RESOLVED | Quotes retain their snapshot on edit. Delete for everyone permanently removes the message, updates quoted text and the channel preview, and recalculates the aggregate when a reply is deleted. |
+| Q2 | Expanded conversation copy graph, 500-item cap, timezone and source references | RESOLVED | Phone local `todayStart`; no 500-cap on expand all; remap thread/quote IDs; the newly appended member-added activity is the new Needl preview. |
 | Q3 | Draft handoff visibility across received list, detail, history and search | RESOLVED | Draft handoffs are author-only. |
 | Q4 | Stable cursor contract for space handoffs ordered by shiftDate and ID | RESOLVED | Sort by shiftDate with `_id` cursor; no duplicates. |
 | Q5 | Supported local/provider media formats and complete upload-to-message pipeline | RESOLVED | Trust filename extension for octet-stream; video supported; full local upload→message; never surface raw Cloudinary URLs. |

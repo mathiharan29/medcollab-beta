@@ -5,6 +5,7 @@ import 'package:medcollab_app/features/notifications/data/models/notification_mo
 import 'package:medcollab_app/features/notifications/data/repositories/notification_repository.dart';
 import 'package:medcollab_app/features/notifications/presentation/cubit/notification_badge_cubit.dart';
 import 'package:medcollab_app/features/notifications/presentation/cubit/notifications_cubit.dart';
+import 'package:medcollab_app/features/notifications/presentation/utils/alert_grouping.dart';
 
 import 'fakes/chat_fakes.dart';
 
@@ -23,8 +24,10 @@ class _FakeNotificationRepository extends NotificationRepository {
   List<AppNotificationModel> server = const [];
   bool failNextRead = false;
   bool failNextUnread = false;
+  bool failNextChannelRead = false;
   int readCalls = 0;
   int unreadCalls = 0;
+  final channelReadCalls = <String>[];
 
   int get serverUnread => server.where((alert) => !alert.read).length;
 
@@ -42,6 +45,31 @@ class _FakeNotificationRepository extends NotificationRepository {
 
   @override
   Future<int> getUnreadCount() async => serverUnread;
+
+  @override
+  Future<int> markReadByChannel(String channelId) async {
+    channelReadCalls.add(channelId);
+    if (failNextChannelRead) {
+      failNextChannelRead = false;
+      throw const ServerException('Synthetic channel read failure');
+    }
+    server = [
+      for (final alert in server)
+        if (alert.metadata.channelId == channelId)
+          AppNotificationModel(
+            id: alert.id,
+            type: alert.type,
+            title: alert.title,
+            body: alert.body,
+            read: true,
+            createdAt: alert.createdAt,
+            metadata: alert.metadata,
+          )
+        else
+          alert,
+    ];
+    return serverUnread;
+  }
 
   @override
   Future<void> markAsRead(String notificationId) async {
@@ -133,5 +161,43 @@ void main() {
     expect(alerts.state.error, isNull);
     expect(alerts.state.notifications.length, 1);
     expect(alerts.state.unreadCount, repository.serverUnread);
+
+    const chatId = 'channel-synthetic-1';
+    const otherChatId = 'channel-synthetic-2';
+    repository.server = [
+      _alert,
+      AppNotificationModel(
+        id: 'notification-synthetic-2',
+        type: 'new_message',
+        title: 'Latest synthetic message',
+        body: 'Second alert in the same chat',
+        read: false,
+        createdAt: DateTime.utc(2026, 11, 10, 12),
+        metadata: const NotificationMetadata(channelId: chatId),
+      ),
+      const AppNotificationModel(
+        id: 'notification-synthetic-3',
+        type: 'emergency_alert',
+        title: 'Synthetic emergency',
+        body: 'Alert in another chat',
+        read: false,
+        metadata: NotificationMetadata(channelId: otherChatId),
+      ),
+    ];
+    await alerts.load();
+    expect(groupAlerts(alerts.state.notifications), hasLength(2));
+    repository.failNextChannelRead = true;
+    await alerts.markChannelRead(chatId);
+    expect(alerts.state.unreadCount, 3);
+    expect(badge.state, 3);
+    await alerts.markChannelRead(chatId);
+    expect(repository.channelReadCalls, [chatId, chatId]);
+    expect(alerts.state.notifications.where((n) => !n.read).map((n) => n.id),
+        ['notification-synthetic-3']);
+    expect(alerts.state.unreadCount, 1);
+    expect(badge.state, 1);
+    await alerts.load();
+    expect(alerts.state.unreadCount, repository.serverUnread);
+    expect(badge.state, 1);
   });
 }

@@ -86,10 +86,14 @@ const cases = [{
       const persisted = await connection.collection('messages').findOne({ _id: new connection.base.Types.ObjectId(sent._id) });
       assert.equal(persisted.content.mediaUrl, uploaded.url);
     });
+    assert.deepEqual(await download(uploaded.url, origin, f.b.token), png);
+    const deleted = await request(`/api/channels/${f.channelId}/messages/${sent._id}?scope=everyone`, { method: 'DELETE', token: f.a.token });
+    assert.deepEqual(deleted.data.deletedIds, [sent._id]);
+    await download(uploaded.url, origin, f.a.token, 404);
   },
 }, {
   id: 'FR-MED-04', module: 'MED',
-  run: async ({ identity, request, db }) => {
+  run: async ({ identity, request, db, origin }) => {
     const f = await fixture(identity, request);
     const uploaded = (await upload(request, f.a.token, 'synthetic-video.mp4', 'video/mp4', mp4)).data;
     assert.equal(uploaded.format, 'video');
@@ -100,6 +104,38 @@ const cases = [{
       const persisted = await connection.collection('messages').findOne({ _id: new connection.base.Types.ObjectId(sent._id) });
       assert.equal(persisted.type, 'video');
       assert.equal(persisted.content.mediaUrl, uploaded.url);
+    });
+    // WAV with 8000 silent 8-bit mono samples at 8 kHz.
+    const wav = Buffer.alloc(44 + 8000, 128);
+    wav.write('RIFF', 0);
+    wav.writeUInt32LE(wav.length - 8, 4);
+    wav.write('WAVEfmt ', 8);
+    wav.writeUInt32LE(16, 16);
+    wav.writeUInt16LE(1, 20);
+    wav.writeUInt16LE(1, 22);
+    wav.writeUInt32LE(8000, 24);
+    wav.writeUInt32LE(8000, 28);
+    wav.writeUInt16LE(1, 32);
+    wav.writeUInt16LE(8, 34);
+    wav.write('data', 36);
+    wav.writeUInt32LE(wav.length - 44, 40);
+    const audio = (await upload(request, f.a.token, 'synthetic-voice.wav', 'audio/wav', wav)).data;
+    assert.equal(audio.format, 'audio');
+    assert.equal(audio.storage, 'local');
+    assert.deepEqual(await download(audio.url, origin, f.b.token), wav);
+    const path = `/api/channels/${f.channelId}/messages`;
+    const content = { mediaUrl: audio.url, fileName: audio.fileName, mimeType: audio.mimeType, durationMs: 1000, waveform: [0, 50, 100] };
+    for (const invalid of [{ mediaUrl: '' }, { durationMs: 900001 }, { waveform: [101] }, { waveform: Array(65).fill(0) }]) {
+      await request(path, { method: 'POST', token: f.a.token, body: { type: 'audio', content: { ...content, ...invalid } }, expectedStatus: 400 });
+    }
+    const voice = (await request(path, { method: 'POST', token: f.a.token, body: { type: 'audio', content }, expectedStatus: 201 })).data.message;
+    const reread = (await request(path, { token: f.b.token })).data.messages.find((item) => item._id === voice._id);
+    assert.equal(reread.type, 'audio');
+    for (const [key, value] of Object.entries(content)) assert.deepEqual(reread.content[key], value);
+    await db(async (connection) => {
+      const audioRows = await connection.collection('messages').find({ channelId: new connection.base.Types.ObjectId(f.channelId), type: 'audio' }).toArray();
+      assert.deepEqual(audioRows.map((row) => String(row._id)), [voice._id]);
+      assert.deepEqual(audioRows[0].content.waveform, content.waveform);
     });
   },
 }, {
