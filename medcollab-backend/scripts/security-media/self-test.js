@@ -1,6 +1,7 @@
 'use strict';
 // Offline infrastructure probes only. No MongoDB, provider client or credential use.
 const assert = require('node:assert/strict'); const fs = require('node:fs'); const path = require('node:path'); const os = require('node:os');
+const { mock } = require('node:test');
 const guard = require('./guard'); const h = require('./helpers');
 const env = { NODE_ENV: 'test', MONGODB_URI: guard.URI, API_BASE_URL: guard.BASE, JWT_SECRET: guard.JWT };
 guard.environment(env, []);
@@ -26,13 +27,25 @@ const Module = require('node:module'), double = require('./sdk-double')(), origi
 Module._load = function (name, ...args) { if (name === 'cloudinary') return { v2: double.sdk }; return Reflect.apply(original, this, [name, ...args]); };
 const config = require('../../src/config/cloudinary'); assert.equal(config.cloudinary, double.sdk); config.isCloudinaryConfigured = () => true;
 const controller = require('../../src/features/media/media.controller');
+const User = require('../../src/features/users/user.model');
 async function smoke() {
+  const userId = '7ed000000000000000000001';
+  // This guard probe has no database. Observe the accounting request here.
+  const accountStorage = mock.method(User, 'findByIdAndUpdate', () => ({ exec: async () => null }));
   const invoke = req => new Promise((resolve, reject) => {
     let status; controller.uploadFile(req, { status(n) { status = n; return this; }, json(body) { resolve({ status, body }); } }, reject);
   });
-  for (const [mime, name, bytes, type] of [['image/png', 'synthetic.png', h.png, 'image'], ['application/pdf', 'synthetic.pdf', h.pdf, 'raw'], ['video/mp4', 'synthetic.mp4', h.video, 'video'], ['application/octet-stream', 'synthetic.pdf', h.pdf, 'raw']]) {
-    double.reset(); const r = await invoke({ body: {}, file: { mimetype: mime, originalname: name, buffer: bytes, size: bytes.length }, user: { _id: '7ed000000000000000000001' } });
-    assert.equal(r.status, 200); assert.equal(double.state().calls[0].options.resource_type, type); assert.equal(double.state().calls[0].sha256, h.hash(bytes));
+  try {
+    for (const [mime, name, bytes, type] of [['image/png', 'synthetic.png', h.png, 'image'], ['application/pdf', 'synthetic.pdf', h.pdf, 'raw'], ['video/mp4', 'synthetic.mp4', h.video, 'video'], ['application/octet-stream', 'synthetic.pdf', h.pdf, 'raw']]) {
+      double.reset();
+      accountStorage.mock.resetCalls();
+      const r = await invoke({ body: {}, file: { mimetype: mime, originalname: name, buffer: bytes, size: bytes.length }, user: { _id: userId } });
+      assert.equal(r.status, 200); assert.equal(double.state().calls[0].options.resource_type, type); assert.equal(double.state().calls[0].sha256, h.hash(bytes));
+      assert.equal(accountStorage.mock.callCount(), 1);
+      assert.deepEqual(accountStorage.mock.calls[0].arguments, [userId, { $inc: { storageUsedBytes: bytes.length } }]);
+    }
+  } finally {
+    accountStorage.mock.restore();
   }
   assert.ok(!Object.keys(require.cache).some(p => /node_modules[\\/]cloudinary[\\/]/.test(p)));
   console.log('Offline guard probes passed: prohibited configuration/file/path rejected; six network attempts intercepted before I/O; real controller smoke via SDK replacement passed. No credentials or provider requests.');

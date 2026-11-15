@@ -70,6 +70,19 @@ async function expandedHistory(c, f, channelId) {
   assert.equal(channel.lastMessage.type, "system");
   return messages.filter((message) => message.type !== "system");
 }
+async function originalHistory(c, f, sourceId, destinationId) {
+  const messages = await rows(c, sourceId);
+  const continuations = messages.filter((message) =>
+    message.type === "system" && message.content.systemEvent === "needl_continued"
+  );
+  assert.equal(continuations.length, 1);
+  const [line] = continuations;
+  assert.equal(String(line.content.movedToChannelId), destinationId);
+  assert.deepEqual(line.content.targetUserIds.map(String), [f.people.D.userId]);
+  const channel = await stored(c, sourceId);
+  assert.equal(String(channel.lastMessage.messageId), String(line._id));
+  return messages.filter((message) => message !== line);
+}
 async function seed(c, id, person, samples) {
   return c.db(async (db) => {
     const O = db.base.Types.ObjectId;
@@ -477,7 +490,12 @@ const cases = [
         members(next),
         new Set(Object.values(f.people).map((p) => p.userId)),
       );
-      assert.deepEqual(await stored(c, g._id), before);
+      const { lastMessage, updatedAt, ...after } = await stored(c, g._id);
+      const { lastMessage: priorMessage, updatedAt: priorUpdate, ...original } = before;
+      assert.deepEqual(after, original);
+      assert.notDeepEqual(lastMessage, priorMessage);
+      assert.ok(updatedAt >= priorUpdate);
+      assert.deepEqual(await originalHistory(c, f, g._id, next._id), []);
     },
   },
   {
@@ -528,7 +546,7 @@ const cases = [
     run: async (c) => {
       const f = await fixture(c);
       const g = await f.create();
-      await seed(c, g._id, f.people.A, [{}]);
+      const original = await seed(c, g._id, f.people.A, [{}]);
       const next = (
         await c.request(`/api/channels/${g._id}/expand`, {
           method: "POST",
@@ -538,7 +556,7 @@ const cases = [
       ).data.channel;
       assert.equal((await expandedHistory(c, f, next._id)).length, 0);
       const sent = await send(c, f, next._id);
-      assert.equal((await rows(c, g._id)).length, 1);
+      assert.deepEqual(await originalHistory(c, f, g._id, next._id), original);
       const destination = await rows(c, next._id);
       assert.equal(destination.length, 2);
       assert.ok(destination.some((message) => String(message._id) === sent._id));
@@ -574,7 +592,7 @@ const cases = [
         source.slice(1).map((m) => +m.createdAt),
       );
       assert.deepEqual(
-        (await rows(c, g._id)).map((m) => String(m._id)),
+        (await originalHistory(c, f, g._id, next._id)).map((m) => String(m._id)),
         source.map((m) => String(m._id)),
       );
     },
@@ -584,7 +602,7 @@ const cases = [
     run: async (c) => {
       const f = await fixture(c);
       const g = await f.create();
-      await seed(c, g._id, f.people.A, [{}]);
+      const original = await seed(c, g._id, f.people.A, [{}]);
       const next = (
         await expand(c, f, g._id, ["D"], "today", {
           todayStart: "2026-11-03T00:00:00Z",
@@ -595,7 +613,7 @@ const cases = [
       const destination = await rows(c, next._id);
       assert.equal(destination.length, 2);
       assert.ok(destination.some((message) => String(message._id) === sent._id));
-      assert.equal((await rows(c, g._id)).length, 1);
+      assert.deepEqual(await originalHistory(c, f, g._id, next._id), original);
     },
   },
   {
@@ -642,7 +660,7 @@ const cases = [
           assert.deepEqual(copies[i].content[key], value);
       }
       assert.deepEqual(
-        (await rows(c, g._id)).map((m) => String(m._id)),
+        (await originalHistory(c, f, g._id, next._id)).map((m) => String(m._id)),
         source.map((m) => String(m._id)),
       );
     },
@@ -707,7 +725,7 @@ const cases = [
         const message = await send(c, f, next._id);
         assert.equal(((await event).message || (await event))._id, message._id);
         assert.equal(outsider.length, 0);
-        assert.equal((await rows(c, g._id)).length, 0);
+        assert.deepEqual(await originalHistory(c, f, g._id, next._id), []);
         const destination = await rows(c, next._id);
         assert.equal(destination.length, 2);
         assert.ok(destination.some((row) => String(row._id) === message._id));
@@ -913,11 +931,13 @@ const cases = [
       assert.ok(failed, "Fault fixture must interrupt copy");
       const retry = (await expand(c, f, g._id, ["D"], "all")).data.channel;
       assert.equal(
-        (await rows(c, retry._id)).length,
+        (await rows(c, retry._id)).filter((message) => message.type !== "system").length,
         source.length,
         "Retry must recover intended history after the database fault is removed",
       );
-      assert.equal((await rows(c, g._id)).length, 1);
+      const copies = await expandedHistory(c, f, retry._id);
+      assert.deepEqual(copies.map((message) => message.content.text), source.map((message) => message.content.text));
+      assert.deepEqual(await originalHistory(c, f, g._id, retry._id), source);
     },
   },
   {
@@ -934,6 +954,55 @@ const cases = [
       });
       assert.equal(response.payload.success, false);
       assert.deepEqual(await snapshot(c), before);
+    },
+  },
+  {
+    id: "FR-NDL-55",
+    run: async (c) => {
+      const f = await fixture(c);
+      const original = await f.create();
+      const oldText = await send(c, f, original._id, "Synthetic lineage history");
+      const sockets = [];
+      try {
+        for (const label of ["A", "B", "C"]) {
+          sockets.push(await connectSocket(null, c.origin, f.people[label].token));
+        }
+        const events = Promise.all(sockets.map((socket) =>
+          waitFor(socket, "new_message", (payload) => {
+            const message = payload.message || payload;
+            return message.channelId === original._id &&
+              message.content?.systemEvent === "needl_continued";
+          }),
+        ));
+        events.catch(() => {}); // If expansion fails, socket timers still settle.
+        const { data } = await expand(c, f, original._id, ["D"], "all");
+        assert.equal(data.createdNew, true);
+        const destination = data.channel;
+        assert.notEqual(destination._id, original._id);
+        assert.deepEqual(members(destination), new Set(Object.values(f.people).map(({ userId }) => userId)));
+
+        const lines = (await rows(c, original._id)).filter(
+          (row) => row.content?.systemEvent === "needl_continued",
+        );
+        assert.equal(lines.length, 1);
+        const line = lines[0];
+        assert.equal(String(line.content.movedToChannelId), destination._id);
+        for (const payload of await events) {
+          const live = payload.message || payload;
+          assert.equal(live._id, String(line._id));
+          assert.equal(live.content.movedToChannelId, destination._id);
+        }
+        const { data: timeline } = await c.request(`/api/channels/${original._id}/messages`, { token: f.people.B.token });
+        assert.ok(timeline.messages.some((message) => message._id === oldText._id));
+        assert.equal(timeline.messages.find((message) => message._id === String(line._id))?.content.movedToChannelId, destination._id);
+        const { data: list } = await c.request("/api/channels/dm", { token: f.people.B.token });
+        assert.equal(list.channels.find((channel) => channel._id === original._id)?.lastMessage.messageId, String(line._id));
+        await c.request(`/api/channels/${original._id}/messages`, { token: f.people.D.token, expectedStatus: 403 });
+        const { data: newTimeline } = await c.request(`/api/channels/${destination._id}/messages`, { token: f.people.D.token });
+        assert.ok(newTimeline.messages.some((message) => message.content?.text === oldText.content.text && message._id !== oldText._id));
+      } finally {
+        for (const socket of sockets) socket.disconnect();
+      }
     },
   },
 ];

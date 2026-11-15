@@ -9,6 +9,16 @@ function expansionActivity(messages, added, history) {
   return activity[0];
 }
 
+function sourceHistory(messages, destinationId, added, expectedContinuations) {
+  const continuations = messages.filter((item) => item.type === 'system' && item.content.systemEvent === 'needl_continued');
+  if (expectedContinuations !== undefined) assert.equal(continuations.length, expectedContinuations);
+  for (const item of continuations) {
+    assert.equal(String(item.content.movedToChannelId), destinationId);
+    assert.deepEqual(item.content.targetUserIds.map(String), [added.userId]);
+  }
+  return messages.filter((item) => !continuations.includes(item));
+}
+
 const cases = [{
   id: 'FR-DM-01', module: 'DM',
   prerequisiteSeed: 'Accepted A/B request inserted directly for pair-delegation and legacy DM adoption',
@@ -170,7 +180,7 @@ const cases = [{
       const messages = await connection.collection('messages').find({ channelId: new connection.base.Types.ObjectId(destinationId) }).sort({ createdAt: 1 }).toArray();
       const activity = expansionActivity(messages, c, "today's messages shared");
       const copies = messages.filter((item) => !item._id.equals(activity._id));
-      assert.deepEqual(source.map((item) => item.content.text), samples.map(([label]) => `synthetic today ${label}`));
+      assert.deepEqual(sourceHistory(source, destinationId, c, 1).map((item) => item.content.text), samples.map(([label]) => `synthetic today ${label}`));
       assert.deepEqual(copies.map((item) => item.content.text), ['synthetic today at', 'synthetic today after']);
       // Copied timestamps remain the original server-stored createdAt values.
       assert.deepEqual(copies.map((item) => item.createdAt.getTime()), [midnight, midnight + 1]);
@@ -211,8 +221,9 @@ const cases = [{
       const messages = await connection.collection('messages').find({ channelId: new connection.base.Types.ObjectId(destinationId) }).sort({ createdAt: 1 }).toArray();
       const activity = expansionActivity(messages, c, 'earlier messages shared');
       const copies = messages.filter((item) => !item._id.equals(activity._id));
-      assert.equal(source.length, 502);
-      assert.equal(source.filter((item) => item.isDeleted).length, 1);
+      const originals = sourceHistory(source, destinationId, c, 1);
+      assert.equal(originals.length, 502);
+      assert.equal(originals.filter((item) => item.isDeleted).length, 1);
       // No 500-cap: every source root (including deleted) is copyable/scrollable.
       assert.equal(copies.length, 502);
       assert.equal(copies[0].content.text, 'synthetic cap 000');
@@ -250,7 +261,7 @@ const cases = [{
       const messages = await connection.collection('messages').find({ channelId: new connection.base.Types.ObjectId(destinationId) }).toArray();
       const activity = expansionActivity(messages, c, 'earlier messages shared');
       const copies = messages.filter((item) => !item._id.equals(activity._id));
-      assert.equal(source.length, 3);
+      assert.equal(sourceHistory(source, destinationId, c, 1).length, 3);
       assert.equal(copies.length, 3);
       const byText = (list, text) => list.find((item) => item.content.text === text);
       assert.equal(String(byText(source, 'synthetic graph thread reply').threadId), root._id);
@@ -304,7 +315,9 @@ const cases = [{
     await db(async (connection) => {
       const source = await connection.collection('messages').find({ channelId: new connection.base.Types.ObjectId(sourceId) }).toArray();
       const copies = await connection.collection('messages').find({ channelId: new connection.base.Types.ObjectId(destinationId) }).toArray();
-      assert.deepEqual(new Set(source.map((message) => String(message._id))), new Set([firstSource._id, secondSource._id]));
+      const originals = sourceHistory(source, destinationId, c);
+      assert.ok(source.length > originals.length, 'The original conversation retains its continuation link');
+      assert.deepEqual(new Set(originals.map((message) => String(message._id))), new Set([firstSource._id, secondSource._id]));
       assert.equal(copies.length, 2);
       const copiedRoot = copies.find((message) => String(message._id) !== activity._id);
       assert.notEqual(String(copiedRoot._id), firstSource._id);

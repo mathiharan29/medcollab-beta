@@ -15,6 +15,8 @@ const mappings = [
   [/\/features\/notifications\/|\/services\/notification\./, ['NOT', 'PUSH', 'JRN']],
   [/\/features\/search\//, ['SRCH', 'JRN', 'NDL']],
   [/\/features\/(support|dev)\//, ['SUP']],
+  [/\/features\/admin\//, ['ADM']],
+  [/\/features\/assistant\//, ['AST']],
 ];
 export function affectedModules(paths) {
   const selected = new Set();

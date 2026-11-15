@@ -18,6 +18,7 @@ const modules = [
   ['OFF', 'Composer/offline state', 'F0'], ['SAVE', 'Saved/recent items', 'F0'],
   ['HOME', 'Home/dashboard', 'F0'], ['LINK', 'Forwarding/invites/deep links', 'F0'],
   ['RUN', 'Runtime/error recovery', 'U'], ['JRN', 'Cross-feature journeys', 'U'], ['NDL', 'Needl group conversations', 'C'],
+  ['ADM', 'Platform operations', 'U'], ['AST', 'Voice assistant', 'U'],
 ];
 
 export const moduleNames = Object.fromEntries(modules.map(([code, name]) => [code, name]));

@@ -42,11 +42,12 @@ export async function runModule(moduleName, cases) {
   try {
     mongo = await startMongo(backendRoot, join(outputRoot, 'mongo-binaries'), { enableTestCommands: cases.some((item) => item.mongoFailpoint === true), ...(cases.some((item) => item.mongoRestart === true) ? { dbPath: join(runtime, 'mongo-data') } : {}) });
     const uri = databaseUri(mongo.uri, moduleName, runId);
-    backend = await startBackend(uri, port, runtime, inbox, { extraEnv: {
+    const providerEnv = {
       VOCLE_FAKE_FIREBASE: cases.some((item) => item.fakeFirebase === true) ? '1' : '0',
       VOCLE_FAKE_CLOUDINARY: cases.some((item) => item.fakeCloudinary === true) ? '1' : '0',
       VOCLE_FAKE_CLOCK: cases.some((item) => item.fakeClock === true) ? '1' : '0',
-    } });
+    };
+    backend = await startBackend(uri, port, runtime, inbox, { extraEnv: providerEnv });
     const request = createHttp(origin);
     const identities = new Map();
     const context = {
@@ -56,13 +57,9 @@ export async function runModule(moduleName, cases) {
         return identities.get(label);
       },
       db: (action) => inspectDatabase(backendRoot, uri, action),
-      restartBackend: async () => {
+      restartBackend: async (extraEnv = {}) => {
         await stopChild(backend.child);
-        backend = await startBackend(uri, port, runtime, inbox, { extraEnv: {
-          VOCLE_FAKE_FIREBASE: cases.some((item) => item.fakeFirebase === true) ? '1' : '0',
-          VOCLE_FAKE_CLOUDINARY: cases.some((item) => item.fakeCloudinary === true) ? '1' : '0',
-          VOCLE_FAKE_CLOCK: cases.some((item) => item.fakeClock === true) ? '1' : '0',
-        } });
+        backend = await startBackend(uri, port, runtime, inbox, { extraEnv: { ...providerEnv, ...extraEnv } });
       },
       pauseMongo: async () => mongo.server.stop({ doCleanup: false, force: false }),
       resumeMongo: async () => {

@@ -68,18 +68,23 @@ const cases = [{
     assert.equal(valid.patients[0].notes.length, 2000);
     const summary = (await request(`/api/handoffs/${valid._id}`, { method: 'PUT', token: f.a.token, body: { shiftSummary: 'S'.repeat(2000) } })).data.handoff;
     assert.equal(summary.shiftSummary.length, 2000);
-    for (const invalid of [
-      { patients: [{ ...patient('', 'Synthetic alias') }] },
-      { patients: [{ ...patient('H-01', '') }] },
-      { patients: [{ ...patient('B'.repeat(21), 'Synthetic alias') }] },
-      { patients: [{ ...patient('H-01', 'A'.repeat(101)) }] },
-      { patients: [{ ...patient('H-01', 'Synthetic alias'), notes: 'N'.repeat(2001) }] },
-      { shiftSummary: 'S'.repeat(2001) },
-      { patients: [{ ...patient('H-01', 'Synthetic alias'), status: 'imaginary' }] },
-      { shiftDate: 'not-a-date' },
-      { shiftType: 'imaginary' },
+    for (const [boundary, invalid] of [
+      ['empty bed number', { patients: [patient('', 'Synthetic alias')] }],
+      ['empty alias', { patients: [patient('H-01', '')] }],
+      ['21-character bed number', { patients: [patient('B'.repeat(21), 'Synthetic alias')] }],
+      ['101-character alias', { patients: [patient('H-01', 'A'.repeat(101))] }],
+      ['2001-character notes', { patients: [{ ...patient('H-01', 'Synthetic alias'), notes: 'N'.repeat(2001) }] }],
+      ['2001-character summary', { shiftSummary: 'S'.repeat(2001) }],
+      ['invalid patient status', { patients: [{ ...patient('H-01', 'Synthetic alias'), status: 'imaginary' }] }],
+      ['invalid shift date', { shiftDate: 'not-a-date' }],
+      ['invalid shift type', { shiftType: 'imaginary' }],
     ]) {
-      const rejected = await request(`/api/handoffs/${valid._id}`, { method: 'PUT', token: f.a.token, body: invalid, expectedStatus: 400 });
+      const rejected = await request(`/api/handoffs/${valid._id}`, {
+        method: 'PUT', token: f.a.token, body: invalid, expectedStatus: 400,
+      }).catch((error) => {
+        error.message = `${boundary}: ${error.message}`;
+        throw error;
+      });
       assert.equal(rejected.payload.success, false);
       const current = (await request(`/api/handoffs/${valid._id}`, { token: f.a.token })).data.handoff;
       assert.equal(current.shiftSummary, summary.shiftSummary);

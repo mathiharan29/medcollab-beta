@@ -24,6 +24,8 @@ const context = {
   HOF: 'One doctor hands a synthetic patient case to another doctor.', MED: 'A doctor attaches, views or removes a synthetic file.',
   SUP: 'A doctor submits support information or a synthetic developer tool is exercised.', RUN: 'The application recovers from a controlled runtime failure.',
   JRN: 'Doctors complete a collaboration journey across several features.', NAV: 'A doctor navigates between screens and restores an interrupted session.',
+  ADM: 'An allowlisted operator reviews synthetic operational aggregate data and feedback.',
+  AST: 'A doctor requests a proposed action without changing collaboration data.',
   HOME: 'A doctor opens their workspace and dashboard.', OFF: 'A doctor restores locally retained collaboration state.', SAVE: 'A doctor returns to a saved message.', LINK: 'A doctor opens an invitation or notification link.',
 };
 const overrides = {

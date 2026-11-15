@@ -499,3 +499,23 @@ Sources: backend channels routes/controller, channelAccess, knownUsers, messagin
 | FR-NDL-52 | Show rename error without claiming success | Server error visible; no success snackbar or false local title update; original group identity retained | F/P1 | NEW |
 | FR-NDL-53 | Display Needl members in stable self-first order | Self first then case-insensitive name order; correct count/roles/presence; original members list not mutated | F/P1 | NEW |
 | FR-NDL-54 | Render group chat identity and group-only menu | Needl title not overwritten by first peer; member count and rename/people options shown; sender identity rendered for group message | F/P0 | NEW |
+| FR-NDL-55 | Subscribe as the three original Needl members, add a fourth with history, then reload both conversations | Each original member receives the same persisted continuation line and destination ID. Old history remains, the preview points to the line, and the new member can read copied history in the destination only | B/P0 | NEW |
+
+### 26. Platform operations
+
+U; start with synthetic doctors A, B and C and a disposable database. Restart only the test backend with A on the platform allowlist. Use minimal aggregate fixtures, a test feedback ticket and no external media. The module removes its backend, database and runtime after reporting.
+Sources: B/features/admin/admin.controller.js and admin.routes.js; B/middleware/auth.js; B/features/support/support.controller.js.
+
+| ID | Title and actions | Expected result | Tier/priority | Coverage / question |
+|---|---|---|---|---|
+| FR-ADM-01 | Compare ops voice metrics before and after synthetic message and handoff records | Only allowlisted A can read. Active audio and video count once, system and deleted messages are excluded, and only nondraft handoffs with shift audio count as voice handoffs | B/P1 | NEW |
+| FR-ADM-02 | Compare ops overview and feedback after adding active and archived conversation fixtures, availability and an open ticket | Active self notes, DM and Needl count in their own buckets. Inactive doctors do not increase on-call counts. Ops can read the exact feedback and the open count increases once | B/P1 | NEW |
+
+### 27. Voice assistant
+
+U; use fake OTP delivery for an onboarded and an incomplete synthetic identity. Leave the Anthropic provider unconfigured. Use synthetic commands and compare the real database before and after. The module removes its backend, database and runtime after reporting.
+Sources: B/features/assistant/assistant.controller.js and assistant.routes.js; B/middleware/auth.js.
+
+| ID | Title and actions | Expected result | Tier/priority | Coverage / question |
+|---|---|---|---|---|
+| FR-AST-01 | Try assistant routes before onboarding, then interpret a synthetic command and the exact length boundary with no provider configured | Authentication and onboarding gates apply. A trimmed 1000-character command gets an empty proposal and 1001 characters fails validation. No message, handoff or availability change persists | B/P0 | NEW |

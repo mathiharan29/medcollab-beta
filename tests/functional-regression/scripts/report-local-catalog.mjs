@@ -70,15 +70,15 @@ export async function main(args = process.argv.slice(2)) {
   const rows = lanes.flatMap(lane => lane.rows);
   assert.deepEqual(execution.selectedIds.slice().sort(), lanes[0].rows.map(row => row.id).sort());
   const counts = Object.fromEntries(statuses.map(status => [status, rows.filter(row => row.status === status).length]));
-  const result = counts.ERROR ? 'ERROR' : counts.PASS === 241 ? 'PASS' : 'FAIL';
+  const result = counts.ERROR ? 'ERROR' : counts.PASS === 245 ? 'PASS' : 'FAIL';
   if (result === 'PASS') assert(execution.attempts.every(row => row.exitCode === 0) && flutter.flutterReporterSuccess && device.fullSuccess, 'Original lane gates must pass');
   const output = resolve(outputPath);
   await mkdir(output, { recursive: true });
   const { report } = await generate({ inputObject: {
-    scope: 'local-full-241', source: { sha: baseline, kind: 'commit', verified: true },
+    scope: 'local-full-245', source: { sha: baseline, kind: 'commit', verified: true },
     harness: { sha: null }, selectedIds: catalog.map(row => row.id), results: rows, tally: counts,
     gate: result, cleanup: { status: 'PASS' }, provenance: { status: 'PASS' },
-  }, suite: 'developer', output, artifact: 'Local complete 241-case catalog' });
+  }, suite: 'developer', output, artifact: 'Local complete 245-case catalog' });
   report.title = 'Vocle full local functional regression';
   report.note += ' This is local execution across all three tiers. Application source and locks match the baseline shown above. Lane execution revisions can differ; each case retains its exact source/harness SHA. No single-revision full-suite success or hosted success marker is claimed. Android uses injected providers; iOS and real delivery are not covered.';
   const byId = new Map(rows.map(row => [row.id, row]));
@@ -90,14 +90,14 @@ export async function main(args = process.argv.slice(2)) {
   await writeReports(output, report);
   await writeFile(join(output, 'local-execution-provenance.json'), JSON.stringify({
     baselineApplicationSha: baseline, reporterCheckoutSha: git('rev-parse', 'HEAD'), sourceObjects,
-    selected: 241, executed: rows.length, counts, result,
+    selected: 245, executed: rows.length, counts, result,
     byTier: Object.fromEntries(lanes.map(lane => [lane.tier, { executed: lane.rows.length,
       revisions: [...new Set(lane.rows.map(row => row.executionHarnessSha))],
       counts: Object.fromEntries(statuses.map(status => [status, lane.rows.filter(row => row.status === status).length])) }])),
     backendCleanupReports: modules.length, backendCleanup: 'PASS', deviceCleanup: device.cleanup,
     inputs, hostedSuccessClaimed: false, iosExecuted: false, providerDeliveryProven: false,
   }, null, 2) + '\n');
-  console.log(JSON.stringify({ selected: 241, executed: rows.length, counts, result }));
+  console.log(JSON.stringify({ selected: 245, executed: rows.length, counts, result }));
   if (result !== 'PASS') process.exitCode = 1;
 }
 

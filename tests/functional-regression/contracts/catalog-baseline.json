@@ -190,5 +190,6 @@
     "FR-JRN-05",
     "FR-JRN-06"
   ],
-  "casesSha256": "d245ed2932e96dfbe53c79cfb6395b91c468d2a3dcb078aecd9a67bf7c4e8778"
+  "casesSha256": "69275f594fb0861fbf699e34bf483ba4abf981026585b3ff633f04b4a55ffc74",
+  "definitionSourceSha": "0a7eeeb656a5c49e7b661d0f5f1acf02099d222a"
 }

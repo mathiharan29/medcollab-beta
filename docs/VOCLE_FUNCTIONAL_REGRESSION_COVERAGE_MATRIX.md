@@ -1,19 +1,19 @@
 # Vocle functional regression coverage matrix
 
-Coverage inventory; execution must be established by each current report. Hosted coverage is 241 total / 233 hosted / 8 LOCAL_ONLY; Android remains unexecuted SKIP in PR reports. Count unit = stable parent testcase ID, including boundary subchecks once. **24 feature modules, 6 cross-feature journey cases, 241 total cases = 48 retained sanity + 193 new.** Existing Flutter tests support several new scenarios but do not satisfy their complete integration contracts.
+The candidate catalog contains **245 cases**, including 48 retained sanity cases, 189 other hosted cases, and 8 Android cases marked LOCAL_ONLY. Counts use stable parent IDs. See the [November master gap review](VOCLE_MASTER_REGRESSION_GAP_MATRIX_2026-11-15.md) for the current feature and source audit. The historical inventory below retains its original evidence references.
 
 ## Reconciled totals
 
 | Distribution | Count |
 |---|---:|
-| P0 | 119 |
-| P1 | 112 |
+| P0 | 121 |
+| P1 | 114 |
 | P2 | 10 |
-| B: backend HTTP/DB/Socket/provider-contract | 177 |
+| B: backend HTTP/DB/Socket/provider-contract | 181 |
 | F: Flutter model/widget/state integration | 56 |
 | D: device/platform and UI journeys | 8 |
 | Retained sanity, all B/P0 | 48 |
-| New B / F / D | 129 / 56 / 8 |
+| New B / F / D | 133 / 56 / 8 |
 
 P0 assignment to retained sanity reflects its existing gating role; it does not imply a color or support feature is intrinsically as critical as a handoff. Each case has exactly one primary tier. Secondary observations (e.g. socket and persistence in one B case) do not add counts.
 
@@ -47,8 +47,10 @@ Existing cases that span features are assigned once to their primary module for 
 | Links/forward LINK | 0 | 4 | 4 | 0/3/1 | Forward payload, missing deep-link target, push routing, QR |
 | Runtime RUN | 1 | 3 | 4 | 3/1/0 | Process restart, DB outage, transport/parse recovery |
 | Cross-feature JRN (not a module) | 0 | 6 | 6 | 4/0/2 | Connected journeys below |
-| Needl group conversations NDL | 0 | 54 | 54 | 30/24/0 | Exact identity/participants, expansion/history, permission/recovery, hub/create/manage widgets and repository contracts; NDL-D1 undecided |
-| **Total** | **48** | **193** | **241** | **177/56/8** | Source-grounded design; not a passing coverage claim |
+| Needl group conversations NDL | 0 | 55 | 55 | 31/24/0 | Exact participants, expansion/history, live continuation, recovery, and client contracts. NDL-D1 remains open |
+| Platform operations ADM | 0 | 2 | 2 | 2/0/0 | Allowlisted overview, voice and Needl aggregates, active availability, and feedback |
+| Voice assistant AST | 0 | 1 | 1 | 1/0/0 | Caller onboarding, command boundary, and read-only fallback without a provider |
+| **Total** | **48** | **197** | **245** | **181/56/8** | Planned coverage. Execution results are recorded per run |
 
 ## Existing coverage quality and evidence
 
@@ -98,4 +100,4 @@ Unsupported roster/approval/ownership-transfer/calls/scheduled-send/synced-bookm
 
 ## November Needl expansion
 
-The original 187 cases are frozen unchanged. FR-NDL-01..54 append 30 backend and 24 Flutter cases against upstream master 4c01dc2. See VOCLE_NEEDL_REGRESSION_PROGRESS.md for executable evidence and limits. This growth is not 241 passed: genuine failures remain, NDL-D1 is unresolved, and the original eight Android cases remain LOCAL_ONLY. Older inventory descriptions below/above are dated baseline research, not new execution claims.
+The original 187 IDs and order are preserved. PR #4 added FR-NDL-01 through FR-NDL-54, comprising 30 backend and 24 Flutter cases. PR #6 adds current beta assertions under existing IDs. The candidate retains the 11-14 navigation contract and adds FR-NDL-55, FR-ADM-01, FR-ADM-02 and FR-AST-01.
