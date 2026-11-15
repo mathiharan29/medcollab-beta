@@ -23,4 +23,22 @@ The upstream baseline is `dc44c9e1083882d48881236811f4d4a6e9c90f26`. The latest 
 
 Source review included Express route registration, channel expansion and system message persistence, message content and transcript serialization, handoff version checks, per-viewer preview/search filters, Socket.IO fan-out, Flutter routing/voice cubits and Android notification registration. The baseline workflows register functional backend/Flutter, sanity, API and realtime security, MongoDB data security, offline media, opt-in Cloudinary, developer QA, secret scan and shared reporting. Routine functional and security suites run through their existing PR or manual events.
 
-Archived Needl expansion remains NEEDS_DECISION under NDL-D1. Whether repeating an expansion targeting an existing Needl should add another line in the original chat also needs a product decision. FR-DM-08 still requires destination reuse, one destination activity line and no history reimport.
+Archived Needl expansion remains NEEDS_DECISION under NDL-D1. Repeated continuation lines in the original chat are recorded as NEEDS_DECISION under NDL-D2. FR-DM-08 requires destination reuse, one destination activity line and no history reimport.
+
+## Execution evidence
+
+The backend, Flutter and first Android run used commit `c864c6fb7ee5ee3c5ed6613c449a3a080fd9f578`, which carries the same application source and dependency locks as the upstream baseline. The backend ran with Node 24 and disposable loopback MongoDB 7.0.14. Flutter used 3.29.3 and locked dependencies. The functional harness validated all 245 unique IDs and found executable definitions for every case. The full backend report verified exact IDs, source and cleanup.
+
+| Lane | Result |
+|---|---|
+| Backend catalog | 177 PASS, 3 FAIL, 1 NEEDS_DECISION across 181 cases. All 48 retained sanity cases passed |
+| Flutter catalog | 54 PASS and 2 FAIL across 56 cases. The full Flutter run had 262 PASS and 2 FAIL |
+| Needl subset | 50 PASS, 4 FAIL, 1 NEEDS_DECISION across 55 cases. FR-NDL-55 passed |
+| Standalone beta API | 22 privacy-view checks, 6 continuation checks, 11 handoff-voice checks and 12 voice/assistant checks passed. The continuation and handoff suites passed after reruns with fresh fixture databases |
+| Backend unit checks | Five passed. The IP fallback assertion failed after the tests were made runnable with Node's built-in test runner |
+| Tooling | 82 catalog, reporting, workflow and device contracts passed. The 25 Python launcher and bootstrap checks passed |
+| Security | General, MongoDB and media manifests and offline safety checks passed. The full containerized security lanes have no current execution evidence. Real provider credentials were absent |
+
+Application failures retained in this run include FR-HOF-02 (invalid shift date update returned 200), FR-NDL-28 (concurrent expansion failed to return a usable destination for both requests), FR-NDL-29 (retry left intended copied history absent), FR-NDL-39 (a late Start DM search result displaced the newer result) and FR-NDL-53 (members sheet overflow). The standalone rate-limiter check found that fallback did not return the expected IP key. FR-MSG-05 and FR-NDL-50, which previously failed on the PR branches, passed on this baseline.
+
+Historical GitHub evidence belongs to the PR #6 head. Its [functional](https://github.com/mathiharan29/medcollab-beta/actions/runs/43060007554), [MongoDB data security](https://github.com/mathiharan29/medcollab-beta/actions/runs/43060007622) and [offline media](https://github.com/mathiharan29/medcollab-beta/actions/runs/43060007509) workflows failed. Its [API and realtime security](https://github.com/mathiharan29/medcollab-beta/actions/runs/43060007534) workflow passed.

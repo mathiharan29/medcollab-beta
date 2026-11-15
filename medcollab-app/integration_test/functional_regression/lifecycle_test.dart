@@ -69,6 +69,8 @@ void main() {
   } else if (devicePhase == 'session-seed') {
     testWidgets('Native session seed prerequisite', (tester) async {
       await initializeDevice();
+      // Keep the first-launch dialog from obscuring a later process phase.
+      await control('notification-permission', {'granted': true});
       await deviceStorage.clearAll();
       await nativeStorageProbe();
       await installSession('A');
