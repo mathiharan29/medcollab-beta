@@ -76,6 +76,15 @@ module.exports = ({ add, ids }) => {
     prepare: async ctx => {
       await ctx.models.User.updateOne({ _id: ctx.users.E._id }, { 'notifications.allowMessageRequestsFromAnyone': true });
       assert.equal((await ctx.http('F', 'POST', '/api/channels/dm', { userId: oid(ctx.users.E) })).status, 403, 'Pair consent denial control failed');
+      // 2026-11-09 (REQ 5): request eligibility no longer allows group adds;
+      // a group needs an explicit "anyone may add me to groups" opt-in.
+      // Opt E and H in for this case only, then restore.
+      for (const actor of ['E', 'H']) {
+        const before = await ctx.models.User.findById(ctx.users[actor]._id).select('notifications').lean();
+        await ctx.models.User.updateOne({ _id: ctx.users[actor]._id }, { 'notifications.allowGroupAddsFromAnyone': true });
+        ctx.cleanup.push(() => ctx.models.User.updateOne({ _id: ctx.users[actor]._id },
+          { 'notifications.allowGroupAddsFromAnyone': before?.notifications?.allowGroupAddsFromAnyone === true }));
+      }
       const control = await ctx.http('F', 'POST', group, { userIds: [oid(ctx.users.E), oid(ctx.users.H)] });
       assert.equal(control.status, 200, 'Group consent prerequisite failed');
       ctx.evidence.pendingRequestBefore = (await ctx.models.MessageRequest.findById(ids.requestPending)).status;

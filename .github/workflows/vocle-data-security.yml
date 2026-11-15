@@ -1,6 +1,7 @@
 name: Vocle MongoDB Data Security
 
 on:
+  workflow_dispatch:
   pull_request:
     branches: [master]
     types: [opened, reopened, ready_for_review, synchronize]
@@ -21,19 +22,27 @@ jobs:
       run:
         working-directory: medcollab-backend
     steps:
-      - name: Validate supported PR context
+      - name: Validate supported PR or manual context
         working-directory: ${{ github.workspace }}
         shell: bash
         env:
           QA_REPOSITORY: ${{ github.repository }}
           QA_EVENT: ${{ github.event_name }}
+          QA_REF: ${{ github.ref }}
+          QA_SHA: ${{ github.sha }}
           QA_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
           QA_BASE_REF: ${{ github.event.pull_request.base.ref }}
         run: |
+          set -euo pipefail
           test "$QA_REPOSITORY" = mathiharan29/medcollab-beta
-          test "$QA_EVENT" = pull_request
-          test "$QA_HEAD_REPOSITORY" = mathiharan29/medcollab-beta
-          test "$QA_BASE_REF" = master
+          if [ "$QA_EVENT" = pull_request ]; then
+            test "$QA_HEAD_REPOSITORY" = mathiharan29/medcollab-beta
+            test "$QA_BASE_REF" = master
+          else
+            test "$QA_EVENT" = workflow_dispatch
+            [[ "$QA_REF" == refs/heads/?* ]]
+            [[ "$QA_SHA" =~ ^[0-9a-f]{40}$ ]]
+          fi
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}

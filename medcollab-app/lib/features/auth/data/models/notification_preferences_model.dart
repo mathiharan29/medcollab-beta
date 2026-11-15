@@ -9,6 +9,7 @@ class NotificationPreferencesModel extends Equatable {
     this.handoffs = true,
     this.readReceiptsEnabled = true,
     this.allowMessageRequestsFromAnyone = false,
+    this.allowGroupAddsFromAnyone = false,
     this.quietHoursStart,
     this.quietHoursEnd,
   });
@@ -22,6 +23,8 @@ class NotificationPreferencesModel extends Equatable {
       readReceiptsEnabled: json['readReceiptsEnabled'] as bool? ?? true,
       allowMessageRequestsFromAnyone:
           json['allowMessageRequestsFromAnyone'] as bool? ?? false,
+      allowGroupAddsFromAnyone:
+          json['allowGroupAddsFromAnyone'] as bool? ?? false,
       quietHoursStart: json['quietHoursStart'] as String?,
       quietHoursEnd: json['quietHoursEnd'] as String?,
     );
@@ -35,6 +38,10 @@ class NotificationPreferencesModel extends Equatable {
   final bool readReceiptsEnabled;
   /// Opt-in: doctors who find you by phone may send a message request.
   final bool allowMessageRequestsFromAnyone;
+
+  /// REQ 5: may doctors you don't know add you to a group? People who share
+  /// a group or a chat with you always can.
+  final bool allowGroupAddsFromAnyone;
   final String? quietHoursStart;
   final String? quietHoursEnd;
 
@@ -45,6 +52,7 @@ class NotificationPreferencesModel extends Equatable {
         'handoffs': handoffs,
         'readReceiptsEnabled': readReceiptsEnabled,
         'allowMessageRequestsFromAnyone': allowMessageRequestsFromAnyone,
+        'allowGroupAddsFromAnyone': allowGroupAddsFromAnyone,
         if (quietHoursStart != null) 'quietHoursStart': quietHoursStart,
         if (quietHoursEnd != null) 'quietHoursEnd': quietHoursEnd,
       };
@@ -56,6 +64,7 @@ class NotificationPreferencesModel extends Equatable {
     bool? handoffs,
     bool? readReceiptsEnabled,
     bool? allowMessageRequestsFromAnyone,
+    bool? allowGroupAddsFromAnyone,
     String? quietHoursStart,
     String? quietHoursEnd,
     bool clearQuietHoursStart = false,
@@ -69,6 +78,8 @@ class NotificationPreferencesModel extends Equatable {
       readReceiptsEnabled: readReceiptsEnabled ?? this.readReceiptsEnabled,
       allowMessageRequestsFromAnyone: allowMessageRequestsFromAnyone ??
           this.allowMessageRequestsFromAnyone,
+      allowGroupAddsFromAnyone:
+          allowGroupAddsFromAnyone ?? this.allowGroupAddsFromAnyone,
       quietHoursStart:
           clearQuietHoursStart ? null : (quietHoursStart ?? this.quietHoursStart),
       quietHoursEnd:
@@ -84,6 +95,7 @@ class NotificationPreferencesModel extends Equatable {
         handoffs,
         readReceiptsEnabled,
         allowMessageRequestsFromAnyone,
+        allowGroupAddsFromAnyone,
         quietHoursStart,
         quietHoursEnd,
       ];

@@ -1,9 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:medcollab_app/core/constants/socket_events.dart';
 import 'package:medcollab_app/core/di/app_dependencies.dart';
 import 'package:medcollab_app/core/presence/presence_cubit.dart';
+import 'package:medcollab_app/core/realtime/hub_refresh_signal.dart';
 import 'package:medcollab_app/core/realtime/typing_presence.dart';
 import 'package:medcollab_app/core/router/app_routes.dart';
 import 'package:medcollab_app/core/router/dm_navigation.dart';
@@ -27,6 +32,16 @@ import 'package:medcollab_app/shared/presentation/widgets/error_banner.dart';
 import 'package:medcollab_app/shared/presentation/widgets/group_row.dart';
 import 'package:medcollab_app/shared/presentation/widgets/subgroup_row.dart';
 
+/// Parts of the hub that reload independently (issue 2).
+enum _Part {
+  spaces,
+  dms,
+  requests,
+  unread;
+
+  static const all = {spaces, dms, requests, unread};
+}
+
 /// Messages hub: Group → subgroups, plus Direct (brief SCREEN 2–3).
 class MessagesHubPage extends StatefulWidget {
   const MessagesHubPage({super.key});
@@ -44,31 +59,98 @@ class _MessagesHubPageState extends State<MessagesHubPage>
   late Future<Set<String>> _draftIdsFuture;
   late Future<Map<String, int>> _unreadByChannelFuture;
 
+  final List<StreamSubscription<Object?>> _refreshSubs = [];
+  Timer? _refreshDebounce;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _reload();
+    // This page stays alive in the bottom-tab shell, so it must refresh
+    // itself when DMs / groups change (request accepted, new message, group
+    // joined/left, chat closed, tab re-shown). Otherwise the lists stayed
+    // stale until an app restart (sanity F1).
+    final socket = AppDependencies.instance.socketClient;
+    _refreshSubs.addAll([
+      HubRefreshSignal.stream.listen((_) => _scheduleRefresh(_Part.all)),
+      // Alerts read (chat opened, notification shade, Alerts tab): the
+      // per-chat unread counts here come from the same alerts.
+      AppDependencies.instance.notificationBadgeCubit.stream
+          .listen((_) => _scheduleRefresh({_Part.unread})),
+      // Issue 2: refresh only what an event changes. Every message used to
+      // re-fetch groups, DMs, requests and alerts together — four requests
+      // competing with the chat the doctor was opening.
+      socket.onMapEvent(SocketEvents.newMessage).listen((m) {
+        final space = m['spaceId']?.toString() ?? '';
+        final isGroup = space.isNotEmpty && space != 'null';
+        _scheduleRefresh({isGroup ? _Part.spaces : _Part.dms, _Part.unread});
+      }),
+      socket.onMapEvent(SocketEvents.newNotification).listen((n) {
+        final type = n['type']?.toString() ?? '';
+        _scheduleRefresh({
+          _Part.unread,
+          if (type.contains('request')) ...{_Part.requests, _Part.dms},
+          if (type.contains('invite') || type.contains('space')) _Part.spaces,
+        });
+      }),
+      socket
+          .onMapEvent(SocketEvents.spaceMemberJoined)
+          .listen((_) => _scheduleRefresh({_Part.spaces})),
+      socket
+          .onMapEvent(SocketEvents.spaceMemberLeft)
+          .listen((_) => _scheduleRefresh({_Part.spaces})),
+    ]);
   }
 
-  void _reload() {
+  final Set<_Part> _pending = {};
+
+  /// Coalesces bursts (e.g. several messages arriving) into one reload of
+  /// just the parts they touched.
+  void _scheduleRefresh(Set<_Part> parts) {
+    _pending.addAll(parts);
+    _refreshDebounce?.cancel();
+    _refreshDebounce = Timer(const Duration(milliseconds: 350), () {
+      if (!mounted) return;
+      final parts = Set.of(_pending);
+      _pending.clear();
+      _reload(parts);
+    });
+  }
+
+  void _reload([Set<_Part> parts = _Part.all]) {
+    final deps = AppDependencies.instance;
     setState(() {
-      _spacesFuture =
-          AppDependencies.instance.spaceRepository.getMySpaces();
-      _dmsFuture = AppDependencies.instance.channelRepository.getMyDMs();
-      _pendingRequestsFuture = AppDependencies.instance.messageRequestRepository
-          .listRequests(direction: 'received', status: 'pending')
-          .catchError((_) => <MessageRequestModel>[]);
-      _draftIdsFuture =
-          AppDependencies.instance.draftMessageService.draftChannelIds();
-      _unreadByChannelFuture = _loadUnreadByChannel();
+      if (parts.contains(_Part.spaces)) {
+        _spacesFuture = deps.spaceRepository.getMySpaces();
+        // Warm the newest group chats so they open instantly (issue 2).
+        unawaited(_spacesFuture.then((spaces) => deps.chatPrefetcher.warm(
+              spaces.expand((s) => s.channels),
+              max: 4,
+            )).catchError((_) {}));
+      }
+      if (parts.contains(_Part.dms)) {
+        _dmsFuture = deps.channelRepository.getMyDMs();
+        unawaited(_dmsFuture
+            .then((dms) => deps.chatPrefetcher.warm(dms))
+            .catchError((_) {}));
+      }
+      if (parts.contains(_Part.requests)) {
+        _pendingRequestsFuture = deps.messageRequestRepository
+            .listRequests(direction: 'received', status: 'pending')
+            .catchError((_) => <MessageRequestModel>[]);
+      }
+      _draftIdsFuture = deps.draftMessageService.draftChannelIds();
+      if (parts.contains(_Part.unread)) {
+        _unreadByChannelFuture = _loadUnreadByChannel();
+      }
     });
   }
 
   Future<Map<String, int>> _loadUnreadByChannel() async {
     try {
       final page = await AppDependencies.instance.notificationRepository
-          .getNotifications(limit: 100);
+          .getRecentNotificationsShared();
       return unreadCountsByChannel(page.notifications);
     } catch (_) {
       return const {};
@@ -77,6 +159,10 @@ class _MessagesHubPageState extends State<MessagesHubPage>
 
   @override
   void dispose() {
+    _refreshDebounce?.cancel();
+    for (final sub in _refreshSubs) {
+      unawaited(sub.cancel());
+    }
     _tabController.dispose();
     super.dispose();
   }
@@ -138,66 +224,73 @@ class _MessagesHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final top = MediaQuery.paddingOf(context).top;
-    return Material(
-      color: AppColors.surfaceCard,
-      child: Column(
-        children: [
-          SizedBox(height: top),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppGaps.screenH,
-              8,
-              4,
-              0,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      // Card-coloured header: icon colour follows the theme (REQ 6).
+      value: (AppColors.isDark
+              ? SystemUiOverlayStyle.light
+              : SystemUiOverlayStyle.dark)
+          .copyWith(statusBarColor: Colors.transparent),
+      child: Material(
+        color: AppColors.surfaceCard,
+        child: Column(
+          children: [
+            SizedBox(height: top),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppGaps.screenH,
+                8,
+                4,
+                0,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text('Messages', style: AppTextStyles.screenTitle),
+                  ),
+                  IconButton(
+                    tooltip: 'Search',
+                    onPressed: onSearch,
+                    icon: Icon(
+                      Icons.search,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'New message',
+                    onPressed: onCompose,
+                    icon: Icon(
+                      Icons.edit_square,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            child: Row(
-              children: [
-                const Expanded(
-                  child: Text('Messages', style: AppTextStyles.screenTitle),
-                ),
-                IconButton(
-                  tooltip: 'Search',
-                  onPressed: onSearch,
-                  icon: const Icon(
-                    Icons.search,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                IconButton(
-                  tooltip: 'New message',
-                  onPressed: onCompose,
-                  icon: const Icon(
-                    Icons.edit_square,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
+            TabBar(
+              controller: tabController,
+              labelColor: AppColors.textPrimary,
+              unselectedLabelColor: AppColors.textMuted,
+              labelStyle: AppTextStyles.cardTitle.copyWith(
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+              unselectedLabelStyle: AppTextStyles.cardTitle.copyWith(
+                fontWeight: FontWeight.w400,
+                fontSize: 14,
+                color: AppColors.textMuted,
+              ),
+              indicatorColor: AppColors.tealPrimary,
+              indicatorWeight: 2,
+              indicatorSize: TabBarIndicatorSize.tab,
+              dividerColor: AppColors.borderLight,
+              tabs: const [
+                Tab(text: 'Direct'),
+                Tab(text: 'Needl'),
+                Tab(text: 'Groups'),
               ],
             ),
-          ),
-          TabBar(
-            controller: tabController,
-            labelColor: AppColors.textPrimary,
-            unselectedLabelColor: AppColors.textMuted,
-            labelStyle: AppTextStyles.cardTitle.copyWith(
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
-            ),
-            unselectedLabelStyle: AppTextStyles.cardTitle.copyWith(
-              fontWeight: FontWeight.w400,
-              fontSize: 14,
-              color: AppColors.textMuted,
-            ),
-            indicatorColor: AppColors.tealPrimary,
-            indicatorWeight: 2,
-            indicatorSize: TabBarIndicatorSize.tab,
-            dividerColor: AppColors.borderLight,
-            tabs: const [
-              Tab(text: 'Direct'),
-              Tab(text: 'Needl'),
-              Tab(text: 'Groups'),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -225,7 +318,10 @@ class _NeedlTab extends StatelessWidget {
         unreadByChannelFuture,
       ]),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        // Keep showing the previous list while a background refresh runs;
+        // only the very first load shows the skeleton.
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData) {
           return const AppListSkeleton();
         }
         if (snapshot.hasError) {
@@ -248,13 +344,13 @@ class _NeedlTab extends StatelessWidget {
                     AppEmptyState(
                       icon: Icons.hub_outlined,
                       title: 'No Needls yet',
-                      subtitle:
-                          'A Needl is a private chat with two or more '
+                      subtitle: 'A Needl is a private chat with two or more '
                           'colleagues that you created or joined — like a '
                           'group DM. Space channels stay under Groups.',
                       action: FilledButton.icon(
                         onPressed: () => context.push(AppRoutes.startDm),
-                        icon: const Icon(Icons.person_add_alt_1_outlined, size: 18),
+                        icon: const Icon(Icons.person_add_alt_1_outlined,
+                            size: 18),
                         label: const Text('Start a Needl'),
                       ),
                     ),
@@ -277,9 +373,8 @@ class _NeedlTab extends StatelessWidget {
                         : (preview != null
                             ? preview.previewLabel
                             : 'No messages yet');
-                    final memberHint = memberCount > 0
-                        ? '$memberCount people'
-                        : 'Needl';
+                    final memberHint =
+                        memberCount > 0 ? '$memberCount people' : 'Needl';
 
                     return ListenableBuilder(
                       listenable: TypingPresence.instance,
@@ -296,8 +391,8 @@ class _NeedlTab extends StatelessWidget {
                             width: 38,
                             height: 38,
                             decoration: BoxDecoration(
-                              color: AppColors.tealPrimary
-                                  .withValues(alpha: 0.14),
+                              color:
+                                  AppColors.tealPrimary.withValues(alpha: 0.14),
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(
@@ -379,7 +474,10 @@ class _GroupsTab extends StatelessWidget {
         unreadByChannelFuture,
       ]),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        // Keep showing the previous list while a background refresh runs;
+        // only the very first load shows the skeleton.
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData) {
           return const AppListSkeleton();
         }
         if (snapshot.hasError) {
@@ -388,28 +486,30 @@ class _GroupsTab extends StatelessWidget {
           );
         }
         final spaces = snapshot.data![0] as List<SpaceModel>;
-        final unreadByChannel =
-            snapshot.data![2] as Map<String, int>;
+        final unreadByChannel = snapshot.data![2] as Map<String, int>;
 
         if (spaces.isEmpty) {
-          return AppEmptyState(
-            icon: Icons.domain_outlined,
-            title: 'No channels yet',
-            subtitle:
-                'Join a clinical group to see ward and team subgroups here.',
-            action: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                FilledButton(
-                  onPressed: () => context.push(AppRoutes.spacesList),
-                  child: const Text('Browse / join groups'),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton(
-                  onPressed: () => context.push(AppRoutes.startDm),
-                  child: const Text('New message'),
-                ),
-              ],
+          return _RefreshableEmpty(
+            onRefresh: onReload,
+            child: AppEmptyState(
+              icon: Icons.domain_outlined,
+              title: 'No channels yet',
+              subtitle:
+                  'Join a clinical group to see ward and team subgroups here.',
+              action: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  FilledButton(
+                    onPressed: () => context.push(AppRoutes.spacesList),
+                    child: const Text('Browse / join groups'),
+                  ),
+                  const SizedBox(height: 8),
+                  OutlinedButton(
+                    onPressed: () => context.push(AppRoutes.startDm),
+                    child: const Text('New message'),
+                  ),
+                ],
+              ),
             ),
           );
         }
@@ -456,10 +556,10 @@ class _GroupsTab extends StatelessWidget {
     if (space.channels.isEmpty) return null;
     final sorted = List<ChannelModel>.of(space.channels)
       ..sort((a, b) {
-        final at = a.lastMessage?.sentAt ??
-            DateTime.fromMillisecondsSinceEpoch(0);
-        final bt = b.lastMessage?.sentAt ??
-            DateTime.fromMillisecondsSinceEpoch(0);
+        final at =
+            a.lastMessage?.sentAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final bt =
+            b.lastMessage?.sentAt ?? DateTime.fromMillisecondsSinceEpoch(0);
         return bt.compareTo(at);
       });
     return sorted.first;
@@ -538,7 +638,7 @@ class _SpaceSubgroupsPageState extends State<SpaceSubgroupsPage> {
   Future<Map<String, int>> _loadUnreadByChannel() async {
     try {
       final page = await AppDependencies.instance.notificationRepository
-          .getNotifications(limit: 100);
+          .getRecentNotificationsShared();
       return unreadCountsByChannel(page.notifications);
     } catch (_) {
       return Map.of(_unreadByChannel);
@@ -576,137 +676,144 @@ class _SpaceSubgroupsPageState extends State<SpaceSubgroupsPage> {
   Widget build(BuildContext context) {
     final channels = List<ChannelModel>.of(_channels)
       ..sort((a, b) {
-        final at = a.lastMessage?.sentAt ??
-            DateTime.fromMillisecondsSinceEpoch(0);
-        final bt = b.lastMessage?.sentAt ??
-            DateTime.fromMillisecondsSinceEpoch(0);
+        final at =
+            a.lastMessage?.sentAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final bt =
+            b.lastMessage?.sentAt ?? DateTime.fromMillisecondsSinceEpoch(0);
         return bt.compareTo(at);
       });
 
     final top = MediaQuery.paddingOf(context).top;
 
-    return Scaffold(
-      backgroundColor: AppColors.backgroundApp,
-      body: Column(
-        children: [
-          Material(
-            color: AppColors.surfaceCard,
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                4,
-                top + 4,
-                AppGaps.screenH,
-                10,
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                    tooltip: 'Back',
-                    onPressed: () => Navigator.of(context).maybePop(),
-                    icon: const Icon(
-                      Icons.arrow_back,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  Expanded(
-                    child: Text(
-                      widget.space.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.screenTitle,
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: 'Members',
-                    onPressed: () => context.push(
-                      AppRoutes.spaceMembersPath(widget.space.id),
-                    ),
-                    icon: const Icon(
-                      Icons.people_outline,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  if (widget.space.inviteCode != null &&
-                      widget.space.inviteCode!.isNotEmpty)
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      // Card-coloured header: icon colour follows the theme (REQ 6).
+      value: (AppColors.isDark
+              ? SystemUiOverlayStyle.light
+              : SystemUiOverlayStyle.dark)
+          .copyWith(statusBarColor: Colors.transparent),
+      child: Scaffold(
+        backgroundColor: AppColors.backgroundApp,
+        body: Column(
+          children: [
+            Material(
+              color: AppColors.surfaceCard,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  4,
+                  top + 4,
+                  AppGaps.screenH,
+                  10,
+                ),
+                child: Row(
+                  children: [
                     IconButton(
-                      tooltip: 'Invite code',
-                      onPressed: () => SpaceInviteShareSheet.show(
-                        context,
-                        spaceName: widget.space.name,
-                        inviteCode: widget.space.inviteCode!,
-                      ),
-                      icon: const Icon(
-                        Icons.qr_code_2_rounded,
+                      tooltip: 'Back',
+                      onPressed: () => Navigator.of(context).maybePop(),
+                      icon: Icon(
+                        Icons.arrow_back,
                         color: AppColors.textPrimary,
                       ),
                     ),
-                  Material(
-                    color: AppColors.tealPrimary,
-                    borderRadius: AppRadius.button,
-                    child: InkWell(
-                      onTap: _createSubgroup,
+                    Expanded(
+                      child: Text(
+                        widget.space.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.screenTitle,
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Members',
+                      onPressed: () => context.push(
+                        AppRoutes.spaceMembersPath(widget.space.id),
+                      ),
+                      icon: Icon(
+                        Icons.people_outline,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    if (widget.space.inviteCode != null &&
+                        widget.space.inviteCode!.isNotEmpty)
+                      IconButton(
+                        tooltip: 'Invite code',
+                        onPressed: () => SpaceInviteShareSheet.show(
+                          context,
+                          spaceName: widget.space.name,
+                          inviteCode: widget.space.inviteCode!,
+                        ),
+                        icon: Icon(
+                          Icons.qr_code_2_rounded,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    Material(
+                      color: AppColors.tealPrimary,
                       borderRadius: AppRadius.button,
-                      child: const SizedBox(
-                        width: 36,
-                        height: 36,
-                        child: Icon(
-                          Icons.add,
-                          color: AppColors.textOnDark,
-                          size: 22,
+                      child: InkWell(
+                        onTap: _createSubgroup,
+                        borderRadius: AppRadius.button,
+                        child: const SizedBox(
+                          width: 36,
+                          height: 36,
+                          child: Icon(
+                            Icons.add,
+                            color: AppColors.textOnDark,
+                            size: 22,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-          Expanded(
-            child: _loading && channels.isEmpty
-                ? const AppListSkeleton()
-                : channels.isEmpty
-                    ? AppEmptyState(
-                        icon: Icons.tag,
-                        title: 'No subgroups yet',
-                        subtitle: 'Create a subgroup for this clinical team.',
-                        action: FilledButton.icon(
-                          onPressed: _createSubgroup,
-                          icon: const Icon(Icons.add),
-                          label: const Text('New subgroup'),
-                        ),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: _refresh,
-                        child: ListView.separated(
-                          padding: const EdgeInsets.all(AppGaps.screenH),
-                          itemCount: channels.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: AppGaps.itemGap),
-                          itemBuilder: (context, index) {
-                            final channel = channels[index];
-                            final preview = channel.lastMessage;
-                            final hasDraft = _draftIds.contains(channel.id);
-                            final previewText = hasDraft
-                                ? 'Draft awaiting'
-                                : _subgroupPreviewText(preview);
+            Expanded(
+              child: _loading && channels.isEmpty
+                  ? const AppListSkeleton()
+                  : channels.isEmpty
+                      ? AppEmptyState(
+                          icon: Icons.tag,
+                          title: 'No subgroups yet',
+                          subtitle: 'Create a subgroup for this clinical team.',
+                          action: FilledButton.icon(
+                            onPressed: _createSubgroup,
+                            icon: const Icon(Icons.add),
+                            label: const Text('New subgroup'),
+                          ),
+                        )
+                      : RefreshIndicator(
+                          onRefresh: _refresh,
+                          child: ListView.separated(
+                            padding: const EdgeInsets.all(AppGaps.screenH),
+                            itemCount: channels.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: AppGaps.itemGap),
+                            itemBuilder: (context, index) {
+                              final channel = channels[index];
+                              final preview = channel.lastMessage;
+                              final hasDraft = _draftIds.contains(channel.id);
+                              final previewText = hasDraft
+                                  ? 'Draft awaiting'
+                                  : _subgroupPreviewText(preview);
 
-                            return SubgroupRow(
-                              key: ValueKey('sub-${channel.id}'),
-                              name: channel.displayName,
-                              preview: previewText,
-                              type: channel.type,
-                              timestamp: hasDraft
-                                  ? null
-                                  : _formatTimestamp(preview?.sentAt),
-                              unreadCount: _unreadByChannel[channel.id] ?? 0,
-                              hasDraft: hasDraft,
-                              onTap: () => _openChannel(channel),
-                            );
-                          },
+                              return SubgroupRow(
+                                key: ValueKey('sub-${channel.id}'),
+                                name: channel.displayName,
+                                preview: previewText,
+                                type: channel.type,
+                                timestamp: hasDraft
+                                    ? null
+                                    : _formatTimestamp(preview?.sentAt),
+                                unreadCount: _unreadByChannel[channel.id] ?? 0,
+                                hasDraft: hasDraft,
+                                onTap: () => _openChannel(channel),
+                              );
+                            },
+                          ),
                         ),
-                      ),
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -796,7 +903,10 @@ class _DirectTabState extends State<_DirectTab> {
         widget.unreadByChannelFuture,
       ]),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        // Keep showing the previous list while a background refresh runs;
+        // only the very first load shows the skeleton.
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData) {
           return const AppListSkeleton();
         }
         if (snapshot.hasError) {
@@ -821,26 +931,27 @@ class _DirectTabState extends State<_DirectTab> {
         }
 
         final allDms = snapshot.data![0] as List<ChannelModel>;
-        final pending =
-            snapshot.data![1] as List<MessageRequestModel>;
+        final pending = snapshot.data![1] as List<MessageRequestModel>;
         final draftIds = snapshot.data![2] as Set<String>;
-        final unreadByChannel =
-            snapshot.data![3] as Map<String, int>;
+        final unreadByChannel = snapshot.data![3] as Map<String, int>;
         // Needls (3+ people) live under the Needl tab — keep Direct 1:1 / notes.
         final dms = allDms.where((dm) => !dm.isGroupDm).toList();
 
         if (dms.isEmpty && pending.isEmpty) {
-          return AppEmptyState(
-            icon: Icons.chat_bubble_outline,
-            title: 'No direct messages yet',
-            subtitle:
-                'Search by name or mobile number to start a private chat. '
-                'Doctors outside your network must approve a request first — '
-                'no chat or Seen until they accept.',
-            action: FilledButton.icon(
-              onPressed: () => context.push(AppRoutes.startDm),
-              icon: const Icon(Icons.edit_outlined, size: 18),
-              label: const Text('New message'),
+          return _RefreshableEmpty(
+            onRefresh: widget.onReload,
+            child: AppEmptyState(
+              icon: Icons.chat_bubble_outline,
+              title: 'No direct messages yet',
+              subtitle:
+                  'Search by name or mobile number to start a private chat. '
+                  'Doctors outside your network must approve a request first — '
+                  'no chat or Seen until they accept.',
+              action: FilledButton.icon(
+                onPressed: () => context.push(AppRoutes.startDm),
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                label: const Text('New message'),
+              ),
             ),
           );
         }
@@ -948,7 +1059,8 @@ class _DirectTabState extends State<_DirectTab> {
                                             ? const SizedBox(
                                                 width: 18,
                                                 height: 18,
-                                                child: CircularProgressIndicator(
+                                                child:
+                                                    CircularProgressIndicator(
                                                   strokeWidth: 2,
                                                 ),
                                               )
@@ -978,8 +1090,8 @@ class _DirectTabState extends State<_DirectTab> {
                     final preview = dm.lastMessage;
                     final hasDraft = draftIds.contains(dm.id);
                     final peer = dm.peer;
-                    final isOnline = peer != null &&
-                        (presence[peer.id]?.isOnline ?? false);
+                    final isOnline =
+                        peer != null && (presence[peer.id]?.isOnline ?? false);
                     final previewText = hasDraft
                         ? (preview != null
                             ? 'Draft · ${preview.previewLabel}'
@@ -1039,4 +1151,32 @@ String? _formatTimestamp(DateTime? sentAt) {
   if (day == today.subtract(const Duration(days: 1))) return 'Yesterday';
   if (now.difference(local).inDays < 7) return DateFormat.E().format(local);
   return DateFormat.MMMd().format(local);
+}
+
+/// Empty state that can still be pulled to refresh. A bare
+/// [AppEmptyState] is not scrollable, so a [RefreshIndicator] around it
+/// never fires (sanity F1: pull-to-refresh did nothing on empty tabs).
+class _RefreshableEmpty extends StatelessWidget {
+  const _RefreshableEmpty({required this.onRefresh, required this.child});
+
+  final VoidCallback onRefresh;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) => RefreshIndicator(
+        onRefresh: () async => onRefresh(),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Center(child: child),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

@@ -4,4 +4,8 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Profile/debug only: the local test server serves media over plain
+         http (10.0.2.2); native players (voice notes) need this. Release
+         builds keep the platform default (HTTPS only; Cloudinary is HTTPS). -->
+    <application android:usesCleartextTraffic="true"/>
 </manifest>

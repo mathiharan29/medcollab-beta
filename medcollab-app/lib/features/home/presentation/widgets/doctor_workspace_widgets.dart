@@ -174,7 +174,7 @@ class TodayShiftWidget extends StatelessWidget {
               )
             : Row(
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     backgroundColor: AppColors.tealTint,
                     child: Icon(
                       Icons.schedule_outlined,
@@ -207,7 +207,7 @@ class TodayShiftWidget extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const Icon(Icons.chevron_right, color: AppColors.textMuted),
+                  Icon(Icons.chevron_right, color: AppColors.textMuted),
                 ],
               ),
       ),
@@ -240,7 +240,7 @@ class AvailabilityWidget extends StatelessWidget {
                 style: AppTextStyles.caption,
               ),
             ),
-            const Icon(Icons.edit_outlined, size: 18, color: AppColors.textMuted),
+            Icon(Icons.edit_outlined, size: 18, color: AppColors.textMuted),
           ],
         ),
       ),
@@ -658,7 +658,7 @@ class _QuickActionCard extends StatelessWidget {
               Container(
                 width: 40,
                 height: 40,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: AppColors.tealTint,
                   borderRadius: AppRadius.button,
                 ),

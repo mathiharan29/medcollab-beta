@@ -7,6 +7,7 @@ import 'package:medcollab_app/core/router/app_routes.dart';
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:medcollab_app/features/handoffs/data/models/handoff_model.dart';
 import 'package:medcollab_app/features/handoffs/presentation/cubit/handoffs_cubit.dart';
+import 'package:medcollab_app/features/handoffs/presentation/widgets/handoff_filter_pills.dart';
 import 'package:medcollab_app/features/handoffs/presentation/widgets/handoff_widgets.dart';
 import 'package:medcollab_app/shared/presentation/widgets/app_fab.dart';
 import 'package:medcollab_app/shared/presentation/widgets/app_search_bar.dart';
@@ -94,36 +95,17 @@ class _HandoffsListPageState extends State<HandoffsListPage> {
                 BlocBuilder<HandoffsCubit, HandoffsState>(
                   buildWhen: (p, n) => p.filter != n.filter,
                   builder: (context, state) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: SegmentedButton<HandoffListFilter>(
-                        segments: const [
-                          ButtonSegment(
-                            value: HandoffListFilter.pending,
-                            label: Text('Pending'),
-                            icon: Icon(Icons.hourglass_top_outlined),
-                          ),
-                          ButtonSegment(
-                            value: HandoffListFilter.active,
-                            label: Text('Active'),
-                            icon: Icon(Icons.assignment_turned_in_outlined),
-                          ),
-                          ButtonSegment(
-                            value: HandoffListFilter.completed,
-                            label: Text('Done'),
-                            icon: Icon(Icons.done_all_outlined),
-                          ),
-                          ButtonSegment(
-                            value: HandoffListFilter.drafts,
-                            label: Text('Drafts'),
-                            icon: Icon(Icons.edit_note_outlined),
-                          ),
-                        ],
-                        selected: {state.filter},
-                        onSelectionChanged: (s) => context
-                            .read<HandoffsCubit>()
-                            .setFilter(s.first),
-                      ),
+                    return HandoffFilterPills<HandoffListFilter>(
+                      values: HandoffListFilter.values,
+                      selected: state.filter,
+                      labelOf: (f) => switch (f) {
+                        HandoffListFilter.pending => 'Pending',
+                        HandoffListFilter.active => 'Active',
+                        HandoffListFilter.completed => 'Done',
+                        HandoffListFilter.drafts => 'Drafts',
+                      },
+                      onSelected: (f) =>
+                          context.read<HandoffsCubit>().setFilter(f),
                     );
                   },
                 ),

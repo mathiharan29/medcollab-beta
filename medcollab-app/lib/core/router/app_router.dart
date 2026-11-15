@@ -20,6 +20,7 @@ import 'package:medcollab_app/features/members/presentation/pages/space_members_
 import 'package:medcollab_app/features/messages/presentation/pages/channel_chat_page.dart';
 import 'package:medcollab_app/features/messages/presentation/pages/start_dm_page.dart';
 import 'package:medcollab_app/features/messages/presentation/pages/thread_page.dart';
+import 'package:medcollab_app/features/needl_voice/presentation/needl_voice_page.dart';
 import 'package:medcollab_app/features/notifications/presentation/pages/notification_settings_page.dart';
 import 'package:medcollab_app/features/profile/presentation/pages/edit_profile_page.dart';
 import 'package:medcollab_app/features/search/presentation/pages/global_search_page.dart';
@@ -36,6 +37,8 @@ import 'package:medcollab_app/features/support/presentation/pages/help_faq_page.
 import 'package:medcollab_app/features/support/presentation/pages/legal_document_page.dart';
 import 'package:medcollab_app/features/support/presentation/pages/report_bug_page.dart';
 import 'package:medcollab_app/core/constants/legal_copy.dart';
+import 'package:medcollab_app/core/router/popup_route_tracker.dart';
+import 'package:medcollab_app/features/shell/presentation/widgets/swipeable_shell_container.dart';
 
 class AppRouter {
   AppRouter({required AuthBloc authBloc}) : _authBloc = authBloc {
@@ -47,8 +50,12 @@ class AppRouter {
   final GlobalKey<NavigatorState> rootNavigatorKey =
       GlobalKey<NavigatorState>(debugLabel: 'root');
 
+  /// Open dialogs/sheets/menus on any navigator; consulted on system back.
+  final PopupRouteTracker popupTracker = PopupRouteTracker();
+
   late final GoRouter router = GoRouter(
     navigatorKey: rootNavigatorKey,
+    observers: [popupTracker.createObserver()],
     initialLocation: AppRoutes.splash,
     debugLogDiagnostics: kDebugMode,
     refreshListenable: _refreshListenable,
@@ -108,12 +115,19 @@ class AppRouter {
         path: AppRoutes.profileSetup,
         builder: (context, state) => const ProfileSetupPage(),
       ),
-      StatefulShellRoute.indexedStack(
+      StatefulShellRoute(
         builder: (context, state, navigationShell) {
           return MainShellPage(navigationShell: navigationShell);
         },
+        // Swipeable main tabs (REQ 8); branches stay alive like IndexedStack.
+        navigatorContainerBuilder: (context, navigationShell, children) =>
+            SwipeableShellContainer(
+          navigationShell: navigationShell,
+          children: children,
+        ),
         branches: [
           StatefulShellBranch(
+            observers: [popupTracker.createObserver()],
             routes: [
               GoRoute(
                 path: AppRoutes.home,
@@ -122,6 +136,7 @@ class AppRouter {
             ],
           ),
           StatefulShellBranch(
+            observers: [popupTracker.createObserver()],
             routes: [
               GoRoute(
                 path: AppRoutes.messages,
@@ -130,6 +145,7 @@ class AppRouter {
             ],
           ),
           StatefulShellBranch(
+            observers: [popupTracker.createObserver()],
             routes: [
               GoRoute(
                 path: AppRoutes.handoffs,
@@ -138,6 +154,7 @@ class AppRouter {
             ],
           ),
           StatefulShellBranch(
+            observers: [popupTracker.createObserver()],
             routes: [
               GoRoute(
                 path: AppRoutes.notifications,
@@ -146,6 +163,7 @@ class AppRouter {
             ],
           ),
           StatefulShellBranch(
+            observers: [popupTracker.createObserver()],
             routes: [
               GoRoute(
                 path: AppRoutes.profile,
@@ -248,6 +266,18 @@ class AppRouter {
             rootMessageId: messageId,
             channel: routeArgs?.channel,
             initialRoot: routeArgs?.rootMessage,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.needlVoice,
+        builder: (context, state) {
+          final extra = state.extra;
+          final args = extra is NeedlVoiceArgs ? extra : null;
+          return NeedlVoicePage(
+            channelId: state.pathParameters['channelId']!,
+            title: args?.title ?? 'Needl Voice',
+            subtitle: args?.subtitle,
           );
         },
       ),
@@ -461,6 +491,7 @@ class AppRouter {
     if (AppRoutes.shellPaths.contains(location)) return true;
     if (location.startsWith('/spaces')) return true;
     if (location.startsWith('/dm')) return true;
+    if (location.startsWith('/voice/')) return true;
     if (location.startsWith('/links/')) return true;
     if (location.startsWith('/join')) return true;
     if (location.startsWith('/profile')) return true;

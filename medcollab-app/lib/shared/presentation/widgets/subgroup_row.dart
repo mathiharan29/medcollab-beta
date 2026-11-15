@@ -129,7 +129,7 @@ class SubgroupRow extends StatelessWidget {
                         horizontal: 6,
                         vertical: 2,
                       ),
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         color: AppColors.statusPendTint,
                         borderRadius: AppRadius.pill,
                       ),

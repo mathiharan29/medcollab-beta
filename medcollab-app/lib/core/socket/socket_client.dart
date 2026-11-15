@@ -6,6 +6,7 @@ import 'package:medcollab_app/core/config/env_config.dart';
 import 'package:medcollab_app/core/constants/app_constants.dart';
 import 'package:medcollab_app/core/constants/socket_events.dart';
 import 'package:medcollab_app/core/network/auth_interceptor.dart';
+import 'package:medcollab_app/core/network/shared_fetch.dart';
 import 'package:medcollab_app/core/utils/json_map_utils.dart';
 
 /// Real-time client for MedCollab Socket.io server.
@@ -165,8 +166,12 @@ class SocketClient {
     _emit(SocketEvents.syncSpaceRooms, {});
   }
 
-  void emitTypingStart(String channelId) {
-    _emit(SocketEvents.typingStart, {'channelId': channelId});
+  /// [kind] `voice` = "is recording…" (Needl Voice, issue 13).
+  void emitTypingStart(String channelId, {String? kind}) {
+    _emit(SocketEvents.typingStart, {
+      'channelId': channelId,
+      if (kind != null) 'kind': kind,
+    });
   }
 
   void emitTypingStop(String channelId) {
@@ -270,6 +275,11 @@ class SocketClient {
   }
 
   void _dispatchEvent(String event, dynamic data) {
+    // Server-side change (message, member, handoff, …): shared list results
+    // are stale now. Typing/presence chatter changes no lists.
+    if (!event.contains('typing') && !event.contains('presence')) {
+      SharedFetch.invalidateAll();
+    }
     final controller = _eventControllers[event];
     if (controller == null || controller.isClosed) return;
 

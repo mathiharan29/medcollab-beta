@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:medcollab_app/core/di/app_dependencies.dart';
+import 'package:medcollab_app/core/realtime/hub_refresh_signal.dart';
 import 'package:medcollab_app/features/handoffs/presentation/pages/global_handoffs_page.dart';
 import 'package:medcollab_app/features/home/presentation/pages/home_dashboard_page.dart';
 import 'package:medcollab_app/features/messages_hub/presentation/pages/messages_hub_page.dart';
@@ -46,7 +47,15 @@ class _MainShellPageState extends State<MainShellPage> {
   void didUpdateWidget(covariant MainShellPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     ShellTabHistory.bind(widget.navigationShell);
+    // However the Messages tab became visible (tap, back, swipe), let it
+    // refresh lists that changed while it was hidden.
+    if (widget.navigationShell.currentIndex == _messagesTabIndex &&
+        oldWidget.navigationShell.currentIndex != _messagesTabIndex) {
+      HubRefreshSignal.ping('messages-tab-shown');
+    }
   }
+
+  static const _messagesTabIndex = 1;
 
   void _onTap(int index) {
     ShellTabHistory.visit(index);

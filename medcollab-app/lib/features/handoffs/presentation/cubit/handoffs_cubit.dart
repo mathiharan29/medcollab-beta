@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:medcollab_app/core/state/safe_emit.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
 import 'package:medcollab_app/core/constants/socket_events.dart';
 import 'package:medcollab_app/core/error/app_exception.dart';
@@ -13,7 +14,7 @@ part 'handoffs_state.dart';
 
 enum HandoffListFilter { pending, active, completed, drafts }
 
-class HandoffsCubit extends Cubit<HandoffsState> {
+class HandoffsCubit extends Cubit<HandoffsState> with SafeEmit<HandoffsState> {
   HandoffsCubit({
     required HandoffRepository handoffRepository,
     required SocketClient socketClient,
@@ -126,14 +127,26 @@ class HandoffsCubit extends Cubit<HandoffsState> {
   }
 
   void _listenForHandoffSubmitted() {
-    _handoffSub = _socketClient
-        .onMapEvent(SocketEvents.handoffSubmitted)
-        .listen((data) {
+    void onEvent(Map<String, dynamic> data) {
       final eventSpaceId = data['spaceId']?.toString();
       if (eventSpaceId != null && eventSpaceId != spaceId) return;
       _scheduleReload();
-    });
+    }
+
+    _handoffSub = _socketClient
+        .onMapEvent(SocketEvents.handoffSubmitted)
+        .listen(onEvent);
+    // REQ 10: edits after submit, deletions and reassignments refresh live.
+    for (final event in const [
+      SocketEvents.handoffUpdated,
+      SocketEvents.handoffDeleted,
+      SocketEvents.handoffReassigned,
+    ]) {
+      _extraSubs.add(_socketClient.onMapEvent(event).listen(onEvent));
+    }
   }
+
+  final List<StreamSubscription<Map<String, dynamic>>> _extraSubs = [];
 
   void _listenForHandoffMessages() {
     _messageSub =
@@ -161,6 +174,9 @@ class HandoffsCubit extends Cubit<HandoffsState> {
     _messageSub?.cancel();
     _handoffSub?.cancel();
     _handoffAckSub?.cancel();
+    for (final sub in _extraSubs) {
+      sub.cancel();
+    }
     _connectionSub?.cancel();
     return super.close();
   }

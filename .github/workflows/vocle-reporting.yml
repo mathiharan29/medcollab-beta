@@ -20,25 +20,26 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - name: Validate supported PR context
+      - name: Validate supported PR or manual context
         working-directory: ${{ github.workspace }}
         shell: bash
         env:
           QA_REPOSITORY: ${{ github.repository }}
           QA_REF: ${{ github.ref }}
-          QA_WORKFLOW: ${{ github.workflow }}
+          QA_SHA: ${{ github.sha }}
           QA_EVENT: ${{ github.event_name }}
           QA_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
           QA_BASE_REF: ${{ github.event.pull_request.base.ref }}
         run: |
+          set -euo pipefail
           test "$QA_REPOSITORY" = mathiharan29/medcollab-beta
           if [ "$QA_EVENT" = pull_request ]; then
             test "$QA_HEAD_REPOSITORY" = mathiharan29/medcollab-beta
             test "$QA_BASE_REF" = master
           else
             test "$QA_EVENT" = workflow_dispatch
-            test "$QA_REF" = refs/heads/master
-            test "$QA_WORKFLOW" = 'Vocle Real Cloudinary Security'
+            [[ "$QA_REF" == refs/heads/?* ]]
+            [[ "$QA_SHA" =~ ^[0-9a-f]{40}$ ]]
           fi
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:

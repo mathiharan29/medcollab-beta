@@ -108,7 +108,7 @@ const registerMessageHandlers = (io, socket) => {
    *
    * We broadcast to the ROOM excluding the sender (socket.to, not io.to).
    */
-  socket.on(SOCKET_EVENTS.TYPING_START, ({ channelId }) => {
+  socket.on(SOCKET_EVENTS.TYPING_START, ({ channelId, kind } = {}) => {
     if (!channelId) return;
 
     const room = `channel:${channelId}`;
@@ -116,6 +116,8 @@ const registerMessageHandlers = (io, socket) => {
       channelId,
       userId,
       userName,
+      // Needl Voice (issue 13): "is recording…" instead of "is typing…".
+      ...(kind === 'voice' ? { kind: 'voice' } : {}),
     };
     socket.to(room).emit(SOCKET_EVENTS.USER_TYPING, payload);
     peerUserIds(channelId, userId)

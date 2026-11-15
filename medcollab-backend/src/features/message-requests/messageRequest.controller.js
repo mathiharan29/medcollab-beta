@@ -7,7 +7,11 @@ const MessageRequest = require('./messageRequest.model');
 const User = require('../users/user.model');
 const { respond } = require('../../utils/apiResponse');
 const asyncHandler = require('../../utils/asyncHandler');
-const { canMessageUser, canRequestMessage } = require('../../utils/knownUsers');
+const {
+  canMessageUser,
+  canRequestMessage,
+  isBlockedPair,
+} = require('../../utils/knownUsers');
 const { MESSAGE_REQUEST_STATUS, NOTIFICATION_TYPES } = require('../../constants');
 const { sendNotification } = require('../../services/notification.service');
 
@@ -71,22 +75,15 @@ const createRequest = asyncHandler(async (req, res) => {
     );
   }
 
+  if (await isBlockedPair(callerId, toUserId)) {
+    return respond.forbidden(res, 'Messaging is not available with this doctor');
+  }
+
   if (!(await canRequestMessage(callerId, toUserId))) {
     return respond.forbidden(
       res,
-      'This doctor is not accepting message requests from outside their network'
+      'This doctor cannot receive message requests right now'
     );
-  }
-
-  const blocked = await MessageRequest.findOne({
-    status: MESSAGE_REQUEST_STATUS.BLOCKED,
-    $or: [
-      { fromUserId: callerId, toUserId },
-      { fromUserId: toUserId, toUserId: callerId },
-    ],
-  }).select('_id');
-  if (blocked) {
-    return respond.forbidden(res, 'Messaging is not available with this doctor');
   }
 
   const existingPending = await MessageRequest.findOne({

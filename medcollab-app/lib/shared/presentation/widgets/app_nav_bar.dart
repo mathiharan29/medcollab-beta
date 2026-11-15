@@ -61,7 +61,7 @@ class AppNavBar extends StatelessWidget {
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     return ColoredBox(
-      color: AppColors.navyPrimary,
+      color: AppColors.chrome,
       child: Padding(
         padding: EdgeInsets.fromLTRB(4, 10, 4, 10 + bottomInset.clamp(0, 20)),
         child: Row(
@@ -175,7 +175,7 @@ class _AppNavItem extends StatelessWidget {
                             color: AppColors.emergencyRed,
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: AppColors.navyPrimary,
+                              color: AppColors.chrome,
                               width: 1.5,
                             ),
                           ),
@@ -199,7 +199,7 @@ class _AppNavItem extends StatelessWidget {
                             color: AppColors.emergencyRed,
                             borderRadius: AppRadius.pill,
                             border: Border.all(
-                              color: AppColors.navyPrimary,
+                              color: AppColors.chrome,
                               width: 1.5,
                             ),
                           ),

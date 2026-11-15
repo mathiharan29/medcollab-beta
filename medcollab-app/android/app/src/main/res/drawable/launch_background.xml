@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Modify this file to customize your launch splash screen -->
+<!-- Android 11 and older launch screen: transparent Vocle logo on the app's
+     page colour (no white box; issue 12). Android 12+ uses values-v31. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@android:color/white" />
-
-    <!-- You can insert your own image assets here -->
-    <!-- <item>
+    <item android:drawable="@color/splash_background" />
+    <item
+        android:width="216dp"
+        android:height="161dp"
+        android:gravity="center">
         <bitmap
-            android:gravity="center"
-            android:src="@mipmap/launch_image" />
-    </item> -->
+            android:filter="true"
+            android:src="@drawable/launch_logo" />
+    </item>
 </layer-list>

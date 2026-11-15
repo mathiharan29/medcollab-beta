@@ -10,6 +10,7 @@ class ThreadState extends Equatable {
     this.hasMore = false,
     this.error,
     this.typingUserNames = const [],
+    this.unavailable = false,
   });
 
   final MessageModel? rootMessage;
@@ -20,6 +21,10 @@ class ThreadState extends Equatable {
   final bool hasMore;
   final String? error;
   final List<String> typingUserNames;
+
+  /// Root not visible to this user (deleted for them, cleared, or gone):
+  /// nothing cached about it may be shown.
+  final bool unavailable;
 
   String get typingLabel {
     final names = typingUserNames;
@@ -38,6 +43,7 @@ class ThreadState extends Equatable {
     bool? hasMore,
     String? error,
     List<String>? typingUserNames,
+    bool? unavailable,
   }) {
     return ThreadState(
       rootMessage: rootMessage ?? this.rootMessage,
@@ -48,6 +54,7 @@ class ThreadState extends Equatable {
       hasMore: hasMore ?? this.hasMore,
       error: error,
       typingUserNames: typingUserNames ?? this.typingUserNames,
+      unavailable: unavailable ?? this.unavailable,
     );
   }
 
@@ -61,5 +68,6 @@ class ThreadState extends Equatable {
         hasMore,
         error,
         typingUserNames,
+        unavailable,
       ];
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
+import 'package:medcollab_app/features/handoffs/presentation/widgets/handoff_voice_note_field.dart';
 import 'package:medcollab_app/core/theme/app_colors.dart';
 import 'package:medcollab_app/core/theme/app_radius.dart';
 import 'package:medcollab_app/core/theme/app_text_styles.dart';
@@ -7,6 +8,7 @@ import 'package:medcollab_app/features/handoffs/data/models/handoff_model.dart';
 import 'package:medcollab_app/features/handoffs/data/models/handoff_patient_model.dart';
 import 'package:medcollab_app/features/handoffs/presentation/utils/handoff_priority_colors.dart';
 import 'package:medcollab_app/features/handoffs/presentation/widgets/handoff_card.dart';
+import 'package:medcollab_app/features/media/data/services/document_open_service.dart';
 
 class HandoffListTile extends StatelessWidget {
   const HandoffListTile({
@@ -87,6 +89,7 @@ class HandoffPatientCard extends StatelessWidget {
                 ),
               if (onEdit != null)
                 IconButton(
+                  tooltip: 'Edit patient',
                   icon: const Icon(Icons.edit_outlined, size: 18),
                   color: AppColors.textMuted,
                   onPressed: onEdit,
@@ -94,6 +97,7 @@ class HandoffPatientCard extends StatelessWidget {
                 ),
               if (onDelete != null)
                 IconButton(
+                  tooltip: 'Remove patient',
                   icon: const Icon(Icons.close, size: 18),
                   color: AppColors.textMuted,
                   onPressed: onDelete,
@@ -162,6 +166,53 @@ class HandoffPatientCard extends StatelessWidget {
                   ],
                 ),
               ),
+            ),
+          ],
+          if (patient.voiceNote != null) ...[
+            const SizedBox(height: 12),
+            HandoffVoiceNotePlayer(
+              note: patient.voiceNote!,
+              playbackId: 'patient-${patient.id ?? patient.bedNumber}',
+              label: 'VOICE NOTE',
+            ),
+          ],
+          if (patient.attachments.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              'Attachments',
+              style: AppTextStyles.cardTitle.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final attachment in patient.attachments)
+                  ActionChip(
+                    avatar: Icon(
+                      attachment.isImage
+                          ? Icons.image_outlined
+                          : Icons.description_outlined,
+                      size: 16,
+                      color: AppColors.tealPrimary,
+                    ),
+                    label: Text(
+                      attachment.displayName,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.body.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    onPressed: () => DocumentOpenService.open(
+                      context,
+                      url: attachment.url,
+                      fileName: attachment.displayName,
+                      mimeType: attachment.mimeType,
+                    ),
+                  ),
+              ],
             ),
           ],
           if (patient.notes.isNotEmpty) ...[

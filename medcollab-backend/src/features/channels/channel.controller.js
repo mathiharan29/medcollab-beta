@@ -57,7 +57,9 @@ const getSpaceChannels = asyncHandler(async (req, res) => {
     ],
   }).sort({ position: 1, createdAt: 1 }).lean();
 
-  return respond.ok(res, 'Channels fetched', { channels });
+  const { personalizeLastMessages } = require('../../utils/personalLastMessage');
+  const personal = await personalizeLastMessages(channels, req.user._id);
+  return respond.ok(res, 'Channels fetched', { channels: personal });
 });
 
 /**
@@ -88,6 +90,11 @@ const getChannelById = asyncHandler(async (req, res) => {
     channel = enrichDM(channel, req.user._id);
   }
 
+  // Pinned bar and preview follow this user's delete-for-me / clear chat.
+  const { personalizePinned, personalizeLastMessages } = require('../../utils/personalLastMessage');
+  channel = await personalizePinned(channel, req.user._id);
+  [channel] = await personalizeLastMessages([channel], req.user._id);
+
   return respond.ok(res, 'Channel fetched', { channel });
 });
 
@@ -105,13 +112,27 @@ const updateChannel = asyncHandler(async (req, res) => {
     (m) => m.toString() === req.user._id.toString()
   );
 
+  const sys = require('../../utils/systemMessages');
+
   if (isDirect) {
     if (!isMember) return respond.forbidden(res, 'Not a conversation member');
+    const before = (channel.name || '').trim();
     if (req.body.name !== undefined) {
       const name = String(req.body.name).trim().slice(0, 80);
       channel.name = name || null;
     }
     await channel.save();
+    const after = (channel.name || '').trim();
+    // Needl (3+ people) rename → activity line, like a WhatsApp group.
+    if (after && after !== before && (channel.members || []).length > 2) {
+      await sys.postSystemMessage({
+        channel,
+        actor: req.user,
+        event: sys.SYSTEM_EVENTS.GROUP_RENAMED,
+        text: `${sys.personName(req.user)} changed the chat name to "${after}"`,
+        notifyUserIds: channel.members.map((m) => m.toString()),
+      });
+    }
     const populated = await Channel.findById(channel._id)
       .populate(
         'members',
@@ -131,11 +152,21 @@ const updateChannel = asyncHandler(async (req, res) => {
     if (req.body[f] !== undefined) channel[f] = req.body[f];
   });
   // Name updates only allowed for non-default channels
+  const previousName = channel.name;
   if (req.body.name && !['general', 'emergency', 'academics'].includes(channel.name)) {
     channel.name = req.body.name.toLowerCase();
   }
 
   await channel.save();
+  if (channel.name !== previousName) {
+    await sys.postSystemMessage({
+      channel,
+      actor: req.user,
+      event: sys.SYSTEM_EVENTS.CHANNEL_RENAMED,
+      text: `${sys.personName(req.user)} renamed this channel to #${channel.name}`,
+      notifyUserIds: space.members.map((m) => m.userId.toString()),
+    });
+  }
   return respond.ok(res, 'Channel updated', { channel });
 });
 
@@ -229,7 +260,9 @@ const getMyDMs = asyncHandler(async (req, res) => {
     .sort({ 'lastMessage.sentAt': -1, updatedAt: -1 })
     .lean();
 
-  const enriched = channels.map((ch) => enrichDM(ch, req.user._id));
+  const { personalizeLastMessages } = require('../../utils/personalLastMessage');
+  const personal = await personalizeLastMessages(channels, req.user._id);
+  const enriched = personal.map((ch) => enrichDM(ch, req.user._id));
   return respond.ok(res, 'DMs fetched', { channels: enriched });
 });
 
@@ -289,6 +322,20 @@ const createOrGetDM = asyncHandler(async (req, res) => {
   const { memberPairKey } = require('../../utils/memberPairKey');
   const pairKey = memberPairKey([req.user._id, targetUserId]);
   const members = [req.user._id, targetUserId];
+
+  // DMs saved before memberPairKey existed have no key: adopt the old
+  // conversation (and its history) instead of opening a second, empty one.
+  await Channel.updateOne(
+    {
+      type: CHANNEL_TYPES.DIRECT,
+      members: { $all: members, $size: 2 },
+      $or: [{ memberPairKey: null }, { memberPairKey: { $exists: false } }],
+    },
+    { $set: { memberPairKey: pairKey } }
+  ).catch(() => {
+    // A keyed duplicate already exists — the upsert below returns it.
+  });
+
   let channel = await Channel.findOneAndUpdate(
     { type: CHANNEL_TYPES.DIRECT, memberPairKey: pairKey },
     {
@@ -299,8 +346,9 @@ const createOrGetDM = asyncHandler(async (req, res) => {
         memberPairKey: pairKey,
         createdBy: req.user._id,
         name: null,
-        isArchived: false,
       },
+      // An archived 1:1 would open but never show in the Direct list.
+      $set: { isArchived: false },
     },
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
@@ -346,18 +394,18 @@ const createGroupDM = asyncHandler(async (req, res) => {
   }
 
   const User = require('../users/user.model');
-  const { canMessageUser, canRequestMessage } = require('../../utils/knownUsers');
+  // REQ 5: requests are open to all, but adding someone to a conversation
+  // needs an existing relationship (or their opt-in) — see knownUsers.
+  const { canAddToConversation } = require('../../utils/knownUsers');
 
   for (const targetId of uniqueOthers) {
     const target = await User.findById(targetId).select('_id name');
     if (!target) return respond.notFound(res, 'One of the users was not found');
-    const allowed =
-      (await canMessageUser(req.user._id, targetId)) ||
-      (await canRequestMessage(req.user._id, targetId));
+    const allowed = await canAddToConversation(req.user._id, targetId);
     if (!allowed) {
       return respond.forbidden(
         res,
-        `Cannot add ${target.name || 'user'} — send a message request first or share a group`
+        `${target.name || 'This doctor'} needs to accept a message request from you before joining a Needl`
       );
     }
   }
@@ -451,18 +499,18 @@ const expandDM = asyncHandler(async (req, res) => {
 
   const User = require('../users/user.model');
   const Message = require('../messages/message.model');
-  const { canMessageUser, canRequestMessage } = require('../../utils/knownUsers');
+  // REQ 5: requests are open to all, but adding someone to a conversation
+  // needs an existing relationship (or their opt-in) — see knownUsers.
+  const { canAddToConversation } = require('../../utils/knownUsers');
 
   for (const targetId of uniqueNew) {
     const target = await User.findById(targetId).select('_id name');
     if (!target) return respond.notFound(res, 'One of the users was not found');
-    const allowed =
-      (await canMessageUser(req.user._id, targetId)) ||
-      (await canRequestMessage(req.user._id, targetId));
+    const allowed = await canAddToConversation(req.user._id, targetId);
     if (!allowed) {
       return respond.forbidden(
         res,
-        `Cannot add ${target.name || 'user'} — send a message request first or share a group`
+        `${target.name || 'This doctor'} needs to accept a message request from you before joining a Needl`
       );
     }
   }
@@ -496,7 +544,9 @@ const expandDM = asyncHandler(async (req, res) => {
       .slice(0, 4)
       .join(', ') || 'Needl';
 
+  let createdChannel = false;
   if (!channel) {
+    createdChannel = true;
     channel = await Channel.create({
       spaceId: null,
       type: CHANNEL_TYPES.DIRECT,
@@ -609,6 +659,38 @@ const expandDM = asyncHandler(async (req, res) => {
     }
   }
 
+  // Activity line in the new conversation people were added to (REQ 2).
+  const sysMsg = require('../../utils/systemMessages');
+  const newUsers = createdChannel
+    ? await User.find({ _id: { $in: uniqueNew } }).select('name displayTitle').lean()
+    : [];
+  if (createdChannel) await sysMsg.postSystemMessage({
+    channel,
+    actor: req.user,
+    event: sysMsg.SYSTEM_EVENTS.MEMBER_ADDED,
+    text: `${sysMsg.personName(req.user)} added ${sysMsg.joinNames(newUsers.map(sysMsg.personName))}`
+      + (history === 'none' ? '' : history === 'all' ? ' · earlier messages shared' : " · today's messages shared"),
+    targetUserIds: uniqueNew,
+    notifyUserIds: memberIds,
+  });
+
+  // Members still looking at the OLD conversation must learn about it live
+  // (beta 11-14, issue 8): a line there that opens the new Needl.
+  if (channel._id.toString() !== source._id.toString()) {
+    const addedUsers = newUsers.length
+      ? newUsers
+      : await User.find({ _id: { $in: uniqueNew } }).select('name displayTitle').lean();
+    await sysMsg.postSystemMessage({
+      channel: source,
+      actor: req.user,
+      event: sysMsg.SYSTEM_EVENTS.NEEDL_CONTINUED,
+      text: `${sysMsg.personName(req.user)} added ${sysMsg.joinNames(addedUsers.map(sysMsg.personName))} · chat continues in the new Needl`,
+      targetUserIds: uniqueNew,
+      notifyUserIds: (source.members || []).map((m) => m.toString()),
+      movedToChannelId: channel._id,
+    });
+  }
+
   const populated = await Channel.findById(channel._id)
     .populate(
       'members',
@@ -634,7 +716,8 @@ const getChannelMembers = asyncHandler(async (req, res) => {
   const channel = access.channel;
   const User = require('../users/user.model');
   const users = await User.find({ _id: { $in: channel.members } })
-    .select('name displayTitle role speciality avatarUrl availability')
+    // vocleUsername tells same-name doctors apart in @mention suggestions.
+    .select('name displayTitle role speciality avatarUrl availability vocleUsername')
     .lean();
 
   return respond.ok(res, 'Members fetched', { members: users });

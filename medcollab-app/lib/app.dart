@@ -9,8 +9,11 @@ import 'package:medcollab_app/core/notifications/fcm_service.dart';
 import 'package:medcollab_app/core/notifications/push_notification_router.dart';
 import 'package:medcollab_app/core/presence/presence_cubit.dart';
 import 'package:medcollab_app/core/router/app_navigation_back_handler.dart';
+import 'package:medcollab_app/core/theme/app_colors.dart';
 import 'package:medcollab_app/core/theme/app_theme.dart';
+import 'package:medcollab_app/core/theme/theme_brightness_sync.dart';
 import 'package:medcollab_app/core/theme/theme_mode_cubit.dart';
+import 'package:medcollab_app/core/theme/theme_switch_transition.dart';
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_state.dart';
 import 'package:medcollab_app/features/notifications/presentation/cubit/notification_badge_cubit.dart';
@@ -76,18 +79,32 @@ class _MedCollabAppState extends State<MedCollabApp> {
         },
         child: AppLifecycleHandler(
           child: BlocBuilder<ThemeModeCubit, ThemeSettingsState>(
-            builder: (context, themeState) => MaterialApp.router(
-              title: AppConstants.appName,
-              debugShowCheckedModeBanner: false,
-              theme: AppTheme.lightFor(themeState.palette),
-              darkTheme: AppTheme.darkFor(themeState.palette),
-              themeMode: themeState.mode,
-              routerConfig: deps.appRouter.router,
-              builder: (context, child) => AppNavigationBackHandler(
-                router: deps.appRouter.router,
-                child: child ?? const SizedBox.shrink(),
-              ),
-            ),
+            builder: (context, themeState) {
+              // Resolve colours for the target theme before building it.
+              AppColors.setBrightness(themeState.brightness);
+              return MaterialApp.router(
+                title: AppConstants.appName,
+                debugShowCheckedModeBanner: false,
+                theme: AppTheme.lightFor(themeState.palette),
+                darkTheme: AppTheme.darkFor(themeState.palette),
+                themeMode: themeState.mode,
+                // No lerp: AppColors tokens switch in one frame, so an
+                // animated ThemeData produced half-light/half-dark frames
+                // and resized text mid-way. ThemeSwitchTransition fades a
+                // snapshot of the old screen instead.
+                themeAnimationDuration: Duration.zero,
+                routerConfig: deps.appRouter.router,
+                builder: (context, child) => ThemeSwitchTransition(
+                  child: ThemeBrightnessSync(
+                    child: AppNavigationBackHandler(
+                      router: deps.appRouter.router,
+                      popupTracker: deps.appRouter.popupTracker,
+                      child: child ?? const SizedBox.shrink(),
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),

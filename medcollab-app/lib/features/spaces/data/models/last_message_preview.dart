@@ -40,6 +40,8 @@ class LastMessagePreview extends Equatable {
       MessageType.ecg => '📈 ECG',
       MessageType.handoff => '🔄 Handoff',
       MessageType.alert => '⚠️ Alert',
+      MessageType.audio => '🎤 Voice message',
+      MessageType.system => 'Group update',
       MessageType.text => 'Message',
     };
   }

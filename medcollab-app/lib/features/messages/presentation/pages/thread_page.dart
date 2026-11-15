@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:medcollab_app/core/di/app_dependencies.dart';
 import 'package:medcollab_app/core/theme/app_colors.dart';
 import 'package:medcollab_app/core/theme/app_spacing.dart';
+import 'package:medcollab_app/core/theme/app_text_styles.dart';
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:medcollab_app/features/media/data/services/media_picker_service.dart';
 import 'package:medcollab_app/features/messages/data/models/message_model.dart';
@@ -112,14 +113,17 @@ class _ThreadPageState extends State<ThreadPage> {
     super.dispose();
   }
 
-  void _scrollToBottom() {
+  /// Pins the thread to its latest reply. Re-checks for a few frames because
+  /// images/attachments finishing layout after the first jump grow the
+  /// content and would otherwise leave the view mid-thread (REQ 2).
+  void _scrollToBottom({int settleFrames = 6}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_scrollController.hasClients) return;
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOut,
-      );
+      if (!mounted || !_scrollController.hasClients) return;
+      final position = _scrollController.position;
+      if (position.pixels < position.maxScrollExtent) {
+        _scrollController.jumpTo(position.maxScrollExtent);
+      }
+      if (settleFrames > 0) _scrollToBottom(settleFrames: settleFrames - 1);
     });
   }
 
@@ -129,11 +133,11 @@ class _ThreadPageState extends State<ThreadPage> {
   ) async {
     final picked = await pick();
     if (picked == null || !context.mounted) return;
-    await context.read<ThreadCubit>().sendAttachment(
+    unawaited(context.read<ThreadCubit>().sendAttachment(
           bytes: picked.bytes,
           fileName: picked.fileName,
           mimeType: picked.mimeType,
-        );
+        ));
     _scrollToBottom();
   }
 
@@ -192,6 +196,19 @@ class _ThreadPageState extends State<ThreadPage> {
                         );
                       }
 
+                      if (state.unavailable) {
+                        return Center(
+                          key: const Key('thread-unavailable'),
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Text(
+                              'This message is no longer available.',
+                              textAlign: TextAlign.center,
+                              style: AppTextStyles.body,
+                            ),
+                          ),
+                        );
+                      }
                       final root = state.rootMessage ?? widget.initialRoot;
                       if (root == null) {
                         return const Center(child: Text('Thread not found'));
@@ -258,8 +275,10 @@ class _ThreadPageState extends State<ThreadPage> {
                   buildWhen: (p, n) =>
                       p.isSending != n.isSending ||
                       p.isUploading != n.isUploading ||
-                      p.typingUserNames != n.typingUserNames,
+                      p.typingUserNames != n.typingUserNames ||
+                      p.unavailable != n.unavailable,
                   builder: (context, state) {
+                    if (state.unavailable) return const SizedBox.shrink();
                     final cubit = context.read<ThreadCubit>();
                     return Column(
                       mainAxisSize: MainAxisSize.min,
@@ -289,11 +308,13 @@ class _ThreadPageState extends State<ThreadPage> {
                           onTyping: _handleTyping,
                           child: MessageComposer(
                             controller: _textController,
-                            hintText: 'Reply in thread…',
-                            isBusy: state.isSending || state.isUploading,
+                            hintText: 'Reply',
+                            // Never block typing while something sends/uploads (beta feedback).
+                            isBusy: false,
                             onSend: (text) async {
-                              await cubit.sendReply(text);
+                              // Clear first: the reply shows instantly.
                               _textController.clear();
+                              unawaited(cubit.sendReply(text));
                               await _clearDraft();
                               _isTyping = false;
                               cubit.emitTypingStop();

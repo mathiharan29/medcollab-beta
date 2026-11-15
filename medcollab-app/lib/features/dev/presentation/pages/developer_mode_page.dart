@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:medcollab_app/core/analytics/analytics_policy.dart';
-import 'package:medcollab_app/core/constants/app_constants.dart';
+import 'package:medcollab_app/core/config/app_version.dart';
 import 'package:medcollab_app/core/di/app_dependencies.dart';
 import 'package:medcollab_app/core/router/app_routes.dart';
 import 'package:medcollab_app/core/theme/app_colors.dart';
@@ -136,7 +136,7 @@ class _DeveloperModePageState extends State<DeveloperModePage> {
           : ListView(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
               children: [
-                const Text(
+                Text(
                   'Beta / debug tools. Actions use client APIs where possible.',
                   style: AppTextStyles.body,
                 ),
@@ -151,7 +151,7 @@ class _DeveloperModePageState extends State<DeveloperModePage> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'App ${AppConstants.appVersionLabel}',
+                        'App ${AppVersion.label}',
                         style: AppTextStyles.caption,
                       ),
                       Text(
@@ -169,11 +169,11 @@ class _DeveloperModePageState extends State<DeveloperModePage> {
                 ClinicalCard(
                   child: SwitchListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text(
+                    title: Text(
                       'Dev tools unlocked',
                       style: AppTextStyles.cardTitle,
                     ),
-                    subtitle: const Text(
+                    subtitle: Text(
                       'Persisted on this device',
                       style: AppTextStyles.caption,
                     ),
@@ -191,25 +191,25 @@ class _DeveloperModePageState extends State<DeveloperModePage> {
                         label: 'Seed sample notifications',
                         onTap: _seedNotifications,
                       ),
-                      const Divider(height: 1, color: AppColors.borderLight),
+                      Divider(height: 1, color: AppColors.borderLight),
                       _DevAction(
                         icon: Icons.assignment_outlined,
                         label: 'Generate sample handoff',
                         onTap: _generateSampleHandoff,
                       ),
-                      const Divider(height: 1, color: AppColors.borderLight),
+                      Divider(height: 1, color: AppColors.borderLight),
                       _DevAction(
                         icon: Icons.chat_bubble_outline,
                         label: 'Open Start DM',
                         onTap: () => context.push(AppRoutes.startDm),
                       ),
-                      const Divider(height: 1, color: AppColors.borderLight),
+                      Divider(height: 1, color: AppColors.borderLight),
                       _DevAction(
                         icon: Icons.forum_outlined,
                         label: 'Seed demo conversation',
                         onTap: _seedConversation,
                       ),
-                      const Divider(height: 1, color: AppColors.borderLight),
+                      Divider(height: 1, color: AppColors.borderLight),
                       _DevAction(
                         icon: Icons.cleaning_services_outlined,
                         label: 'Reset local drafts / bookmarks',
@@ -241,7 +241,7 @@ class _DevAction extends StatelessWidget {
       contentPadding: EdgeInsets.zero,
       leading: Icon(icon, color: AppColors.textSecondary, size: 22),
       title: Text(label, style: AppTextStyles.cardTitle),
-      trailing: const Icon(
+      trailing: Icon(
         Icons.chevron_right,
         color: AppColors.textMuted,
         size: 20,

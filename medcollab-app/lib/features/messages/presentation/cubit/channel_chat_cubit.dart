@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:medcollab_app/core/state/safe_emit.dart';
 import 'package:medcollab_app/core/chat/active_chat_tracker.dart';
 import 'package:medcollab_app/core/chat/chat_transcript_cache.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
@@ -22,7 +23,7 @@ import 'package:medcollab_app/features/notifications/data/repositories/notificat
 
 part 'channel_chat_state.dart';
 
-class ChannelChatCubit extends Cubit<ChannelChatState> {
+class ChannelChatCubit extends Cubit<ChannelChatState> with SafeEmit<ChannelChatState> {
   StreamSubscription<bool>? _connectionSub;
 
   /// Dedupe socket fan-out (channel room + user room).
@@ -112,26 +113,37 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
     }
   }
 
+  /// Loads in flight, each recording what changed live while it ran.
+  final List<_LiveChanges> _openLoads = [];
+
   Future<void> loadMessages({bool silent = false}) async {
     if (isClosed) return;
     if (!silent) {
       emit(state.copyWith(isLoading: true, error: null));
     }
+    final live = _LiveChanges();
+    _openLoads.add(live);
     try {
-      final page = await _messageRepository.getMessages(channelId);
+      final fetched = await _messageRepository.getMessages(channelId);
       if (isClosed) return;
+      // The snapshot was taken when the request started. A message that
+      // arrived live meanwhile (e.g. sent just as the chat opened) used to
+      // vanish when it replaced the list, and one deleted meanwhile came
+      // back. Keep what changed live meanwhile.
+      final messages = _withLiveChanges(fetched.messages, live);
       emit(
         state.copyWith(
-          messages: page.messages,
-          hasMore: page.hasMore,
+          messages: messages,
+          hasMore: fetched.hasMore,
           isLoading: false,
         ),
       );
       ChatTranscriptCache.save(
         channelId,
-        page.messages,
-        hasMore: page.hasMore,
+        messages,
+        hasMore: fetched.hasMore,
       );
+      final page = fetched;
       _socketClient.joinChannel(channelId);
       unawaited(_markMessagesRead(page.messages));
       unawaited(_markChannelNotificationsRead());
@@ -139,6 +151,35 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
       if (isClosed) return;
       _markReadOnlyForAccessError(e);
       emit(state.copyWith(isLoading: false, error: e.message));
+    } finally {
+      _openLoads.remove(live);
+    }
+  }
+
+  List<MessageModel> _withLiveChanges(
+      List<MessageModel> fetched, _LiveChanges live) {
+    final result = live.removed.isEmpty
+        ? List<MessageModel>.from(fetched)
+        : fetched.where((m) => !live.removed.contains(m.id)).toList();
+    final ids = {for (final m in result) m.id};
+    // Only what was added while this load ran (live arrivals, and sends /
+    // placeholders started meanwhile). Older placeholders — e.g. a failed
+    // send restored from the transcript cache — follow the server as before.
+    final keep = state.messages
+        .where((m) => !ids.contains(m.id) && live.added.contains(m.id));
+    if (keep.isEmpty) return result;
+    return [...result, ...keep]..sort(_compareByCreatedAt);
+  }
+
+  void _noteLiveAdd(String id) {
+    for (final l in _openLoads) {
+      l.added.add(id);
+    }
+  }
+
+  void _noteLiveRemove(String id) {
+    for (final l in _openLoads) {
+      l.removed.add(id);
     }
   }
 
@@ -233,10 +274,34 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
     });
   }
 
+  // Sends go out one after another in the background so the composer never
+  // blocks (typing / sending again while one is in flight, like WhatsApp)
+  // and the server keeps the order they were written in.
+  Future<void> _sendChain = Future.value();
+  int _inFlight = 0;
+  int _tempSeq = 0;
+
+  String _nextTempId() =>
+      'local-${DateTime.now().millisecondsSinceEpoch}-${_tempSeq++}';
+
+  Future<void> _enqueue(Future<void> Function() job) {
+    _inFlight++;
+    emit(state.copyWith(isSending: true, error: null));
+    final run = _sendChain.then((_) => job()).whenComplete(() {
+      _inFlight--;
+      // copyWith clears error unless passed: keep a send failure visible.
+      if (_inFlight == 0) {
+        emit(state.copyWith(isSending: false, error: state.error));
+      }
+    });
+    _sendChain = run.catchError((Object _) {});
+    return run;
+  }
+
   Future<void> sendMessage(String text,
       {List<String> mentions = const []}) async {
     final trimmed = text.trim();
-    if (trimmed.isEmpty || state.isSending || state.isReadOnly) return;
+    if (trimmed.isEmpty || state.isReadOnly) return;
 
     final replySource = state.pendingReply;
     final replyTo = replySource == null || replySource.localOnly
@@ -249,7 +314,7 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
             text: replySource.displayText,
           );
 
-    final tempId = 'local-${DateTime.now().millisecondsSinceEpoch}';
+    final tempId = _nextTempId();
     final optimistic = MessageModel(
       id: tempId,
       channelId: channelId,
@@ -261,29 +326,31 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
       localOnly: true,
       deliveryState: MessageDeliveryState.sending,
     );
+    // Shown instantly; the network round trip happens in the background.
     _upsertRootMessage(optimistic);
-    emit(state.copyWith(isSending: true, error: null, clearPendingReply: true));
-    try {
-      final message = await _messageRepository.sendTextMessage(
-        channelId: channelId,
-        text: trimmed,
-        mentions: mentions,
-        replyToId: replyTo?.messageId,
-      );
-      _replaceLocalMessage(tempId, message);
-      emit(state.copyWith(isSending: false));
-    } on AppException catch (e) {
-      _markFailed(tempId);
-      _markReadOnlyForAccessError(e);
-      emit(state.copyWith(isSending: false, error: e.message));
-    } catch (_) {
-      _markFailed(tempId);
-      emit(state.copyWith(isSending: false, error: 'Failed to send message'));
-    }
+    emit(state.copyWith(clearPendingReply: true));
+    await _enqueue(() async {
+      try {
+        final message = await _messageRepository.sendTextMessage(
+          channelId: channelId,
+          text: trimmed,
+          mentions: mentions,
+          replyToId: replyTo?.messageId,
+        );
+        _replaceLocalMessage(tempId, message);
+      } on AppException catch (e) {
+        _markFailed(tempId);
+        _markReadOnlyForAccessError(e);
+        emit(state.copyWith(error: e.message));
+      } catch (_) {
+        _markFailed(tempId);
+        emit(state.copyWith(error: 'Failed to send message'));
+      }
+    });
   }
 
   Future<void> retryFailedMessage(String messageId) async {
-    if (state.isSending || state.isReadOnly) return;
+    if (state.isReadOnly) return;
     final failed = state.messages
         .where((message) =>
             message.id == messageId &&
@@ -311,8 +378,11 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
     required String fileName,
     required String mimeType,
     String? caption,
+    // Voice note (REQ 12).
+    int? durationMs,
+    List<int> waveform = const [],
   }) async {
-    if (state.isSending || state.isReadOnly) return;
+    if (state.isReadOnly) return;
     if (bytes.length > 50 * 1024 * 1024) {
       emit(state.copyWith(error: 'That file is over 50 MB'));
       return;
@@ -329,7 +399,7 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
             text: replySource.displayText,
           );
 
-    final tempId = 'local-${DateTime.now().millisecondsSinceEpoch}';
+    final tempId = _nextTempId();
     final mediaType = MessageType.forMime(mimeType);
     final optimistic = MessageModel(
       id: tempId,
@@ -340,6 +410,8 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
         text: caption,
         fileName: fileName,
         mimeType: mimeType,
+        durationMs: durationMs,
+        waveform: waveform,
       ),
       replyTo: replyTo,
       createdAt: DateTime.now(),
@@ -355,38 +427,58 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
       ),
     );
     _upsertRootMessage(optimistic);
-    emit(state.copyWith(isSending: true, error: null, isUploading: true));
+    // Upload starts right away and never blocks typing or other sends;
+    // only the final "post message" step joins the ordered send queue.
+    _uploading++;
+    emit(state.copyWith(error: null, isUploading: true));
+    void doneUploading() {
+      _uploading--;
+      if (_uploading == 0) {
+        emit(state.copyWith(isUploading: false, error: state.error));
+      }
+    }
+
     try {
       final upload = await _mediaRepository.uploadFile(
         bytes: bytes,
         fileName: fileName,
         mimeType: mimeType,
       );
-      final message = await _messageRepository.sendMediaMessage(
-        channelId: channelId,
-        type: mediaType,
-        upload: upload,
-        caption: caption,
-        replyToId: replyTo?.messageId,
-      );
-      _replaceLocalMessage(tempId, message);
-      emit(state.copyWith(isSending: false, isUploading: false));
+      doneUploading();
+      await _enqueue(() async {
+        try {
+          final message = await _messageRepository.sendMediaMessage(
+            channelId: channelId,
+            type: mediaType,
+            upload: upload,
+            caption: caption,
+            replyToId: replyTo?.messageId,
+            durationMs: durationMs,
+            waveform: waveform,
+          );
+          _replaceLocalMessage(tempId, message);
+        } on AppException catch (e) {
+          _markFailed(tempId);
+          _markReadOnlyForAccessError(e);
+          emit(state.copyWith(error: e.message));
+        } catch (_) {
+          _markFailed(tempId);
+          emit(state.copyWith(error: 'Failed to send attachment'));
+        }
+      });
     } on AppException catch (e) {
+      doneUploading();
       _markFailed(tempId);
       _markReadOnlyForAccessError(e);
-      emit(state.copyWith(
-          isSending: false, isUploading: false, error: e.message));
+      emit(state.copyWith(error: e.message));
     } catch (_) {
+      doneUploading();
       _markFailed(tempId);
-      emit(
-        state.copyWith(
-          isSending: false,
-          isUploading: false,
-          error: 'Failed to send attachment',
-        ),
-      );
+      emit(state.copyWith(error: 'Failed to send attachment'));
     }
   }
+
+  int _uploading = 0;
 
   Future<void> editMessage(String messageId, String text) async {
     final trimmed = text.trim();
@@ -403,21 +495,51 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
     }
   }
 
-  Future<void> deleteMessage(String messageId) async {
+  /// WhatsApp-style delete. [forEveryone] removes it from the server for all
+  /// members; otherwise it is hidden for this user only. Either way it
+  /// leaves the timeline immediately and comes back only if the call fails.
+  Future<void> deleteMessage(String messageId, {bool forEveryone = true}) async {
     final index = state.messages.indexWhere((m) => m.id == messageId);
     if (index < 0) return;
-    final existing = state.messages[index];
-    // Optimistic soft-delete — API does not return the deleted message body.
-    _upsertRootMessage(existing.copyWith(isDeleted: true));
+    final before = state.messages;
+    emit(state.copyWith(
+      messages: before.where((m) => m.id != messageId).toList(),
+    ));
     try {
       await _messageRepository.deleteMessage(
         channelId: channelId,
         messageId: messageId,
+        forEveryone: forEveryone,
       );
     } on AppException catch (e) {
-      _upsertRootMessage(existing);
-      emit(state.copyWith(error: e.message));
+      // Restore, keeping anything that arrived meanwhile.
+      final current = state.messages;
+      final restored = List<MessageModel>.from(current)..add(before[index]);
+      restored.sort(_byCreatedAt);
+      emit(state.copyWith(messages: restored, error: e.message));
     }
+  }
+
+  /// "Clear chat" (this user only). Messages still sending stay visible.
+  Future<bool> clearChat() async {
+    final before = state.messages;
+    emit(state.copyWith(
+      messages: before.where((m) => m.localOnly).toList(),
+      hasMore: false,
+    ));
+    try {
+      await _messageRepository.clearChat(channelId);
+      return true;
+    } on AppException catch (e) {
+      emit(state.copyWith(messages: before, error: e.message));
+      return false;
+    }
+  }
+
+  static int _byCreatedAt(MessageModel a, MessageModel b) {
+    final at = a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+    final bt = b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+    return at.compareTo(bt);
   }
 
   void _listenForTyping() {
@@ -481,6 +603,27 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
         return;
       }
 
+      // Edits arrive as a partial update { messageId, content, isEdited }:
+      // merge them into the message we already show. Parsing them as a full
+      // message created a stray "null" row and the edit never appeared.
+      if (data['_id'] == null && data['id'] == null) {
+        if (messageId.isEmpty) return;
+        final index = state.messages.indexWhere((m) => m.id == messageId);
+        if (index < 0) return;
+        final contentJson = asJsonMap(data['content']);
+        final updated = List<MessageModel>.from(state.messages);
+        updated[index] = updated[index].copyWith(
+          content: contentJson != null
+              ? MessageContent.fromJson(contentJson)
+              : updated[index].content,
+          isEdited: data['isEdited'] == true || updated[index].isEdited,
+          // A thread reply deleted for everyone lowers the root's count.
+          replyCount: (data['replyCount'] as num?)?.toInt(),
+        );
+        emit(state.copyWith(messages: updated));
+        return;
+      }
+
       final message = _parseSocketMessage(data);
       if (message == null) return;
       final msgChannelId = message.channelId.isNotEmpty
@@ -488,10 +631,11 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
           : data['channelId']?.toString() ?? '';
       if (msgChannelId.isNotEmpty && msgChannelId != channelId) return;
       if (message.isThreadReply) {
-        _applyThreadReplyToRoot(message);
-      } else {
-        _upsertRootMessage(message);
+        // A full message_updated for a reply is not a *new* reply: don't
+        // bump the count (only new_message does).
+        return;
       }
+      _upsertRootMessage(message);
     });
 
     _messageDeletedSub =
@@ -499,16 +643,20 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
       final messageId =
           data['messageId']?.toString() ?? data['_id']?.toString() ?? '';
       if (messageId.isEmpty) return;
+      // A load in flight may still hold it: don't let it come back.
+      _noteLiveRemove(messageId);
       final index = state.messages.indexWhere((m) => m.id == messageId);
       if (index < 0) {
-        // May be a thread reply — refresh counts softly when possible.
-        final parsed = _parseSocketMessage(data);
-        if (parsed != null && parsed.channelId == channelId) {
-          _upsertRootMessage(parsed.copyWith(isDeleted: true));
-        }
+        // Not in the main timeline (e.g. a thread reply, or another chat —
+        // deletes also reach members' personal rooms). Never turn the
+        // payload into a row.
         return;
       }
-      _upsertRootMessage(state.messages[index].copyWith(isDeleted: true));
+      // Deleted for everyone = gone from the server, so gone from view
+      // (matches what a reload shows).
+      emit(state.copyWith(
+        messages: state.messages.where((m) => m.id != messageId).toList(),
+      ));
     });
   }
 
@@ -526,16 +674,12 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
 
   void _replaceLocalMessage(String tempId, MessageModel message) {
     final updated = List<MessageModel>.from(state.messages);
-    updated.removeWhere(
-      (m) =>
-          m.id == tempId ||
-          m.id == message.id ||
-          (m.localOnly &&
-              m.sender.id == currentUserId &&
-              _messagesMatch(m, message)),
-    );
+    // Only this send's placeholder (and a live echo of the same message):
+    // matching by text dropped a second identical quick send for a moment.
+    updated.removeWhere((m) => m.id == tempId || m.id == message.id);
     updated.add(message);
     updated.sort(_compareByCreatedAt);
+    _noteLiveAdd(message.id);
 
     final localMedia = Map<String, List<int>>.from(state.localMediaByMessageId);
     final bytes = localMedia.remove(tempId);
@@ -633,19 +777,25 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
   void _upsertRootMessage(MessageModel message, {bool fromSocket = false}) {
     final updated = List<MessageModel>.from(state.messages);
 
-    if (fromSocket && message.sender.id == currentUserId) {
-      updated.removeWhere(
+    if (fromSocket &&
+        message.sender.id == currentUserId &&
+        !updated.any((m) => m.id == message.id)) {
+      // Our own message echoed live: retire the oldest matching placeholder
+      // only (two quick identical sends keep both visible).
+      final i = updated.indexWhere(
         (m) =>
             m.localOnly &&
             m.sender.id == currentUserId &&
             _messagesMatch(m, message),
       );
+      if (i >= 0) updated.removeAt(i);
     }
 
     final existing = updated.indexWhere((m) => m.id == message.id);
     if (existing >= 0) {
       updated[existing] = message;
     } else {
+      _noteLiveAdd(message.id);
       updated.add(message);
       updated.sort(_compareByCreatedAt);
     }
@@ -696,4 +846,10 @@ class ChannelChatCubit extends Cubit<ChannelChatState> {
     _memberLeftSub?.cancel();
     return super.close();
   }
+}
+
+/// What changed live while one [ChannelChatCubit.loadMessages] ran.
+class _LiveChanges {
+  final Set<String> added = {};
+  final Set<String> removed = {};
 }

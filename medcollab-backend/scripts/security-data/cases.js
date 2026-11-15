@@ -148,15 +148,16 @@ add('Soft deletion blanks content and reactions on persisted message', 'Save del
   const raw = await c.models.Message.findById(m._id).lean();
   return out(raw.isDeleted && !!raw.deletedAt && raw.content.text === 'This message was deleted' && raw.content.mediaUrl === null && raw.reactions.length === 0, { deletionFlag: raw.isDeleted, deletedAtSet: !!raw.deletedAt, mediaBlanked: raw.content.mediaUrl === null, reactions: raw.reactions.length });
 });
-add('Editing a deleted message cannot restore stored text', 'Deleted message update is denied and placeholder content remains unchanged', 'HTTP', [msg, 'src/features/messages/message.controller.js'], async c => {
+add('Editing a deleted message cannot restore stored text', 'Delete for everyone removes the row; a later edit is denied and recreates nothing', 'HTTP', [msg, 'src/features/messages/message.controller.js'], async c => {
   const live = await c.make('Message', { channelId: c.ch._id, senderId: c.A._id, content: { text: 'live control' } });
   assert.equal((await c.api('A', 'PUT', `/api/channels/${c.ch._id}/messages/${live._id}`, { content: { text: 'valid edit control' } })).status, 200);
   const m = await c.make('Message', { channelId: c.ch._id, senderId: c.A._id, content: { text: 'delete canary' } });
   assert.equal((await c.api('A', 'DELETE', `/api/channels/${c.ch._id}/messages/${m._id}`)).status, 200);
-  assert.equal((await c.models.Message.findById(m._id)).content.text, 'This message was deleted');
+  const removed = (await c.models.Message.findById(m._id)) === null;
   const r = await c.api('A', 'PUT', `/api/channels/${c.ch._id}/messages/${m._id}`, { content: { text: 'restored synthetic canary' } });
   const raw = await c.models.Message.findById(m._id).lean();
-  return out([400, 403, 404, 409].includes(r.status) && raw.content.text === 'This message was deleted', { liveEditStatus: 200, deletionStatus: 200, deletedEditStatus: r.status, isDeleted: raw.isDeleted, deletedAtSet: !!raw.deletedAt, deletedTextRestored: raw.content.text === 'restored synthetic canary' });
+  const canaryAnywhere = await c.models.Message.exists({ 'content.text': { $in: ['delete canary', 'restored synthetic canary'] } });
+  return out(removed && [400, 403, 404, 409].includes(r.status) && raw === null && !canaryAnywhere, { liveEditStatus: 200, deletionStatus: 200, rowRemoved: removed, deletedEditStatus: r.status, recreated: raw !== null, canaryRetained: !!canaryAnywhere });
 });
 add('Deletion removes denormalized quote and channel text copies', 'Policy candidate: delete scrubs copied previews as well as original content', 'model-policy', [msg, channel, 'src/features/messages/message.controller.js'], async c => {
   const m = await c.make('Message', { channelId: c.ch._id, senderId: c.A._id, content: { text: 'snapshot canary' } });

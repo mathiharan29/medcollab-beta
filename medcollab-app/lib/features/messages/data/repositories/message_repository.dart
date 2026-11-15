@@ -56,6 +56,8 @@ class MessageRepository extends BaseRepository {
     required MediaUploadResult upload,
     String? caption,
     String? replyToId,
+    int? durationMs,
+    List<int> waveform = const [],
   }) {
     return _sendMessage(
       channelId: channelId,
@@ -69,8 +71,51 @@ class MessageRepository extends BaseRepository {
         mimeType: upload.mimeType,
         width: upload.width,
         height: upload.height,
+        durationMs: durationMs,
+        waveform: waveform,
       ),
       replyToId: replyToId,
+    );
+  }
+
+  /// Needl Voice (issue 13): a voice clip whose transcript follows later
+  /// (made on this phone, attached with [setTranscript]).
+  Future<MessageModel> sendVoiceMessage({
+    required String channelId,
+    required MediaUploadResult upload,
+    required int durationMs,
+    List<int> waveform = const [],
+  }) {
+    return _sendMessage(
+      channelId: channelId,
+      type: MessageType.audio,
+      content: MessageContent(
+        mediaUrl: upload.url,
+        mimeType: upload.mimeType,
+        fileSize: upload.fileSize,
+        durationMs: durationMs,
+        waveform: waveform,
+        transcriptStatus: 'pending',
+        voiceMode: true,
+      ),
+    );
+  }
+
+  /// `PATCH …/messages/:id/transcript` — null/empty marks it unavailable.
+  Future<MessageModel> setTranscript({
+    required String channelId,
+    required String messageId,
+    String? transcript,
+  }) {
+    final text = transcript?.trim() ?? '';
+    return execute(
+      () => apiClient.patch(
+        '${ApiEndpoints.messageById(channelId, messageId)}/transcript',
+        data: text.isEmpty
+            ? {'status': 'unavailable'}
+            : {'status': 'done', 'transcript': text},
+        parser: (json) => parseNested(json, 'message', MessageModel.fromJson),
+      ),
     );
   }
 
@@ -111,13 +156,25 @@ class MessageRepository extends BaseRepository {
     );
   }
 
-  /// Soft-deletes a message. Backend returns `{ success }` without a message body.
+  /// [forEveryone]: removes the message (and its thread) from the server for
+  /// all members. Otherwise hides it for the current user only.
   Future<void> deleteMessage({
     required String channelId,
     required String messageId,
+    bool forEveryone = true,
   }) {
     return executeVoid(
-      () => apiClient.delete(ApiEndpoints.messageById(channelId, messageId)),
+      () => apiClient.delete(
+        ApiEndpoints.messageById(channelId, messageId),
+        queryParameters: {'scope': forEveryone ? 'everyone' : 'me'},
+      ),
+    );
+  }
+
+  /// "Clear chat": hides every message so far, for the current user only.
+  Future<void> clearChat(String channelId) {
+    return executeVoid(
+      () => apiClient.post('${ApiEndpoints.channelMessages(channelId)}/clear'),
     );
   }
 

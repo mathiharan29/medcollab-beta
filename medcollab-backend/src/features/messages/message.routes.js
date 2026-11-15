@@ -151,13 +151,35 @@ router.put(
 );
 
 /**
- * @route   DELETE /api/channels/:channelId/messages/:id
- * @desc    Soft-delete a message
- * @access  Protected + Sender (own messages) OR Space Admin (any message)
- *
- * Does NOT remove the document from MongoDB.
- * Sets isDeleted: true, blanks content, emits `message_deleted` socket event.
- * Client shows "This message was deleted" placeholder.
+ * @route   PATCH /api/channels/:channelId/messages/:id/transcript
+ * @desc    Needl Voice (issue 13): the sender's phone attaches the on-device
+ *          transcript of its own voice message (or marks it unavailable).
+ * @body    { transcript?: string (≤ 8000), status: 'done' | 'unavailable' }
+ */
+router.patch(
+  '/:id/transcript',
+  validateMongoId('id'),
+  [
+    body('status').isIn(['done', 'unavailable']).withMessage('status must be done or unavailable'),
+    body('transcript').optional({ nullable: true }).isString()
+      .isLength({ max: 8000 }).withMessage('Transcript cannot exceed 8000 characters'),
+    handleValidationErrors,
+  ],
+  messageController.setTranscript
+);
+
+/**
+ * @route   POST /api/channels/:channelId/messages/clear
+ * @desc    Clear chat for the caller only (messages up to now are hidden)
+ */
+router.post('/clear', messageController.clearChat);
+
+/**
+ * @route   DELETE /api/channels/:channelId/messages/:id?scope=everyone|me
+ * @desc    scope=me: hide for the caller (any member).
+ *          scope=everyone (default): sender or space admin; removes the
+ *          message, its thread replies, media and alerts from the database
+ *          and emits `message_deleted` for each removed id.
  */
 router.delete('/:id', validateMongoId('id'), messageController.deleteMessage);
 

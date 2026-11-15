@@ -10,6 +10,12 @@ const { joinUserToSpaceRoom, leaveUserFromSpaceRoom } = require('../../socket');
 const { respond } = require('../../utils/apiResponse');
 const asyncHandler = require('../../utils/asyncHandler');
 const { SPACE_ROLES, CHANNEL_TYPES } = require('../../constants');
+const {
+  SYSTEM_EVENTS,
+  personName,
+  joinNames,
+  postSpaceSystemMessage,
+} = require('../../utils/systemMessages');
 
 /**
  * Seed the three default channels every new space gets.
@@ -69,6 +75,12 @@ const createSpace = asyncHandler(async (req, res) => {
   // Join creator's socket to the space room for presence broadcasts
   joinUserToSpaceRoom(req.user._id, space._id);
 
+  await postSpaceSystemMessage(space, {
+    actor: req.user,
+    event: SYSTEM_EVENTS.GROUP_CREATED,
+    text: `${personName(req.user)} created the group "${space.name}"`,
+  });
+
   // Fetch channels to include in response
   const channels = await Channel.find({ spaceId: space._id }).sort({ position: 1 }).lean();
 
@@ -110,7 +122,10 @@ const getMySpaces = asyncHandler(async (req, res) => {
     myRole: s.members.find((m) => m.userId.toString() === req.user._id.toString())?.role,
   }));
 
-  return respond.ok(res, 'Spaces fetched', { spaces: result });
+  // Group-list previews follow this user's delete-for-me / clear chat.
+  const { personalizeSpaceChannels } = require('../../utils/personalLastMessage');
+  const personal = await personalizeSpaceChannels(result, req.user._id);
+  return respond.ok(res, 'Spaces fetched', { spaces: personal });
 });
 
 /**
@@ -129,11 +144,15 @@ const getSpaceById = asyncHandler(async (req, res) => {
   );
   if (!isMember) return respond.forbidden(res, 'You are not a member of this space');
 
-  const channels = await Channel.find(
-    accessibleChannelFilter(req.user._id, { spaceId: space._id }),
-  )
-    .sort({ position: 1 })
-    .lean();
+  const { personalizeLastMessages } = require('../../utils/personalLastMessage');
+  const channels = await personalizeLastMessages(
+    await Channel.find(
+      accessibleChannelFilter(req.user._id, { spaceId: space._id }),
+    )
+      .sort({ position: 1 })
+      .lean(),
+    req.user._id,
+  );
 
   const myRole = space.members.find(
     (m) => m.userId.toString() === req.user._id.toString()
@@ -208,6 +227,13 @@ const joinSpace = asyncHandler(async (req, res) => {
     /* non-fatal */
   }
 
+  await postSpaceSystemMessage(space, {
+    actor: req.user,
+    event: SYSTEM_EVENTS.MEMBER_JOINED,
+    text: `${personName(req.user)} joined using the invite code`,
+    targetUserIds: [req.user._id],
+  });
+
   return respond.ok(res, `Joined "${space.name}"`, { space, channels });
 });
 
@@ -242,10 +268,12 @@ const approveJoinRequest = asyncHandler(async (req, res) => {
 
   joinUserToSpaceRoom(targetId, space._id);
 
+  const approvedUser = await User.findById(targetId)
+    .select('name displayTitle')
+    .lean();
   try {
     const { getIO } = require('../../socket');
     const { SOCKET_EVENTS } = require('../../constants');
-    const approvedUser = await User.findById(targetId).select('name').lean();
     getIO().to(`space:${space._id}`).emit(SOCKET_EVENTS.SPACE_MEMBER_JOINED, {
       spaceId: space._id.toString(),
       userId: targetId,
@@ -255,6 +283,13 @@ const approveJoinRequest = asyncHandler(async (req, res) => {
   } catch (_) {
     /* non-fatal */
   }
+
+  await postSpaceSystemMessage(space, {
+    actor: req.user,
+    event: SYSTEM_EVENTS.MEMBER_JOINED,
+    text: `${personName(approvedUser)} joined (approved by ${personName(req.user)})`,
+    targetUserIds: [targetId],
+  });
 
   return respond.ok(res, `Approved join request for "${space.name}"`, {
     space,
@@ -319,12 +354,21 @@ const updateSpace = asyncHandler(async (req, res) => {
   if (!space) return respond.notFound(res, 'Space not found');
   if (!space.isAdmin(req.user._id)) return respond.forbidden(res, 'Admins only');
 
+  const previousName = space.name;
   const allowed = ['name', 'description', 'settings', 'avatarUrl'];
   allowed.forEach((f) => {
     if (req.body[f] !== undefined) space[f] = req.body[f];
   });
 
   await space.save();
+
+  if (space.name !== previousName) {
+    await postSpaceSystemMessage(space, {
+      actor: req.user,
+      event: SYSTEM_EVENTS.GROUP_RENAMED,
+      text: `${personName(req.user)} changed the group name to "${space.name}"`,
+    });
+  }
   return respond.ok(res, 'Space updated', { space });
 });
 
@@ -342,7 +386,8 @@ const getMembers = asyncHandler(async (req, res) => {
   const memberIds = space.members.map((m) => m.userId);
 
   const users = await User.find({ _id: { $in: memberIds } })
-    .select('name displayTitle role speciality avatarUrl availability lastSeenAt')
+    // vocleUsername tells same-name doctors apart in @mention suggestions.
+    .select('name displayTitle role speciality avatarUrl availability lastSeenAt vocleUsername')
     .lean();
 
   // Merge space role into user objects
@@ -390,6 +435,18 @@ const removeMember = asyncHandler(async (req, res) => {
     byUserName: req.user.name || '',
   });
 
+  const removedUser = await User.findById(targetId)
+    .select('name displayTitle')
+    .lean();
+  await postSpaceSystemMessage(space, {
+    actor: req.user,
+    event: SYSTEM_EVENTS.MEMBER_REMOVED,
+    text: `${personName(req.user)} removed ${personName(removedUser)}`,
+    targetUserIds: [targetId],
+    // The removed doctor still sees why the chat went read-only.
+    notifyUserIds: [targetId],
+  });
+
   return respond.ok(res, 'Member removed');
 });
 
@@ -414,7 +471,143 @@ const leaveSpace = asyncHandler(async (req, res) => {
   await leaveUserFromSpaceRoom(req.user._id, space._id);
   emitSpaceMemberLeft(space._id, req.user._id, { reason: 'left' });
 
+  await postSpaceSystemMessage(space, {
+    actor: req.user,
+    event: SYSTEM_EVENTS.MEMBER_LEFT,
+    text: `${personName(req.user)} left`,
+    targetUserIds: [req.user._id],
+  });
+
   return respond.ok(res, `Left "${space.name}"`);
+});
+
+/**
+ * Can `actorId` put `targetId` straight into a group? (REQ 2 / REQ 5)
+ * People who already know the doctor (shared group, or an existing chat /
+ * accepted request) can; strangers only if the doctor allows group adds from
+ * anyone. Everyone else must use the invite link — they choose to join.
+ */
+async function canAddToGroup(actorId, target) {
+  const { canAddToConversation } = require('../../utils/knownUsers');
+  return canAddToConversation(actorId, target._id);
+}
+
+/**
+ * POST /api/spaces/:id/members  { userIds: string[] }
+ * Admins add doctors directly (WhatsApp "Add participants", REQ 2).
+ * New members see the group's full history (channel reads are not limited
+ * by join date) and an "X added Y" line is posted to #general.
+ */
+const addMembers = asyncHandler(async (req, res) => {
+  const space = await Space.findById(req.params.id);
+  if (!space || !space.isActive) return respond.notFound(res, 'Space not found');
+  if (!space.isAdmin(req.user._id)) {
+    return respond.forbidden(res, 'Only group admins can add members');
+  }
+
+  const rawIds = Array.isArray(req.body.userIds) ? req.body.userIds : [];
+  const ids = [...new Set(rawIds.map((id) => id?.toString()).filter(Boolean))];
+  if (ids.length === 0) return respond.badRequest(res, 'Select at least one doctor');
+  if (ids.length > 50) return respond.badRequest(res, 'Add up to 50 doctors at a time');
+  if (!ids.every((id) => /^[a-f\d]{24}$/i.test(id))) {
+    return respond.badRequest(res, 'Invalid user id');
+  }
+
+  const users = await User.find({
+    _id: { $in: ids },
+    isActive: true,
+    isOnboarded: true,
+  }).select('name displayTitle notifications');
+  const byId = new Map(users.map((u) => [u._id.toString(), u]));
+
+  const added = [];
+  const skipped = [];
+  for (const id of ids) {
+    const user = byId.get(id);
+    if (!user) {
+      skipped.push({ userId: id, reason: 'not_found' });
+    } else if (space.isMember(id)) {
+      skipped.push({ userId: id, reason: 'already_member', name: personName(user) });
+    } else if (!(await canAddToGroup(req.user._id, user))) {
+      skipped.push({ userId: id, reason: 'privacy', name: personName(user) });
+    } else {
+      added.push(user);
+    }
+  }
+
+  if (added.length > 0) {
+    for (const user of added) {
+      space.members.push({ userId: user._id, role: SPACE_ROLES.MEMBER });
+    }
+    // A direct add also settles any pending join request from them.
+    const addedIds = new Set(added.map((u) => u._id.toString()));
+    space.pendingRequests = space.pendingRequests.filter(
+      (r) => !addedIds.has(r.userId.toString())
+    );
+    await space.save();
+
+    const { getIO } = require('../../socket');
+    const { SOCKET_EVENTS, NOTIFICATION_TYPES } = require('../../constants');
+    for (const user of added) {
+      joinUserToSpaceRoom(user._id, space._id);
+      try {
+        getIO().to(`space:${space._id}`).emit(SOCKET_EVENTS.SPACE_MEMBER_JOINED, {
+          spaceId: space._id.toString(),
+          userId: user._id.toString(),
+          userName: user.name || '',
+          memberCount: space.members.length,
+          addedBy: req.user._id.toString(),
+        });
+      } catch (_) {
+        /* non-fatal */
+      }
+    }
+
+    await postSpaceSystemMessage(space, {
+      actor: req.user,
+      event: SYSTEM_EVENTS.MEMBER_ADDED,
+      text: `${personName(req.user)} added ${joinNames(added.map(personName))}`,
+      targetUserIds: added.map((u) => u._id),
+    });
+
+    setImmediate(async () => {
+      try {
+        const { sendNotification } = require('../../services/notification.service');
+        for (const user of added) {
+          await sendNotification({
+            userId: user._id,
+            type: NOTIFICATION_TYPES.SPACE_INVITE,
+            title: `Added to ${space.name}`,
+            body: `${personName(req.user)} added you to "${space.name}"`,
+            referenceId: space._id,
+            referenceType: 'Space',
+            metadata: { spaceId: space._id.toString() },
+            actor: req.user,
+          });
+        }
+      } catch (err) {
+        const logger = require('../../utils/logger');
+        logger.error(`Add-member notify failed: ${err.message}`);
+      }
+    });
+  }
+
+  const status = added.length > 0 ? 200 : 400;
+  const message = added.length > 0
+    ? `Added ${added.length} ${added.length === 1 ? 'doctor' : 'doctors'}`
+    : skipped.some((s) => s.reason === 'privacy')
+      ? 'They only accept group adds from people they know — share the invite link instead'
+      : 'No one new to add';
+  return res.status(status).json({
+    success: added.length > 0,
+    message,
+    data: {
+      added: added.map((u) => ({ _id: u._id, name: u.name, displayTitle: u.displayTitle })),
+      skipped,
+      memberCount: space.members.length,
+    },
+    errors: [],
+  });
 });
 
 /**
@@ -467,5 +660,5 @@ const getPendingJoins = asyncHandler(async (req, res) => {
 module.exports = {
   createSpace, getMySpaces, getSpaceById,
   joinSpace, approveJoinRequest, getPendingJoins, previewInvite, regenerateInviteCode, updateSpace,
-  getMembers, removeMember, leaveSpace,
+  getMembers, removeMember, leaveSpace, addMembers,
 };

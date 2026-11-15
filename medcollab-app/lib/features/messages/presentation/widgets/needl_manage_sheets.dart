@@ -2,10 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:medcollab_app/core/router/app_routes.dart';
 import 'package:medcollab_app/core/di/app_dependencies.dart';
 import 'package:medcollab_app/core/error/app_exception.dart';
 import 'package:medcollab_app/core/presence/presence_cubit.dart';
-import 'package:medcollab_app/core/router/dm_navigation.dart';
 import 'package:medcollab_app/core/theme/app_colors.dart';
 import 'package:medcollab_app/core/theme/app_text_styles.dart';
 import 'package:medcollab_app/core/utils/phone_utils.dart';
@@ -38,6 +39,12 @@ Future<void> showAddNeedlPeopleSheet(
 
   final existingIds = existingMembers.map((m) => m.id).toSet();
   final selfId = context.read<AuthBloc>().state.user?.id ?? '';
+  // Navigate with the CHAT page's router, captured now. The sheet's own
+  // context is gone once it closes (and is not a GoRouter page), so opening
+  // the new Needl from it failed silently: the doctor stayed in the old
+  // chat until leaving and coming back (beta 11-14, issue 8).
+  final router = GoRouter.of(context);
+  final messenger = ScaffoldMessenger.maybeOf(context);
 
   void refreshModal(VoidCallback fn) {
     if (!sheetOpen) return;
@@ -203,14 +210,14 @@ Future<void> showAddNeedlPeopleSheet(
                 userIds: selected.keys.toList(),
                 history: history,
               );
-              if (!sheetContext.mounted) return;
-              Navigator.pop(sheetContext);
-              openDmChat(
-                sheetContext,
-                channelId: next.id,
-                channel: next,
-                replace: true,
-              );
+              if (sheetContext.mounted) Navigator.pop(sheetContext);
+              messenger?.hideCurrentSnackBar();
+              if (next.id == channel.id) {
+                // Same conversation (members grew in place): the open chat
+                // refreshes itself from the activity line.
+                return;
+              }
+              router.pushReplacement(AppRoutes.dmPath(next.id), extra: next);
             } on AppException catch (e) {
               setModal(() {
                 busy = false;
@@ -304,7 +311,7 @@ Future<void> showAddNeedlPeopleSheet(
                               ),
                               backgroundColor: AppColors.surfaceInput,
                               deleteIconColor: AppColors.textSecondary,
-                              side: const BorderSide(
+                              side: BorderSide(
                                 color: AppColors.borderDefault,
                               ),
                               onDeleted: () => setModal(() {

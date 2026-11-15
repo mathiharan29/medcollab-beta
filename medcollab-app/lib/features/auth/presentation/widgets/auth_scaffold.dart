@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:medcollab_app/core/constants/branding_assets.dart';
 import 'package:medcollab_app/core/theme/app_colors.dart';
 import 'package:medcollab_app/core/theme/app_radius.dart';
@@ -29,7 +30,13 @@ class AuthScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasTitle = title != null && title!.isNotEmpty;
 
-    return Scaffold(
+    // Plain background (no header): status-bar icons must contrast with it.
+    // They were white-on-white on the sign-in and OTP screens.
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: AppColors.isDark
+          ? SystemUiOverlayStyle.light
+          : SystemUiOverlayStyle.dark,
+      child: Scaffold(
       backgroundColor: AppColors.backgroundApp,
       body: SafeArea(
         child: Center(
@@ -47,6 +54,7 @@ class AuthScaffold extends StatelessWidget {
                     Align(
                       alignment: Alignment.centerLeft,
                       child: IconButton(
+                        tooltip: 'Back',
                         onPressed: onBack,
                         icon: const Icon(Icons.arrow_back),
                         color: AppColors.textSecondary,
@@ -64,7 +72,7 @@ class AuthScaffold extends StatelessWidget {
                   if (hasTitle) ...[
                     Text(
                       title!,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary,
@@ -90,6 +98,7 @@ class AuthScaffold extends StatelessWidget {
             ),
           ),
         ),
+      ),
       ),
     );
   }

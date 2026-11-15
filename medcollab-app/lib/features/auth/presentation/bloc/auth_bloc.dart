@@ -85,7 +85,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         emit(AuthState(status: AuthStatus.needsProfile, user: user));
       }
     } on UnauthorizedException {
-      await _authRepository.logout();
+      // Logout can throw (e.g. "No token provided") once the saved session
+      // was rejected. An exception thrown inside this handler is not caught
+      // by the sibling clauses, so the bloc would stay on the splash.
+      try {
+        await _authRepository.logout();
+      } catch (_) {}
       emit(const AuthState(status: AuthStatus.unauthenticated));
     } on NetworkException catch (e) {
       _sessionCheckStarted = false;

@@ -114,7 +114,7 @@ class _ScanInviteQrPageState extends State<ScanInviteQrPage> {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: AppColors.borderDefault),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Live scan paused',
                         style: TextStyle(color: AppColors.textMuted),
                       ),

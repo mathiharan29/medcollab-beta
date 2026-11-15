@@ -22,8 +22,19 @@ final class ValidationException extends AppException {
   const ValidationException(super.message, {super.errors});
 }
 
+/// HTTP 403 — signed in, but not allowed (e.g. DM needs a message request).
+final class ForbiddenException extends AppException {
+  const ForbiddenException([super.message = 'Not allowed']);
+}
+
 final class NotFoundException extends AppException {
   const NotFoundException([super.message = 'Resource not found']);
+}
+
+/// HTTP 409 — e.g. the handoff was changed on another device since this
+/// copy was loaded (issue 5). Reload before editing again.
+final class ConflictException extends AppException {
+  const ConflictException([super.message = 'Changed elsewhere — reload']);
 }
 
 final class ServerException extends AppException {

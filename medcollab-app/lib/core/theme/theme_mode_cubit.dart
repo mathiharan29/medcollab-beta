@@ -1,6 +1,8 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:medcollab_app/core/state/safe_emit.dart';
+import 'package:medcollab_app/core/theme/theme_switch_transition.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // Color is used by ThemePalette.primary getters.
@@ -67,7 +69,7 @@ class ThemeSettingsState extends Equatable {
 }
 
 /// Persists Light / Dark / System and the accent palette stub.
-class ThemeModeCubit extends Cubit<ThemeSettingsState> {
+class ThemeModeCubit extends Cubit<ThemeSettingsState> with SafeEmit<ThemeSettingsState> {
   ThemeModeCubit() : super(const ThemeSettingsState());
 
   static const _modeKey = 'vocle_theme_mode';
@@ -92,7 +94,20 @@ class ThemeModeCubit extends Cubit<ThemeSettingsState> {
     }
   }
 
+  Brightness _brightnessOf(ThemeMode mode) => switch (mode) {
+        ThemeMode.dark => Brightness.dark,
+        ThemeMode.light => Brightness.light,
+        ThemeMode.system =>
+          WidgetsBinding.instance.platformDispatcher.platformBrightness,
+      };
+
   Future<void> setMode(ThemeMode mode) async {
+    if (mode == state.mode) return;
+    if (_brightnessOf(mode) != _brightnessOf(state.mode)) {
+      // Freeze the current frame so the switch cross-fades (no half-themed
+      // frames while every screen rebuilds with the new colours).
+      await ThemeSwitchController.instance.capture();
+    }
     emit(state.copyWith(mode: mode));
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -101,6 +116,8 @@ class ThemeModeCubit extends Cubit<ThemeSettingsState> {
   }
 
   Future<void> setPalette(ThemePalette palette) async {
+    if (palette == state.palette) return;
+    await ThemeSwitchController.instance.capture();
     emit(state.copyWith(palette: palette));
     try {
       final prefs = await SharedPreferences.getInstance();

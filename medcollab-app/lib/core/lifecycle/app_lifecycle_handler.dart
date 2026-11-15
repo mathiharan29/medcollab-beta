@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:medcollab_app/core/chat/active_chat_tracker.dart';
 import 'package:medcollab_app/core/di/app_dependencies.dart';
 
 /// Reconnects the socket when the app returns to the foreground.
@@ -30,8 +31,26 @@ class _AppLifecycleHandlerState extends State<AppLifecycleHandler>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      AppDependencies.instance.authRepository.ensureSocketConnected();
+    final deps = AppDependencies.instance;
+    final tracker = ActiveChatTracker.instance;
+    switch (state) {
+      case AppLifecycleState.resumed:
+        tracker.setForeground(true);
+        deps.authRepository.ensureSocketConnected();
+        // Alerts may have changed while away (read from the notification
+        // shade, on another phone, new messages). The chat on screen is
+        // being read again, so its alerts clear now.
+        final open = tracker.channelId;
+        if (open != null) {
+          deps.notificationBadgeCubit.markChatRead(open);
+        }
+        deps.navBadgesCubit.refresh();
+      case AppLifecycleState.paused:
+      case AppLifecycleState.hidden:
+        tracker.setForeground(false);
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.detached:
+        break;
     }
   }
 

@@ -12,7 +12,11 @@ import 'package:medcollab_app/features/messages/data/models/message_delivery_sta
 import 'package:medcollab_app/features/messages/data/models/message_model.dart';
 import 'package:medcollab_app/features/messages/data/models/message_reply_to.dart';
 import 'package:medcollab_app/features/messages/presentation/utils/message_list_utils.dart';
+import 'package:medcollab_app/features/messages/presentation/widgets/chat_wallpaper.dart';
+import 'package:medcollab_app/features/messages/presentation/widgets/composer_parts.dart';
+import 'package:medcollab_app/features/messages/presentation/widgets/emoji_picker.dart';
 import 'package:medcollab_app/features/messages/presentation/widgets/read_receipt_footer.dart';
+import 'package:medcollab_app/features/messages/presentation/widgets/voice_note.dart';
 import 'package:medcollab_app/shared/presentation/widgets/chat_network_image.dart';
 import 'package:medcollab_app/shared/presentation/widgets/mention_rich_text.dart';
 
@@ -26,9 +30,10 @@ class MessageComposer extends StatelessWidget {
     this.onPickGallery,
     this.onPickCamera,
     this.onPickDocument,
-    this.hintText = 'Message…',
+    this.hintText = 'Message',
     this.isBusy = false,
     this.showTopBorder = true,
+    this.onRecordVoice,
     super.key,
   });
 
@@ -38,6 +43,9 @@ class MessageComposer extends StatelessWidget {
   final VoidCallback? onPickGallery;
   final VoidCallback? onPickCamera;
   final VoidCallback? onPickDocument;
+
+  /// When set, an empty composer shows a mic instead of send (REQ 12).
+  final VoidCallback? onRecordVoice;
   final String hintText;
   final bool isBusy;
   final bool showTopBorder;
@@ -93,185 +101,98 @@ class MessageComposer extends StatelessWidget {
     );
   }
 
-  void _showEmojiPicker(BuildContext context) {
-    const emojis = [
-      '👍', '🙏', '✅', '❌', '⚠️', '🚨',
-      '💉', '🩺', '💊', '🏥', '📋', '📝',
-      '😊', '😂', '😮', '😢', '🔥', '💯',
-      '👀', '🤝', '⏰', '📌', '➡️', '⬅️',
-    ];
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Quick emoji',
-                style: Theme.of(ctx).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final emoji in emojis)
-                    InkWell(
-                      onTap: () {
-                        Navigator.pop(ctx);
-                        _insertAtCursor(emoji);
-                        focusNode?.requestFocus();
-                      },
-                      borderRadius: BorderRadius.circular(8),
-                      child: SizedBox(
-                        width: 44,
-                        height: 44,
-                        child: Center(
-                          child: Text(emoji, style: const TextStyle(fontSize: 24)),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  Future<void> _showEmojiPicker(BuildContext context) async {
+    // REQ 12: full tabbed picker with Recent (was 24 fixed emojis).
+    final emoji = await showEmojiPickerSheet(context);
+    if (emoji == null) return;
+    _insertAtCursor(emoji);
+    focusNode?.requestFocus();
   }
 
   @override
   Widget build(BuildContext context) {
-    final canAttach = onPickGallery != null ||
-        onPickDocument != null ||
-        onPickCamera != null;
+    final canAttach = onPickGallery != null || onPickDocument != null;
+    final canCamera = onPickCamera != null && !kIsWeb;
 
-    // Floating pill (WhatsApp-style): transparent outer bar, no full-bleed
-    // top border. [showTopBorder] is kept for call-site compatibility.
-    return Container(
-      color: Colors.transparent,
-      child: SafeArea(
-        top: false,
-        child: Container(
-          margin: const EdgeInsets.fromLTRB(8, 4, 8, 6),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceCard,
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: AppColors.borderDefault, width: 0.5),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          padding: const EdgeInsets.fromLTRB(4, 4, 4, 4),
-          child: Row(
+    // WhatsApp layout: [😊  Message…  📎 📷]  (●)
+    // Every icon is a 48×48 target with a 24 px glyph on the bottom line;
+    // the round send / mic button sits outside the pill.
+    return ValueListenableBuilder<TextEditingValue>(
+      valueListenable: controller,
+      builder: (context, value, _) {
+        final empty = value.text.trim().isEmpty;
+        final showMic = onRecordVoice != null && empty;
+        return ComposerShell(
+          pill: Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
+              ComposerIconButton(
+                icon: Icons.emoji_emotions_outlined,
+                tooltip: 'Emoji',
+                onPressed: isBusy ? null : () => _showEmojiPicker(context),
+              ),
+              Expanded(
+                child: TextField(
+                  key: const Key('composer-field'),
+                  controller: controller,
+                  focusNode: focusNode,
+                  minLines: 1,
+                  maxLines: 6,
+                  textCapitalization: TextCapitalization.sentences,
+                  enabled: !isBusy,
+                  keyboardType: TextInputType.multiline,
+                  textInputAction: TextInputAction.newline,
+                  cursorColor: AppColors.tealDark,
+                  style: AppTextStyles.body.copyWith(
+                    color: AppColors.textPrimary,
+                    fontSize: ComposerMetrics.textSize,
+                    height: ComposerMetrics.textHeight,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: hintText,
+                    hintMaxLines: 1,
+                    hintStyle: AppTextStyles.body.copyWith(
+                      color: AppColors.textMuted,
+                      fontSize: ComposerMetrics.textSize,
+                      height: ComposerMetrics.textHeight,
+                    ),
+                    filled: false,
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    disabledBorder: InputBorder.none,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 13),
+                  ),
+                ),
+              ),
               if (canAttach)
-                IconButton(
+                ComposerIconButton(
+                  icon: Icons.attach_file_rounded,
+                  turns: -0.125,
                   tooltip: 'Attach',
                   onPressed: isBusy ? null : () => _showAttachMenu(context),
-                  icon: const Icon(Icons.add_circle_outline, size: 26),
-                  color: AppColors.tealDark,
-                  padding: const EdgeInsets.all(8),
-                  constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
                 ),
-              Expanded(
-                child: Container(
-                  constraints: const BoxConstraints(minHeight: 44),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: controller,
-                          focusNode: focusNode,
-                          minLines: 1,
-                          maxLines: 6,
-                          textCapitalization: TextCapitalization.sentences,
-                          enabled: !isBusy,
-                          keyboardType: TextInputType.multiline,
-                          textInputAction: TextInputAction.newline,
-                          style: AppTextStyles.body.copyWith(
-                            color: AppColors.textPrimary,
-                            fontSize: 15,
-                            height: 1.35,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: hintText,
-                            hintStyle: AppTextStyles.body.copyWith(
-                              color: AppColors.textMuted,
-                              fontSize: 15,
-                            ),
-                            border: InputBorder.none,
-                            enabledBorder: InputBorder.none,
-                            focusedBorder: InputBorder.none,
-                            isDense: true,
-                            contentPadding: const EdgeInsets.fromLTRB(
-                              16,
-                              12,
-                              4,
-                              12,
-                            ),
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        tooltip: 'Emoji',
-                        onPressed:
-                            isBusy ? null : () => _showEmojiPicker(context),
-                        icon: const Icon(Icons.emoji_emotions_outlined, size: 22),
-                        color: AppColors.textSecondary,
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    ],
-                  ),
+              // Camera shortcut while the box is empty (as in WhatsApp).
+              if (canCamera && empty)
+                ComposerIconButton(
+                  icon: Icons.photo_camera_outlined,
+                  tooltip: 'Camera',
+                  onPressed: isBusy ? null : onPickCamera,
                 ),
-              ),
-              const SizedBox(width: 8),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 2),
-                child: Material(
-                  color: isBusy
-                      ? AppColors.navyPrimary.withValues(alpha: 0.5)
-                      : AppColors.navyPrimary,
-                  shape: const CircleBorder(),
-                  child: InkWell(
-                    customBorder: const CircleBorder(),
-                    onTap: isBusy ? null : () => onSend(controller.text),
-                    child: SizedBox(
-                      width: 44,
-                      height: 44,
-                      child: isBusy
-                          ? const Padding(
-                              padding: EdgeInsets.all(12),
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Icon(
-                              Icons.send_rounded,
-                              size: 20,
-                              color: Colors.white,
-                            ),
-                    ),
-                  ),
-                ),
-              ),
+              if (!(canCamera && empty)) const SizedBox(width: 4),
             ],
           ),
-        ),
-      ),
+          // Empty box → mic (voice note, REQ 12); text → send.
+          action: ComposerRoundButton(
+            icon: showMic ? Icons.mic_rounded : Icons.send_rounded,
+            // F6: icon-only buttons need a spoken label.
+            semanticLabel: showMic ? 'Record voice message' : 'Send message',
+            busy: isBusy,
+            onTap: showMic ? onRecordVoice : () => onSend(controller.text),
+          ),
+        );
+      },
     );
   }
 }
@@ -289,11 +210,86 @@ class DateSeparatorChip extends StatelessWidget {
       child: Center(
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: AppColors.borderDefault,
             borderRadius: AppRadius.pill,
           ),
           child: Text(label, style: AppTextStyles.timestamp),
+        ),
+      ),
+    );
+  }
+}
+
+/// Group activity line — "Dr Asha Rao added Dr Vikram Shah" (REQ 2).
+/// Centred, muted and not a bubble, like WhatsApp; no long-press actions.
+class SystemEventChip extends StatelessWidget {
+  const SystemEventChip({
+    required this.text,
+    this.time,
+    this.actionLabel,
+    this.onAction,
+    super.key,
+  });
+
+  final String text;
+  final DateTime? time;
+
+  /// e.g. "Open new Needl" on a `needl_continued` line.
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    final at = time?.toLocal();
+    final action = actionLabel;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 24),
+      child: Center(
+        child: Semantics(
+          label: 'Group update: $text${action != null ? '. $action' : ''}',
+          button: onAction != null,
+          // Read once, not label + text.
+          excludeSemantics: true,
+          child: GestureDetector(
+           onTap: onAction,
+           child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.isDark
+                  ? AppColors.surfaceCard
+                  : AppColors.statusNeutTint,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.borderDefault, width: 0.5),
+            ),
+            child: Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(text: text),
+                  if (at != null)
+                    TextSpan(
+                      text:
+                          '  ${MaterialLocalizations.of(context).formatTimeOfDay(TimeOfDay.fromDateTime(at))}',
+                      style: AppTextStyles.timestamp,
+                    ),
+                  if (action != null)
+                    TextSpan(
+                      text: '\n$action ›',
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.tealDark,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                ],
+              ),
+              textAlign: TextAlign.center,
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          ),
         ),
       ),
     );
@@ -314,7 +310,7 @@ class ParentMessagePreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.primaryMuted,
         border: Border(bottom: BorderSide(color: AppColors.border)),
       ),
@@ -389,11 +385,14 @@ class MessageBubble extends StatelessWidget {
   final bool isMine;
   final bool showSender;
   final bool showTimestamp;
+
   /// WhatsApp-style quote reply (swipe / Reply action).
   final VoidCallback? onQuoteReply;
+
   /// Slack-style side thread (long-press menu).
   final VoidCallback? onOpenThread;
   final void Function(String url)? onImageTap;
+
   /// Jump to the quoted parent message in the timeline.
   final VoidCallback? onJumpToQuoted;
   final VoidCallback? onEdit;
@@ -414,9 +413,24 @@ class MessageBubble extends StatelessWidget {
 
   static const quickReactions = ['👍', '❤️', '😂', '🙏', '✅', '👏'];
   static const moreReactions = [
-    '👍', '❤️', '😂', '😮', '😢', '🙏',
-    '✅', '👏', '🔥', '💯', '👀', '🫡',
-    '🩺', '💉', '🏥', '📋', '⚠️', '🚨',
+    '👍',
+    '❤️',
+    '😂',
+    '😮',
+    '😢',
+    '🙏',
+    '✅',
+    '👏',
+    '🔥',
+    '💯',
+    '👀',
+    '🫡',
+    '🩺',
+    '💉',
+    '🏥',
+    '📋',
+    '⚠️',
+    '🚨',
   ];
 
   Future<void> _showActions(BuildContext context) async {
@@ -424,122 +438,138 @@ class MessageBubble extends StatelessWidget {
     final action = await showModalBottomSheet<String>(
       context: context,
       showDragHandle: true,
+      // The action list is taller than the default 9/16 cap: without this,
+      // Delete / Bookmark / Pin were cut off below the fold.
+      isScrollControlled: true,
       builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (onReact != null) ...[
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                child: Row(
-                  children: [
-                    ...quickReactions.map(
-                      (e) => Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 8,
-                            horizontal: 2,
-                          ),
-                          child: Center(
-                            child: InkResponse(
-                              onTap: () => Navigator.pop(ctx, 'react:$e'),
-                              radius: 24,
-                              child: Container(
-                                width: 40,
-                                height: 40,
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  color: AppColors.surfaceInput,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: AppColors.borderDefault,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(ctx).height * 0.85,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (onReact != null) ...[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                    child: Row(
+                      children: [
+                        ...quickReactions.map(
+                          (e) => Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 8,
+                                horizontal: 2,
+                              ),
+                              child: Center(
+                                child: InkResponse(
+                                  onTap: () => Navigator.pop(ctx, 'react:$e'),
+                                  radius: 24,
+                                  child: Container(
+                                    width: 40,
+                                    height: 40,
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.surfaceInput,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: AppColors.borderDefault,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      e,
+                                      style: const TextStyle(fontSize: 22),
+                                    ),
                                   ),
-                                ),
-                                child: Text(
-                                  e,
-                                  style: const TextStyle(fontSize: 22),
                                 ),
                               ),
                             ),
                           ),
                         ),
-                      ),
+                        IconButton(
+                          tooltip: 'More reactions',
+                          onPressed: () => Navigator.pop(ctx, 'more-react'),
+                          icon: const Icon(Icons.add_reaction_outlined),
+                        ),
+                      ],
                     ),
-                    IconButton(
-                      tooltip: 'More reactions',
-                      onPressed: () => Navigator.pop(ctx, 'more-react'),
-                      icon: const Icon(Icons.add_reaction_outlined),
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(height: 1),
-            ],
-            if (onQuoteReply != null)
-              ListTile(
-                leading: const Icon(Icons.reply),
-                title: const Text('Reply'),
-                subtitle: const Text('Quote in this chat'),
-                onTap: () => Navigator.pop(ctx, 'quote'),
-              ),
-            if (onOpenThread != null)
-              ListTile(
-                leading: const Icon(Icons.forum_outlined),
-                title: const Text('Reply in thread'),
-                subtitle: const Text('Side discussion — keep main chat clean'),
-                onTap: () => Navigator.pop(ctx, 'thread'),
-              ),
-            if (onCopy != null)
-              ListTile(
-                leading: const Icon(Icons.copy_outlined),
-                title: const Text('Copy'),
-                onTap: () => Navigator.pop(ctx, 'copy'),
-              ),
-            if (onForward != null)
-              ListTile(
-                leading: const Icon(Icons.forward_outlined),
-                title: const Text('Forward / share'),
-                onTap: () => Navigator.pop(ctx, 'forward'),
-              ),
-            if (isMine &&
-                message.type == MessageType.text &&
-                onEdit != null)
-              ListTile(
-                leading: const Icon(Icons.edit_outlined),
-                title: const Text('Edit message'),
-                onTap: () => Navigator.pop(ctx, 'edit'),
-              ),
-            if (isMine && onDelete != null)
-              ListTile(
-                leading: const Icon(Icons.delete_outline, color: AppColors.error),
-                title: const Text('Delete message'),
-                onTap: () => Navigator.pop(ctx, 'delete'),
-              ),
-            if (onBookmark != null)
-              ListTile(
-                leading: const Icon(Icons.bookmark_outline),
-                title: const Text('Bookmark'),
-                onTap: () => Navigator.pop(ctx, 'bookmark'),
-              ),
-            if (isPinned && onUnpin != null)
-              ListTile(
-                leading: const Icon(Icons.push_pin),
-                title: const Text('Unpin message'),
-                onTap: () => Navigator.pop(ctx, 'unpin'),
-              )
-            else if (onPin != null)
-              ListTile(
-                leading: const Icon(Icons.push_pin_outlined),
-                title: const Text('Pin message'),
-                onTap: () => Navigator.pop(ctx, 'pin'),
-              ),
-          ],
+                  ),
+                  const Divider(height: 1),
+                ],
+                if (onQuoteReply != null)
+                  ListTile(
+                    leading: const Icon(Icons.reply),
+                    title: const Text('Reply'),
+                    subtitle: const Text('Quote in this chat'),
+                    onTap: () => Navigator.pop(ctx, 'quote'),
+                  ),
+                if (onOpenThread != null)
+                  ListTile(
+                    leading: const Icon(Icons.forum_outlined),
+                    title: const Text('Reply in thread'),
+                    subtitle:
+                        const Text('Side discussion — keep main chat clean'),
+                    onTap: () => Navigator.pop(ctx, 'thread'),
+                  ),
+                if (onCopy != null)
+                  ListTile(
+                    leading: const Icon(Icons.copy_outlined),
+                    title: const Text('Copy'),
+                    onTap: () => Navigator.pop(ctx, 'copy'),
+                  ),
+                if (onForward != null)
+                  ListTile(
+                    leading: const Icon(Icons.forward_outlined),
+                    title: const Text('Forward / share'),
+                    onTap: () => Navigator.pop(ctx, 'forward'),
+                  ),
+                if (isMine &&
+                    message.type == MessageType.text &&
+                    onEdit != null)
+                  ListTile(
+                    leading: const Icon(Icons.edit_outlined),
+                    title: const Text('Edit message'),
+                    onTap: () => Navigator.pop(ctx, 'edit'),
+                  ),
+                // Any message can be deleted for me; the page offers
+                // "for everyone" on the sender's own messages.
+                if (onDelete != null)
+                  ListTile(
+                    leading: const Icon(Icons.delete_outline,
+                        color: AppColors.error),
+                    title: const Text('Delete'),
+                    onTap: () => Navigator.pop(ctx, 'delete'),
+                  ),
+                if (onBookmark != null)
+                  ListTile(
+                    leading: const Icon(Icons.bookmark_outline),
+                    title: const Text('Bookmark'),
+                    onTap: () => Navigator.pop(ctx, 'bookmark'),
+                  ),
+                if (isPinned && onUnpin != null)
+                  ListTile(
+                    leading: const Icon(Icons.push_pin),
+                    title: const Text('Unpin message'),
+                    onTap: () => Navigator.pop(ctx, 'unpin'),
+                  )
+                else if (onPin != null)
+                  ListTile(
+                    leading: const Icon(Icons.push_pin_outlined),
+                    title: const Text('Pin message'),
+                    onTap: () => Navigator.pop(ctx, 'pin'),
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
     );
     if (!context.mounted || action == null) return;
     if (action == 'more-react') {
-      final emoji = await _pickMoreReaction(context);
+      // REQ 12: any emoji, not a fixed 18.
+      if (!context.mounted) return;
+      final emoji = await showEmojiPickerSheet(context);
       if (emoji != null) onReact?.call(emoji);
       return;
     }
@@ -564,47 +594,6 @@ class MessageBubble extends StatelessWidget {
     } else if (action == 'unpin') {
       onUnpin?.call();
     }
-  }
-
-  Future<String?> _pickMoreReaction(BuildContext context) {
-    return showModalBottomSheet<String>(
-      context: context,
-      showDragHandle: true,
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'React',
-                style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 4,
-                runSpacing: 4,
-                children: moreReactions
-                    .map(
-                      (e) => InkWell(
-                        onTap: () => Navigator.pop(ctx, e),
-                        borderRadius: BorderRadius.circular(12),
-                        child: Padding(
-                          padding: const EdgeInsets.all(10),
-                          child: Text(e, style: const TextStyle(fontSize: 28)),
-                        ),
-                      ),
-                    )
-                    .toList(),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   @override
@@ -661,55 +650,53 @@ class MessageBubble extends StatelessWidget {
                 children: message.reactions
                     .where((r) => r.emoji.isNotEmpty && r.count > 0)
                     .map(
-                      (r) {
-                        final mine = currentUserId != null &&
-                            r.reactedBy(currentUserId!);
-                        return InkWell(
-                          onTap: () {
-                            if (mine && onReact != null) {
-                              onReact!(r.emoji);
-                              return;
-                            }
-                            _showReactionPeople(
-                              context,
-                              emoji: r.emoji,
-                              userIds: r.userIds,
-                              nameByUserId: nameByUserId,
-                            );
-                          },
-                          onLongPress: () => _showReactionPeople(
-                            context,
-                            emoji: r.emoji,
-                            userIds: r.userIds,
-                            nameByUserId: nameByUserId,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: mine
-                                  ? AppColors.tealPrimary
-                                      .withValues(alpha: 0.15)
-                                  : AppColors.surfaceInput,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: mine
-                                    ? AppColors.tealPrimary
-                                    : AppColors.borderDefault,
-                              ),
-                            ),
-                            child: Text(
-                              '${r.emoji} ${r.count}',
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                          ),
+                  (r) {
+                    final mine =
+                        currentUserId != null && r.reactedBy(currentUserId!);
+                    return InkWell(
+                      onTap: () {
+                        if (mine && onReact != null) {
+                          onReact!(r.emoji);
+                          return;
+                        }
+                        _showReactionPeople(
+                          context,
+                          emoji: r.emoji,
+                          userIds: r.userIds,
+                          nameByUserId: nameByUserId,
                         );
                       },
-                    )
-                    .toList(),
+                      onLongPress: () => _showReactionPeople(
+                        context,
+                        emoji: r.emoji,
+                        userIds: r.userIds,
+                        nameByUserId: nameByUserId,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: mine
+                              ? AppColors.tealPrimary.withValues(alpha: 0.15)
+                              : AppColors.surfaceInput,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: mine
+                                ? AppColors.tealPrimary
+                                : AppColors.borderDefault,
+                          ),
+                        ),
+                        child: Text(
+                          '${r.emoji} ${r.count}',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    );
+                  },
+                ).toList(),
               ),
             ],
             if (onOpenThread != null && !message.localOnly) ...[
@@ -851,7 +838,8 @@ class _FingerSwipeReplyState extends State<_FingerSwipeReply> {
       onHorizontalDragEnd: _onEnd,
       onHorizontalDragCancel: () => setState(() => _dx = 0),
       child: Stack(
-        alignment: widget.fromLeft ? Alignment.centerLeft : Alignment.centerRight,
+        alignment:
+            widget.fromLeft ? Alignment.centerLeft : Alignment.centerRight,
         children: [
           if (showIcon)
             Padding(
@@ -906,8 +894,7 @@ class MessageBubbleContent extends StatelessWidget {
     final time = message.createdAt != null
         ? DateFormat.jm().format(message.createdAt!.toLocal())
         : '';
-    final textColor =
-        isMine ? AppColors.textOnDark : AppColors.textPrimary;
+    final textColor = isMine ? AppColors.textOnDark : AppColors.textPrimary;
     final timestampColor =
         isMine ? AppColors.textOnDarkMuted : AppColors.textMuted;
 
@@ -915,6 +902,8 @@ class MessageBubbleContent extends StatelessWidget {
       duration: const Duration(milliseconds: 250),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: AppDecorations.bubble(isMine: isMine).copyWith(
+        // Chat theme (REQ 2 / #4): own-bubble colour follows the theme.
+        color: isMine ? ChatThemeScope.mineBubbleOf(context) : null,
         border: isHighlighted
             ? Border.all(color: AppColors.tealPrimary, width: 2)
             : (isPinned && !isMine
@@ -936,9 +925,8 @@ class MessageBubbleContent extends StatelessWidget {
                   Icon(
                     Icons.push_pin,
                     size: 12,
-                    color: isMine
-                        ? AppColors.textOnDarkMuted
-                        : AppColors.tealDark,
+                    color:
+                        isMine ? AppColors.textOnDarkMuted : AppColors.tealDark,
                   ),
                   const SizedBox(width: 4),
                   Text(
@@ -1010,8 +998,7 @@ class MessageBubbleContent extends StatelessWidget {
                     ),
                   ],
                   if (isMine &&
-                      message.deliveryState ==
-                          MessageDeliveryState.failed) ...[
+                      message.deliveryState == MessageDeliveryState.failed) ...[
                     if (time.isNotEmpty) const SizedBox(width: 6),
                     const Icon(
                       Icons.error_outline,
@@ -1117,7 +1104,7 @@ class ReplyQuoteBar extends StatelessWidget {
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           border: Border(
             top: BorderSide(color: AppColors.borderDefault),
             left: BorderSide(color: AppColors.tealPrimary, width: 3),
@@ -1192,27 +1179,37 @@ class _MessageBody extends StatelessWidget {
         style: (isMine ? AppTextStyles.bubbleMine : AppTextStyles.bubbleTheirs)
             .copyWith(
           fontStyle: FontStyle.italic,
-          color: isMine
-              ? AppColors.textOnDarkMuted
-              : AppColors.textSecondary,
+          color: isMine ? AppColors.textOnDarkMuted : AppColors.textSecondary,
         ),
       );
     }
 
+    // Voice note (REQ 12). Also treat audio files sent as documents alike.
+    if (message.type == MessageType.audio ||
+        (message.content.mimeType?.startsWith('audio/') ?? false)) {
+      return VoiceNoteBubble(
+        messageId: message.id,
+        url: message.content.mediaUrl,
+        isMine: isMine,
+        durationMs: message.content.durationMs,
+        waveform: message.content.waveform,
+        sending: message.localOnly,
+      );
+    }
+
     if (message.type == MessageType.image) {
-      final url = message.content.mediaUrl ?? message.content.thumbnailUrl ?? '';
-      final bytes = localImageBytes != null
-          ? Uint8List.fromList(localImageBytes!)
-          : null;
+      final url =
+          message.content.mediaUrl ?? message.content.thumbnailUrl ?? '';
+      final bytes =
+          localImageBytes != null ? Uint8List.fromList(localImageBytes!) : null;
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ChatNetworkImage(
             imageUrl: url,
             localBytes: bytes,
-            onTap: message.localOnly || url.isEmpty
-                ? null
-                : () => onImageTap(url),
+            onTap:
+                message.localOnly || url.isEmpty ? null : () => onImageTap(url),
           ),
           if (message.localOnly) ...[
             const SizedBox(height: 4),
@@ -1246,7 +1243,8 @@ class _MessageBody extends StatelessWidget {
       final name = message.content.fileName ?? 'Video';
       final url = message.content.mediaUrl;
       return InkWell(
-        onTap: url != null && !message.localOnly ? () => onDocumentTap(url) : null,
+        onTap:
+            url != null && !message.localOnly ? () => onDocumentTap(url) : null,
         borderRadius: BorderRadius.circular(8),
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.sm),
@@ -1298,7 +1296,8 @@ class _MessageBody extends StatelessWidget {
       final name = message.content.fileName ?? 'Document';
       final url = message.content.mediaUrl;
       return InkWell(
-        onTap: url != null && !message.localOnly ? () => onDocumentTap(url) : null,
+        onTap:
+            url != null && !message.localOnly ? () => onDocumentTap(url) : null,
         borderRadius: BorderRadius.circular(8),
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.sm),

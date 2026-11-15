@@ -50,7 +50,7 @@ abstract final class AppDecorations {
   }
 
   static BoxDecoration bottomBar() {
-    return const BoxDecoration(color: VocleColors.navy);
+    return BoxDecoration(color: AppColors.chrome);
   }
 
   static BoxDecoration presenceChip({required Color dotColor}) {

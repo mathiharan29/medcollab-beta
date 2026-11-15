@@ -119,6 +119,14 @@ router.post('/:id/invite', validateMongoId('id'), spaceController.regenerateInvi
 router.get('/:id/members', validateMongoId('id'), spaceController.getMembers);
 
 /**
+ * @route   POST /api/spaces/:id/members
+ * @desc    Add doctors directly (WhatsApp "Add participants", REQ 2)
+ * @access  Protected + Space Admin/Owner only
+ * @body    { userIds: string[] }
+ */
+router.post('/:id/members', validateMongoId('id'), spaceController.addMembers);
+
+/**
  * @route   GET /api/spaces/:id/pending
  * @desc    List pending join requests
  * @access  Protected + Space Admin/Owner only

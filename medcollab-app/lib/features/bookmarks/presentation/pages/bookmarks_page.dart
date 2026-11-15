@@ -84,6 +84,7 @@ class _BookmarksPageState extends State<BookmarksPage> {
                       ),
                     ),
                     IconButton(
+                      tooltip: 'Remove bookmark',
                       icon: const Icon(Icons.close, size: 18),
                       onPressed: () async {
                         await AppDependencies.instance.bookmarkService

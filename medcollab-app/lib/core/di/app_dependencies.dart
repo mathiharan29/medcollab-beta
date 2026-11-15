@@ -1,3 +1,6 @@
+import 'package:medcollab_app/core/chat/chat_prefetcher.dart';
+import 'package:medcollab_app/core/speech/speech_service.dart';
+import 'package:medcollab_app/features/voice_bot/data/voice_bot_repository.dart';
 import 'package:medcollab_app/core/auth/msg91_otp_service.dart';
 import 'package:medcollab_app/core/config/env_config.dart';
 import 'package:medcollab_app/core/network/api_client.dart';
@@ -15,6 +18,7 @@ import 'package:medcollab_app/features/auth/data/repositories/user_repository.da
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_event.dart';
 import 'package:medcollab_app/features/channels/data/repositories/channel_repository.dart';
+import 'package:medcollab_app/features/contacts/contact_sync_service.dart';
 import 'package:medcollab_app/features/handoffs/data/repositories/handoff_repository.dart';
 import 'package:medcollab_app/features/home/data/dashboard_preferences_service.dart';
 import 'package:medcollab_app/features/media/data/repositories/media_repository.dart';
@@ -40,11 +44,16 @@ class AppDependencies {
   late final UserRepository userRepository;
   late final SpaceRepository spaceRepository;
   late final MessageRepository messageRepository;
+  late final ChatPrefetcher chatPrefetcher;
+  // Issues 13/14: on-device speech + the voice bot's server half.
+  late final SpeechService speechService;
+  late final AssistantRepository assistantRepository;
   late final MessageRequestRepository messageRequestRepository;
   late final ThreadRepository threadRepository;
   late final MediaRepository mediaRepository;
   late final ChannelRepository channelRepository;
   late final MemberRepository memberRepository;
+  late final ContactSyncService contactSyncService;
   late final HandoffRepository handoffRepository;
   late final DashboardPreferencesService dashboardPreferencesService;
   late final NotificationRepository notificationRepository;
@@ -83,11 +92,15 @@ class AppDependencies {
     userRepository = UserRepository(apiClient: apiClient);
     spaceRepository = SpaceRepository(apiClient: apiClient);
     messageRepository = MessageRepository(apiClient: apiClient);
+    chatPrefetcher = ChatPrefetcher(messageRepository);
+    speechService = PlatformSpeechService();
+    assistantRepository = AssistantRepository(apiClient: apiClient);
     messageRequestRepository = MessageRequestRepository(apiClient: apiClient);
     threadRepository = ThreadRepository(apiClient: apiClient);
     mediaRepository = MediaRepository(apiClient: apiClient);
     channelRepository = ChannelRepository(apiClient: apiClient);
     memberRepository = MemberRepository(apiClient: apiClient);
+    contactSyncService = ContactSyncService(apiClient: apiClient);
     handoffRepository = HandoffRepository(apiClient: apiClient);
     dashboardPreferencesService = DashboardPreferencesService();
     notificationRepository = NotificationRepository(apiClient: apiClient);

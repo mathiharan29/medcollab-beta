@@ -14,6 +14,9 @@
  */
 
 const Message = require('./message.model');
+const ChatClear = require('./chatClear.model');
+const { personalizeThreadSummaries } = require('../../utils/personalLastMessage');
+const Notification = require('../notifications/notification.model');
 const Channel = require('../channels/channel.model');
 const Space = require('../spaces/space.model');
 const User = require('../users/user.model');
@@ -28,8 +31,16 @@ const { notifyNewMessage, notifyMention } = require('../../services/notification
 const { MESSAGE_TYPES, MESSAGE_PRIORITY, PAGINATION, CHANNEL_TYPES } = require('../../constants');
 const logger = require('../../utils/logger');
 
+const formatDuration = (ms) => {
+  const total = Math.round((Number(ms) || 0) / 1000);
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+};
+
 const messagePreviewText = (message) =>
   message.content?.text?.slice(0, 200) ||
+  (message.type === MESSAGE_TYPES.AUDIO
+    ? `🎤 Voice message${message.content?.durationMs ? ` (${formatDuration(message.content.durationMs)})` : ''}`
+    : null) ||
   (message.type === MESSAGE_TYPES.IMAGE || message.type === MESSAGE_TYPES.ECG
     ? '📷 Photo'
     : message.type === MESSAGE_TYPES.VIDEO
@@ -41,6 +52,65 @@ const messagePreviewText = (message) =>
           : message.type === MESSAGE_TYPES.ALERT
             ? '⚠️ Alert'
             : null);
+
+/**
+ * Per-user filter: hides messages this user deleted "for me" and everything
+ * up to their last "Clear chat" in this channel.
+ */
+const personalVisibility = async (userId, channelId) => {
+  const cleared = await ChatClear.findOne({ userId, channelId }).select('clearedAt').lean();
+  return {
+    hiddenFor: { $ne: userId },
+    ...(cleared ? { createdAt: { $gt: cleared.clearedAt } } : {}),
+  };
+};
+
+/** Recompute channel.lastMessage after messages vanish. */
+const refreshLastMessage = async (channelId) => {
+  const previous = await Message.findOne({
+    channelId,
+    threadId: null,
+    isDeleted: { $ne: true },
+  })
+    .sort({ createdAt: -1, _id: -1 })
+    .populate('senderId', 'name')
+    .lean();
+  await Channel.updateOne(
+    { _id: channelId },
+    {
+      $set: {
+        lastMessage: previous
+          ? {
+              messageId: previous._id,
+              text: messagePreviewText(previous),
+              senderName: previous.senderId?.name || 'Doctor',
+              type: previous.type,
+              sentAt: previous.createdAt,
+            }
+          : { messageId: null, text: null, senderName: null, type: null, sentAt: null },
+      },
+    }
+  );
+};
+
+/** Our own stored file behind a message mediaUrl (Cloudinary or local). */
+const messageMediaPublicId = (mediaUrl) => {
+  if (!mediaUrl) return null;
+  let pathname;
+  try {
+    pathname = mediaUrl.startsWith('/') ? mediaUrl : new URL(mediaUrl).pathname;
+  } catch {
+    return null;
+  }
+  let id = null;
+  if (pathname.startsWith('/uploads/')) {
+    id = decodeURIComponent(pathname.slice('/uploads/'.length));
+  } else {
+    const at = pathname.indexOf('/medcollab/messages/');
+    if (at >= 0) id = pathname.slice(at + 1).replace(/\.[^/.]+$/, '');
+  }
+  return id && id.startsWith('medcollab/messages/') && !id.includes('..') ? id : null;
+};
 
 /**
  * GET /api/channels/:channelId/messages
@@ -57,6 +127,7 @@ const getMessages = asyncHandler(async (req, res) => {
     channelId: req.params.channelId,
     threadId: null,          // Root messages only — threads fetched separately
     isDeleted: false,
+    ...(await personalVisibility(req.user._id, access.channel._id)),
   };
 
   // Cursor: fetch messages older than the given messageId
@@ -66,6 +137,7 @@ const getMessages = asyncHandler(async (req, res) => {
     .sort({ _id: -1 })          // Newest first from DB
     .limit(limit + 1)           // Fetch one extra to know if there's more
     .populate('senderId', 'name displayTitle role avatarUrl')
+    .select('-hiddenFor')
     .lean();
 
   const hasMore = messages.length > limit;
@@ -78,6 +150,9 @@ const getMessages = asyncHandler(async (req, res) => {
       select: 'name displayTitle role avatarUrl',
     });
   }
+
+  // "N replies" must not count replies this user deleted for themselves.
+  messages = await personalizeThreadSummaries(messages, req.user._id);
 
   // Return in ascending order (oldest → newest) for natural chat rendering
   messages.reverse();
@@ -109,10 +184,19 @@ const sendMessage = asyncHandler(async (req, res) => {
   } = req.body;
 
   // Persist trimmed text so route length checks match Mongo maxlength.
+  // Server-only fields (activity lines) can never come from a client.
+  const {
+    systemEvent: _se, targetUserIds: _tu, movedToChannelId: _mv, ...clientContent
+  } = rawContent || {};
+  if (type !== MESSAGE_TYPES.AUDIO) {
+    delete clientContent.transcript;
+    delete clientContent.transcriptStatus;
+    delete clientContent.voiceMode;
+  }
   const content =
-    rawContent && typeof rawContent.text === 'string'
-      ? { ...rawContent, text: rawContent.text.trim() }
-      : rawContent;
+    rawContent && typeof clientContent.text === 'string'
+      ? { ...clientContent, text: clientContent.text.trim() }
+      : rawContent ? clientContent : rawContent;
 
   // Validate media URLs point to trusted domains or this server's uploads.
   if (content?.mediaUrl) {
@@ -156,9 +240,16 @@ const sendMessage = asyncHandler(async (req, res) => {
       _id: threadId,
       channelId: channel._id,
       isDeleted: { $ne: true },
-    }).select('_id');
+    }).select('_id type threadId');
     if (!threadParent) {
       return respond.badRequest(res, 'Thread parent not found in this chat');
+    }
+    // Threads hang off real messages only (not "X added Y", not a reply).
+    if (threadParent.type === MESSAGE_TYPES.SYSTEM) {
+      return respond.badRequest(res, 'Cannot start a thread on group activity');
+    }
+    if (threadParent.threadId) {
+      return respond.badRequest(res, 'Reply in the original thread');
     }
   }
 
@@ -190,7 +281,9 @@ const sendMessage = asyncHandler(async (req, res) => {
           ? parent.content?.fileName || 'Document'
           : parent.type === MESSAGE_TYPES.HANDOFF
             ? 'Handoff'
-            : 'Message');
+            : parent.type === MESSAGE_TYPES.AUDIO
+              ? 'Voice message'
+              : 'Message');
     replyTo = {
       messageId: parent._id,
       senderId: parentSender?._id || parentSender || null,
@@ -233,6 +326,22 @@ const sendMessage = asyncHandler(async (req, res) => {
       sentAt: message.createdAt,
     },
   });
+  if (threadId) {
+    // Reply count before the response, so reopening the chat right away
+    // never shows a stale "N replies". Never touch a foreign parent (VR-S1).
+    await Message.updateOne(
+      { _id: threadId, channelId: channel._id },
+      {
+        $inc: { replyCount: 1 },
+        lastReply: {
+          senderId: req.user._id,
+          senderName: req.user.name,
+          text: content?.text?.slice(0, 100) || messagePreviewText(message)?.slice(0, 100) || null,
+          sentAt: message.createdAt,
+        },
+      }
+    );
+  }
 
   // ── HTTP response first ─────────────────────────────────────────────────────
   respond.created(res, 'Message sent', { message });
@@ -251,21 +360,8 @@ const sendMessage = asyncHandler(async (req, res) => {
         recipientIds
       );
 
-      // Thread reply bookkeeping — never update a foreign-channel parent (VR-S1).
-      if (threadId) {
-        await Message.updateOne(
-          { _id: threadId, channelId: channel._id },
-          {
-            $inc: { replyCount: 1 },
-            lastReply: {
-              senderId: req.user._id,
-              senderName: req.user.name,
-              text: content?.text?.slice(0, 100) || null,
-              sentAt: message.createdAt,
-            },
-          }
-        );
-      }
+      // Live "N replies": clients bump the root from the new_message above
+      // (threadId set), so no separate message_updated is sent here.
 
       await notifyNewMessage({
         recipientIds,
@@ -296,12 +392,22 @@ const getThread = asyncHandler(async (req, res) => {
   const access = await resolveChannelAccess(req, res);
   if (!access) return;
 
-  const rootMessage = await Message.findById(req.params.id)
+  const visibility = await personalVisibility(req.user._id, access.channel._id);
+
+  // The root obeys the same per-user rules as the timeline: a root this
+  // user deleted for themselves, or one from before their Clear chat, is
+  // "not found" for them — opening the thread directly must not reveal it.
+  let rootMessage = await Message.findOne({
+    _id: req.params.id,
+    ...visibility,
+  })
     .populate('senderId', 'name displayTitle role avatarUrl')
+    .select('-hiddenFor')
     .lean();
 
   if (!rootMessage) return respond.notFound(res, 'Message not found');
   if (!assertMessageInChannel(rootMessage, req.params.channelId, res)) return;
+  [rootMessage] = await personalizeThreadSummaries([rootMessage], req.user._id);
 
   const limit = Math.min(parseInt(req.query.limit) || 50, 100);
   const before = req.query.before;
@@ -313,6 +419,7 @@ const getThread = asyncHandler(async (req, res) => {
       { threadId: rootMessage._id.toString() },
     ],
     isDeleted: false,
+    ...visibility,
   };
   if (before) threadQuery._id = { $lt: before };
 
@@ -320,6 +427,7 @@ const getThread = asyncHandler(async (req, res) => {
     .sort({ _id: -1 })
     .limit(limit + 1)
     .populate('senderId', 'name displayTitle role avatarUrl')
+    .select('-hiddenFor')
     .lean();
 
   const hasMore = replies.length > limit;
@@ -371,66 +479,174 @@ const editMessage = asyncHandler(async (req, res) => {
 });
 
 /**
- * DELETE /api/channels/:channelId/messages/:id
- * Soft-delete a message (sender or space admin)
+ * DELETE /api/channels/:channelId/messages/:id?scope=everyone|me
+ *
+ * scope=me (any member, any message): hides it from the caller only.
+ * scope=everyone (default; sender or space admin): permanently removes the
+ * message from the database together with its thread replies, their stored
+ * media and the alerts that pointed at them, then tells every open client.
  */
 const deleteMessage = asyncHandler(async (req, res) => {
   const access = await resolveChannelAccess(req, res);
   if (!access) return;
 
+  const scope = req.query.scope === 'me' ? 'me' : 'everyone';
+
   const message = await Message.findById(req.params.id);
   if (!message) return respond.notFound(res, 'Message not found');
   if (!assertMessageInChannel(message, req.params.channelId, res)) return;
+
+  if (scope === 'me') {
+    await Message.updateOne(
+      { _id: message._id },
+      { $addToSet: { hiddenFor: req.user._id } }
+    );
+    return respond.ok(res, 'Message deleted for you', { scope, deletedIds: [String(message._id)] });
+  }
+
+  // Activity lines ("X removed Y") are a record, not someone's message.
+  if (message.type === MESSAGE_TYPES.SYSTEM) {
+    return respond.badRequest(res, 'Group activity cannot be deleted');
+  }
 
   const isSender = message.senderId.toString() === req.user._id.toString();
   const isAdmin  = access.space?.isAdmin(req.user._id);
 
   if (!isSender && !isAdmin) {
-    return respond.forbidden(res, 'Cannot delete this message');
+    return respond.forbidden(res, 'You can only delete your own messages for everyone');
   }
 
-  message.isDeleted = true; // Pre-save hook blanks content
-  await message.save();
+  // A root takes its whole thread with it.
+  const replies = message.threadId
+    ? []
+    : await Message.find({ channelId: message.channelId, threadId: message._id })
+        .select('_id content.mediaUrl')
+        .lean();
+  const doomed = [message, ...replies];
+  const doomedIds = doomed.map((m) => m._id);
 
-  await Message.updateMany(
-    {
-      channelId: message.channelId,
-      'replyTo.messageId': message._id,
-    },
-    { $set: { 'replyTo.text': 'This message was deleted' } }
-  );
+  await Message.deleteMany({ _id: { $in: doomedIds }, channelId: message.channelId });
 
-  const channel = await Channel.findById(message.channelId).select('lastMessage');
-  if (channel?.lastMessage?.messageId?.toString() === message._id.toString()) {
-    const previous = await Message.findOne({
-      channelId: message.channelId,
-      isDeleted: { $ne: true },
-    })
-      .sort({ createdAt: -1, _id: -1 })
+  // Files are removed after the rows, best effort (a CDN hiccup must not
+  // leave the message visible).
+  for (const m of doomed) {
+    const publicId = messageMediaPublicId(m.content?.mediaUrl);
+    if (!publicId) continue;
+    try {
+      const { deleteStoredMedia } = require('../media/media.controller');
+      await deleteStoredMedia(publicId);
+    } catch (err) {
+      logger.warn(`Media cleanup failed for deleted message: ${err.message}`);
+    }
+  }
+
+  await Promise.all([
+    Notification.deleteMany({
+      $or: [
+        { 'metadata.messageId': { $in: doomedIds } },
+        { referenceType: 'Message', referenceId: { $in: doomedIds } },
+      ],
+    }),
+    Message.updateMany(
+      { channelId: message.channelId, 'replyTo.messageId': { $in: doomedIds } },
+      { $set: { 'replyTo.text': 'This message was deleted' } }
+    ),
+    Channel.updateOne(
+      { _id: message.channelId },
+      { $pull: { pinnedMessages: { messageId: { $in: doomedIds } } } }
+    ),
+  ]);
+
+  if (message.threadId) {
+    // A deleted reply leaves the root's "N replies" / last reply accurate.
+    const remaining = await Message.find({ channelId: message.channelId, threadId: message.threadId, isDeleted: { $ne: true } })
+      .sort({ createdAt: -1 })
       .populate('senderId', 'name')
       .lean();
-
-    channel.lastMessage = previous
-      ? {
-          messageId: previous._id,
-          text: messagePreviewText(previous),
-          senderName: previous.senderId?.name || 'Doctor',
-          type: previous.type,
-          sentAt: previous.createdAt,
-        }
-      : {
-          messageId: message._id,
-          text: 'This message was deleted',
-          senderName: req.user.name,
-          type: message.type,
-          sentAt: message.createdAt,
-        };
-    await channel.save();
+    const last = remaining[0];
+    await Message.updateOne(
+      { _id: message.threadId, channelId: message.channelId },
+      {
+        $set: {
+          replyCount: remaining.length,
+          lastReply: last
+            ? {
+                senderId: last.senderId?._id || last.senderId,
+                senderName: last.senderId?.name || 'Doctor',
+                text: messagePreviewText(last)?.slice(0, 100) || null,
+                sentAt: last.createdAt,
+              }
+            : null,
+        },
+      }
+    );
+    emitMessageUpdated(req.params.channelId, message.threadId, {
+      replyCount: remaining.length,
+    });
   }
 
-  emitMessageDeleted(req.params.channelId, message._id);
+  const channel = await Channel.findById(message.channelId).select('lastMessage');
+  if (
+    channel?.lastMessage?.messageId &&
+    doomedIds.some((id) => String(id) === String(channel.lastMessage.messageId))
+  ) {
+    await refreshLastMessage(message.channelId);
+  }
 
-  return respond.ok(res, 'Message deleted');
+  const { resolveMessageAudienceIds } = require('../../utils/channelAccess');
+  const audience = resolveMessageAudienceIds(access.channel, access.space);
+  for (const id of doomedIds) {
+    emitMessageDeleted(req.params.channelId, id, audience);
+  }
+
+  return respond.ok(res, 'Message deleted for everyone', {
+    scope,
+    deletedIds: doomedIds.map(String),
+  });
+});
+
+/**
+ * PATCH /api/channels/:channelId/messages/:id/transcript
+ * Needl Voice (issue 13): transcripts are made on the sender's phone (the
+ * audio never goes to a speech service from the server) and attached here.
+ */
+const setTranscript = asyncHandler(async (req, res) => {
+  const access = await resolveChannelAccess(req, res);
+  if (!access) return;
+  const message = await Message.findById(req.params.id);
+  if (!message) return respond.notFound(res, 'Message not found');
+  if (!assertMessageInChannel(message, req.params.channelId, res)) return;
+  if (message.senderId.toString() !== req.user._id.toString()) {
+    return respond.forbidden(res, 'Only the sender can add a transcript');
+  }
+  if (message.type !== MESSAGE_TYPES.AUDIO) {
+    return respond.badRequest(res, 'Only voice messages have transcripts');
+  }
+  const status = req.body.status;
+  const text = status === 'done' ? String(req.body.transcript || '').trim() : '';
+  message.content.transcript = text || undefined;
+  message.content.transcriptStatus = status === 'done' && !text ? 'unavailable' : status;
+  message.markModified('content');
+  await message.save();
+
+  emitMessageUpdated(req.params.channelId, message._id, { content: message.content });
+  return respond.ok(res, 'Transcript saved', { message });
+});
+
+/**
+ * POST /api/channels/:channelId/messages/clear
+ * "Clear chat" for the caller only; new messages still arrive.
+ */
+const clearChat = asyncHandler(async (req, res) => {
+  const access = await resolveChannelAccess(req, res);
+  if (!access) return;
+  const clearedAt = new Date();
+  await ChatClear.findOneAndUpdate(
+    { userId: req.user._id, channelId: access.channel._id },
+    { $set: { clearedAt } },
+    { upsert: true }
+  );
+  return respond.ok(res, 'Chat cleared', { clearedAt });
 });
 
 /**
@@ -445,6 +661,9 @@ const toggleReaction = asyncHandler(async (req, res) => {
   if (!message) return respond.notFound(res, 'Message not found');
   if (!assertMessageInChannel(message, req.params.channelId, res)) return;
   if (message.isDeleted) return respond.badRequest(res, 'Cannot react to a deleted message');
+  if (message.type === MESSAGE_TYPES.SYSTEM) {
+    return respond.badRequest(res, 'Cannot react to group activity');
+  }
 
   await message.toggleReaction(req.body.emoji, req.user._id);
 
@@ -492,5 +711,6 @@ const markAsRead = asyncHandler(async (req, res) => {
 
 module.exports = {
   getMessages, sendMessage, getThread, replyToThread,
-  editMessage, deleteMessage, toggleReaction, markAsRead,
+  editMessage, deleteMessage, toggleReaction, markAsRead, clearChat,
+  setTranscript, personalVisibility,
 };

@@ -244,10 +244,20 @@ const emitMessageUpdated = (channelId, messageId, updates) => {
 /**
  * Emit a message_deleted event (after soft delete)
  */
-const emitMessageDeleted = (channelId, messageId) => {
-  getIO()
-    .to(`channel:${channelId}`)
-    .emit(SOCKET_EVENTS.MESSAGE_DELETED, { messageId, deletedAt: new Date() });
+const emitMessageDeleted = (channelId, messageId, alsoNotifyUserIds = []) => {
+  const payload = {
+    messageId: messageId?.toString?.() || messageId,
+    channelId: channelId?.toString?.() || channelId,
+    deletedAt: new Date(),
+  };
+  // Room + each member's personal room (same fan-out as new_message), so
+  // the message also disappears for members who have not joined the room.
+  let target = getIO().to(`channel:${channelId}`);
+  for (const raw of alsoNotifyUserIds) {
+    const id = raw?.toString?.() || String(raw);
+    if (id) target = target.to(`user:${id}`);
+  }
+  target.emit(SOCKET_EVENTS.MESSAGE_DELETED, payload);
 };
 
 /**

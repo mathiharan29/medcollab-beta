@@ -40,6 +40,46 @@ const {
 } = require('../../constants');
 
 // ── Patient Entry Subdocument ─────────────────────────────────────────────────
+/**
+ * Voice handover (beta 11-14, issue 5) — replaces the WhatsApp voice notes
+ * doctors used to send next to the written handoff. One per patient and one
+ * for the whole shift. The audio file is never deleted on replace / handoff
+ * delete (medical audit trail, like the soft-deleted handoff itself).
+ */
+const VOICE_LIMITS = Object.freeze({
+  minMs: 700,
+  maxMs: 5 * 60 * 1000,
+  maxBars: 64,
+});
+
+const voiceNoteSchema = new mongoose.Schema(
+  {
+    url: { type: String, required: true, maxlength: 2048 },
+    mimeType: { type: String, default: 'audio/mp4', maxlength: 100 },
+    durationMs: {
+      type: Number,
+      required: true,
+      min: VOICE_LIMITS.minMs,
+      max: VOICE_LIMITS.maxMs,
+    },
+    waveform: {
+      type: [Number],
+      default: undefined,
+      validate: {
+        validator: (bars) =>
+          !bars ||
+          (bars.length <= VOICE_LIMITS.maxBars &&
+            bars.every((b) => Number.isFinite(b) && b >= 0 && b <= 100)),
+        message: 'waveform must be up to 64 values between 0 and 100',
+      },
+    },
+    // Set by the server, never taken from the client.
+    recordedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    recordedAt: { type: Date },
+  },
+  { _id: false }
+);
+
 const patientSchema = new mongoose.Schema(
   {
     // Physical location — how the incoming doctor finds the patient
@@ -111,6 +151,9 @@ const patientSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    // Spoken handover for this patient (beta 11-14, issue 5).
+    voiceNote: { type: voiceNoteSchema, default: null },
   },
   { _id: true } // Patients DO get _id — we reference them in follow-up queries
 );
@@ -174,6 +217,14 @@ const handoffSchema = new mongoose.Schema(
       default: '',
     },
 
+    // Spoken summary of the whole shift (issue 5).
+    voiceNote: { type: voiceNoteSchema, default: null },
+
+    // Bumped on every content edit (patients / summary / voice / shift).
+    // Edits carry the version they were made on; a stale one gets 409
+    // instead of silently overwriting a newer edit from another device.
+    contentVersion: { type: Number, default: 0 },
+
     // ── Status Lifecycle ──────────────────────────────────────────────────
     status: {
       type: String,
@@ -228,11 +279,42 @@ const handoffSchema = new mongoose.Schema(
         _id: false,
       },
     ],
+
+    // REQ 10: the sender may edit after submitting. Every edit is recorded.
+    editHistory: [
+      {
+        byUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        fields: { type: [String], default: [] },
+        statusBefore: { type: String },
+        at: { type: Date, default: Date.now },
+        _id: false,
+      },
+    ],
+
+    // REQ 10: submitted handoffs are soft-deleted (hidden everywhere, kept
+    // for the medical audit trail). Drafts are hard-deleted.
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: { type: Date, default: null },
+    deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   },
   {
     timestamps: true,
   }
 );
+
+// Hide soft-deleted handoffs from every query unless the query names
+// `isDeleted` itself (audit tooling can pass { isDeleted: true }).
+handoffSchema.pre(
+  ['find', 'findOne', 'findOneAndUpdate', 'countDocuments', 'updateOne', 'updateMany'],
+  function excludeDeleted() {
+    if (this.getFilter().isDeleted === undefined) {
+      this.where({ isDeleted: { $ne: true } });
+    }
+  }
+);
+handoffSchema.pre('aggregate', function excludeDeletedAgg() {
+  this.pipeline().unshift({ $match: { isDeleted: { $ne: true } } });
+});
 
 // ── Indexes ───────────────────────────────────────────────────────────────────
 handoffSchema.index({ spaceId: 1, shiftDate: -1 });                      // List handoffs by space, recent first
@@ -263,3 +345,4 @@ handoffSchema.methods.acknowledge = function (note = '') {
 
 const Handoff = mongoose.model('Handoff', handoffSchema);
 module.exports = Handoff;
+module.exports.VOICE_LIMITS = VOICE_LIMITS;

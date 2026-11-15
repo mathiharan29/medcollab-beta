@@ -139,7 +139,7 @@ class _ChatNetworkImageState extends State<ChatNetworkImage> {
     }
 
     if (_loading) {
-      return const ColoredBox(
+      return ColoredBox(
         color: AppColors.surfaceVariant,
         child: Center(
           child: SizedBox(
@@ -157,7 +157,7 @@ class _ChatNetworkImageState extends State<ChatNetworkImage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.broken_image_outlined, color: AppColors.textMuted),
+            Icon(Icons.broken_image_outlined, color: AppColors.textMuted),
             const SizedBox(height: 6),
             TextButton(
               onPressed: _loadNetwork,

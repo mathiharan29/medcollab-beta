@@ -31,27 +31,18 @@ class _SplashPageState extends State<SplashPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.navyPrimary.withValues(alpha: 0.06),
-                    blurRadius: 24,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Image.asset(
-                BrandingAssets.logo,
-                width: 180,
-                fit: BoxFit.contain,
-              ),
+            // Transparent logo straight on the page colour — same size and
+            // place as the Android launch screen, so the hand-off from the
+            // system splash is seamless (issue 12: no white card / box).
+            Image.asset(
+              BrandingAssets.logo,
+              key: const Key('splash-logo'),
+              width: 216,
+              fit: BoxFit.contain,
+              gaplessPlayback: true,
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'For doctors. Built for India.',
               style: AppTextStyles.body,
             ),

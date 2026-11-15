@@ -1,5 +1,6 @@
 import 'package:medcollab_app/core/constants/api_endpoints.dart';
 import 'package:medcollab_app/core/error/app_exception.dart';
+import 'package:medcollab_app/core/network/shared_fetch.dart';
 import 'package:medcollab_app/core/utils/json_map_utils.dart';
 import 'package:medcollab_app/features/auth/data/models/user_model.dart';
 import 'package:medcollab_app/features/channels/data/models/channel_detail_model.dart';
@@ -27,12 +28,17 @@ class ChannelRepository extends BaseRepository {
 
   /// `GET /api/channels/dm`
   Future<List<ChannelModel>> getMyDMs() {
-    return execute(
-      () => apiClient.get(
-        ApiEndpoints.listDms,
-        parser: (json) => parseNestedList(json, 'channels', ChannelModel.fromJson),
+    // Shared between tabs that load together (REQ 13); per-caller copy.
+    return SharedFetch.run<List<ChannelModel>>(
+      'dms',
+      () => execute(
+        () => apiClient.get(
+          ApiEndpoints.listDms,
+          parser: (json) =>
+              parseNestedList(json, 'channels', ChannelModel.fromJson),
+        ),
       ),
-    );
+    ).then(List.of);
   }
 
   /// `POST /api/channels/dm`

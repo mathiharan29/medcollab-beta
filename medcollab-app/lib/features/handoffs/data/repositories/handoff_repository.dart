@@ -1,7 +1,9 @@
 import 'package:medcollab_app/core/constants/api_endpoints.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
+import 'package:medcollab_app/core/network/shared_fetch.dart';
 import 'package:medcollab_app/features/handoffs/data/models/handoff_model.dart';
 import 'package:medcollab_app/features/handoffs/data/models/handoff_patient_model.dart';
+import 'package:medcollab_app/features/handoffs/data/models/handoff_voice_note.dart';
 import 'package:medcollab_app/shared/data/repositories/base_repository.dart';
 
 class HandoffsPage {
@@ -43,18 +45,22 @@ class HandoffRepository extends BaseRepository {
     String type = 'all',
     HandoffStatus? status,
   }) {
-    return execute(
-      () => apiClient.get(
-        ApiEndpoints.handoffs,
-        queryParameters: {
-          'type': type,
-          if (spaceId != null) 'spaceId': spaceId,
-          if (status != null) 'status': status.value,
-        },
-        parser: (json) =>
-            parseNestedList(json, 'handoffs', HandoffModel.fromJson),
+    // Shared between tabs/badges that load together (REQ 13); per-caller copy.
+    return SharedFetch.run<List<HandoffModel>>(
+      'handoffs:$type:${spaceId ?? ''}:${status?.value ?? ''}',
+      () => execute(
+        () => apiClient.get(
+          ApiEndpoints.handoffs,
+          queryParameters: {
+            'type': type,
+            if (spaceId != null) 'spaceId': spaceId,
+            if (status != null) 'status': status.value,
+          },
+          parser: (json) =>
+              parseNestedList(json, 'handoffs', HandoffModel.fromJson),
+        ),
       ),
-    );
+    ).then(List.of);
   }
 
   /// Merges space history with the current user's sent handoffs (drafts + submitted).
@@ -99,6 +105,7 @@ class HandoffRepository extends BaseRepository {
     required ShiftType shiftType,
     List<HandoffPatientModel> patients = const [],
     String shiftSummary = '',
+    HandoffVoiceNote? voiceNote,
   }) {
     return execute(
       () => apiClient.post(
@@ -111,6 +118,7 @@ class HandoffRepository extends BaseRepository {
           'shiftType': shiftType.value,
           'patients': patients.map((p) => p.toJson()).toList(),
           'shiftSummary': shiftSummary,
+          if (voiceNote != null) 'voiceNote': voiceNote.toJson(),
         },
         parser: (json) =>
             parseNested(json, 'handoff', HandoffModel.fromJson),
@@ -125,6 +133,11 @@ class HandoffRepository extends BaseRepository {
     ShiftType? shiftType,
     List<HandoffPatientModel>? patients,
     String? shiftSummary,
+    // Shift voice note: pass [setVoiceNote] true to send it (null removes).
+    HandoffVoiceNote? voiceNote,
+    bool setVoiceNote = false,
+    // The content version this edit was made on (409 if stale).
+    int? baseContentVersion,
   }) {
     return execute(
       () => apiClient.put(
@@ -135,6 +148,9 @@ class HandoffRepository extends BaseRepository {
           if (patients != null)
             'patients': patients.map((p) => p.toJson()).toList(),
           if (shiftSummary != null) 'shiftSummary': shiftSummary,
+          if (setVoiceNote) 'voiceNote': voiceNote?.toJson(),
+          if (baseContentVersion != null)
+            'baseContentVersion': baseContentVersion,
         },
         parser: (json) =>
             parseNested(json, 'handoff', HandoffModel.fromJson),

@@ -50,7 +50,7 @@ const fileFilter = (req, file, cb) => {
   const name = (file.originalname || '').toLowerCase();
   if (
     file.mimetype === 'application/octet-stream' &&
-    /\.(jpe?g|png|webp|heic|heif|pdf|mp4|mov|webm|3gp)$/.test(name)
+    /\.(jpe?g|png|webp|heic|heif|pdf|mp4|mov|webm|3gp|m4a|aac|mp3|ogg|opus|wav)$/.test(name)
   ) {
     cb(null, true);
     return;

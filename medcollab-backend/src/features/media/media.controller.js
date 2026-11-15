@@ -11,6 +11,7 @@ const asyncHandler = require('../../utils/asyncHandler');
 const { saveLocalUpload, deleteLocalUpload } = require('../../utils/localMediaStorage');
 const logger = require('../../utils/logger');
 const Handoff = require('../handoffs/handoff.model');
+const { MEDIA } = require('../../constants');
 
 const bumpUserStorage = (userId, deltaBytes) => {
   if (!userId || !deltaBytes) return;
@@ -48,9 +49,21 @@ const uploadFile = asyncHandler(async (req, res) => {
       ['.mp4', '.mov', '.webm', '.mkv', '.m4v'].some((ext) =>
         original.endsWith(ext)
       ));
+  // Voice notes (REQ 12). Checked before video: ".webm"/".mp4" audio from
+  // recorders arrives as audio/*.
+  const isAudio =
+    mime.startsWith('audio/') ||
+    (isOctet &&
+      ['.m4a', '.aac', '.mp3', '.ogg', '.opus', '.wav'].some((ext) =>
+        original.endsWith(ext)
+      ));
+  if (isAudio && req.file.size > MEDIA.MAX_AUDIO_BYTES) {
+    return respond.badRequest(res, 'Voice message is too long');
+  }
   const isImage =
     !isPDF &&
     !isVideo &&
+    !isAudio &&
     (mime.startsWith('image/') ||
       (isOctet &&
         ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.heic'].some((ext) =>
@@ -79,7 +92,7 @@ const uploadFile = asyncHandler(async (req, res) => {
       mimeType: req.file.mimetype,
       width: null,
       height: null,
-      format: isPDF ? 'pdf' : isVideo ? 'video' : isImage ? 'image' : null,
+      format: isPDF ? 'pdf' : isAudio ? 'audio' : isVideo ? 'video' : isImage ? 'image' : null,
       storage: 'local',
     });
   }
@@ -99,7 +112,8 @@ const uploadFile = asyncHandler(async (req, res) => {
 
     const uploadOptions = {
       folder,
-      resource_type: isPDF ? 'raw' : isVideo ? 'video' : 'image',
+      // Cloudinary stores audio under the "video" resource type.
+      resource_type: isPDF ? 'raw' : isVideo || isAudio ? 'video' : 'image',
       use_filename: true,
       unique_filename: true,
       filename_override: baseName.slice(0, 100),
@@ -117,6 +131,8 @@ const uploadFile = asyncHandler(async (req, res) => {
         quality: 'auto',
         format: 'webp',
       });
+    } else if (isAudio) {
+      thumbnailUrl = null;
     } else if (isVideo) {
       thumbnailUrl = cloudinary.url(result.public_id, {
         resource_type: 'video',

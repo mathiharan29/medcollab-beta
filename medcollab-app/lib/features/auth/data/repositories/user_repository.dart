@@ -62,6 +62,19 @@ class UserRepository extends BaseRepository {
     );
   }
 
+  /// Removes the profile photo (REQ 7). The server clears `avatarUrl` and
+  /// deletes the stored image.
+  Future<UserModel> removeAvatar() {
+    return execute(
+      () => apiClient.put(
+        ApiEndpoints.me,
+        data: {'avatarUrl': null},
+        parser: (json) =>
+            UserModel.fromJson(json['user'] as Map<String, dynamic>),
+      ),
+    );
+  }
+
   /// `PUT /api/users/me/availability`
   Future<AvailabilityModel> updateAvailability({
     required AvailabilityStatus status,
@@ -105,6 +118,30 @@ class UserRepository extends BaseRepository {
       () => apiClient.get(
         ApiEndpoints.lookupUser,
         queryParameters: {'phone': phoneE164},
+        parser: (json) => UserLookupResult.fromJson(json),
+      ),
+    );
+  }
+
+  /// `GET /api/users/username-available?u=` — REQ 5 live check.
+  Future<({bool available, String? reason})> checkUsername(String username) {
+    return execute(
+      () => apiClient.get(
+        ApiEndpoints.usernameAvailable,
+        queryParameters: {'u': username},
+        parser: (json) => (
+          available: json['available'] == true,
+          reason: json['reason'] as String?,
+        ),
+      ),
+    );
+  }
+
+  /// `GET /api/users/:id/relationship` — can I message / request / accept?
+  Future<UserLookupResult> getRelationship(String userId) {
+    return execute(
+      () => apiClient.get(
+        ApiEndpoints.userRelationship(userId),
         parser: (json) => UserLookupResult.fromJson(json),
       ),
     );

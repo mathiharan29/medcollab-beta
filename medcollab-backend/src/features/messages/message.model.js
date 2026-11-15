@@ -26,10 +26,11 @@
  *    For MVP: show read receipts only in DMs (2 participants).
  *    Use a separate UserChannelRead collection for group read tracking later.
  *
- * 4. Soft delete
- *    Medical context: we never hard-delete messages.
- *    deletedAt is set, content is replaced with a placeholder,
- *    but the document remains for audit purposes.
+ * 4. Deletion (beta feedback 2026-11-10)
+ *    "Delete for everyone" (sender or space admin) removes the message, its
+ *    thread replies, their media and alerts from the database.
+ *    "Delete for me" only adds the user to `hiddenFor`.
+ *    The isDeleted/deletedAt soft-delete fields remain for legacy rows.
  *
  * 5. content is a single embedded object (not separate fields)
  *    A message has ONE type of content. Embedding avoids optional
@@ -70,6 +71,41 @@ const contentSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Handoff',
       default: null,
+    },
+
+    // For type: audio (voice note, REQ 12) — length in milliseconds and a
+    // small loudness profile (0–100 values) for the waveform.
+    durationMs: { type: Number, default: null, min: 0 },
+    waveform: {
+      type: [Number],
+      default: undefined,
+      validate: {
+        validator: (v) => !v || (v.length <= 64 && v.every((n) => n >= 0 && n <= 100)),
+        message: 'Invalid waveform',
+      },
+    },
+
+    // For type: system (REQ 2) — what happened and to whom.
+    systemEvent: { type: String, default: null },
+    // Needl Voice (issue 13): on-device transcript of an audio message,
+    // written by the sender's phone after recording.
+    transcript: { type: String, maxlength: 8000, default: undefined },
+    transcriptStatus: {
+      type: String,
+      enum: ['pending', 'done', 'unavailable'],
+      default: undefined,
+    },
+    // Sent from the voice-first Needl Voice screen (shown with a mic badge).
+    voiceMode: { type: Boolean, default: undefined },
+    // needl_continued: the conversation that continues with the new people.
+    movedToChannelId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Channel',
+      default: undefined,
+    },
+    targetUserIds: {
+      type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+      default: undefined,
     },
   },
   { _id: false }
@@ -214,15 +250,30 @@ const messageSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    // "Delete for me": users who hid this message from their own view.
+    // ("Delete for everyone" removes the document entirely.)
+    hiddenFor: {
+      type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+      default: [],
+    },
   },
   {
     timestamps: true, // createdAt is our message timestamp
+    // Who hid a message for themselves is private to them.
+    toJSON: { transform: (_doc, ret) => { delete ret.hiddenFor; return ret; } },
+    toObject: { transform: (_doc, ret) => { delete ret.hiddenFor; return ret; } },
   }
 );
 
 // ── Indexes ───────────────────────────────────────────────────────────────────
 // Primary query: fetch messages in a channel, newest first, cursor-based
 messageSchema.index({ channelId: 1, createdAt: -1 });
+
+// Timeline / thread pages: filter by channel + thread, newest first by _id
+// (getMessages / getThread). Without it MongoDB sorted every message of the
+// chat in memory on each open (issue 2).
+messageSchema.index({ channelId: 1, threadId: 1, _id: -1 });
 
 // Thread query: fetch all replies to a root message
 messageSchema.index({ threadId: 1, createdAt: 1 });

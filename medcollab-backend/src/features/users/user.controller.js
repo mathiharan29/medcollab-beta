@@ -74,6 +74,18 @@ const updateMe = asyncHandler(async (req, res) => {
     delete updates.vocleUsername;
   }
 
+  // REQ 5: Vocle ID = unique @username. Clear message instead of a raw 409.
+  const usernames = require('../../utils/username');
+  if (updates.vocleUsername !== undefined) {
+    const wanted = usernames.normalizeUsername(updates.vocleUsername);
+    const problem = usernames.usernameProblem(wanted);
+    if (problem) return respond.badRequest(res, problem);
+    if (await usernames.isUsernameTaken(wanted, req.user._id)) {
+      return respond.conflict(res, `@${wanted} is taken — try another`);
+    }
+    updates.vocleUsername = wanted;
+  }
+
   // Promote to onboarded once they have the minimum required fields
   const user = await User.findById(req.user._id);
   const nameAfter  = updates.name  ?? user.name;
@@ -96,6 +108,11 @@ const updateMe = asyncHandler(async (req, res) => {
     { $set: updates },
     { new: true, runValidators: true }
   );
+
+  // Every onboarded doctor has a Vocle ID from day one.
+  if (updated.isOnboarded && !updated.vocleUsername) {
+    await usernames.ensureUsername(updated);
+  }
 
   if (
     updates.avatarUrl !== undefined &&
@@ -188,10 +205,18 @@ const getUserById = asyncHandler(async (req, res) => {
   return respond.ok(res, 'User fetched', { user: user.toPublicProfile() });
 });
 
+const SEARCH_SELECT =
+  'name displayTitle role speciality institution avatarUrl availability vocleUsername';
+
 /**
  * GET /api/users/search?q=priya&spaceId=...
- * Search known users only (shared spaces ∪ DMs ∪ same institution).
- * Optional spaceId further narrows to that group's members ∩ known set.
+ *
+ * REQ 5: search every active, onboarded doctor on Vocle — by name,
+ * @username (Vocle ID), speciality or institution. People you already know
+ * (shared groups, chats, same institution) come first and are flagged
+ * `isKnown`. A phone number finds anyone only by the full number; partial
+ * digits match only people you know (no number enumeration).
+ * Optional spaceId narrows to that group's members (for @mentions).
  */
 const searchUsers = asyncHandler(async (req, res) => {
   const { q, spaceId } = req.query;
@@ -200,52 +225,146 @@ const searchUsers = asyncHandler(async (req, res) => {
     return respond.badRequest(res, 'Search query must be at least 2 characters');
   }
 
-  const searchRegex = new RegExp(escapeRegex(q.trim()), 'i');
+  const raw = q.trim().slice(0, 60);
   const { resolveKnownUserIds } = require('../../utils/knownUsers');
   const Space = require('../spaces/space.model');
+  const knownIds = new Set(await resolveKnownUserIds(req.user._id));
 
-  let filteredIds = await resolveKnownUserIds(req.user._id);
-
+  let scopeIds = null;
   if (spaceId) {
     const space = await Space.findById(spaceId).select('members');
-    if (!space) {
+    if (!space || !space.isMember(req.user._id)) {
       return respond.ok(res, 'Search results', { users: [] });
     }
-    const spaceMemberIds = new Set(
-      (space.members || []).map((m) => m.userId.toString())
-    );
-    filteredIds = filteredIds.filter((id) => spaceMemberIds.has(id));
+    scopeIds = (space.members || []).map((m) => m.userId);
   }
 
-  if (filteredIds.length === 0) {
-    return respond.ok(res, 'Search results', { users: [] });
-  }
-
-  const digitQuery = q.trim().replace(/\D/g, '');
+  const handle = raw.replace(/^@/, '');
+  const textRegex = new RegExp(escapeRegex(handle), 'i');
+  const prefixRegex = new RegExp('^' + escapeRegex(handle.toLowerCase()));
   const orClauses = [
-    { name: searchRegex },
-    { displayTitle: searchRegex },
-    { speciality: searchRegex },
+    { name: textRegex },
+    { speciality: textRegex },
+    { institution: textRegex },
+    { vocleUsername: prefixRegex },
   ];
-  // Allow finding known colleagues by partial/full mobile digits too.
-  if (digitQuery.length >= 4) {
-    // Prefer the last 10 digits (drops +91 / leading 0 noise).
-    const phoneDigits = digitQuery.length > 10 ? digitQuery.slice(-10) : digitQuery;
-    orClauses.push({ phone: new RegExp(escapeRegex(phoneDigits) + '$') });
-    orClauses.push({ phone: new RegExp(escapeRegex(phoneDigits)) });
+
+  const digits = raw.replace(/\D/g, '');
+  const looksLikePhone = digits.length >= 4 && digits.length >= raw.replace(/\s/g, '').length - 1;
+  if (looksLikePhone) {
+    const last10 = digits.length > 10 ? digits.slice(-10) : digits;
+    if (last10.length === 10) {
+      // Full number: anyone on Vocle.
+      orClauses.push({ phone: new RegExp(escapeRegex(last10) + '$') });
+    } else {
+      // Partial digits: only people you already know.
+      orClauses.push({
+        _id: { $in: [...knownIds] },
+        phone: new RegExp(escapeRegex(last10)),
+      });
+    }
   }
 
-  const users = await User.find({
-    _id: { $in: filteredIds },
+  const filter = {
+    _id: scopeIds ? { $in: scopeIds, $ne: req.user._id } : { $ne: req.user._id },
     isActive: true,
     isOnboarded: true,
     $or: orClauses,
+  };
+
+  const found = await User.find(filter).select(SEARCH_SELECT).limit(60).lean();
+
+  // Known people first, then exact @username, then name starts-with, A–Z.
+  const lower = handle.toLowerCase();
+  const rank = (u) =>
+    (knownIds.has(u._id.toString()) ? 0 : 4) +
+    (u.vocleUsername === lower ? 0 : 2) +
+    ((u.name || '').toLowerCase().startsWith(lower) ? 0 : 1);
+  found.sort(
+    (a, b) => rank(a) - rank(b) || (a.name || '').localeCompare(b.name || '')
+  );
+
+  const users = found.slice(0, 25).map((u) => ({
+    ...u,
+    isKnown: knownIds.has(u._id.toString()),
+  }));
+  return respond.ok(res, 'Search results', { users });
+});
+
+/**
+ * GET /api/users/username-available?u=asharao
+ * Live check for Edit profile (REQ 5).
+ */
+const usernameAvailable = asyncHandler(async (req, res) => {
+  const usernames = require('../../utils/username');
+  const wanted = usernames.normalizeUsername(req.query.u);
+  const problem = usernames.usernameProblem(wanted);
+  if (problem) {
+    return respond.ok(res, problem, { username: wanted, available: false, reason: problem });
+  }
+  const taken = await usernames.isUsernameTaken(wanted, req.user._id);
+  return respond.ok(res, taken ? 'Taken' : 'Available', {
+    username: wanted,
+    available: !taken,
+    reason: taken ? `@${wanted} is taken` : null,
+  });
+});
+
+/**
+ * POST /api/users/contacts/match  { phones: string[] }
+ *
+ * REQ 5 contact sync: which of my phone contacts are on Vocle?
+ * Numbers are matched in memory and never stored. Up to 3000 per call.
+ * Returns each match with the number it matched, so the app can show the
+ * name saved in the phone's address book.
+ */
+const matchContacts = asyncHandler(async (req, res) => {
+  const list = Array.isArray(req.body?.phones) ? req.body.phones : null;
+  if (!list) return respond.badRequest(res, 'phones must be an array');
+  if (list.length > 3000) {
+    return respond.badRequest(res, 'Send at most 3000 numbers at a time');
+  }
+
+  // Indian-first normalisation to the last 10 digits (+91 / 0 prefixes).
+  const byLast10 = new Map();
+  for (const entry of list) {
+    if (typeof entry !== 'string' || entry.length > 32) continue;
+    const digits = entry.replace(/\D/g, '');
+    if (digits.length < 10) continue;
+    const last10 = digits.slice(-10);
+    if (!byLast10.has(last10)) byLast10.set(last10, entry);
+  }
+  if (byLast10.size === 0) {
+    return respond.ok(res, 'Contacts matched', { matches: [] });
+  }
+
+  const variants = [];
+  for (const last10 of byLast10.keys()) {
+    variants.push(`+91${last10}`, last10, `91${last10}`);
+  }
+  const users = await User.find({
+    phone: { $in: variants },
+    isActive: true,
+    isOnboarded: true,
+    _id: { $ne: req.user._id },
   })
-    .select('name displayTitle role speciality institution avatarUrl availability')
-    .limit(20)
+    .select(`${SEARCH_SELECT} phone`)
     .lean();
 
-  return respond.ok(res, 'Search results', { users });
+  const { describeRelationship } = require('../../utils/knownUsers');
+  const matches = [];
+  for (const u of users) {
+    const last10 = (u.phone || '').replace(/\D/g, '').slice(-10);
+    const relation = await describeRelationship(req.user._id, u._id);
+    const { phone: _phone, ...profile } = u;
+    matches.push({
+      contactPhone: byLast10.get(last10) || null,
+      user: profile,
+      canMessage: relation.canMessage,
+      pendingRequest: relation.pendingRequest,
+    });
+  }
+  return respond.ok(res, 'Contacts matched', { matches });
 });
 
 /**
@@ -296,47 +415,46 @@ const lookupByPhone = asyncHandler(async (req, res) => {
     });
   }
 
-  const { canMessageUser, canRequestMessage, shareActiveSpace } = require('../../utils/knownUsers');
-  const MessageRequest = require('../message-requests/messageRequest.model');
-
-  const canMessage = await canMessageUser(req.user._id, user._id);
-  const sharesGroup = await shareActiveSpace(req.user._id, user._id);
-  const canRequest = await canRequestMessage(req.user._id, user._id);
-  const acceptsMessageRequests = canRequest;
-
-  let pendingRequest = null;
-  const pending = await MessageRequest.findOne({
-    status: MESSAGE_REQUEST_STATUS.PENDING,
-    $or: [
-      { fromUserId: req.user._id, toUserId: user._id },
-      { fromUserId: user._id, toUserId: req.user._id },
-    ],
-  }).select('_id fromUserId toUserId introMessage createdAt');
-
-  if (pending) {
-    pendingRequest = {
-      id: pending._id.toString(),
-      direction:
-        pending.fromUserId.toString() === req.user._id.toString()
-          ? 'sent'
-          : 'received',
-      introMessage: pending.introMessage || '',
-      createdAt: pending.createdAt,
-    };
-  }
+  const { describeRelationship } = require('../../utils/knownUsers');
+  const relation = await describeRelationship(req.user._id, user._id);
 
   return respond.ok(res, 'Lookup result', {
     user: user.toPublicProfile(),
-    relationship: canMessage
-      ? 'known'
-      : sharesGroup
-        ? 'group_member'
-        : 'stranger',
-    canMessage,
-    sharesGroup,
-    acceptsMessageRequests,
-    canRequest,
-    pendingRequest,
+    ...relation,
+  });
+});
+
+/**
+ * GET /api/users/:id/relationship
+ * Same shape as phone lookup, by user id — lets every "Message" button decide
+ * between opening the chat, sending a request, or accepting one (REQ 11).
+ */
+const getRelationship = asyncHandler(async (req, res) => {
+  const user = await User.findOne({
+    _id: req.params.id,
+    isActive: true,
+    isOnboarded: true,
+  });
+  if (!user) return respond.notFound(res, 'Doctor not found');
+
+  if (user._id.toString() === req.user._id.toString()) {
+    return respond.ok(res, 'Relationship', {
+      user: user.toPublicProfile(),
+      relationship: 'self',
+      canMessage: true,
+      sharesGroup: false,
+      acceptsMessageRequests: false,
+      canRequest: false,
+      pendingRequest: null,
+      isSelf: true,
+    });
+  }
+
+  const { describeRelationship } = require('../../utils/knownUsers');
+  const relation = await describeRelationship(req.user._id, user._id);
+  return respond.ok(res, 'Relationship', {
+    user: user.toPublicProfile(),
+    ...relation,
   });
 });
 
@@ -430,4 +548,5 @@ const getNeedl = asyncHandler(async (req, res) => {
 module.exports = {
   getMe, updateMe, updateAvailability,
   registerFcmToken, getUserById, searchUsers, lookupByPhone, getNeedl,
+  getRelationship, usernameAvailable, matchContacts,
 };

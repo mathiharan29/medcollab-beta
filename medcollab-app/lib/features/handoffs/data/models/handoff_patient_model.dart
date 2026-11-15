@@ -1,5 +1,50 @@
 import 'package:equatable/equatable.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
+import 'package:medcollab_app/features/handoffs/data/models/handoff_voice_note.dart';
+
+/// A file attached to a handoff patient (lab report, ECG, X-ray photo...).
+/// Mirrors `patientSchema.attachments` on the backend.
+class HandoffAttachment extends Equatable {
+  const HandoffAttachment({
+    required this.url,
+    this.thumbnailUrl,
+    this.fileName = '',
+    this.mimeType = '',
+  });
+
+  factory HandoffAttachment.fromJson(Map<String, dynamic> json) {
+    return HandoffAttachment(
+      url: json['url']?.toString() ?? '',
+      thumbnailUrl: json['thumbnailUrl']?.toString(),
+      fileName: json['fileName']?.toString() ?? '',
+      mimeType: json['mimeType']?.toString() ?? '',
+    );
+  }
+
+  final String url;
+  final String? thumbnailUrl;
+  final String fileName;
+  final String mimeType;
+
+  bool get isImage => mimeType.startsWith('image/');
+
+  /// Name to show; falls back to the last URL segment.
+  String get displayName {
+    if (fileName.trim().isNotEmpty) return fileName.trim();
+    final segments = Uri.tryParse(url)?.pathSegments ?? const [];
+    return segments.isNotEmpty ? segments.last : 'Attachment';
+  }
+
+  Map<String, dynamic> toJson() => {
+        'url': url,
+        if (thumbnailUrl != null) 'thumbnailUrl': thumbnailUrl,
+        if (fileName.isNotEmpty) 'fileName': fileName,
+        if (mimeType.isNotEmpty) 'mimeType': mimeType,
+      };
+
+  @override
+  List<Object?> get props => [url, thumbnailUrl, fileName, mimeType];
+}
 
 /// Single patient entry inside a shift handoff.
 class HandoffPatientModel extends Equatable {
@@ -13,9 +58,12 @@ class HandoffPatientModel extends Equatable {
     this.notes = '',
     this.pendingTasks = const [],
     this.isFlagged = false,
+    this.attachments = const [],
+    this.voiceNote,
   });
 
   factory HandoffPatientModel.fromJson(Map<String, dynamic> json) {
+    final rawAttachments = json['attachments'];
     return HandoffPatientModel(
       id: json['_id']?.toString(),
       bedNumber: json['bedNumber'] as String? ?? '',
@@ -28,6 +76,16 @@ class HandoffPatientModel extends Equatable {
           ? (json['pendingTasks'] as List).map((e) => e.toString()).toList()
           : const [],
       isFlagged: json['isFlagged'] as bool? ?? false,
+      attachments: rawAttachments is List
+          ? rawAttachments
+              .whereType<Map>()
+              .map((m) => HandoffAttachment.fromJson(
+                    Map<String, dynamic>.from(m),
+                  ))
+              .where((a) => a.url.isNotEmpty)
+              .toList()
+          : const [],
+      voiceNote: HandoffVoiceNote.fromJson(json['voiceNote']),
     );
   }
 
@@ -40,6 +98,10 @@ class HandoffPatientModel extends Equatable {
   final String notes;
   final List<String> pendingTasks;
   final bool isFlagged;
+  final List<HandoffAttachment> attachments;
+
+  /// Spoken handover for this patient (issue 5).
+  final HandoffVoiceNote? voiceNote;
 
   /// De-identified patient identifier — bed + alias, no PHI.
   String get patientIdentifier {
@@ -57,6 +119,9 @@ class HandoffPatientModel extends Equatable {
         if (notes.isNotEmpty) 'notes': notes,
         'pendingTasks': pendingTasks,
         'isFlagged': isFlagged,
+        'attachments': attachments.map((a) => a.toJson()).toList(),
+        // Always sent so removing a voice note reaches the server.
+        'voiceNote': voiceNote?.toJson(),
       };
 
   HandoffPatientModel copyWith({
@@ -69,6 +134,9 @@ class HandoffPatientModel extends Equatable {
     String? notes,
     List<String>? pendingTasks,
     bool? isFlagged,
+    List<HandoffAttachment>? attachments,
+    HandoffVoiceNote? voiceNote,
+    bool clearVoiceNote = false,
   }) {
     return HandoffPatientModel(
       id: id ?? this.id,
@@ -80,6 +148,8 @@ class HandoffPatientModel extends Equatable {
       notes: notes ?? this.notes,
       pendingTasks: pendingTasks ?? this.pendingTasks,
       isFlagged: isFlagged ?? this.isFlagged,
+      attachments: attachments ?? this.attachments,
+      voiceNote: clearVoiceNote ? null : (voiceNote ?? this.voiceNote),
     );
   }
 
@@ -94,5 +164,7 @@ class HandoffPatientModel extends Equatable {
         notes,
         pendingTasks,
         isFlagged,
+        attachments,
+        voiceNote,
       ];
 }

@@ -33,6 +33,7 @@ class AuthErrorBanner extends StatelessWidget {
             ),
             if (onDismiss != null)
               IconButton(
+                tooltip: 'Dismiss',
                 onPressed: onDismiss,
                 icon: const Icon(Icons.close, size: 18),
                 color: AppColors.error,

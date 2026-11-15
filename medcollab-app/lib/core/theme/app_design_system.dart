@@ -24,12 +24,12 @@ abstract final class AppDesignSystem {
 
   // App bar
   static const double appBarHeight = 56;
-  static const Color appBarBackground = AppColors.surface;
-  static const Color appBarForeground = AppColors.textPrimary;
+  static Color get appBarBackground => AppColors.surface;
+  static Color get appBarForeground => AppColors.textPrimary;
 
   // Bottom bar / navigation
-  static const Color bottomBarBackground = AppColors.surface;
-  static const Color bottomBarBorder = AppColors.border;
+  static Color get bottomBarBackground => AppColors.surface;
+  static Color get bottomBarBorder => AppColors.border;
 
   // FAB
   static const Color fabBackground = AppColors.primary;
@@ -41,8 +41,8 @@ abstract final class AppDesignSystem {
 
   // Cards
   static const double cardRadius = AppSpacing.radiusMd;
-  static const Color cardBackground = AppColors.surface;
-  static const Color cardBorder = AppColors.border;
+  static Color get cardBackground => AppColors.surface;
+  static Color get cardBorder => AppColors.border;
 
   // Avatar sizes
   static const double avatarSm = 32;
@@ -50,7 +50,7 @@ abstract final class AppDesignSystem {
   static const double avatarLg = 56;
 
   // Elevation — border over shadow
-  static const List<BoxShadow> cardShadow = [
+  static List<BoxShadow> get cardShadow => [
     BoxShadow(
       color: AppColors.shadow,
       blurRadius: 8,

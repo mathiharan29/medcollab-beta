@@ -22,6 +22,8 @@ class FakeMessageRepository extends MessageRepository {
   int textSendCount = 0;
   final List<String> sentChannelIds = [];
   int mediaSendCount = 0;
+  int? lastMediaDurationMs;
+  List<int> lastMediaWaveform = const [];
 
   @override
   Future<MessagesPage> getMessages(String channelId, {String? before, int limit = 30}) async {
@@ -42,13 +44,36 @@ class FakeMessageRepository extends MessageRepository {
   Future<MessageModel> sendMediaMessage({
     required String channelId, required MessageType type,
     required MediaUploadResult upload, String? caption, String? replyToId,
+    int? durationMs, List<int> waveform = const [],
   }) {
     mediaSendCount++;
+    lastMediaDurationMs = durationMs;
+    lastMediaWaveform = waveform;
     return onSendMedia!(type, upload, caption);
   }
 
   @override
   Future<void> markMessagesRead({required String channelId, required List<String> messageIds}) async {}
+
+  /// (messageId, forEveryone) for each delete call; [onDelete] may throw.
+  final List<(String, bool)> deletes = [];
+  Future<void> Function()? onDelete;
+  int clearCount = 0;
+  Future<void> Function()? onClear;
+
+  @override
+  Future<void> deleteMessage({
+    required String channelId, required String messageId, bool forEveryone = true,
+  }) async {
+    deletes.add((messageId, forEveryone));
+    await onDelete?.call();
+  }
+
+  @override
+  Future<void> clearChat(String channelId) async {
+    clearCount++;
+    await onClear?.call();
+  }
 }
 
 class FakeMediaRepository extends MediaRepository {
