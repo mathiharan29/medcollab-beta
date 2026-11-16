@@ -4,16 +4,16 @@ import { suiteFiles } from './ci-contracts.mjs';
 
 const all = Object.keys(suiteFiles);
 const mappings = [
-  [/\/features\/auth\/|\/services\/(otp|msg91Widget)\./, ['AUTH', 'PRO', 'JRN']],
+  [/\/features\/auth\/|\/services\/(otp|msg91Widget)\./, ['AUTH', 'PRO', 'JRN', 'VCE', 'AST']],
   [/\/features\/users\//, ['PRO', 'DISC', 'JRN', 'NDL']],
-  [/\/features\/spaces\//, ['SPC', 'CH', 'HOF', 'RT', 'SRCH', 'JRN', 'NDL']],
-  [/\/features\/channels\//, ['CH', 'DM', 'MSG', 'THR', 'SOC', 'RT', 'SRCH', 'JRN', 'NDL']],
+  [/\/features\/spaces\//, ['SPC', 'CH', 'HOF', 'RT', 'SRCH', 'JRN', 'NDL', 'VCE', 'AST']],
+  [/\/features\/channels\//, ['CH', 'DM', 'MSG', 'THR', 'SOC', 'RT', 'SRCH', 'JRN', 'NDL', 'VCE', 'AST']],
   [/\/features\/message-requests\//, ['REQ', 'DM', 'NOT', 'JRN', 'NDL']],
-  [/\/features\/messages\//, ['MSG', 'THR', 'SOC', 'NOT', 'RT', 'SRCH', 'MED', 'JRN', 'NDL']],
-  [/\/features\/media\/|\/utils\/localMediaStorage\./, ['MED', 'MSG', 'JRN']],
+  [/\/features\/messages\//, ['MSG', 'THR', 'SOC', 'NOT', 'RT', 'SRCH', 'MED', 'JRN', 'NDL', 'VCE']],
+  [/\/features\/media\/|\/utils\/localMediaStorage\./, ['MED', 'MSG', 'JRN', 'VCE', 'HOF']],
   [/\/features\/handoffs\//, ['HOF', 'NOT', 'SRCH', 'JRN']],
   [/\/features\/notifications\/|\/services\/notification\./, ['NOT', 'PUSH', 'JRN']],
-  [/\/features\/search\//, ['SRCH', 'JRN', 'NDL']],
+  [/\/features\/search\//, ['SRCH', 'JRN', 'NDL', 'VCE']],
   [/\/features\/(support|dev)\//, ['SUP']],
   [/\/features\/admin\//, ['ADM']],
   [/\/features\/assistant\//, ['AST']],

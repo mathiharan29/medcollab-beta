@@ -29,7 +29,7 @@ export function renderFeatureMatrix(cases, features, executors) {
   lines.push(
     '', `The catalog has **${cases.length} unique cases** and **${assignments} feature assignments**. A test with several tags counts once in each feature and once in \`all\`.`,
     '', 'The Security column counts dedicated security-suite IDs. The separate API and realtime, MongoDB, offline media and Cloudinary inventories use their existing workflows. Access and privacy checks inside this functional catalog keep their backend, Flutter or Android layer.',
-    '', 'Voice messaging includes the catalog audio send case and the ops voice metrics case. The catalog has no separate voice-in-DM case. Standalone beta API tests and retained Flutter tests without catalog IDs keep their existing entry points.',
+    '', 'See the [voice coverage audit](VOICE-COVERAGE-AUDIT.md) for the baseline evidence, new voice cases and native test steps.',
     '', '## Case assignments', '',
     '| Feature tags | Regression ID | Test description | Test layer | Executor |',
     '|---|---|---|---|---|',

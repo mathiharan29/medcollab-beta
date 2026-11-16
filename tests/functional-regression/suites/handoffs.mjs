@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { syntheticWav, uploadVoice } from '../src/audio-fixture.mjs';
 import { runModule } from '../src/module-runner.mjs';
 import { connectSocket, waitFor } from '../src/socket.mjs';
 
@@ -369,6 +370,142 @@ const cases = [{
     assert.equal(after.writeBackNotes.length, 1);
   },
 }];
+
+
+async function voiceDraft(context) {
+  const { identity, request } = context;
+  const f = await fixture(identity, request, 'Synthetic Voice Handoff');
+  const recordings = [];
+  for (const [index, name] of ['shift', 'patient', 'replacement'].entries()) {
+    const bytes = syntheticWav(index);
+    const media = await uploadVoice(request, f.a.token, `handoff-${name}.wav`, 'handoff', bytes);
+    recordings.push({ bytes, media, note: { url: media.url, mimeType: media.mimeType, durationMs: 1000, waveform: [10, 40, 90] } });
+  }
+  const [shift, bed, replacement] = recordings;
+  const create = body(f, [{ ...patient('H-01', 'Synthetic audio patient'), voiceNote: bed.note }]);
+  create.voiceNote = { ...shift.note, recordedBy: f.c.userId };
+  const { data } = await request('/api/handoffs', { method: 'POST', token: f.a.token, body: create, expectedStatus: 201 });
+  const handoff = data.handoff;
+  const path = `/api/handoffs/${handoff._id}`;
+  return { f, shift, bed, replacement, handoff, path };
+}
+
+cases.push({
+  id: 'FR-HOF-14', module: 'HOF',
+  run: async (context) => {
+    const { request, db, origin } = context;
+    const { f, shift, bed, handoff, path } = await voiceDraft(context);
+    await request(path, { token: f.b.token, expectedStatus: 403 });
+    const peer = await connectSocket(null, origin, f.b.token);
+    try {
+      const delivery = waitFor(peer, 'handoff_submitted', event => event.handoffId === handoff._id);
+      await Promise.all([delivery, request(`${path}/submit`, { method: 'POST', token: f.a.token })]);
+    } finally { peer.disconnect(); }
+    await request(path, { token: f.c.token, expectedStatus: 403 });
+    await request(path, { method: 'PUT', token: f.b.token, body: { voiceNote: null }, expectedStatus: 403 });
+    const receiver = (await request(path, { token: f.b.token })).data.handoff;
+    const persisted = await stored(db, handoff._id);
+    assert.equal(receiver.status, 'submitted');
+    for (const [recording, delivered, saved] of [
+      [shift, receiver.voiceNote, persisted.voiceNote],
+      [bed, receiver.patients[0].voiceNote, persisted.patients[0].voiceNote],
+    ]) {
+      for (const note of [delivered, saved]) {
+        for (const [key, value] of Object.entries(recording.note)) assert.deepEqual(note[key], value);
+        assert.equal(String(note.recordedBy), f.a.userId);
+        assert.ok(Number.isFinite(new Date(note.recordedAt).getTime()));
+      }
+      assert.equal(new URL(delivered.url).origin, origin);
+      const audio = await fetch(delivered.url, { headers: { authorization: `Bearer ${f.b.token}` }, signal: AbortSignal.timeout(10000) });
+      assert.equal(audio.status, 200);
+      assert.deepEqual(Buffer.from(await audio.arrayBuffer()), recording.bytes);
+    }
+  },
+}, {
+  id: 'FR-HOF-15', module: 'HOF',
+  run: async (context) => {
+    const { request } = context;
+    const { f, shift, bed, replacement, handoff, path } = await voiceDraft(context);
+    const update = (body, expectedStatus = 200) => request(path, { method: 'PUT', token: f.a.token, body, expectedStatus });
+    const baseContentVersion = handoff.contentVersion;
+    const before = (await request(path, { token: f.a.token })).data.handoff;
+    for (const invalid of [
+      { ...bed.note, url: 'https://invalid.example/clip.wav' },
+      { ...bed.note, mimeType: 'image/png' },
+      { ...bed.note, durationMs: 699 },
+      { ...bed.note, durationMs: 300001 },
+      { ...bed.note, waveform: [101] },
+    ]) {
+      await update({ baseContentVersion, voiceNote: invalid }, 400);
+      await update({ baseContentVersion, patients: [{ ...before.patients[0], voiceNote: invalid }] }, 400);
+    }
+    const reread = (await request(path, { token: f.a.token })).data.handoff;
+    assert.equal(reread.contentVersion, baseContentVersion);
+    assert.deepEqual(reread.voiceNote, before.voiceNote);
+    assert.deepEqual(reread.patients[0].voiceNote, before.patients[0].voiceNote);
+
+    const edited = (await update({
+      baseContentVersion, patients: [{ ...before.patients[0], voiceNote: replacement.note }],
+    })).data.handoff;
+    assert.equal(edited.contentVersion, baseContentVersion + 1);
+    assert.equal(edited.patients[0]._id, before.patients[0]._id);
+    assert.equal(edited.patients[0].voiceNote.url, replacement.note.url);
+    assert.equal(edited.voiceNote.url, shift.note.url);
+    assert.equal(edited.voiceNote.recordedAt, before.voiceNote.recordedAt);
+    const removed = (await update({
+      baseContentVersion: edited.contentVersion, patients: [{ ...edited.patients[0], voiceNote: null }],
+    })).data.handoff;
+    assert.equal(removed.patients[0].voiceNote ?? null, null);
+    assert.equal(removed.contentVersion, edited.contentVersion + 1);
+    const afterRemoval = (await request(path, { token: f.a.token })).data.handoff;
+    assert.equal(afterRemoval.contentVersion, removed.contentVersion);
+    assert.equal(afterRemoval.patients[0]._id, before.patients[0]._id);
+    assert.equal(afterRemoval.patients[0].voiceNote ?? null, null);
+    assert.deepEqual(afterRemoval.voiceNote, before.voiceNote);
+    const deletion = await request(`/api/media/${encodeURIComponent(bed.media.publicId)}`, {
+      method: 'DELETE', token: f.a.token, expectedStatus: [403, 404],
+    });
+    assert.equal(deletion.payload.success, false);
+    assert.equal(new URL(bed.note.url).origin, context.origin);
+    const original = await fetch(bed.note.url, { signal: AbortSignal.timeout(10000) });
+    assert.equal(original.status, 200);
+    assert.deepEqual(Buffer.from(await original.arrayBuffer()), bed.bytes);
+  },
+}, {
+  id: 'FR-HOF-16', module: 'HOF',
+  run: async (context) => {
+    const { request } = context;
+    const { f, shift, bed, replacement, handoff, path } = await voiceDraft(context);
+    await request(`${path}/submit`, { method: 'POST', token: f.a.token });
+    await request(`${path}/notes`, { method: 'POST', token: f.b.token, body: { text: 'Synthetic receiver note' }, expectedStatus: [200, 201] });
+    await request(`${path}/acknowledge`, { method: 'POST', token: f.b.token, body: { note: 'Synthetic acknowledgement' } });
+    const baseContentVersion = handoff.contentVersion;
+    const edit = (version, voiceNote, expectedStatus = 200) =>
+      request(path, { method: 'PUT', token: f.a.token, body: { baseContentVersion: version, voiceNote }, expectedStatus });
+    const [removed, replaced] = await Promise.all([
+      edit(baseContentVersion, null, [200, 409]),
+      edit(baseContentVersion, replacement.note, [200, 409]),
+    ]);
+    assert.deepEqual([removed.status, replaced.status].sort(), [200, 409]);
+    const [winner, loser] = removed.status === 200 ? [removed, replaced] : [replaced, removed];
+    const current = winner.data.handoff;
+    assert.equal(current.contentVersion, baseContentVersion + 1);
+    assert.deepEqual(loser.data.handoff.voiceNote, current.voiceNote);
+    assert.equal(loser.data.handoff.contentVersion, current.contentVersion);
+    assert.equal(current.voiceNote?.url ?? null, removed.status === 200 ? null : replacement.note.url);
+    assert.equal(current.patients[0].voiceNote.url, bed.note.url);
+    assert.equal(current.status, 'submitted');
+    assert.equal(current.editHistory.length, 1);
+    assert.deepEqual(current.editHistory[0].fields, ['voiceNote']);
+    assert.ok(current.writeBackNotes.some(note => note.text === 'Synthetic receiver note'));
+    const recovered = (await edit(current.contentVersion, shift.note)).data.handoff;
+    const receiver = (await request(path, { token: f.b.token })).data.handoff;
+    assert.equal(receiver.contentVersion, baseContentVersion + 2);
+    assert.deepEqual(receiver.voiceNote, recovered.voiceNote);
+    assert.equal(receiver.voiceNote.url, shift.note.url);
+    assert.equal(receiver.patients[0].voiceNote.url, bed.note.url);
+  },
+});
 
 const selected = process.env.VOCLE_CASE_IDS?.split(',').filter(Boolean);
 const ordered = cases.sort((left, right) => left.id.localeCompare(right.id));

@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 
 export const deviceCases = Object.freeze({
+  'FR-HOF-24': { file: 'voice_test.dart', phases: ['voice-handoff'] },
+  'FR-VCE-14': { file: 'voice_test.dart', phases: ['voice-dm'] },
   'FR-MED-08': { file: 'media_test.dart', phases: ['media'] },
   'FR-PUSH-05': { file: 'notifications_test.dart', phases: ['notification-grouping'] },
   'FR-PUSH-06': { file: 'notifications_test.dart', phases: ['notification-token'] },

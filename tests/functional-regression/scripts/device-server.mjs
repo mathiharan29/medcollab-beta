@@ -189,7 +189,7 @@ export async function startDeviceServer({ adb, serial, caseId }) {
         { $set: { 'settings.requireApproval': true } })); // Explicit approval prerequisite.
     }
     let handoffId;
-    if (caseId === 'FR-JRN-06') {
+    if (caseId === 'FR-JRN-06' || caseId === 'FR-HOF-24') {
       const made = await request('/api/handoffs', { method: 'POST', token: people.A.token,
         body: { spaceId, channelId, toUserId: people.B.userId, shiftDate: '2035-01-15T00:00:00.000Z', shiftType: 'night',
           shiftSummary: 'Synthetic device handoff', patients: [{ bedNumber: 'D-01', clinicalAlias: 'Synthetic device patient', pendingTasks: ['Synthetic follow-up'] }] }, expectedStatus: 201 });
@@ -198,7 +198,18 @@ export async function startDeviceServer({ adb, serial, caseId }) {
       senderSocket = await connectSocket(backendRoot, `http://127.0.0.1:${backendPort}`, people.A.token);
       senderSocket.on('handoff_acknowledged', (payload) => { if (ackListening && payload?.handoffId === handoffId) ackEvents.push(payload.handoffId); });
     }
-    fixture = { ...people, spaceId, channelId, otherChannelId: other.data.channel._id,
+    let voiceDmId;
+    if (caseId === 'FR-VCE-14') {
+      const consent = await request('/api/message-requests', {
+        method: 'POST', token: people.A.token, body: { toUserId: people.B.userId }, expectedStatus: 201,
+      });
+      await request(`/api/message-requests/${consent.data.request.id}/accept`, { method: 'POST', token: people.B.token });
+      const direct = await request('/api/channels/dm', {
+        method: 'POST', token: people.A.token, body: { userId: people.B.userId },
+      });
+      voiceDmId = direct.data.channel._id;
+    }
+    fixture = { voiceDmId, ...people, spaceId, channelId, otherChannelId: other.data.channel._id,
       invites: invites.slice(0, 4), pendingInvite: invites[4], handoffId };
     const oid = (connection, value) => new connection.base.Types.ObjectId(value);
     const membership = async (space, label) => db(async (connection) => {
@@ -209,7 +220,7 @@ export async function startDeviceServer({ adb, serial, caseId }) {
         pendingCount: row.pendingRequests.filter((member) => String(member.userId) === people[label].userId).length };
     });
     const messages = (channel) => db(async (connection) => {
-      assert.ok([channelId, fixture.otherChannelId].includes(channel));
+      assert.ok([channelId, fixture.otherChannelId, voiceDmId].filter(Boolean).includes(channel));
       return connection.collection('messages').find({ channelId: oid(connection, channel) }).toArray();
     });
     const tokenState = (label, token) => db(async (connection) => {
@@ -282,8 +293,12 @@ export async function startDeviceServer({ adb, serial, caseId }) {
             await observe(foreground, (text) => resumed(text).includes(devicePackage), 'native foreground');
             answer = { backgroundObserved: true, stoppedObserved: true, foregroundObserved: true, transportOutageInjection: 'local HTTP/Socket.IO gateway' }; break;
           }
-          case 'camera-permission': case 'notification-permission': {
-            const permission = action === 'camera-permission' ? 'android.permission.CAMERA' : 'android.permission.POST_NOTIFICATIONS';
+          case 'camera-permission': case 'notification-permission': case 'microphone-permission': {
+            const permission = {
+              'camera-permission': 'android.permission.CAMERA',
+              'notification-permission': 'android.permission.POST_NOTIFICATIONS',
+              'microphone-permission': 'android.permission.RECORD_AUDIO',
+            }[action];
             await native('shell', 'pm', 'clear-permission-flags', devicePackage, permission, 'user-fixed');
             await native('shell', 'pm', input.granted ? 'grant' : 'revoke', devicePackage, permission);
             if (!input.granted) await native('shell', 'pm', 'set-permission-flags', devicePackage, permission, 'user-fixed');
@@ -296,6 +311,24 @@ export async function startDeviceServer({ adb, serial, caseId }) {
           case 'await-token': answer = await observe(() => tokenState(input.label, input.token), (row) => row.present, 'token registration'); break;
           case 'membership': answer = await membership(input.spaceId, input.label); break;
           case 'await-pending': answer = await observe(() => membership(input.spaceId, input.label), (row) => row.pendingCount > 0, 'pending join'); break;
+          case 'handoff-voice-received': {
+            const read = async () => (await request(`/api/handoffs/${handoffId}`, { token: people.B.token })).data.handoff;
+            const row = await observe(read, handoff => Boolean(handoff.voiceNote && handoff.patients[0]?.voiceNote),
+              'receiver can read shift and patient voice notes');
+            answer = { shift: row.voiceNote, patient: row.patients[0].voiceNote };
+            break;
+          }
+          case 'voice-dm-received': {
+            assert.ok(voiceDmId, 'Expected a dedicated voice DM');
+            const read = async () => (await request(`/api/channels/${voiceDmId}/messages`, {
+              token: people.B.token,
+            })).data.messages.filter(message => message.type === 'audio');
+            const clips = await observe(read, rows => rows.some(message =>
+              ['done', 'unavailable'].includes(message.content.transcriptStatus)), 'recipient voice history and terminal transcript status');
+            assert.equal(clips.length, 1);
+            answer = { message: clips[0] };
+            break;
+          }
           case 'media-counts': answer = { uploadRequests: requests.filter((row) => row.method === 'POST' && row.pathname === '/api/media/upload').length, messageCount: (await messages(input.channelId)).length }; break;
           case 'media-fixtures': {
             // Prefer a real emulator capture; headless WHPX builds often reject
@@ -331,7 +364,7 @@ export async function startDeviceServer({ adb, serial, caseId }) {
         res.end(JSON.stringify(answer));
       } catch (error) {
         const action = req.url.replace('/control/', '');
-        const applicationObservation = ['await-message', 'await-token', 'await-ack', 'await-pending'].includes(action) &&
+        const applicationObservation = ['await-message', 'await-token', 'await-ack', 'await-pending', 'voice-dm-received', 'handoff-voice-received'].includes(action) &&
           !/^Mongo/.test(error.name) || error.name === 'HttpContractError';
         res.end(JSON.stringify({ status: applicationObservation ? 'FAIL' : 'ERROR', error: redact(error.message) }));
       }

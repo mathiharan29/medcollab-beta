@@ -519,3 +519,76 @@ Sources: B/features/assistant/assistant.controller.js and assistant.routes.js; B
 | ID | Title and actions | Expected result | Tier/priority | Coverage / question |
 |---|---|---|---|---|
 | FR-AST-01 | Try assistant routes before onboarding, then interpret a synthetic command and the exact length boundary with no provider configured | Authentication and onboarding gates apply. A trimmed 1000-character command gets an empty proposal and 1001 characters fails validation. No message, handoff or availability change persists | B/P0 | NEW |
+
+### Needl Voice and shared messaging
+
+Sources: NeedlVoiceCubit, NeedlVoiceView, VoiceRecorderController, VoiceNotePlayback, message and search controllers, and the voice device journey.
+
+| ID | Actions | Expected result | Tier/priority | Classification |
+|---|---|---|---|---|
+| FR-VCE-01 | Record peer typing then send and transcribe audio in a consented DM | Recipient sees matching typing, audio arrival, transcript event and durable history, and downloads original bytes. | B/P0 | NEW |
+| FR-VCE-02 | Find a Needl transcript after it is written and hide the clip for one member | Search uses the transcript and honors membership and personal deletion. The other Needl member retains the clip and the separate DM never lists it. | B/P0 | NEW |
+| FR-VCE-03 | Expire the clip sender token and try unauthorized and invalid transcript edits | Expired, other-user, cross-chat and over-limit attempts preserve pending state. Refresh allows the sender to save and later clear the transcript without losing audio. | B/P0 | NEW |
+| FR-VCE-04 | Load the voice view from mixed chat history | Only the existing audio clip is listed. | F/P1 | NEW |
+| FR-VCE-05 | Send a recording and attach the on-device transcript to the server ID | Optimistic card is replaced, typing stops, transcript is set and the temp WAV is deleted. | F/P0 | NEW |
+| FR-VCE-06 | Send voice when speech recognition returns no text | The recorded clip remains listed and its transcript status becomes unavailable. | F/P1 | NEW |
+| FR-VCE-07 | Reject a voice send after the upload | Failed optimistic card is removed, an actionable error is shown and transcription is skipped. | F/P0 | NEW |
+| FR-VCE-08 | Receive recording and transcript updates for a voice peer | Voice typing is shown and cleared, text typing ignored and a transcript update is merged into its clip. | F/P1 | NEW |
+| FR-VCE-09 | Autoplay two incoming clips, then record and disable autoplay | Clips start in order. Recording and disabled autoplay suppress additional playback while preserving incoming cards. | F/P0 | NEW |
+| FR-VCE-10 | Fail a voice upload, then record again | No send, transcription, pending card or temporary file remains after failure. Retry sends one clip and clears the error. | F/P0 | NEW |
+| FR-VCE-11 | Pause and resume a clip with another clip queued | The paused position stays intact and the next clip waits for completion. | F/P1 | NEW |
+| FR-VCE-12 | Receive a live clip and transcript before old history returns | The initial history and the live clip coexist, with the live transcript preserved. | F/P0 | NEW |
+| FR-VCE-13 | Leave the voice view while recording | Playback stops at recording start, closing the cubit clears the signal, and later socket clips cannot play or send. | F/P1 | NEW |
+| FR-VCE-14 | Deny microphone permission, slide to discard, then hold and send in a DM | Denied/discarded capture makes no upload or message. The one granted clip reaches recipient history and replays on the native player. | D/P0 | NEW |
+| FR-VCE-15 | Receive another clip while voice playback is paused | The paused clip and its position stay active while the new clip waits. | F/P0 | NEW |
+| FR-VCE-16 | Fail an audio load with another incoming clip queued | The failed clip remains visible and the next clip loads and plays. | F/P0 | NEW |
+
+### Handoff voice
+
+Sources: HandoffVoiceNoteField, HandoffFormCubit, patient editor, HandoffVoiceNotePlayer and handoff controller voice validation and versioned writes.
+
+| ID | Actions | Expected result | Tier/priority | Classification |
+|---|---|---|---|---|
+| FR-HOF-14 | Submit a handoff with uploaded shift and patient audio | The draft is private, receiver gets submission and both attachments with exact stored bytes, and editing is restricted to the sender. | B/P0 | NEW |
+| FR-HOF-15 | Reject invalid handoff audio, then replace and remove the patient note | Invalid edits leave the version and notes intact. The same patient gets the new note, shift audio stays put, and old bytes remain auditable. | B/P0 | NEW |
+| FR-HOF-16 | Race two audio edits on an acknowledged handoff and recover the stale edit | One writer wins, 409 includes the latest note, sender reloads and retries, and receiver notes and patient audio persist. | B/P0 | NEW |
+| FR-HOF-17 | Save and remove shift audio in a versioned form | Updates carry the base version and explicit null on removal. Successful save adopts the new version. | F/P0 | NEW |
+| FR-HOF-18 | Reload the latest shift audio after a form edit conflict | The stale save shows conflict. Reload restores latest audio and version, and retry can save. | F/P0 | NEW |
+| FR-HOF-19 | Save while a voice upload is pending | The save is blocked and repository receives no write until upload completes. | F/P0 | NEW |
+| FR-HOF-20 | Record and upload in the handoff voice field, then keep or remove | Upload toggles busy state, success shows a player and removal changes the value only after confirmation. | F/P1 | NEW |
+| FR-HOF-21 | Stop a short recording and deny microphone access in the handoff field | Both paths give feedback and leave the note empty. | F/P1 | NEW |
+| FR-HOF-22 | Decode and clear handoff voice notes | Empty URL is ignored, levels are normalized, and per-patient voice removal serializes to null. | F/P1 | NEW |
+| FR-HOF-23 | Fail to upload a replacement patient recording, then record again | The old note survives failure and saving is unblocked. Retry shows the exact new note. | F/P0 | NEW |
+| FR-HOF-24 | Record and save a shift note and patient note on an existing handoff | The recipient reloads the same handoff and both distinct clips play on the native player. | D/P0 | NEW |
+
+
+### Voice Bot commands and execution
+
+Sources: VoiceBotCubit, VoiceCommandParser, AppVoiceActionExecutor and assistant routes and controller.
+
+| ID | Actions | Expected result | Tier/priority | Classification |
+|---|---|---|---|---|
+| FR-AST-02 | Interpret a command against a loopback provider with rate-limit, outage and success responses | 401 never reaches the provider. Upstream 429 and 500 are surfaced; valid proposal survives while unknown targets and unsupported actions are discarded. No writes persist. | B/P0 | NEW |
+| FR-AST-03 | Turn streamed speech into an edited confirmation and execute once | Partial and final text flow into the proposal; only confirming sends the final edited payload. | F/P0 | NEW |
+| FR-AST-04 | Disambiguate same-name doctors before sending | Both identities are offered and selection proposes the chosen doctor. | F/P0 | NEW |
+| FR-AST-05 | Use AI for an unrecognized command only | Local success bypasses provider; free-form text invokes provider and shows its proposal. | F/P1 | NEW |
+| FR-AST-06 | Submit a command unsupported by the local parser without AI | The bot shows a hint and the executor receives no action. | F/P1 | NEW |
+| FR-AST-07 | Report denied speech permission | Microphone permission failure renders a user-facing message. | F/P1 | NEW |
+| FR-AST-08 | Type a request while the recognizer is listening | Typing cancels listening and a late recognizer error cannot replace the confirm state. | F/P1 | NEW |
+| FR-AST-09 | Report a missing speech language pack | The bot gives the dedicated speech-pack message. | F/P1 | NEW |
+| FR-AST-10 | Dismiss a proposed action | Proposal is removed and the action is never executed. | F/P0 | NEW |
+| FR-AST-11 | Parse voice message phrases with varied names and punctuation | Every phrase resolves to the exact intended target ID and preserves the message text. | F/P0 | NEW |
+| FR-AST-12 | Say a person's name that also appears in a Needl name | Parser resolves explicit person commands to the person in the send and open-chat paths. | F/P0 | NEW |
+| FR-AST-13 | Speak multiple names to identify an existing Needl | Parser selects the exact Needl target. | F/P1 | NEW |
+| FR-AST-14 | Ask a same-name doctor to act | Parser returns clarification with both identities. | F/P0 | NEW |
+| FR-AST-15 | Use speciality to distinguish two doctors with the same name | Correct specialist target is selected. | F/P1 | NEW |
+| FR-AST-16 | Name a doctor absent from the available directory | Parser returns clarification with no guessed targets. | F/P0 | NEW |
+| FR-AST-17 | Parse a patient handoff command with multiple bed numbers | Proposal includes exact person, beds and shift. | F/P0 | NEW |
+| FR-AST-18 | Try to hand off a patient to a chat | Parser asks for clarification instead of proposing a group recipient. | F/P0 | NEW |
+| FR-AST-19 | Parse navigation, alert, availability and search commands | The action carries the correct route, status or query. | F/P1 | NEW |
+| FR-AST-20 | Parse a free-form question and empty input | Local parser does not fabricate a supported action. | F/P1 | NEW |
+| FR-AST-21 | Decode server assistant proposal types | Supported proposal deserializes and unknown type is rejected. | F/P0 | NEW |
+| FR-AST-22 | Fail a configured provider call and recover with a local command | The bot discards the failed proposal, shows a hint, and offers a reviewable handoff only after a new supported command. | F/P0 | NEW |
+| FR-AST-23 | Confirm actions for an unconsented DM, a consented DM and a Needl | The executor cannot send to the denied DM and uses the exact expected DM and Needl identifiers after confirmation. | F/P0 | NEW |
+| FR-AST-24 | Confirm a voice handoff with and without a shared group | No draft without a shared group. After confirmation with a group exactly one draft opens for review with the specified beds. | F/P0 | NEW |
+| FR-AST-25 | Tap confirm again while a bot message write is pending | One confirmed proposal runs at most one write. | F/P0 | NEW |

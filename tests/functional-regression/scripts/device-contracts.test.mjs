@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { prepareDeviceWorkspace } from './prepare-device-workspace.mjs';
 import { deviceCases, emulatorOrigin, emulatorSerial, selectedDeviceCases, validateRestart, resumedActivityState, activityLifecycleStates, classifyDeviceDiagnostics } from './device-contracts.mjs';
 
-test('device registry matches the exact eight catalog IDs, files and phases', async () => {
+test('device registry matches the exact device catalog IDs, files and phases', async () => {
   const catalog = JSON.parse(await readFile(new URL('../catalog.json', import.meta.url)));
   const planned = catalog.cases.filter((row) => row.tier === 'D').map((row) => row.id).sort();
   assert.deepEqual(Object.keys(deviceCases).sort(), planned);

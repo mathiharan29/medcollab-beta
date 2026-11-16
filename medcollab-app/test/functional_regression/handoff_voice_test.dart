@@ -16,10 +16,11 @@ import 'package:medcollab_app/features/handoffs/presentation/cubit/handoff_form_
 import 'package:medcollab_app/features/handoffs/presentation/widgets/handoff_voice_note_field.dart';
 import 'package:medcollab_app/features/messages/presentation/widgets/voice_note.dart';
 
-import 'functional_regression/fakes/chat_fakes.dart';
+import 'fakes/chat_fakes.dart';
 
 const _receiver = UserModel(id: 'r1', name: 'Arjun');
-const _voice = HandoffVoiceNote(url: 'https://res.cloudinary.com/x/a.m4a', durationMs: 9000);
+const _voice = HandoffVoiceNote(
+    url: 'https://res.cloudinary.com/x/a.m4a', durationMs: 9000);
 
 HandoffModel _h({int version = 3, HandoffVoiceNote? voice}) => HandoffModel(
       id: 'h1',
@@ -30,7 +31,9 @@ HandoffModel _h({int version = 3, HandoffVoiceNote? voice}) => HandoffModel(
       shiftDate: DateTime(2026, 11, 14),
       shiftType: ShiftType.night,
       status: HandoffStatus.submitted,
-      patients: const [HandoffPatientModel(id: 'p1', bedNumber: '7', clinicalAlias: 'Post-op')],
+      patients: const [
+        HandoffPatientModel(id: 'p1', bedNumber: '7', clinicalAlias: 'Post-op')
+      ],
       voiceNote: voice,
       contentVersion: version,
     );
@@ -52,7 +55,8 @@ class _Repo extends HandoffRepository {
     bool setVoiceNote = false,
     int? baseContentVersion,
   }) async {
-    sent.add({'voice': voiceNote, 'set': setVoiceNote, 'base': baseContentVersion});
+    sent.add(
+        {'voice': voiceNote, 'set': setVoiceNote, 'base': baseContentVersion});
     if (baseContentVersion != serverVersion) {
       throw const ConflictException('changed on another device');
     }
@@ -91,7 +95,8 @@ class _Rec implements VoiceRecorderEngine {
 /// Let real I/O (temp files) finish and run its continuations.
 Future<void> _settle(WidgetTester tester, [int ms = 0]) async {
   for (var i = 0; i < 8; i++) {
-    await tester.runAsync(() => Future<void>.delayed(Duration(milliseconds: i == 0 ? ms : 20)));
+    await tester.runAsync(
+        () => Future<void>.delayed(Duration(milliseconds: i == 0 ? ms : 20)));
     await tester.pump();
   }
 }
@@ -112,7 +117,8 @@ void main() {
     });
     tearDown(() => cubit.close());
 
-    test('saving sends the voice note with the base version, adopts the new one',
+    test(
+        'FR-HOF-17 saving sends the voice note with the base version, adopts the new one',
         () async {
       cubit.setVoiceNote(_voice);
       final r = await cubit.saveChanges();
@@ -126,7 +132,8 @@ void main() {
           reason: 'removal is sent explicitly (null)');
     });
 
-    test('edited on another device → conflict banner; reload takes the latest',
+    test(
+        'FR-HOF-18 edited on another device → conflict banner; reload takes the latest',
         () async {
       repo.serverVersion = 5; // someone saved twice meanwhile
       repo.serverVoice = _voice;
@@ -141,7 +148,7 @@ void main() {
       expect(await cubit.saveChanges(), isNotNull);
     });
 
-    test('a voice note still uploading blocks save', () async {
+    test('FR-HOF-19 a voice note still uploading blocks save', () async {
       cubit.uploadStarted();
       expect(await cubit.saveChanges(), isNull);
       expect(cubit.state.error, contains('uploading'));
@@ -153,7 +160,8 @@ void main() {
 
   group('voice note field', () {
     late Directory tmp;
-    setUp(() async => tmp = await Directory.systemTemp.createTemp('handoff_voice'));
+    setUp(() async =>
+        tmp = await Directory.systemTemp.createTemp('handoff_voice'));
     tearDown(() async {
       try {
         await tmp.delete(recursive: true);
@@ -162,15 +170,18 @@ void main() {
 
     Widget host(Widget child) => MaterialApp(
           theme: AppTheme.light,
-          home: Scaffold(body: Padding(padding: const EdgeInsets.all(16), child: child)),
+          home: Scaffold(
+              body: Padding(padding: const EdgeInsets.all(16), child: child)),
         );
 
-    testWidgets('record → stop → uploaded → player; remove asks first',
+    testWidgets(
+        'FR-HOF-20 record → stop → uploaded → player; remove asks first',
         (tester) async {
       HandoffVoiceNote? value;
       final busy = <bool>[];
       var now = DateTime(2026);
-      final rec = VoiceRecorderController(engine: _Rec(), tempDir: () async => tmp.path, clock: () => now);
+      final rec = VoiceRecorderController(
+          engine: _Rec(), tempDir: () async => tmp.path, clock: () => now);
       final upload = Completer<HandoffVoiceNote>();
       Future<void> pumpField() => tester.pumpWidget(host(StatefulBuilder(
             builder: (context, setState) => HandoffVoiceNoteField(
@@ -214,10 +225,14 @@ void main() {
       rec.dispose();
     });
 
-    testWidgets('too short or no microphone permission: clear message, nothing saved',
+    testWidgets(
+        'FR-HOF-21 too short or no microphone permission: clear message, nothing saved',
         (tester) async {
       HandoffVoiceNote? value;
-      final shortRec = VoiceRecorderController(engine: _Rec(), tempDir: () async => tmp.path, clock: () => DateTime(2026)); // 0 s
+      final shortRec = VoiceRecorderController(
+          engine: _Rec(),
+          tempDir: () async => tmp.path,
+          clock: () => DateTime(2026)); // 0 s
       await tester.pumpWidget(host(HandoffVoiceNoteField(
         value: null,
         playbackId: 't',
@@ -233,7 +248,8 @@ void main() {
       expect(value, isNull);
       shortRec.dispose();
 
-      final denied = VoiceRecorderController(engine: _Rec(permission: false), tempDir: () async => tmp.path);
+      final denied = VoiceRecorderController(
+          engine: _Rec(permission: false), tempDir: () async => tmp.path);
       await tester.pumpWidget(host(HandoffVoiceNoteField(
         key: const Key('denied'),
         value: null,
@@ -249,18 +265,79 @@ void main() {
       denied.dispose();
     });
 
-    test('model round-trips and ignores empty urls', () {
+    test('FR-HOF-22 model round-trips and ignores empty urls', () {
       expect(HandoffVoiceNote.fromJson({'url': ''}), isNull);
       final n = HandoffVoiceNote.fromJson({
-        'url': 'u', 'durationMs': 1200, 'waveform': [1, 200, -5], 'recordedBy': {'_id': 'me'},
+        'url': 'u',
+        'durationMs': 1200,
+        'waveform': [1, 200, -5],
+        'recordedBy': {'_id': 'me'},
       })!;
       expect(n.waveform, [1, 100, 0]);
       expect(n.recordedById, 'me');
       final p = HandoffPatientModel.fromJson({
-        'bedNumber': '7', 'clinicalAlias': 'x', 'voiceNote': {'url': 'u', 'durationMs': 1200},
+        'bedNumber': '7',
+        'clinicalAlias': 'x',
+        'voiceNote': {'url': 'u', 'durationMs': 1200},
       });
       expect(p.voiceNote?.url, 'u');
       expect(p.copyWith(clearVoiceNote: true).toJson()['voiceNote'], isNull);
+    });
+
+    testWidgets(
+        'FR-HOF-23 failed re-record keeps the prior note and releases save blocking',
+        (tester) async {
+      HandoffVoiceNote? value = _voice;
+      const replacement = HandoffVoiceNote(
+          url: 'https://res.cloudinary.com/x/b.m4a', durationMs: 2000);
+      final changes = <HandoffVoiceNote?>[];
+      final busy = <bool>[];
+      var now = DateTime(2026);
+      final rec = VoiceRecorderController(
+          engine: _Rec(), tempDir: () async => tmp.path, clock: () => now);
+      var attempts = 0;
+      await tester.pumpWidget(host(StatefulBuilder(
+        builder: (context, setState) => HandoffVoiceNoteField(
+          value: value,
+          label: 'Patient voice note',
+          playbackId: 'patient-p1',
+          recorder: rec,
+          upload: (_) async {
+            if (++attempts == 1) throw StateError('synthetic upload outage');
+            return replacement;
+          },
+          onBusyChanged: busy.add,
+          onChanged: (note) {
+            changes.add(note);
+            setState(() => value = note);
+          },
+        ),
+      )));
+      Future<void> rerecord() async {
+        await tester.tap(find.byTooltip('Record again'));
+        await _settle(tester);
+        now = now.add(const Duration(seconds: 2));
+        await tester.tap(find.byKey(const Key('composer-action')));
+        await _settle(tester);
+        await tester.pumpAndSettle();
+      }
+
+      await rerecord();
+      expect(find.textContaining('Upload failed'), findsOneWidget);
+      expect(find.byKey(const Key('handoff-voice-player')), findsOneWidget);
+      expect(value, _voice);
+      expect(changes, isEmpty);
+      expect(busy, [true, false]);
+
+      await rerecord();
+      expect(find.textContaining('Upload failed'), findsNothing);
+      expect(changes, [replacement]);
+      expect(tester.widget<VoiceNoteBubble>(find.byType(VoiceNoteBubble)).url,
+          replacement.url);
+      expect(busy, [true, false, true, false]);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      rec.dispose();
     });
   });
 }

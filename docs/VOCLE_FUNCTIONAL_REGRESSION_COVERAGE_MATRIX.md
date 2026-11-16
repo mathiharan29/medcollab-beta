@@ -1,6 +1,6 @@
 # Vocle functional regression coverage matrix
 
-The candidate catalog contains **245 cases**, including 48 retained sanity cases, 189 other hosted cases, and 8 Android cases marked LOCAL_ONLY. Counts use stable parent IDs. See the [November master gap review](VOCLE_MASTER_REGRESSION_GAP_MATRIX_2026-11-15.md) for the current feature and source audit. The historical inventory below retains its original evidence references.
+The current catalog contains **296 cases** across 188 backend, 98 Flutter and 10 Android cases marked LOCAL_ONLY. The [feature matrix](regression/FEATURE-REGRESSION-MATRIX.md) lists the selectable IDs and executors. The [voice audit](regression/VOICE-COVERAGE-AUDIT.md) records the voice-specific baseline evidence and expansion. The historical 245-case inventory below retains its original counts and evidence references.
 
 ## Reconciled totals
 

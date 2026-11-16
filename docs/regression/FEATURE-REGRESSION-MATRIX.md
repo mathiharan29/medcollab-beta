@@ -7,32 +7,33 @@ To regenerate this file after updating the registry, run `node tests/functional-
 
 | Feature | Backend cases | Flutter cases | Security cases | Android cases | Total unique cases |
 |---|---:|---:|---:|---:|---:|
-| Authentication and sessions (`authentication`) | 16 | 4 | 0 | 4 | 24 |
+| Authentication and sessions (`authentication`) | 19 | 4 | 0 | 4 | 27 |
 | Profiles and preferences (`profile`) | 10 | 1 | 0 | 0 | 11 |
 | Contact discovery (`contact-discovery`) | 7 | 8 | 0 | 0 | 15 |
-| Direct messaging and consent (`direct-messaging`) | 25 | 4 | 0 | 0 | 29 |
+| Direct messaging and consent (`direct-messaging`) | 27 | 7 | 0 | 1 | 35 |
 | Group and channel messaging (`group-messaging`) | 35 | 2 | 0 | 0 | 37 |
-| Voice messaging (`voice-messaging`) | 2 | 0 | 0 | 0 | 2 |
-| Voice assistant (`voice-assistant`) | 1 | 0 | 0 | 0 | 1 |
-| Handoffs (`handoff`) | 21 | 4 | 0 | 1 | 26 |
-| Needl (`needl`) | 46 | 24 | 0 | 0 | 70 |
+| Voice messaging (`voice-messaging`) | 5 | 12 | 0 | 1 | 18 |
+| Voice assistant (`voice-assistant`) | 2 | 23 | 0 | 0 | 25 |
+| Handoffs (`handoff`) | 24 | 15 | 0 | 2 | 41 |
+| Handoff Voice (`handoff-voice`) | 3 | 11 | 0 | 1 | 15 |
+| Needl (`needl`) | 47 | 33 | 0 | 0 | 80 |
 | Threads and message actions (`message-actions`) | 28 | 5 | 0 | 0 | 33 |
-| Media sharing (`media-sharing`) | 12 | 3 | 0 | 1 | 16 |
+| Media sharing (`media-sharing`) | 15 | 5 | 0 | 1 | 21 |
 | Notifications (`notifications`) | 21 | 2 | 0 | 3 | 26 |
 | Workspaces and invitations (`workspaces`) | 22 | 1 | 0 | 1 | 24 |
-| Search (`search`) | 7 | 6 | 0 | 0 | 13 |
-| Navigation and home (`navigation`) | 0 | 12 | 0 | 4 | 16 |
-| Offline and recovery (`offline-recovery`) | 7 | 9 | 0 | 3 | 19 |
+| Search (`search`) | 8 | 6 | 0 | 0 | 14 |
+| Navigation and home (`navigation`) | 0 | 15 | 0 | 5 | 20 |
+| Offline and recovery (`offline-recovery`) | 8 | 16 | 0 | 3 | 27 |
 | Saved items and sharing links (`saved-and-shared`) | 1 | 8 | 0 | 1 | 10 |
-| Realtime and availability (`realtime`) | 15 | 5 | 0 | 1 | 21 |
+| Realtime and availability (`realtime`) | 18 | 9 | 0 | 1 | 28 |
 | Support and platform operations (`support-and-ops`) | 6 | 1 | 0 | 0 | 7 |
-| Access and privacy (`access-and-privacy`) | 43 | 1 | 0 | 1 | 45 |
+| Access and privacy (`access-and-privacy`) | 47 | 3 | 0 | 1 | 51 |
 
-The catalog has **245 unique cases** and **445 feature assignments**. A test with several tags counts once in each feature and once in `all`.
+The catalog has **296 unique cases** and **565 feature assignments**. A test with several tags counts once in each feature and once in `all`.
 
 The Security column counts dedicated security-suite IDs. The separate API and realtime, MongoDB, offline media and Cloudinary inventories use their existing workflows. Access and privacy checks inside this functional catalog keep their backend, Flutter or Android layer.
 
-Voice messaging includes the catalog audio send case and the ops voice metrics case. The catalog has no separate voice-in-DM case. Standalone beta API tests and retained Flutter tests without catalog IDs keep their existing entry points.
+See the [voice coverage audit](VOICE-COVERAGE-AUDIT.md) for the baseline evidence, new voice cases and native test steps.
 
 ## Case assignments
 
@@ -282,4 +283,55 @@ Voice messaging includes the catalog audio send case and the ops voice metrics c
 | group-messaging, needl, realtime, access-and-privacy | `FR-NDL-55` | Subscribe as the three original Needl members, add a fourth with history, then reload both conversations | Backend | [needl.mjs](../../tests/functional-regression/suites/needl.mjs) |
 | voice-messaging, handoff, support-and-ops, access-and-privacy | `FR-ADM-01` | Compare ops voice metrics before and after synthetic message and handoff records | Backend | [admin.mjs](../../tests/functional-regression/suites/admin.mjs) |
 | support-and-ops, access-and-privacy | `FR-ADM-02` | Compare ops overview and feedback after adding active and archived conversation fixtures, availability and an open ticket | Backend | [admin.mjs](../../tests/functional-regression/suites/admin.mjs) |
-| voice-assistant, access-and-privacy | `FR-AST-01` | Try assistant routes before onboarding, then interpret a synthetic command and the exact length boundary with no provider configured | Backend | [assistant.mjs](../../tests/functional-regression/suites/assistant.mjs) |
+| authentication, voice-assistant, access-and-privacy | `FR-AST-01` | Try assistant routes before onboarding, then interpret a synthetic command and the exact length boundary with no provider configured | Backend | [assistant.mjs](../../tests/functional-regression/suites/assistant.mjs) |
+| direct-messaging, voice-messaging, media-sharing, realtime | `FR-VCE-01` | Record peer typing then send and transcribe audio in a consented DM | Backend | [voice.mjs](../../tests/functional-regression/suites/voice.mjs) |
+| voice-messaging, needl, search, access-and-privacy | `FR-VCE-02` | Find a Needl transcript after it is written and hide the clip for one member | Backend | [voice.mjs](../../tests/functional-regression/suites/voice.mjs) |
+| authentication, direct-messaging, voice-messaging, offline-recovery, access-and-privacy | `FR-VCE-03` | Expire the clip sender token and try unauthorized and invalid transcript edits | Backend | [voice.mjs](../../tests/functional-regression/suites/voice.mjs) |
+| voice-messaging | `FR-VCE-04` | Load the voice view from mixed chat history | Flutter | [needl_voice_cubit_test.dart](../../medcollab-app/test/functional_regression/needl_voice_cubit_test.dart) |
+| voice-messaging | `FR-VCE-05` | Send a recording and attach the on-device transcript to the server ID | Flutter | [needl_voice_cubit_test.dart](../../medcollab-app/test/functional_regression/needl_voice_cubit_test.dart) |
+| voice-messaging | `FR-VCE-06` | Send voice when speech recognition returns no text | Flutter | [needl_voice_cubit_test.dart](../../medcollab-app/test/functional_regression/needl_voice_cubit_test.dart) |
+| voice-messaging, offline-recovery | `FR-VCE-07` | Reject a voice send after the upload | Flutter | [needl_voice_cubit_test.dart](../../medcollab-app/test/functional_regression/needl_voice_cubit_test.dart) |
+| voice-messaging, needl, realtime | `FR-VCE-08` | Receive recording and transcript updates for a voice peer | Flutter | [needl_voice_cubit_test.dart](../../medcollab-app/test/functional_regression/needl_voice_cubit_test.dart) |
+| voice-messaging, needl, realtime | `FR-VCE-09` | Autoplay two incoming clips, then record and disable autoplay | Flutter | [needl_voice_cubit_test.dart](../../medcollab-app/test/functional_regression/needl_voice_cubit_test.dart) |
+| voice-messaging, media-sharing, offline-recovery | `FR-VCE-10` | Fail a voice upload, then record again | Flutter | [needl_voice_cubit_test.dart](../../medcollab-app/test/functional_regression/needl_voice_cubit_test.dart) |
+| voice-messaging, needl | `FR-VCE-11` | Pause and resume a clip with another clip queued | Flutter | [needl_voice_cubit_test.dart](../../medcollab-app/test/functional_regression/needl_voice_cubit_test.dart) |
+| voice-messaging, needl, offline-recovery, realtime | `FR-VCE-12` | Receive a live clip and transcript before old history returns | Flutter | [needl_voice_cubit_test.dart](../../medcollab-app/test/functional_regression/needl_voice_cubit_test.dart) |
+| voice-messaging, navigation | `FR-VCE-13` | Leave the voice view while recording | Flutter | [needl_voice_cubit_test.dart](../../medcollab-app/test/functional_regression/needl_voice_cubit_test.dart) |
+| direct-messaging, voice-messaging, navigation | `FR-VCE-14` | Deny microphone permission, slide to discard, then hold and send in a DM | Android (local) | [voice_test.dart](../../medcollab-app/integration_test/functional_regression/voice_test.dart) |
+| voice-messaging, needl, realtime | `FR-VCE-15` | Receive another clip while voice playback is paused | Flutter | [needl_voice_cubit_test.dart](../../medcollab-app/test/functional_regression/needl_voice_cubit_test.dart) |
+| voice-messaging, needl, offline-recovery | `FR-VCE-16` | Fail an audio load with another incoming clip queued | Flutter | [needl_voice_cubit_test.dart](../../medcollab-app/test/functional_regression/needl_voice_cubit_test.dart) |
+| handoff, handoff-voice, media-sharing, realtime, access-and-privacy | `FR-HOF-14` | Submit a handoff with uploaded shift and patient audio | Backend | [handoffs.mjs](../../tests/functional-regression/suites/handoffs.mjs) |
+| handoff, handoff-voice, media-sharing | `FR-HOF-15` | Reject invalid handoff audio, then replace and remove the patient note | Backend | [handoffs.mjs](../../tests/functional-regression/suites/handoffs.mjs) |
+| handoff, handoff-voice, realtime | `FR-HOF-16` | Race two audio edits on an acknowledged handoff and recover the stale edit | Backend | [handoffs.mjs](../../tests/functional-regression/suites/handoffs.mjs) |
+| handoff, handoff-voice | `FR-HOF-17` | Save and remove shift audio in a versioned form | Flutter | [handoff_voice_test.dart](../../medcollab-app/test/functional_regression/handoff_voice_test.dart) |
+| handoff, handoff-voice, offline-recovery | `FR-HOF-18` | Reload the latest shift audio after a form edit conflict | Flutter | [handoff_voice_test.dart](../../medcollab-app/test/functional_regression/handoff_voice_test.dart) |
+| handoff, handoff-voice | `FR-HOF-19` | Save while a voice upload is pending | Flutter | [handoff_voice_test.dart](../../medcollab-app/test/functional_regression/handoff_voice_test.dart) |
+| handoff, handoff-voice | `FR-HOF-20` | Record and upload in the handoff voice field, then keep or remove | Flutter | [handoff_voice_test.dart](../../medcollab-app/test/functional_regression/handoff_voice_test.dart) |
+| handoff, handoff-voice | `FR-HOF-21` | Stop a short recording and deny microphone access in the handoff field | Flutter | [handoff_voice_test.dart](../../medcollab-app/test/functional_regression/handoff_voice_test.dart) |
+| handoff, handoff-voice | `FR-HOF-22` | Decode and clear handoff voice notes | Flutter | [handoff_voice_test.dart](../../medcollab-app/test/functional_regression/handoff_voice_test.dart) |
+| handoff, handoff-voice, media-sharing, offline-recovery | `FR-HOF-23` | Fail to upload a replacement patient recording, then record again | Flutter | [handoff_voice_test.dart](../../medcollab-app/test/functional_regression/handoff_voice_test.dart) |
+| handoff, handoff-voice | `FR-HOF-24` | Record and save a shift note and patient note on an existing handoff | Android (local) | [voice_test.dart](../../medcollab-app/integration_test/functional_regression/voice_test.dart) |
+| authentication, voice-assistant, access-and-privacy | `FR-AST-02` | Interpret a command against a loopback provider with rate-limit, outage and success responses | Backend | [assistant.mjs](../../tests/functional-regression/suites/assistant.mjs) |
+| voice-assistant | `FR-AST-03` | Turn streamed speech into an edited confirmation and execute once | Flutter | [voice_bot_cubit_test.dart](../../medcollab-app/test/functional_regression/voice_bot_cubit_test.dart) |
+| voice-assistant | `FR-AST-04` | Disambiguate same-name doctors before sending | Flutter | [voice_bot_cubit_test.dart](../../medcollab-app/test/functional_regression/voice_bot_cubit_test.dart) |
+| voice-assistant | `FR-AST-05` | Use AI for an unrecognized command only | Flutter | [voice_bot_cubit_test.dart](../../medcollab-app/test/functional_regression/voice_bot_cubit_test.dart) |
+| voice-assistant | `FR-AST-06` | Submit a command unsupported by the local parser without AI | Flutter | [voice_bot_cubit_test.dart](../../medcollab-app/test/functional_regression/voice_bot_cubit_test.dart) |
+| voice-assistant | `FR-AST-07` | Report denied speech permission | Flutter | [voice_bot_cubit_test.dart](../../medcollab-app/test/functional_regression/voice_bot_cubit_test.dart) |
+| voice-assistant | `FR-AST-08` | Type a request while the recognizer is listening | Flutter | [voice_bot_cubit_test.dart](../../medcollab-app/test/functional_regression/voice_bot_cubit_test.dart) |
+| voice-assistant | `FR-AST-09` | Report a missing speech language pack | Flutter | [voice_bot_cubit_test.dart](../../medcollab-app/test/functional_regression/voice_bot_cubit_test.dart) |
+| voice-assistant | `FR-AST-10` | Dismiss a proposed action | Flutter | [voice_bot_cubit_test.dart](../../medcollab-app/test/functional_regression/voice_bot_cubit_test.dart) |
+| voice-assistant | `FR-AST-11` | Parse voice message phrases with varied names and punctuation | Flutter | [voice_command_parser_test.dart](../../medcollab-app/test/functional_regression/voice_command_parser_test.dart) |
+| direct-messaging, voice-assistant, needl | `FR-AST-12` | Say a person's name that also appears in a Needl name | Flutter | [voice_command_parser_test.dart](../../medcollab-app/test/functional_regression/voice_command_parser_test.dart) |
+| voice-assistant, needl | `FR-AST-13` | Speak multiple names to identify an existing Needl | Flutter | [voice_command_parser_test.dart](../../medcollab-app/test/functional_regression/voice_command_parser_test.dart) |
+| voice-assistant | `FR-AST-14` | Ask a same-name doctor to act | Flutter | [voice_command_parser_test.dart](../../medcollab-app/test/functional_regression/voice_command_parser_test.dart) |
+| voice-assistant | `FR-AST-15` | Use speciality to distinguish two doctors with the same name | Flutter | [voice_command_parser_test.dart](../../medcollab-app/test/functional_regression/voice_command_parser_test.dart) |
+| voice-assistant | `FR-AST-16` | Name a doctor absent from the available directory | Flutter | [voice_command_parser_test.dart](../../medcollab-app/test/functional_regression/voice_command_parser_test.dart) |
+| voice-assistant, handoff, handoff-voice | `FR-AST-17` | Parse a patient handoff command with multiple bed numbers | Flutter | [voice_command_parser_test.dart](../../medcollab-app/test/functional_regression/voice_command_parser_test.dart) |
+| voice-assistant, handoff, handoff-voice | `FR-AST-18` | Try to hand off a patient to a chat | Flutter | [voice_command_parser_test.dart](../../medcollab-app/test/functional_regression/voice_command_parser_test.dart) |
+| voice-assistant, navigation | `FR-AST-19` | Parse navigation, alert, availability and search commands | Flutter | [voice_command_parser_test.dart](../../medcollab-app/test/functional_regression/voice_command_parser_test.dart) |
+| voice-assistant | `FR-AST-20` | Parse a free-form question and empty input | Flutter | [voice_command_parser_test.dart](../../medcollab-app/test/functional_regression/voice_command_parser_test.dart) |
+| voice-assistant | `FR-AST-21` | Decode server assistant proposal types | Flutter | [voice_command_parser_test.dart](../../medcollab-app/test/functional_regression/voice_command_parser_test.dart) |
+| voice-assistant, handoff, handoff-voice, offline-recovery | `FR-AST-22` | Fail a configured provider call and recover with a local command | Flutter | [voice_bot_cubit_test.dart](../../medcollab-app/test/functional_regression/voice_bot_cubit_test.dart) |
+| direct-messaging, voice-assistant, needl, access-and-privacy | `FR-AST-23` | Confirm actions for an unconsented DM, a consented DM and a Needl | Flutter | [voice_action_executor_test.dart](../../medcollab-app/test/functional_regression/voice_action_executor_test.dart) |
+| voice-assistant, handoff, handoff-voice, navigation, access-and-privacy | `FR-AST-24` | Confirm a voice handoff with and without a shared group | Flutter | [voice_action_executor_test.dart](../../medcollab-app/test/functional_regression/voice_action_executor_test.dart) |
+| direct-messaging, voice-assistant | `FR-AST-25` | Tap confirm again while a bot message write is pending | Flutter | [voice_bot_cubit_test.dart](../../medcollab-app/test/functional_regression/voice_bot_cubit_test.dart) |

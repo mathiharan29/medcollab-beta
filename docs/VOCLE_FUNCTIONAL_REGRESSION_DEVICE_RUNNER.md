@@ -1,6 +1,6 @@
 # Android device regression runner
 
-The eight device catalog cases use an Android emulator, the real application
+The ten device catalog cases use an Android emulator, the real application
 widgets/repositories/Socket.IO client and a real disposable Express/MongoDB
 backend. Firebase and picker/camera **inputs** are test-owned. Secure storage,
 preferences, local notification display, Android lifecycle and file opening use
@@ -18,7 +18,7 @@ No iOS implementation or execution is claimed.
 - Disposable local MongoDB 7, either downloaded by MongoMemoryServer or an
   explicitly supplied `--mongo-bin` test binary. No Mongo connection URI input.
 
-Hosted PR coverage lists these eight cases as `LOCAL_ONLY`, `executed: false`
+Hosted PR coverage lists these ten cases as `LOCAL_ONLY`, `executed: false`
 and underlying `SKIP`; they do not contribute hosted PASS or executed totals.
 Run locally with the selected `JAVA_HOME` and optional `VOCLE_ANDROID_TRUSTSTORE`.
 The selected JDK/CA settings replace machine-specific Gradle arguments only inside
@@ -36,7 +36,9 @@ node tests/functional-regression/scripts/run-device.mjs `
 ```
 
 Run a focused case with `--cases=FR-NAV-05`; a comma-separated exact catalog ID
-list selects a subset. Optional `--source-sha=<40-character-local-commit>` pins a
+list selects a subset. Use `--cases=FR-VCE-14,FR-HOF-24` for the two native voice cases. These require an emulator with microphone capture and audio playback. The [voice audit](regression/VOICE-COVERAGE-AUDIT.md) lists the native assertions and remaining hardware protocols.
+
+Optional `--source-sha=<40-character-local-commit>` pins a
 commit already present in the local repository checkout. This runner does not
 fetch, push or write any remote repository.
 

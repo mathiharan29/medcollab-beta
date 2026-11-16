@@ -1,20 +1,12 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { deviceCases, deviceSdk } from './device-contracts.mjs';
 
 const root = resolve(import.meta.dirname, '../../..');
 const app = resolve(root, 'medcollab-app');
-const expectedSdk = '3.29.3';
-const cases = {
-  'FR-MED-08': 'media_test.dart',
-  'FR-PUSH-05': 'notifications_test.dart',
-  'FR-PUSH-06': 'notifications_test.dart',
-  'FR-NAV-04': 'lifecycle_test.dart',
-  'FR-NAV-05': 'lifecycle_test.dart',
-  'FR-LINK-04': 'invites_test.dart',
-  'FR-JRN-05': 'journeys_test.dart',
-  'FR-JRN-06': 'journeys_test.dart',
-};
+const expectedSdk = deviceSdk;
+const cases = Object.fromEntries(Object.entries(deviceCases).map(([id, entry]) => [id, entry.file]));
 const reasons = [];
 const isolatedOverlay = process.argv.includes('--isolated-overlay');
 const result = {

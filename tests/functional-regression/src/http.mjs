@@ -18,7 +18,8 @@ export function createHttp(origin) {
       throw new HttpContractError(`${method} ${url.pathname} transport ${error.name === 'TimeoutError' ? `timed out after ${timeoutMs} ms` : `failed: ${error.message}`}`, { method, path: url.pathname, cause: error.name });
     }
     const payload = await response.json().catch(() => null);
-    if (response.status !== expectedStatus) throw new HttpContractError(`${method} ${url.pathname} expected ${expectedStatus}, got ${response.status}`, { method, path: url.pathname, expectedStatus, status: response.status, payload });
+    const expectedStatuses = Array.isArray(expectedStatus) ? expectedStatus : [expectedStatus];
+    if (!expectedStatuses.includes(response.status)) throw new HttpContractError(`${method} ${url.pathname} expected ${expectedStatus}, got ${response.status}`, { method, path: url.pathname, expectedStatus, status: response.status, payload });
     return { status: response.status, data: payload?.data, payload };
   };
 }

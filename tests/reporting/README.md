@@ -30,7 +30,7 @@ STILL_PASSING. Security OBSERVATION and other uncertain statuses remain distinct
 each security suite uses its own manifest/evidence contract. Scanner step records
 are workflow checks, not application tests or published raw secret matches.
 
-Combined PR coverage is 187 total / 179 hosted / 8 LOCAL_ONLY. All eight Android
+Combined PR coverage is 296 total / 286 hosted / 10 LOCAL_ONLY. All ten Android
 IDs display LOCAL_ONLY, underlying SKIP and executed false. Missing required hosted
 lanes remain ERROR. Verified local Android outcomes are reported separately and
 cannot be relabeled as hosted results. Counts from overlapping suites or developer

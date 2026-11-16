@@ -18,6 +18,7 @@ on:
           - voice-messaging
           - voice-assistant
           - handoff
+          - handoff-voice
           - needl
           - message-actions
           - media-sharing

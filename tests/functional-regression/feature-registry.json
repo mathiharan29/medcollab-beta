@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "catalogCount": 245,
+  "catalogCount": 296,
   "features": [
     {
       "id": "authentication",
@@ -29,7 +29,10 @@
         "FR-LINK-03",
         "FR-JRN-01",
         "FR-JRN-05",
-        "FR-JRN-06"
+        "FR-JRN-06",
+        "FR-VCE-03",
+        "FR-AST-01",
+        "FR-AST-02"
       ]
     },
     {
@@ -102,7 +105,13 @@
         "FR-NDL-30",
         "FR-NDL-31",
         "FR-NDL-36",
-        "FR-NDL-41"
+        "FR-NDL-41",
+        "FR-VCE-01",
+        "FR-VCE-03",
+        "FR-VCE-14",
+        "FR-AST-12",
+        "FR-AST-23",
+        "FR-AST-25"
       ]
     },
     {
@@ -153,14 +162,54 @@
       "name": "Voice messaging",
       "caseIds": [
         "FR-MED-04",
-        "FR-ADM-01"
+        "FR-ADM-01",
+        "FR-VCE-01",
+        "FR-VCE-02",
+        "FR-VCE-03",
+        "FR-VCE-04",
+        "FR-VCE-05",
+        "FR-VCE-06",
+        "FR-VCE-07",
+        "FR-VCE-08",
+        "FR-VCE-09",
+        "FR-VCE-10",
+        "FR-VCE-11",
+        "FR-VCE-12",
+        "FR-VCE-13",
+        "FR-VCE-14",
+        "FR-VCE-15",
+        "FR-VCE-16"
       ]
     },
     {
       "id": "voice-assistant",
       "name": "Voice assistant",
       "caseIds": [
-        "FR-AST-01"
+        "FR-AST-01",
+        "FR-AST-02",
+        "FR-AST-03",
+        "FR-AST-04",
+        "FR-AST-05",
+        "FR-AST-06",
+        "FR-AST-07",
+        "FR-AST-08",
+        "FR-AST-09",
+        "FR-AST-10",
+        "FR-AST-11",
+        "FR-AST-12",
+        "FR-AST-13",
+        "FR-AST-14",
+        "FR-AST-15",
+        "FR-AST-16",
+        "FR-AST-17",
+        "FR-AST-18",
+        "FR-AST-19",
+        "FR-AST-20",
+        "FR-AST-21",
+        "FR-AST-22",
+        "FR-AST-23",
+        "FR-AST-24",
+        "FR-AST-25"
       ]
     },
     {
@@ -192,7 +241,43 @@
         "FR-JRN-01",
         "FR-JRN-03",
         "FR-JRN-06",
-        "FR-ADM-01"
+        "FR-ADM-01",
+        "FR-HOF-14",
+        "FR-HOF-15",
+        "FR-HOF-16",
+        "FR-HOF-17",
+        "FR-HOF-18",
+        "FR-HOF-19",
+        "FR-HOF-20",
+        "FR-HOF-21",
+        "FR-HOF-22",
+        "FR-HOF-23",
+        "FR-HOF-24",
+        "FR-AST-17",
+        "FR-AST-18",
+        "FR-AST-22",
+        "FR-AST-24"
+      ]
+    },
+    {
+      "id": "handoff-voice",
+      "name": "Handoff Voice",
+      "caseIds": [
+        "FR-HOF-14",
+        "FR-HOF-15",
+        "FR-HOF-16",
+        "FR-HOF-17",
+        "FR-HOF-18",
+        "FR-HOF-19",
+        "FR-HOF-20",
+        "FR-HOF-21",
+        "FR-HOF-22",
+        "FR-HOF-23",
+        "FR-HOF-24",
+        "FR-AST-17",
+        "FR-AST-18",
+        "FR-AST-22",
+        "FR-AST-24"
       ]
     },
     {
@@ -268,7 +353,17 @@
         "FR-NDL-52",
         "FR-NDL-53",
         "FR-NDL-54",
-        "FR-NDL-55"
+        "FR-NDL-55",
+        "FR-VCE-02",
+        "FR-VCE-08",
+        "FR-VCE-09",
+        "FR-VCE-11",
+        "FR-VCE-12",
+        "FR-VCE-15",
+        "FR-AST-12",
+        "FR-AST-13",
+        "FR-AST-23",
+        "FR-VCE-16"
       ]
     },
     {
@@ -329,7 +424,12 @@
         "FR-MED-08",
         "FR-OFF-05",
         "FR-LINK-01",
-        "FR-NDL-21"
+        "FR-NDL-21",
+        "FR-VCE-01",
+        "FR-VCE-10",
+        "FR-HOF-14",
+        "FR-HOF-15",
+        "FR-HOF-23"
       ]
     },
     {
@@ -410,7 +510,8 @@
         "FR-NDL-40",
         "FR-NDL-45",
         "FR-NDL-46",
-        "FR-NDL-47"
+        "FR-NDL-47",
+        "FR-VCE-02"
       ]
     },
     {
@@ -432,7 +533,11 @@
         "FR-NDL-36",
         "FR-NDL-37",
         "FR-NDL-41",
-        "FR-NDL-50"
+        "FR-NDL-50",
+        "FR-VCE-13",
+        "FR-VCE-14",
+        "FR-AST-19",
+        "FR-AST-24"
       ]
     },
     {
@@ -457,7 +562,15 @@
         "FR-RUN-03",
         "FR-JRN-05",
         "FR-NDL-27",
-        "FR-NDL-29"
+        "FR-NDL-29",
+        "FR-VCE-03",
+        "FR-VCE-07",
+        "FR-VCE-10",
+        "FR-VCE-12",
+        "FR-HOF-18",
+        "FR-HOF-23",
+        "FR-AST-22",
+        "FR-VCE-16"
       ]
     },
     {
@@ -500,7 +613,14 @@
         "FR-JRN-05",
         "FR-NDL-22",
         "FR-NDL-23",
-        "FR-NDL-55"
+        "FR-NDL-55",
+        "FR-VCE-01",
+        "FR-VCE-08",
+        "FR-VCE-09",
+        "FR-VCE-12",
+        "FR-VCE-15",
+        "FR-HOF-14",
+        "FR-HOF-16"
       ]
     },
     {
@@ -564,7 +684,13 @@
         "FR-NDL-55",
         "FR-ADM-01",
         "FR-ADM-02",
-        "FR-AST-01"
+        "FR-AST-01",
+        "FR-VCE-02",
+        "FR-VCE-03",
+        "FR-HOF-14",
+        "FR-AST-02",
+        "FR-AST-23",
+        "FR-AST-24"
       ]
     }
   ]

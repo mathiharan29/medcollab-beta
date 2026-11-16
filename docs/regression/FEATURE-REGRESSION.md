@@ -6,7 +6,7 @@
 
 The [feature matrix](FEATURE-REGRESSION-MATRIX.md) lists the dropdown choices, the IDs in each choice and the executor for each ID. Tests with several tags execute once per run. The workflow filters exact IDs before launching backend scenarios or Flutter tests. Backend assertions use disposable loopback MongoDB and test-owned provider fixtures inside the existing Docker isolation. Flutter uses the pinned SDK and locked dependencies.
 
-Choosing `all` selects all 245 IDs, runs the 181 backend and 56 Flutter cases, and reports the eight Android cases as **LOCAL_ONLY / SKIP** with `executed: false`. The hosted verdict requires all selected hosted cases to pass. Missing results, unexpected results, assertion failures and unresolved decisions keep the run red.
+Choosing `all` selects all 296 IDs, runs the 188 backend and 98 Flutter cases, and reports the ten Android cases as **LOCAL_ONLY / SKIP** with `executed: false`. The hosted verdict requires all selected hosted cases to pass. Missing results, unexpected results, assertion failures and unresolved decisions keep the run red.
 
 ## Local use
 
@@ -28,7 +28,11 @@ Add each catalog case ID to one or more lists in [feature-registry.json](../../t
 
 The catalog validation used by the existing full workflow checks the mapping, executor declarations, generated matrix and dropdown. The separate security workflows, full regression triggers and standalone sanity workflow retain their original entry points.
 
-## Initial local validation
+## Voice selections
+
+Select `voice-messaging` for capture, transcription, history and playback, `handoff-voice` for shift and patient audio, or `voice-assistant` for spoken and typed commands, proposals and execution. Cross-feature tests are also selectable under their related DM, Needl, Handoff, search, lifecycle and access features. The [voice audit](VOICE-COVERAGE-AUDIT.md) lists the original assertions, gaps, execution results and manual device protocols.
+
+## Baseline feature-workflow validation (245-case catalog)
 
 The backend and Flutter observed ID sets matched the selected IDs exactly in the following isolated test runs. Android counts are listed as local only in the hosted feature plan.
 
