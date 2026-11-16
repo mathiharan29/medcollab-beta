@@ -48,6 +48,37 @@ export const scenarioGroups = Object.freeze(groups.map(([id, expected, groupScen
 export const scenarios = Object.freeze(scenarioGroups.flatMap((group) => group.scenarios));
 export const expectedScenarioCount = 48;
 
+export const moduleForGroup = Object.freeze({
+  'authentication-and-profiles': 'authentication-scenarios.js',
+  'spaces-and-invitations': 'spaces-and-channels-scenarios.js',
+  channels: 'spaces-and-channels-scenarios.js',
+  'messaging-and-needl': 'messaging-scenarios.js',
+  'message-requests': 'message-requests-and-conversations-scenarios.js',
+  'direct-and-group-conversations': 'message-requests-and-conversations-scenarios.js',
+  handoffs: 'handoff-scenarios.js', media: 'media-scenarios.js', notifications: 'notification-scenarios.js',
+  'realtime-and-availability': 'realtime-availability-scenarios.js', search: 'search-scenarios.js',
+  support: 'support-scenarios.js', startup: 'live-runner.js',
+});
+
+export function selectSanityGroups(selection) {
+  if (selection === undefined) return scenarioGroups;
+  const ids = selection.split(',');
+  const selected = new Set(ids);
+  const known = new Set(scenarios.map(({ id }) => id));
+  if (ids.length !== selected.size || ids.some(id => !known.has(id))) throw new Error('Invalid retained sanity selection');
+  return scenarioGroups.flatMap(group => {
+    const matches = group.scenarios.filter(({ id }) => selected.has(id));
+    return matches.length ? [{ ...group, expected: matches.length, scenarios: matches }] : [];
+  });
+}
+
+const explicitSelection = process.env.SANITY_CASE_IDS;
+const selectedGroups = selectSanityGroups(explicitSelection);
+const selectedIds = new Set(selectedGroups.flatMap(group => group.scenarios.map(({ id }) => id)));
+export const selectedSanityCase = id => selectedIds.has(id);
+export const selectedSanityCount = file =>
+  selectedGroups.filter(group => moduleForGroup[group.id] === file).reduce((total, group) => total + group.expected, 0);
+
 export function validateScenarioRegistry() {
   const failures = [];
   const ids = scenarios.map(({ id }) => id);

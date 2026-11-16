@@ -1,3 +1,4 @@
+import { selectedSanityCase, selectedSanityCount } from './scenarios.js';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { createFixtureUsers } from './fixtures.js';
@@ -7,6 +8,7 @@ import { expectSuccess, request } from './http.js';
 const results = [];
 const assert = (value, message) => { if (!value) throw new Error(message); };
 async function scenario(id, action) {
+  if (!selectedSanityCase(id)) return;
   const startedAt = Date.now();
   try { await action(); results.push({ id, status: 'passed', durationMs: Date.now() - startedAt }); }
   catch (error) { results.push({ id, status: 'failed', durationMs: Date.now() - startedAt, error: error.message }); throw error; }
@@ -25,8 +27,8 @@ async function run() {
   } finally {
     await closeDatabase();
     const output = resolve(process.env.SANITY_OUTPUT_DIR || 'output'); await mkdir(output, { recursive: true });
-    await writeFile(resolve(output, 'support-results.json'), `${JSON.stringify({ expected: 1, results }, null, 2)}\n`);
+    await writeFile(resolve(output, 'support-results.json'), `${JSON.stringify({ expected: selectedSanityCount('support-scenarios.js'), results }, null, 2)}\n`);
   }
-  console.log('Support scenario passed: 1/1.');
+  console.log(`Support scenario passed: ${results.length}/${selectedSanityCount('support-scenarios.js')}.`);
 }
 run().catch(async (error) => { console.error(error.stack || error.message); await closeDatabase(); process.exitCode = 1; });

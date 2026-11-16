@@ -1,3 +1,4 @@
+import { selectedSanityCase, selectedSanityCount } from './scenarios.js';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { createFixtureUsers } from './fixtures.js';
@@ -7,6 +8,7 @@ import { closeDatabase, connectDatabase, messageById } from './database.js';
 const results = [];
 const assert = (condition, message) => { if (!condition) throw new Error(message); };
 async function scenario(id, action) {
+  if (!selectedSanityCase(id)) return;
   const startedAt = Date.now();
   try { await action(); results.push({ id, status: 'passed', durationMs: Date.now() - startedAt }); }
   catch (error) { results.push({ id, status: 'failed', durationMs: Date.now() - startedAt, error: error.message }); throw error; }
@@ -18,13 +20,20 @@ async function run() {
   let space;
   let general;
   let custom;
+  const createSpace = async () => expectSuccess(await request('/api/spaces', { method: 'POST', token: people.A.token, body: { name: 'Sanity Main Space', type: 'department', description: 'Synthetic suite space' }, expectedStatus: 201 }), 'create space');
+  const createChannel = async () => expectSuccess(await request(`/api/spaces/${space._id}/channels`, { method: 'POST', token: people.A.token, body: { name: 'sanity-rounds', description: 'Synthetic channel' }, expectedStatus: 201 }), 'create public channel').channel;
   try {
     await scenario('spaces-and-invitations-01', async () => {
-      const data = expectSuccess(await request('/api/spaces', { method: 'POST', token: people.A.token, body: { name: 'Sanity Main Space', type: 'department', description: 'Synthetic suite space' }, expectedStatus: 201 }), 'create space');
+      const data = await createSpace();
       space = data.space;
       assert(data.channels.length === 3 && data.channels.map((channel) => channel.name).join(',') === 'general,emergency,academics', 'New space did not contain exactly the three default channels.');
       general = data.channels.find((channel) => channel.name === 'general');
     });
+    if (!selectedSanityCase('spaces-and-invitations-01')) {
+      const data = await createSpace();
+      space = data.space;
+      general = data.channels.find((channel) => channel.name === 'general');
+    }
     await scenario('spaces-and-invitations-02', async () => {
       const preview = expectSuccess(await request(`/api/spaces/invite/${space.inviteCode}`, { token: people.B.token }), 'preview invitation');
       assert(preview.invite.name === space.name && preview.invite.alreadyMember === false, 'Invitation preview was incorrect.');
@@ -36,6 +45,10 @@ async function run() {
       assert(expectSuccess(detail, 'space detail').space._id === space._id, 'Joined space detail missing.');
       assert(expectSuccess(members, 'members').members.length === 2, 'Member list did not reflect invitation join.');
     });
+    if (!selectedSanityCase('spaces-and-invitations-02') &&
+        (selectedSanityCase('spaces-and-invitations-03') || selectedSanityCase('spaces-and-invitations-05'))) {
+      await request('/api/spaces/join', { method: 'POST', token: people.B.token, body: { inviteCode: space.inviteCode } });
+    }
     await scenario('spaces-and-invitations-03', async () => {
       await request('/api/spaces/join', { method: 'POST', token: people.B.token, body: { inviteCode: space.inviteCode }, expectedStatus: 409 });
       const members = expectSuccess(await request(`/api/spaces/${space._id}/members`, { token: people.A.token }), 'members after duplicate join');
@@ -57,7 +70,7 @@ async function run() {
       assert(expectSuccess(await request(`/api/spaces/${space._id}/members`, { token: people.A.token }), 'members after leave/remove').members.length === 1, 'Membership lifecycle did not persist.');
     });
     await scenario('channels-01', async () => {
-      custom = expectSuccess(await request(`/api/spaces/${space._id}/channels`, { method: 'POST', token: people.A.token, body: { name: 'sanity-rounds', description: 'Synthetic channel' }, expectedStatus: 201 }), 'create public channel').channel;
+      custom = await createChannel();
       await request(`/api/spaces/${space._id}/channels`, { method: 'POST', token: people.A.token, body: { name: 'sanity-rounds' }, expectedStatus: 409 });
       const updated = expectSuccess(await request(`/api/channels/${custom._id}`, { method: 'PUT', token: people.A.token, body: { name: 'sanity-updated' } }), 'update public channel');
       assert(updated.channel.name === 'sanity-updated', 'Public channel update did not persist.');
@@ -66,6 +79,7 @@ async function run() {
       const privateChannel = expectSuccess(await request(`/api/spaces/${space._id}/channels`, { method: 'POST', token: people.A.token, body: { name: 'sanity-private', isPrivate: true }, expectedStatus: 201 }), 'create private channel').channel;
       assert(expectSuccess(await request(`/api/channels/${privateChannel._id}`, { token: people.A.token }), 'read private channel').channel._id === privateChannel._id, 'Private creator access failed.');
     });
+    if (!selectedSanityCase('channels-01') && selectedSanityCase('channels-03')) custom = await createChannel();
     await scenario('channels-03', async () => {
       const message = expectSuccess(await request(`/api/channels/${custom._id}/messages`, { method: 'POST', token: people.A.token, body: { type: 'text', content: { text: 'archive retention marker' } }, expectedStatus: 201 }), 'send retained channel message').message;
       await request(`/api/channels/${custom._id}`, { method: 'DELETE', token: people.A.token });
@@ -79,8 +93,8 @@ async function run() {
     await closeDatabase();
     const output = resolve(process.env.SANITY_OUTPUT_DIR || 'output');
     await mkdir(output, { recursive: true });
-    await writeFile(resolve(output, 'spaces-and-channels-results.json'), `${JSON.stringify({ expected: 8, results }, null, 2)}\n`);
+    await writeFile(resolve(output, 'spaces-and-channels-results.json'), `${JSON.stringify({ expected: selectedSanityCount('spaces-and-channels-scenarios.js'), results }, null, 2)}\n`);
   }
-  console.log('Spaces and channel scenarios passed: 8/8.');
+  console.log(`Spaces and channel scenarios passed: ${results.length}/${selectedSanityCount('spaces-and-channels-scenarios.js')}.`);
 }
 run().catch(async (error) => { console.error(error.stack || error.message); await closeDatabase(); process.exitCode = 1; });

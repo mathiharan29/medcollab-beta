@@ -1,3 +1,4 @@
+import { selectedSanityCase, selectedSanityCount } from './scenarios.js';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { createFixtureUsers } from './fixtures.js';
@@ -9,6 +10,7 @@ const results = [];
 const assert = (value, message) => { if (!value) throw new Error(message); };
 const marker = (name) => `sanity-notification-${name}`;
 async function scenario(id, action) {
+  if (!selectedSanityCase(id)) return;
   const startedAt = Date.now();
   try { await action(); results.push({ id, status: 'passed', durationMs: Date.now() - startedAt }); }
   catch (error) { results.push({ id, status: 'failed', durationMs: Date.now() - startedAt, error: error.message }); throw error; }
@@ -59,6 +61,11 @@ async function run() {
       const emergencyNotification = current.find((item) => item.type === 'emergency_alert' && String(item.referenceId) === emergencyMessage._id);
       assert(emergencyNotification.priority === 'emergency', 'Emergency notification priority was incorrect.');
     });
+    if (selectedSanityCase('notifications-03') &&
+        !selectedSanityCase('notifications-01') && !selectedSanityCase('notifications-02')) {
+      const message = await send(general._id, people.A.token, marker('ordinary'));
+      await eventually('notification fixture', async () => (await inbox(people.B.token)).notifications.find((item) => String(item.referenceId) === message._id));
+    }
 
     await scenario('notifications-03', async () => {
       const initial = await inbox(people.B.token);
@@ -79,8 +86,8 @@ async function run() {
   } finally {
     closeRealtime(clientB); await closeDatabase();
     const output = resolve(process.env.SANITY_OUTPUT_DIR || 'output'); await mkdir(output, { recursive: true });
-    await writeFile(resolve(output, 'notification-results.json'), `${JSON.stringify({ expected: 3, results }, null, 2)}\n`);
+    await writeFile(resolve(output, 'notification-results.json'), `${JSON.stringify({ expected: selectedSanityCount('notification-scenarios.js'), results }, null, 2)}\n`);
   }
-  console.log('Notification scenarios passed: 3/3.');
+  console.log(`Notification scenarios passed: ${results.length}/${selectedSanityCount('notification-scenarios.js')}.`);
 }
 run().catch(async (error) => { console.error(error.stack || error.message); await closeDatabase(); process.exitCode = 1; });

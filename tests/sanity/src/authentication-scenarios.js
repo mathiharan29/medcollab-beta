@@ -1,3 +1,4 @@
+import { selectedSanityCase, selectedSanityCount } from './scenarios.js';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { latestOtp } from './fake-inbox.js';
@@ -18,6 +19,7 @@ async function verifyOtp(phone, otp, expectedStatus = 200) {
 }
 
 async function scenario(id, action) {
+  if (!selectedSanityCase(id)) return;
   const startedAt = Date.now();
   try {
     await action();
@@ -43,6 +45,12 @@ async function run() {
       const persisted = await userByPhone(users.A);
       assert(persisted?.isVerified === true, 'Verified user was not persisted.');
     });
+    if (!selectedSanityCase('authentication-and-profiles-01') &&
+        ['02', '04', '05', '06', '07'].some(number => selectedSanityCase(`authentication-and-profiles-${number}`))) {
+      await requestOtp(users.A);
+      firstOtp = await latestOtp(users.A);
+      firstAuth = await verifyOtp(users.A, firstOtp);
+    }
 
     await scenario('authentication-and-profiles-02', async () => {
       await requestOtp(users.A);
@@ -96,8 +104,8 @@ async function run() {
   }
   const output = resolve(process.env.SANITY_OUTPUT_DIR || 'output');
   await mkdir(output, { recursive: true });
-  await writeFile(resolve(output, 'authentication-results.json'), `${JSON.stringify({ expected: 7, results }, null, 2)}\n`);
-  console.log('Authentication scenarios passed: 7/7.');
+  await writeFile(resolve(output, 'authentication-results.json'), `${JSON.stringify({ expected: selectedSanityCount('authentication-scenarios.js'), results }, null, 2)}\n`);
+  console.log(`Authentication scenarios passed: ${results.length}/${selectedSanityCount('authentication-scenarios.js')}.`);
 }
 
 run().catch(async (error) => {

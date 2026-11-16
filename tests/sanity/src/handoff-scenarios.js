@@ -1,3 +1,4 @@
+import { selectedSanityCase, selectedSanityCount } from './scenarios.js';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { createFixtureUsers } from './fixtures.js';
@@ -10,6 +11,7 @@ const assert = (value, message) => { if (!value) throw new Error(message); };
 const marker = (name) => `sanity-handoff-${name}`;
 const patient = (attachments = []) => ({ bedNumber: 'S-07', ward: 'Sanity ICU', clinicalAlias: 'Synthetic ACS case', diagnosis: 'Synthetic diagnosis', status: 'monitoring', notes: marker('patient-notes'), pendingTasks: ['Synthetic ECG review'], isFlagged: true, attachments });
 async function scenario(id, action) {
+  if (!selectedSanityCase(id)) return;
   const startedAt = Date.now();
   try { await action(); results.push({ id, status: 'passed', durationMs: Date.now() - startedAt }); }
   catch (error) { results.push({ id, status: 'failed', durationMs: Date.now() - startedAt, error: error.message }); throw error; }
@@ -31,6 +33,7 @@ async function run() {
     await request('/api/spaces/join', { method: 'POST', token: people.B.token, body: { inviteCode: space.inviteCode } });
     await request('/api/spaces/join', { method: 'POST', token: people.C.token, body: { inviteCode: space.inviteCode } });
     clientA = await connectRealtime(people.A.token); clientB = await connectRealtime(people.B.token); clientC = await connectRealtime(people.C.token);
+    const createPopulated = async () => expectSuccess(await request('/api/handoffs', { method: 'POST', token: people.A.token, expectedStatus: 201, body: base(people.B.userId) }), 'create populated handoff').handoff;
 
     await scenario('handoffs-01', async () => {
       const createdDraft = expectSuccess(await request('/api/handoffs', { method: 'POST', token: people.A.token, expectedStatus: 201, body: base(people.B.userId, [patient([{ url: 'https://res.cloudinary.com/sanity/image/upload/handoff.png', fileName: 'handoff.png', mimeType: 'image/png' }])]) }), 'create handoff draft').handoff;
@@ -47,7 +50,7 @@ async function run() {
     });
 
     await scenario('handoffs-03', async () => {
-      handoff = expectSuccess(await request('/api/handoffs', { method: 'POST', token: people.A.token, expectedStatus: 201, body: base(people.B.userId) }), 'create populated handoff').handoff;
+      handoff = await createPopulated();
       const event = waitFor(clientB.socket, 'handoff_submitted', (payload) => payload?.handoffId === handoff._id);
       const submitted = expectSuccess(await request(`/api/handoffs/${handoff._id}/submit`, { method: 'POST', token: people.A.token }), 'submit handoff').handoff;
       await event;
@@ -58,6 +61,10 @@ async function run() {
       assert(submitted.status === 'submitted' && expectSuccess(inbox, 'handoff inbox').handoffs.some((item) => item._id === handoff._id), 'Submitted handoff was absent from recipient inbox.');
       assert(expectSuccess(history, 'handoff history').handoffs.some((item) => item._id === handoff._id) && notification.type === 'handoff_received', 'Submitted handoff history or notification was missing.');
     });
+    if (!selectedSanityCase('handoffs-03') && (selectedSanityCase('handoffs-04') || selectedSanityCase('handoffs-05'))) {
+      handoff = await createPopulated();
+      await request(`/api/handoffs/${handoff._id}/submit`, { method: 'POST', token: people.A.token });
+    }
 
     await scenario('handoffs-04', async () => {
       const event = waitFor(clientA.socket, 'handoff_acknowledged', (payload) => payload?.handoffId === handoff._id);
@@ -67,6 +74,9 @@ async function run() {
       await request(`/api/handoffs/${handoff._id}/acknowledge`, { method: 'POST', token: people.B.token, expectedStatus: 400, body: { note: marker('duplicate') } });
       assert(acknowledged.status === 'acknowledged' && acknowledged.acknowledgedAt && acknowledged.acknowledgementNote === marker('acknowledged') && notification.type === 'handoff_acknowledged', 'Acknowledgement did not persist expected state or notification.');
     });
+    if (!selectedSanityCase('handoffs-04') && selectedSanityCase('handoffs-05')) {
+      await request(`/api/handoffs/${handoff._id}/acknowledge`, { method: 'POST', token: people.B.token, body: { note: marker('acknowledged') } });
+    }
 
     await scenario('handoffs-05', async () => {
       const noted = expectSuccess(await request(`/api/handoffs/${handoff._id}/notes`, { method: 'POST', token: people.B.token, body: { text: marker('write-back'), kind: 'note' } }), 'add write-back note').handoff;
@@ -80,8 +90,8 @@ async function run() {
   } finally {
     closeRealtime(clientA); closeRealtime(clientB); closeRealtime(clientC); await closeDatabase();
     const output = resolve(process.env.SANITY_OUTPUT_DIR || 'output'); await mkdir(output, { recursive: true });
-    await writeFile(resolve(output, 'handoff-results.json'), `${JSON.stringify({ expected: 5, results }, null, 2)}\n`);
+    await writeFile(resolve(output, 'handoff-results.json'), `${JSON.stringify({ expected: selectedSanityCount('handoff-scenarios.js'), results }, null, 2)}\n`);
   }
-  console.log('Handoff scenarios passed: 5/5.');
+  console.log(`Handoff scenarios passed: ${results.length}/${selectedSanityCount('handoff-scenarios.js')}.`);
 }
 run().catch(async (error) => { console.error(error.stack || error.message); await closeDatabase(); process.exitCode = 1; });

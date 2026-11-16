@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { loadFeature } from './feature-registry.mjs';
 
 const [input, outputBase, provenanceFile] = process.argv.slice(2);
 if (!input || !outputBase) {
@@ -11,7 +12,9 @@ if (!input || !outputBase) {
 }
 
 const catalog = JSON.parse(fs.readFileSync(new URL('../catalog.json', import.meta.url), 'utf8'));
-const flutterCatalog = new Map(catalog.cases.filter((item) => item.tier === 'F').map((item) => [item.id, item]));
+const feature = process.env.VOCLE_FEATURE;
+const selected = feature === undefined ? catalog.cases : await loadFeature(feature, catalog.cases);
+const flutterCatalog = new Map(selected.filter((item) => item.tier === 'F').map((item) => [item.id, item]));
 const inputBytes = fs.readFileSync(input);
 const inputSha256 = createHash('sha256').update(inputBytes).digest('hex');
 const events = inputBytes.toString('utf8').split(/\r?\n/).filter(Boolean).map((line) => JSON.parse(line));
@@ -32,7 +35,10 @@ for (const event of events) {
   } else if (event.type === 'testDone') {
     const started = starts.get(event.testID);
     const id = started?.name.match(/\bFR-[A-Z]+-\d{2}\b/)?.[0];
-    if (!id) continue;
+    if (!id) {
+      if (feature !== undefined && !event.hidden) throw new Error('Unselected Flutter testcase ran');
+      continue;
+    }
     if (!flutterCatalog.has(id)) throw new Error(`Unknown Flutter catalog ID ${id}`);
     if (seenIds.has(id)) throw new Error(`Duplicate Flutter test ID ${id}`);
     seenIds.add(id);
@@ -81,6 +87,7 @@ const source = provenance?.source || { sha: null, kind: 'unverified', verified: 
 const sourceKind = source.kind === 'working-tree' ? 'working-tree' : provenance ? provenance.sourceKind === 'pr-head' ? 'pr-head' : 'commit' : 'unverified';
 const report = { context: captureContext(repositoryRoot), execution: executionIdentity(), sourceKind, source, harnessSha, inputSha256,
   schemaVersion: 1,
+  ...(feature === undefined ? {} : { feature }),
   tier: 'F',
   input: path.basename(input),
   planned: flutterCatalog.size,

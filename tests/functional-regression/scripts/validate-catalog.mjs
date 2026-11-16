@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseCatalog, moduleNames } from './catalog-source.mjs';
 import { scenarios } from '../../../tests/sanity/src/scenarios.js';
+import { validateFeatures } from './validate-features.mjs';
 
 const root = resolve(fileURLToPath(new URL('../../../', import.meta.url)));
 const path = resolve(root, 'tests/functional-regression/catalog.json');
@@ -53,6 +54,11 @@ const ledger = await readFile(resolve(root, 'tests/functional-regression/contrac
 for (let number = 1; number <= 14; number++) expect(ledger.includes(`| Q${number} |`), `Missing Q${number} ledger row`);
 const needlLedger=await readFile(resolve(root,'tests/functional-regression/contracts/needl-decisions.md'),'utf8');
 expect(needlLedger.includes('| NDL-D1 |'),'Missing Needl decision record');
+try {
+  await validateFeatures(root, stored.cases);
+} catch (error) {
+  issues.push(error.message);
+}
 const result = {
   status: issues.length ? 'FAIL' : 'PASS',
   counts: { total: stored.cases.length, retained: count((row) => row.coverage === 'EXISTING'), new: count((row) => row.coverage === 'NEW'), backend: count((row) => row.tier === 'B'), flutter: count((row) => row.tier === 'F'), device: count((row) => row.tier === 'D') },

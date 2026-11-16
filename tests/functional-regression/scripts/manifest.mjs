@@ -3,11 +3,13 @@ import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import { catalogCases, completeBackendSuccess, environmentContractVersion, forkRepository, harnessRoot, selectBackend, statuses, upstreamRef, upstreamRepository, validateResultSet } from './ci-contracts.mjs';
+import { catalogCases, completeBackendSuccess, environmentContractVersion, forkRepository, harnessRoot, selectBackendRun, statuses, upstreamRef, upstreamRepository, validateResultSet } from './ci-contracts.mjs';
+import { loadFeature } from './feature-registry.mjs';
 
 const output = resolve(process.env.VOCLE_OUTPUT_DIR || join(harnessRoot, 'output'));
 const target = process.env.VOCLE_TARGET_DIR;
 const scope = process.env.VOCLE_SCOPE || 'backend-all';
+const feature = scope === 'backend-feature' ? process.env.VOCLE_FEATURE : undefined;
 const sourceKind = process.env.VOCLE_TARGET_KIND || 'upstream-read-only';
 const targetSha = process.env.VOCLE_TARGET_SHA;
 const harnessSha = process.env.VOCLE_HARNESS_SHA;
@@ -20,13 +22,15 @@ await mkdir(output, { recursive: true });
 let selected = [], results = [], reports = [], execution, integrityError = null, provenance, cleanup, tally, result = 'ERROR';
 try {
   if (!target || !/^[a-f0-9]{40}$/.test(targetSha || '') || !/^[a-f0-9]{40}$/.test(harnessSha || '') || !/^[a-f0-9]{64}$/.test(fingerprint || '')) throw new Error('Missing exact source, harness or fingerprint');
-  selected = selectBackend(await catalogCases(), scope, affected);
+  const cases = await catalogCases();
+  selected = await selectBackendRun(cases, scope, affected, feature);
   execution = JSON.parse(await readFile(join(output, 'execution.json'), 'utf8'));
   if (process.env.VOCLE_REQUIRE_PREFLIGHT === 'true') {
     const preflight = JSON.parse(await readFile(join(output, 'preflight.json'), 'utf8'));
     if (preflight.status !== 'PASS' || !preflight.fakeProviderIntercepted || !preflight.unexpectedProviderRequestBlocked || !preflight.loopbackOnlyInterfaces || !preflight.outboundNetworkDenied) throw new Error('Provider/network isolation preflight failed');
   }
   if (JSON.stringify(execution.selectedIds) !== JSON.stringify(selected.map((item) => item.id))) throw new Error('Execution ID selection does not match catalog scope');
+  if (execution.scope !== scope || execution.feature !== feature) throw new Error('Execution belongs to a different scope or feature');
   const entries = await readdir(output, { withFileTypes: true });
   for (const entry of entries) {
     if (!entry.isDirectory() || !entry.name.endsWith(`-${execution.runId}`)) continue;
@@ -63,9 +67,13 @@ try {
 }
 const byId = new Map(selected.map((item) => [item.id, item]));
 const enriched = results.map((item) => ({ ...item, title: byId.get(item.id)?.title, tier: byId.get(item.id)?.tier, priority: byId.get(item.id)?.priority, targetSha }));
-const coverage = { planned: { total: 245, hosted: 237, localOnly: 8, backend: 181, flutter: 56, device: 8 }, localOnlyCases: (await catalogCases()).filter(c => c.tier === 'D').map(c => ({ id: c.id, executionMode: 'LOCAL_ONLY', executed: false, status: 'SKIP' })), scope, selected: selected.length, executed: enriched.filter((item) => item.errorCategory !== 'REPORT_MISSING').length, tally, byTier: Object.fromEntries(['B', 'F', 'D'].map((tier) => [tier, { selected: selected.filter((item) => item.tier === tier).length, executed: enriched.filter((item) => item.tier === tier && item.errorCategory !== 'REPORT_MISSING').length }])), byPriority: Object.fromEntries(['P0', 'P1', 'P2'].map((priority) => [priority, { selected: selected.filter((item) => item.priority === priority).length, executed: enriched.filter((item) => item.priority === priority && item.errorCategory !== 'REPORT_MISSING').length }])) };
+const inventory = await catalogCases();
+const localInventory = feature === undefined ? inventory : await loadFeature(feature, inventory).catch(() => []);
+const wasExecuted = item => item.errorCategory !== 'REPORT_MISSING' && (feature === undefined ||
+  (!['SETUP', 'DEPENDENCY'].includes(item.errorCategory) && !['BLOCKED', 'SKIP'].includes(item.status)));
+const coverage = { planned: { total: 245, hosted: 237, localOnly: 8, backend: 181, flutter: 56, device: 8 }, localOnlyCases: localInventory.filter(c => c.tier === 'D').map(c => ({ id: c.id, executionMode: 'LOCAL_ONLY', executed: false, status: 'SKIP' })), scope, selected: selected.length, executed: enriched.filter(wasExecuted).length, tally, byTier: Object.fromEntries(['B', 'F', 'D'].map((tier) => [tier, { selected: selected.filter((item) => item.tier === tier).length, executed: enriched.filter((item) => item.tier === tier && wasExecuted(item)).length }])), byPriority: Object.fromEntries(['P0', 'P1', 'P2'].map((priority) => [priority, { selected: selected.filter((item) => item.priority === priority).length, executed: enriched.filter((item) => item.priority === priority && wasExecuted(item)).length }])) };
 const verifiedBackendAll = result === 'PASS' && completeBackendSuccess({ scope, selected, tally, cleanup, provenance });
-const manifest = { context: captureContext(harnessRoot), execution: executionIdentity(), schemaVersion: 1, environmentContractVersion, scope, sourceKind, targetSha, harnessSha, fingerprint, selectedIds: selected.map((item) => item.id), tally, result, verifiedBackendAll, integrityError, runId: process.env.GITHUB_RUN_ID || null, attempt: process.env.GITHUB_RUN_ATTEMPT || null };
+const manifest = { context: captureContext(harnessRoot), execution: executionIdentity(), schemaVersion: 1, environmentContractVersion, scope, feature, sourceKind, targetSha, harnessSha, fingerprint, selectedIds: selected.map((item) => item.id), tally, result, verifiedBackendAll, integrityError, runId: process.env.GITHUB_RUN_ID || null, attempt: process.env.GITHUB_RUN_ATTEMPT || null };
 await Promise.all([
   writeFile(join(output, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`),
   writeFile(join(output, 'results.json'), `${JSON.stringify({ ...manifest, results: enriched }, null, 2)}\n`),

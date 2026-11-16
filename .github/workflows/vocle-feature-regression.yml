@@ -1,0 +1,130 @@
+name: Vocle — Feature Regression
+
+on:
+  workflow_dispatch:
+    inputs:
+      feature:
+        description: Select a feature or all regression cases
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - authentication
+          - profile
+          - contact-discovery
+          - direct-messaging
+          - group-messaging
+          - voice-messaging
+          - voice-assistant
+          - handoff
+          - needl
+          - message-actions
+          - media-sharing
+          - notifications
+          - workspaces
+          - search
+          - navigation
+          - offline-recovery
+          - saved-and-shared
+          - realtime
+          - support-and-ops
+          - access-and-privacy
+
+permissions:
+  contents: read
+
+jobs:
+  feature:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    env:
+      VOCLE_FEATURE: ${{ inputs.feature }}
+      VOCLE_SCOPE: backend-feature
+      VOCLE_TARGET_KIND: commit
+      VOCLE_TARGET_SHA: ${{ github.sha }}
+      VOCLE_HARNESS_SHA: ${{ github.sha }}
+      NODE_IMAGE: node:22.20.0-bookworm@sha256:915acd9e9b885ead0c620e27e37c81b74c226e0e1c8177f37a60217b6eabb0d7
+      TZ: UTC
+    steps:
+      - name: Validate repository and manual workflow context
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = mathiharan29/medcollab-beta
+          test "$GITHUB_EVENT_NAME" = workflow_dispatch
+          [[ "$GITHUB_REF" == refs/heads/?* ]]
+          [[ "$GITHUB_SHA" =~ ^[a-f0-9]{40}$ ]]
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+      - id: select
+        name: Validate the catalog and resolve selected IDs
+        run: |
+          set -euo pipefail
+          node tests/functional-regression/scripts/verify-target.mjs . "$GITHUB_SHA"
+          node tests/functional-regression/scripts/validate-catalog.mjs
+          mkdir -p "$RUNNER_TEMP/vocle-feature"
+          printf 'VOCLE_FEATURE_OUTPUT=%s\n' "$RUNNER_TEMP/vocle-feature" >> "$GITHUB_ENV"
+          node tests/functional-regression/scripts/select-feature.mjs | tee "$RUNNER_TEMP/vocle-feature/selection.json"
+      - name: Run selected backend cases in the existing isolated harness
+        if: steps.select.outputs.backend != '0'
+        run: |
+          set -euo pipefail
+          output="$VOCLE_FEATURE_OUTPUT/backend"
+          mkdir -p "$output"
+          docker pull "$NODE_IMAGE"
+          for package in medcollab-backend tests/sanity; do
+            docker run --rm --user "$(id -u):$(id -g)" -e npm_config_cache=/tmp/npm-cache \
+              --mount "type=bind,source=$PWD,target=/repo" --workdir "/repo/$package" "$NODE_IMAGE" npm ci --ignore-scripts
+          done
+          mount_repo="type=bind,source=$PWD,target=/repo,readonly"
+          mount_output="type=bind,source=$output,target=/output"
+          docker run --rm --user "$(id -u):$(id -g)" --mount "$mount_repo" --mount "$mount_output" "$NODE_IMAGE" \
+            node /repo/tests/functional-regression/scripts/prepare-mongo.mjs /repo /output
+          docker run --rm --network none --read-only --tmpfs /tmp:rw,exec --user "$(id -u):$(id -g)" \
+            --mount "$mount_repo" --mount "$mount_output" \
+            -e VOCLE_TARGET_DIR=/repo -e VOCLE_OUTPUT_DIR=/output -e VOCLE_FEATURE -e VOCLE_SCOPE -e TZ "$NODE_IMAGE" \
+            sh -c 'node /repo/tests/functional-regression/scripts/preflight-isolation.mjs && node /repo/tests/functional-regression/scripts/run-backend.mjs'
+      - name: Verify backend selection, provenance and cleanup
+        if: ${{ !cancelled() && steps.select.outcome == 'success' && steps.select.outputs.backend != '0' }}
+        env:
+          VOCLE_REQUIRE_PREFLIGHT: 'true'
+        run: |
+          set -euo pipefail
+          export VOCLE_TARGET_DIR="$PWD"
+          export VOCLE_OUTPUT_DIR="$VOCLE_FEATURE_OUTPUT/backend"
+          export VOCLE_FINGERPRINT="$(node tests/functional-regression/scripts/fingerprint.mjs)"
+          node tests/functional-regression/scripts/manifest.mjs
+      - id: flutter
+        name: Set up pinned Flutter SDK
+        if: ${{ !cancelled() && steps.select.outcome == 'success' && steps.select.outputs.flutter != '0' }}
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: stable
+          flutter-version: '3.29.3'
+          cache: true
+      - name: Run selected Flutter tests
+        if: ${{ !cancelled() && steps.flutter.outcome == 'success' }}
+        run: |
+          set -euo pipefail
+          (cd medcollab-app && flutter pub get --enforce-lockfile)
+          node tests/functional-regression/scripts/run-feature-flutter.mjs
+      - name: Write feature report and enforce its verdict
+        if: ${{ !cancelled() && steps.select.outcome == 'success' }}
+        run: node tests/functional-regression/scripts/report-feature.mjs
+      - id: stage
+        name: Sanitize reports and logs
+        if: ${{ !cancelled() && steps.select.outcome == 'success' }}
+        run: node tests/reporting/stage.mjs "$VOCLE_FEATURE_OUTPUT" "$RUNNER_TEMP/vocle-feature-artifact"
+      - name: Upload feature regression evidence
+        if: ${{ !cancelled() && steps.stage.outcome == 'success' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: vocle-feature-${{ inputs.feature }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/vocle-feature-artifact
+          if-no-files-found: error
+          retention-days: 90

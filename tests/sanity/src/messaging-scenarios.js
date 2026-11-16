@@ -1,3 +1,4 @@
+import { selectedSanityCase, selectedSanityCount } from './scenarios.js';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { createFixtureUsers } from './fixtures.js';
@@ -9,6 +10,7 @@ const results = [];
 const assert = (value, message) => { if (!value) throw new Error(message); };
 const marker = (name) => `sanity-message-${name}`;
 async function scenario(id, action) {
+  if (!selectedSanityCase(id)) return;
   const startedAt = Date.now();
   try { await action(); results.push({ id, status: 'passed', durationMs: Date.now() - startedAt }); }
   catch (error) { results.push({ id, status: 'failed', durationMs: Date.now() - startedAt, error: error.message }); throw error; }
@@ -48,6 +50,10 @@ async function run() {
       assert(listing.messages.some((item) => item._id === message._id), 'Sent text was not readable.');
       assert(listedChannel?.lastMessage?.text === marker('text'), 'Sidebar preview did not persist.');
     });
+    if (!selectedSanityCase('messaging-and-needl-01') &&
+        (selectedSanityCase('messaging-and-needl-03') || selectedSanityCase('messaging-and-needl-04'))) {
+      root = await send(general._id, people.A.token, marker('text'));
+    }
 
     await scenario('messaging-and-needl-02', async () => {
       await send(general._id, people.A.token, marker('page-one'));
@@ -113,9 +119,9 @@ async function run() {
     closeRealtime(clientA); closeRealtime(clientB); await closeDatabase();
     const output = resolve(process.env.SANITY_OUTPUT_DIR || 'output');
     await mkdir(output, { recursive: true });
-    await writeFile(resolve(output, 'messaging-results.json'), `${JSON.stringify({ expected: 7, results }, null, 2)}\n`);
+    await writeFile(resolve(output, 'messaging-results.json'), `${JSON.stringify({ expected: selectedSanityCount('messaging-scenarios.js'), results }, null, 2)}\n`);
   }
-  console.log('Messaging scenarios passed: 7/7.');
+  console.log(`Messaging scenarios passed: ${results.length}/${selectedSanityCount('messaging-scenarios.js')}.`);
 }
 
 run().catch(async (error) => { console.error(error.stack || error.message); await closeDatabase(); process.exitCode = 1; });

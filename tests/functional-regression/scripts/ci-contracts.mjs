@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { loadFeature } from './feature-registry.mjs';
 
 export const harnessRoot = resolve(fileURLToPath(new URL('../', import.meta.url)));
 export const environmentContractVersion = 1;
@@ -32,6 +33,13 @@ export function selectBackend(cases, scope, affectedModules = []) {
   }
   const selected = cases.filter((item) => selectedIds.has(item.id));
   if (scope === 'backend-all' && selected.length !== 181) throw new Error('Backend-all requires 181 catalog IDs');
+  return selected;
+}
+
+export async function selectBackendRun(cases, scope, affectedModules, feature) {
+  if (scope !== 'backend-feature') return selectBackend(cases, scope, affectedModules);
+  const selected = (await loadFeature(feature, cases)).filter(row => row.tier === 'B');
+  if (!selected.length) throw new Error(`No backend cases for ${feature}`);
   return selected;
 }
 

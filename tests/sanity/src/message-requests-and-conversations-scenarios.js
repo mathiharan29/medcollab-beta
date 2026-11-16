@@ -1,3 +1,4 @@
+import { selectedSanityCase, selectedSanityCount } from './scenarios.js';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { createFixtureUsers } from './fixtures.js';
@@ -17,6 +18,7 @@ async function eventuallyNotification(label, userId, referenceId) {
   throw new Error(`${label} was not persisted within 5 seconds (request state was persisted).`);
 }
 async function scenario(id, action, prerequisite = true) {
+  if (!selectedSanityCase(id)) return;
   const startedAt = Date.now();
   if (!prerequisite) { results.push({ id, status: 'blocked', durationMs: 0, error: 'Required request, conversation, or message fixture was not created.' }); return; }
   try { await action(); results.push({ id, status: 'passed', durationMs: Date.now() - startedAt }); }
@@ -32,6 +34,13 @@ async function run() {
   await connectDatabase();
   const people = await createFixtureUsers();
   let acceptedRequest; let dm; let dmMessage;
+  const wantDm = ['01', '02', '03', '05'].some(number => selectedSanityCase(`direct-and-group-conversations-${number}`));
+  const createRequest = async () => expectSuccess(await request('/api/message-requests', {
+    method: 'POST', token: people.A.token, expectedStatus: 201, body: { toUserId: people.D.userId, introMessage: marker('intro') },
+  }), 'create message request').request;
+  const acceptRequest = async () => expectSuccess(await request(`/api/message-requests/${acceptedRequest.id}/accept`, {
+    method: 'POST', token: people.D.token,
+  }), 'accept request');
   try {
     const groupFixture = expectSuccess(await request('/api/spaces', {
       method: 'POST', token: people.A.token, expectedStatus: 201,
@@ -45,10 +54,7 @@ async function run() {
     await scenario('message-requests-01', async () => {
       const lookup = expectSuccess(await request(`/api/users/lookup?phone=${encodeURIComponent(people.D.phone)}`, { token: people.A.token }), 'lookup eligible peer');
       assert(lookup.canRequest === true && lookup.canMessage === false, 'Lookup did not identify a request-eligible peer.');
-      const created = expectSuccess(await request('/api/message-requests', {
-        method: 'POST', token: people.A.token, expectedStatus: 201, body: { toUserId: people.D.userId, introMessage: marker('intro') },
-      }), 'create message request');
-      acceptedRequest = created.request;
+      acceptedRequest = await createRequest();
       const duplicate = expectSuccess(await request('/api/message-requests', {
         method: 'POST', token: people.A.token, body: { toUserId: people.D.userId, introMessage: marker('intro') },
       }), 'repeat message request');
@@ -64,9 +70,12 @@ async function run() {
       assert(expectSuccess(pending, 'pending count').count === 1, 'Pending request count was incorrect.');
       assert(notification?.type === 'message_request' && notification.referenceType === 'MessageRequest', 'Recipient notification was not persisted.');
     });
+    if (!selectedSanityCase('message-requests-01') && (wantDm || selectedSanityCase('message-requests-02'))) {
+      acceptedRequest = await createRequest();
+    }
 
     await scenario('message-requests-02', async () => {
-      const accepted = expectSuccess(await request(`/api/message-requests/${acceptedRequest.id}/accept`, { method: 'POST', token: people.D.token }), 'accept request');
+      const accepted = await acceptRequest();
       dm = accepted.channel;
       const [fromList, toList] = await Promise.all([
         request('/api/channels/dm', { token: people.A.token }), request('/api/channels/dm', { token: people.D.token }),
@@ -77,6 +86,7 @@ async function run() {
       assert(expectSuccess(toList, 'recipient DM list').channels.some((channel) => channel._id === dm._id), 'Accepted DM missing for recipient.');
       assert(notification?.metadata?.channelId?.toString() === dm._id, 'Acceptance notification was not persisted for sender.');
     }, Boolean(acceptedRequest));
+    if (!selectedSanityCase('message-requests-02') && wantDm && acceptedRequest) dm = (await acceptRequest()).channel;
 
     await scenario('message-requests-03', async () => {
       const declined = expectSuccess(await request('/api/message-requests', {
@@ -105,6 +115,9 @@ async function run() {
       assert(expectSuccess(messages, 'DM messages').messages.some((message) => message._id === dmMessage._id), 'DM message was not readable.');
       assert(expectSuccess(sidebar, 'DM sidebar').channels.find((channel) => channel._id === dm._id)?.lastMessage?.text === marker('dm-message'), 'DM last-message preview was incorrect.');
     }, Boolean(dm));
+    if (!selectedSanityCase('direct-and-group-conversations-02') && selectedSanityCase('direct-and-group-conversations-03') && dm) {
+      dmMessage = await send(dm._id, people.A.token, marker('dm-message'));
+    }
 
     await scenario('direct-and-group-conversations-03', async () => {
       await request(`/api/channels/${dm._id}/messages/read`, { method: 'POST', token: people.D.token, body: { messageIds: [dmMessage._id] } });
@@ -146,11 +159,12 @@ async function run() {
     await closeDatabase();
     const output = resolve(process.env.SANITY_OUTPUT_DIR || 'output');
     await mkdir(output, { recursive: true });
-    await writeFile(resolve(output, 'message-requests-and-conversations-results.json'), `${JSON.stringify({ expected: 8, results }, null, 2)}\n`);
+    await writeFile(resolve(output, 'message-requests-and-conversations-results.json'), `${JSON.stringify({ expected: selectedSanityCount('message-requests-and-conversations-scenarios.js'), results }, null, 2)}\n`);
   }
+  const expected = selectedSanityCount('message-requests-and-conversations-scenarios.js');
   const passed = results.filter((result) => result.status === 'passed').length;
-  console.log(`Message-request and conversation scenarios passed: ${passed}/8.`);
-  if (passed !== 8) process.exitCode = 1;
+  console.log(`Message-request and conversation scenarios passed: ${passed}/${expected}.`);
+  if (passed !== expected) process.exitCode = 1;
 }
 
 run().catch(async (error) => { console.error(error.stack || error.message); await closeDatabase(); process.exitCode = 1; });

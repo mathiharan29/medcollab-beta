@@ -7,10 +7,13 @@ import { backendRoot, outputRoot, repoRoot, runId, targetRoot, validateConfig } 
 import { startMongo, databaseUri } from './db.mjs';
 import { startBackend, stopChild } from './runner.mjs';
 import { writeReports } from './reporting.mjs';
+import { selectSanityGroups } from '../../sanity/src/scenarios.js';
 
 const sanityRoot = join(repoRoot, 'tests/sanity');
 const catalog = JSON.parse(await readFile(join(repoRoot, 'tests/functional-regression/catalog.json'), 'utf8'));
-const selectedIds = catalog.cases.filter((item) => item.coverage === 'EXISTING').map((item) => item.id);
+const sanitySelection = process.env.SANITY_CASE_IDS;
+const requested = new Set(selectSanityGroups(sanitySelection).flatMap(group => group.scenarios.map(({ id }) => id)));
+const selectedIds = catalog.cases.filter((item) => item.coverage === 'EXISTING' && requested.has(item.id)).map((item) => item.id);
 const sourceSha = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: targetRoot, encoding: 'utf8' }).stdout.trim();
 const harnessSha = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: repoRoot, encoding: 'utf8' }).stdout.trim();
 
@@ -26,6 +29,7 @@ async function executeSanity(outputDirectory, fixtureDirectory, inboxDirectory, 
     SANITY_BACKEND_DIR: backendRoot, SANITY_DATABASE_URI: uri, SANITY_ORIGIN: 'http://127.0.0.1:5000',
     SANITY_PROVIDER_INBOX: inboxDirectory, SANITY_FIXTURE_DIR: fixtureDirectory, SANITY_OUTPUT_DIR: outputDirectory,
     SANITY_UPSTREAM_SHA: targetRoot === repoRoot ? '' : sourceSha, SANITY_HARNESS_SHA: harnessSha,
+    ...(sanitySelection === undefined ? {} : { SANITY_CASE_IDS: sanitySelection }),
   };
   const child = spawn(process.execPath, [join(sanityRoot, 'src/runner.js'), '--live'], { cwd: sanityRoot, env, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
   const chunks = [];
@@ -74,7 +78,7 @@ try {
   } catch (error) { cleanup = { status: 'ERROR', error: error.message }; }
 }
 const report = await writeReports(join(outputRoot, `sanity-adapted-${runId}`), {
-  scope: 'retained-sanity-48', targetSha: sourceSha, harnessSha, selectedIds, results, cleanup,
+  scope: sanitySelection === undefined ? 'retained-sanity-48' : 'retained-sanity-feature', targetSha: sourceSha, harnessSha, selectedIds, results, cleanup,
   provenance: { status: /^[a-f0-9]{40}$/.test(sourceSha) && /^[a-f0-9]{40}$/.test(harnessSha) ? 'PASS' : 'ERROR', sourceKind: targetRoot === repoRoot ? 'local-fork-checkout' : 'detached-target', targetSha: sourceSha, harnessSha, originalRunnerExit: driver },
 });
 console.log(JSON.stringify({ reportDirectory: join(outputRoot, `sanity-adapted-${runId}`), tally: report.tally, complete: report.complete, success: report.success }, null, 2));

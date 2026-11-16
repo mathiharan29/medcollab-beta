@@ -3,7 +3,7 @@ import { dirname, resolve } from 'node:path';
 import { readdir, readFile } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import { validateStaticConfig } from './config.js';
-import { expectedScenarioCount, scenarioGroups, scenarios, validateScenarioRegistry } from './scenarios.js';
+import { expectedScenarioCount, scenarios, selectSanityGroups, selectedSanityCount, validateScenarioRegistry } from './scenarios.js';
 import { writeExecutionReports, writePlannedReports } from './reporting.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -31,8 +31,11 @@ const execute = (file) => new Promise((resolveRun) => {
 });
 
 async function runLive() {
+  const scenarioGroups = selectSanityGroups(process.env.SANITY_CASE_IDS);
   const outcomes = [];
-  for (const file of modules) outcomes.push(await execute(file));
+  for (const file of modules) {
+    if (selectedSanityCount(file)) outcomes.push(await execute(file));
+  }
   const files = await readdir(outputDirectory);
   const results = [];
   for (const file of files.filter((name) => name.endsWith('-results.json'))) {
@@ -41,6 +44,12 @@ async function runLive() {
   }
   const startup = JSON.parse(await readFile(resolve(outputDirectory, 'startup-result.json'), 'utf8').catch(() => '{}'));
   if (startup.result) results.push({ id: 'startup-01', status: startup.result, durationMs: 0 });
+  const recorded = new Set();
+  const expected = new Set(scenarioGroups.flatMap(group => group.scenarios.map(({ id }) => id)));
+  for (const { id } of results) {
+    if (!expected.has(id) || recorded.has(id)) throw new Error(`Unexpected or duplicate retained case ${id}`);
+    recorded.add(id);
+  }
   const report = await writeExecutionReports({ outputDirectory, scenarioGroups, results, metadata: { upstreamSha: process.env.SANITY_UPSTREAM_SHA, harnessSha: process.env.SANITY_HARNESS_SHA, modules: outcomes } });
   if (report.result !== 'passed' || outcomes.some((outcome) => outcome.code !== 0)) process.exitCode = 1;
 }

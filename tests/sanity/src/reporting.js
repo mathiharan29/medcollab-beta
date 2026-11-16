@@ -1,5 +1,6 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { moduleForGroup } from './scenarios.js';
 
 const xml = (value) => String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&apos;');
 
@@ -44,17 +45,6 @@ const coverage = {
 export async function writeExecutionReports({ outputDirectory, scenarioGroups, results, metadata = {} }) {
   await mkdir(outputDirectory, { recursive: true });
   const byId = new Map(results.map((result) => [result.id, result]));
-  const moduleForGroup = {
-    'authentication-and-profiles': 'authentication-scenarios.js',
-    'spaces-and-invitations': 'spaces-and-channels-scenarios.js',
-    channels: 'spaces-and-channels-scenarios.js',
-    'messaging-and-needl': 'messaging-scenarios.js',
-    'message-requests': 'message-requests-and-conversations-scenarios.js',
-    'direct-and-group-conversations': 'message-requests-and-conversations-scenarios.js',
-    handoffs: 'handoff-scenarios.js', media: 'media-scenarios.js', notifications: 'notification-scenarios.js',
-    'realtime-and-availability': 'realtime-availability-scenarios.js', search: 'search-scenarios.js',
-    support: 'support-scenarios.js', startup: 'live-runner.js',
-  };
   const all = scenarioGroups.flatMap((group) => group.scenarios.map((scenario) => {
     const recorded = byId.get(scenario.id);
     if (recorded) return { ...scenario, ...recorded };
