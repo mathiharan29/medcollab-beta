@@ -9,6 +9,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
 import android.os.SystemClock;
+import android.speech.ModelDownloadListener;
 import android.speech.RecognitionListener;
 import android.speech.RecognitionSupport;
 import android.speech.RecognitionSupportCallback;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import org.json.JSONObject;
 
 /** Standalone API probe. The process has no Flutter, Vocle backend or audio playback. */
@@ -71,24 +73,25 @@ public final class AudioSourceProbe extends Instrumentation {
             for (String engine : List.of("on-device", "default")) {
                 if (!(engine.equals("on-device") ? offline : standard)) continue;
                 checkSupport(context, engine);
+                boolean modelUnavailable = false;
+                boolean engineProven = false;
                 for (String mode : List.of("regular-file", "pipe")) {
-                    Session supplied = recognize(context, engine, mode, "speech", speech);
-                    Session control = recognize(context, engine, mode, "silence", silence);
-                    boolean matched = normalize(supplied.transcript()).equals(EXPECTED);
-                    boolean quiet = control.transcript().isEmpty()
-                        && (control.terminal.equals("segment-end") || control.terminal.equals("results")
-                           || control.error == SpeechRecognizer.ERROR_NO_MATCH
-                           || control.error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT);
-                    boolean consumed = mode.equals("pipe")
-                        && supplied.written == speech.length && control.written == silence.length;
-                    boolean compatible = matched && quiet && consumed
-                        && supplied.error == 0 && !supplied.terminal.equals("timeout");
-                    log(new JSONObject().put("event", "comparison").put("engine", engine)
-                        .put("source", mode).put("expectedPhraseMatched", matched)
-                        .put("silenceControlPassed", quiet).put("pipeConsumptionProven", consumed)
-                        .put("sourceProven", compatible));
-                    proven |= compatible;
+                    Comparison trial = compare(context, engine, mode, "offline-preferred", speech, silence);
+                    modelUnavailable |= trial.modelUnavailable;
+                    engineProven |= trial.proven;
                 }
+                if (!engineProven && modelUnavailable && Build.VERSION.SDK_INT >= 34) {
+                    downloadEnglish(context, engine);
+                    for (String mode : List.of("regular-file", "pipe")) {
+                        engineProven |= compare(context, engine, mode, "after-model-request", speech, silence).proven;
+                    }
+                }
+                if (!engineProven && engine.equals("default") && modelUnavailable) {
+                    // Synthetic input only. Test the installed recognizer's
+                    // other policy separately from Vocle's offline preference.
+                    engineProven |= compare(context, engine, "pipe", "online-allowed", speech, silence).proven;
+                }
+                proven |= engineProven;
             }
             log(new JSONObject().put("event", "verdict").put("sourceProven", proven));
             result.putString("stream", "\nAUDIO_SOURCE_PROVEN=" + proven + "\n");
@@ -125,6 +128,62 @@ public final class AudioSourceProbe extends Instrumentation {
             .putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true);
     }
 
+    private static final class Comparison {
+        final boolean proven;
+        final boolean modelUnavailable;
+
+        Comparison(boolean proven, boolean modelUnavailable) {
+            this.proven = proven;
+            this.modelUnavailable = modelUnavailable;
+        }
+    }
+
+    private Comparison compare(Context context, String engine, String mode, String profile,
+        byte[] speech, byte[] silence) throws Exception {
+        Session supplied = recognize(context, engine, mode, profile, "speech", speech);
+        Session control = recognize(context, engine, mode, profile, "silence", silence);
+        boolean matched = normalize(supplied.transcript()).equals(EXPECTED);
+        boolean quiet = control.transcript().isEmpty()
+            && (control.terminal.equals("segment-end") || control.terminal.equals("results")
+               || control.error == SpeechRecognizer.ERROR_NO_MATCH
+               || control.error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT);
+        boolean consumed = mode.equals("pipe")
+            && supplied.written == speech.length && control.written == silence.length;
+        boolean passed = matched && quiet && consumed
+            && supplied.error == 0 && !supplied.terminal.equals("timeout");
+        log(new JSONObject().put("event", "comparison").put("engine", engine)
+            .put("source", mode).put("profile", profile).put("expectedPhraseMatched", matched)
+            .put("silenceControlPassed", quiet).put("pipeConsumptionProven", consumed)
+            .put("sourceProven", passed));
+        return new Comparison(passed, supplied.error == SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE);
+    }
+
+    private void downloadEnglish(Context context, String engine) throws Exception {
+        SpeechRecognizer[] instance = new SpeechRecognizer[1];
+        CountDownLatch done = new CountDownLatch(1);
+        AtomicReference<String> state = new AtomicReference<>("timeout");
+        runOnMainSync(() -> {
+            instance[0] = recognizer(context, engine);
+            instance[0].triggerModelDownload(request("en-US"), context.getMainExecutor(),
+                new ModelDownloadListener() {
+                    private void report(String result) { state.set(result); done.countDown(); }
+                    @Override public void onProgress(int percent) {}
+                    @Override public void onSuccess() { report("success"); }
+                    @Override public void onScheduled() { report("scheduled"); }
+                    @Override public void onError(int error) { report("error_" + error); }
+                });
+        });
+        try {
+            done.await(50, TimeUnit.SECONDS);
+            log(new JSONObject().put("event", "model-download").put("engine", engine)
+                .put("locale", "en-US").put("outcome", state.get()));
+            if (state.get().equals("scheduled")) SystemClock.sleep(30000);
+        } finally {
+            runOnMainSync(instance[0]::destroy);
+        }
+        checkSupport(context, engine);
+    }
+
     private void checkSupport(Context context, String engine) throws Exception {
         SpeechRecognizer[] instance = new SpeechRecognizer[1];
         CountDownLatch done = new CountDownLatch(1);
@@ -159,7 +218,8 @@ public final class AudioSourceProbe extends Instrumentation {
         log(info);
     }
 
-    private Session recognize(Context context, String engine, String mode, String input, byte[] bytes)
+    private Session recognize(Context context, String engine, String mode, String profile,
+        String input, byte[] bytes)
         throws Exception {
         boolean isPipe = mode.equals("pipe");
         File temp = isPipe ? null : File.createTempFile("input-", ".pcm", context.getCacheDir());
@@ -172,6 +232,7 @@ public final class AudioSourceProbe extends Instrumentation {
         Thread writer = null;
         try {
             Intent intent = request("en-US")
+                .putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, !profile.equals("online-allowed"))
                 .putExtra(RecognizerIntent.EXTRA_AUDIO_SOURCE, read)
                 .putExtra(RecognizerIntent.EXTRA_AUDIO_SOURCE_CHANNEL_COUNT, 1)
                 .putExtra(RecognizerIntent.EXTRA_AUDIO_SOURCE_ENCODING, AudioFormat.ENCODING_PCM_16BIT)
@@ -196,13 +257,18 @@ public final class AudioSourceProbe extends Instrumentation {
                 if (writer.isAlive()) throw new IllegalStateException("PCM writer did not terminate");
             }
             if (instance[0] != null) runOnMainSync(instance[0]::destroy);
+            if (temp != null) {
+                try { outcome.filePosition = Os.lseek(read.getFileDescriptor(), 0, OsConstants.SEEK_CUR); }
+                catch (ErrnoException ignored) { /* optional diagnostic */ }
+            }
             read.close();
             if (isPipe && writer == null) pipe[1].close();
             if (temp != null) Files.deleteIfExists(temp.toPath());
         }
         log(new JSONObject().put("event", "session").put("engine", engine).put("source", mode)
-            .put("input", input).put("locale", "en-US").put("bytesOffered", bytes.length)
+            .put("input", input).put("locale", "en-US").put("profile", profile).put("bytesOffered", bytes.length)
             .put("pipeBytesWritten", outcome.written).put("writerError", outcome.writerError)
+            .put("regularFilePosition", outcome.filePosition)
             .put("terminal", outcome.terminal).put("error", outcome.error)
             .put("ready", outcome.ready).put("segmentCount", outcome.parts.size())
             .put("transcript", outcome.transcript()));
@@ -258,6 +324,7 @@ public final class AudioSourceProbe extends Instrumentation {
         volatile String terminal = "timeout", writerError = "";
         volatile int error, written;
         volatile boolean ready;
+        long filePosition = -1;
 
         synchronized String transcript() { return String.join(" ", parts); }
         private synchronized void add(Bundle result) {
