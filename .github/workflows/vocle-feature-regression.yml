@@ -39,7 +39,7 @@ permissions:
 
 jobs:
   feature:
-    if: inputs.feature != 'voice-assistant-live-audio'
+    if: inputs.feature != 'voice-assistant-live-audio' && inputs.feature != 'voice-assistant-prerecorded'
     runs-on: ubuntu-24.04
     timeout-minutes: 50
     env:
@@ -132,6 +132,9 @@ jobs:
           path: ${{ runner.temp }}/vocle-feature-artifact
           if-no-files-found: error
           retention-days: 90
+  voice-assistant-prerecorded:
+    if: inputs.feature == 'voice-assistant-prerecorded'
+    uses: ./.github/workflows/vocle-digital-audio-regression.yml
   voice-assistant-live-audio:
     if: inputs.feature == 'voice-assistant-live-audio'
     runs-on: ${{ github.ref == 'refs/heads/master' && vars.VOCLE_LIVE_AUDIO_RUNNER == 'enabled' && fromJSON('["self-hosted","linux","vocle-live-audio"]') || 'ubuntu-24.04' }}

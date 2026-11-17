@@ -36,7 +36,9 @@ export function renderFeatureMatrix(cases, features, executors) {
   );
   for (const row of cases) {
     const path = executors.get(row.id);
-    lines.push(`| ${tags.get(row.id).join(', ')} | \`${row.id}\` | ${row.actions.replaceAll('|', '\\|')} | ${layers[row.tier]} | [${path.split('/').at(-1)}](../../${path}) |`);
+    const features = tags.get(row.id);
+    const layer = features.includes('voice-assistant-prerecorded') ? 'Android (hosted and local)' : layers[row.tier];
+    lines.push(`| ${features.join(', ')} | \`${row.id}\` | ${row.actions.replaceAll('|', '\\|')} | ${layer} | [${path.split('/').at(-1)}](../../${path}) |`);
   }
   return lines.join('\n') + '\n';
 }

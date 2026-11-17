@@ -2,13 +2,18 @@ name: Vocle — Voice Assistant Digital Audio
 
 on:
   push:
-    branches: [testing/voice-digital-audio-probe]
+    branches: [master, testing/voice-digital-audio-probe]
     paths:
       - '.github/workflows/vocle-digital-audio-regression.yml'
       - 'tests/functional-regression/voice-audio/**'
-      - 'tests/functional-regression/scripts/**'
+      - 'tests/functional-regression/scripts/voice-*.mjs'
+      - 'tests/functional-regression/scripts/device-*.mjs'
+      - 'tests/functional-regression/scripts/prepare-device-workspace.mjs'
+      - 'tests/functional-regression/scripts/run-device.mjs'
       - 'medcollab-app/integration_test/functional_regression/voice_assistant_test.dart'
+      - 'medcollab-app/lib/features/voice_bot/**'
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read

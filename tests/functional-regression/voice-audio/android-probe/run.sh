@@ -66,7 +66,12 @@ timeout 420 "$adb" shell am instrument -w -e onlineOnly "${VOCLE_PROBE_ONLINE_ON
   2>&1 | tee "$output/instrumentation.txt"
 status="${PIPESTATUS[0]}"
 set -e
-"$adb" logcat -d -v raw -s 'VocleAudioSource:I' '*:S' | tee "$output/probe.ndjson"
+"$adb" logcat -d -v raw -s 'VocleAudioSource:I' '*:S' | python3 -c '
+import json, sys
+rows = [json.loads(line) for line in sys.stdin if line.startswith("{")]
+json.dump(rows, sys.stdout, indent=2)
+print()
+' | tee "$output/probe.json"
 "$adb" logcat -d -v brief -s 'SpeechRecognizer:V' 'RecognitionService:V' \
   'SpeechRecognitionManagerService:V' 'RemoteSpeechRecognitionService:V' 'AndroidRuntime:E' '*:S' \
   > "$output/speech-service.log"

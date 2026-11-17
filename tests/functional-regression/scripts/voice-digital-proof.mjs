@@ -10,11 +10,10 @@ const normalize = text => text.toLowerCase().replace(/[^a-z]+/g, ' ').trim().rep
 
 export async function verifiedDigitalTranscript(directory, sample, runningFingerprint) {
   const read = name => readFile(join(directory, name), 'utf8');
-  const [fixture, journal, instrument] = await Promise.all([
-    read('fixture.json').then(JSON.parse), read('probe.ndjson'), read('instrumentation.txt'),
+  const [fixture, rows, instrument] = await Promise.all([
+    read('fixture.json').then(JSON.parse), read('probe.json').then(JSON.parse), read('instrumentation.txt'),
   ]);
   assert.match(instrument, /^AUDIO_SOURCE_PROVEN=true$/m, 'Native recognition probe did not pass');
-  const rows = journal.split(/\r?\n/).filter(line => line.startsWith('{')).map(line => JSON.parse(line));
   const [availability] = rows.filter(row => row.event === 'availability');
   assert.equal(fixture.sample, digitalSampleId);
   assert.equal(fixture.sample, sample.id);

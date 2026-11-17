@@ -428,11 +428,9 @@ Future<void> _assertDraft(WidgetTester tester, Map<String, dynamic> f,
     of: editor,
     matching: find.byType(BlocProvider<HandoffFormCubit>),
   );
-  await until(tester, () => form.evaluate().length == 1,
-      'persisted draft populates its form');
+  await until(tester, () => form.evaluate().length == 1, 'persisted draft populates its form');
   final content = tester.widget<BlocProvider<HandoffFormCubit>>(form).child!;
-  final formState =
-      tester.element(find.byWidget(content)).read<HandoffFormCubit>().state;
+  final formState = tester.element(find.byWidget(content)).read<HandoffFormCubit>().state;
   expect(formState.assignedDoctor?.id, _person(f, 'C'));
   expect(formState.patients.map((patient) => patient.bedNumber), ['7']);
   expect(formState.isSent, isFalse);
@@ -559,8 +557,7 @@ Future<void> _transcript(WidgetTester tester) async {
 
   try {
     final beforeChat = await control('assistant-state');
-    final chat =
-        (await say('Open Bala chat')).proposals.single as OpenChatAction;
+    final chat = (await say('Open Bala chat')).proposals.single as OpenChatAction;
     final chatRow = <String, Object?>{
       'layer': 'TRANSCRIPT_INJECTION',
       'transcript': 'Open Bala chat',
