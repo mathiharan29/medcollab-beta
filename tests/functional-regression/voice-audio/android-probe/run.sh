@@ -12,6 +12,19 @@ build="$(mktemp -d)"
 trap 'rm -rf -- "$build"' EXIT
 mkdir -p "$build/assets" "$build/classes" "$output"
 
+tag=VocleAudioSource
+marker=AUDIO_SOURCE_PROVEN
+instrumentation_timeout=420
+instrumentation_args=(-e onlineOnly "${VOCLE_PROBE_ONLINE_ONLY:-false}")
+if [ -n "${VOCLE_AUDIO_SUITE_SCOPE:-}" ]; then
+  tag=VocleAudioSuite
+  marker=AUDIO_SUITE_RECORDED
+  instrumentation_timeout=1200
+  instrumentation_args=(-e suite true)
+  python3 "$here/prepare-suite.py" "$fixture_dir" "$build/assets" \
+    "$VOCLE_AUDIO_SUITE_SCOPE" "${VOCLE_DIGITAL_REPETITIONS:-2}" > "$output/suite.json"
+  cp "$output/suite.json" "$build/assets/suite.json"
+else
 # Validate and strip the checked-in RIFF container without transcoding.
 python3 - "$fixture_dir" "$build/assets/sample.pcm" "${VOCLE_PROBE_SAMPLE:-chat-bala}" > "$output/fixture.json" <<'PY'
 import hashlib, json, struct, sys, wave
@@ -38,6 +51,7 @@ print(json.dumps({
 }, indent=2))
 PY
 cp "$output/fixture.json" "$build/assets/fixture.json"
+fi
 
 javac --release 11 -classpath "$platform" -d "$build/classes" "$here/AudioSourceProbe.java"
 jar cf "$build/classes.jar" -C "$build/classes" .
@@ -61,12 +75,12 @@ keytool -genkeypair -keystore "$build/debug.keystore" -storepass android -keypas
 
 "$adb" install -g "$build/probe.apk"
 set +e
-timeout 420 "$adb" shell am instrument -w -e onlineOnly "${VOCLE_PROBE_ONLINE_ONLY:-false}" \
+timeout "$instrumentation_timeout" "$adb" shell am instrument -w "${instrumentation_args[@]}" \
   com.vocle.audiosourceprobe/.AudioSourceProbe \
   2>&1 | tee "$output/instrumentation.txt"
 status="${PIPESTATUS[0]}"
 set -e
-"$adb" logcat -d -v raw -s 'VocleAudioSource:I' '*:S' | python3 -c '
+"$adb" logcat -d -v raw -s "$tag:I" '*:S' | python3 -c '
 import json, sys
 rows = [json.loads(line) for line in sys.stdin if line.startswith("{")]
 json.dump(rows, sys.stdout, indent=2)
@@ -77,4 +91,4 @@ print()
   > "$output/speech-service.log"
 "$adb" uninstall com.vocle.audiosourceprobe
 test "$status" = 0
-grep -Fx 'AUDIO_SOURCE_PROVEN=true' "$output/instrumentation.txt"
+grep -Fx "$marker=true" "$output/instrumentation.txt"

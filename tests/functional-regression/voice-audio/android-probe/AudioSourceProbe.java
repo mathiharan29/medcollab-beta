@@ -31,6 +31,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.json.JSONObject;
+import org.json.JSONArray;
 
 /** Standalone API probe. The process has no Flutter, Vocle backend or audio playback. */
 public final class AudioSourceProbe extends Instrumentation {
@@ -41,11 +42,13 @@ public final class AudioSourceProbe extends Instrumentation {
     private static final int TIMEOUT_SECONDS = 18;
     private String expected;
     private boolean onlineOnly;
+    private boolean suite;
 
     @Override
     public void onCreate(Bundle arguments) {
         super.onCreate(arguments);
         onlineOnly = arguments != null && "true".equals(arguments.getString("onlineOnly"));
+        suite = arguments != null && "true".equals(arguments.getString("suite"));
         start();
     }
 
@@ -57,6 +60,12 @@ public final class AudioSourceProbe extends Instrumentation {
             Context context = getTargetContext();
             activity = startActivitySync(new Intent(context, Foreground.class)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            if (suite) {
+                runSuite(context);
+                result.putString("stream", "\nAUDIO_SUITE_RECORDED=true\n");
+                finish(Activity.RESULT_OK, result);
+                return;
+            }
             byte[] speech;
             JSONObject fixture;
             try (InputStream input = context.getAssets().open("fixture.json")) {
@@ -129,6 +138,41 @@ public final class AudioSourceProbe extends Instrumentation {
 
     private static void log(JSONObject row) {
         Log.i(TAG, row.toString());
+    }
+
+    private void runSuite(Context context) throws Exception {
+        JSONObject plan;
+        try (InputStream input = context.getAssets().open("suite.json")) {
+            plan = new JSONObject(new String(input.readAllBytes(), StandardCharsets.UTF_8));
+        }
+        String run = plan.getString("run");
+        boolean available = SpeechRecognizer.isRecognitionAvailable(context);
+        Log.i("VocleAudioSuite", new JSONObject().put("event", "availability")
+            .put("run", run).put("fingerprint", Build.FINGERPRINT).put("sdk", Build.VERSION.SDK_INT)
+            .put("defaultAvailable", available).toString());
+        if (!available) throw new IllegalStateException("Android has no default recognizer");
+        JSONArray attempts = plan.getJSONArray("attempts");
+        for (int i = 0; i < attempts.length(); i++) {
+            JSONObject attempt = attempts.getJSONObject(i);
+            String sample = attempt.getString("sample");
+            byte[] pcm;
+            try (InputStream input = context.getAssets().open(sample + ".pcm")) {
+                pcm = input.readAllBytes();
+            }
+            if (pcm.length != attempt.getInt("bytes")) throw new IllegalStateException("PCM length changed");
+            long start = SystemClock.elapsedRealtime();
+            Session result = recognize(context, "default", "regular-file", "online-allowed",
+                sample, pcm);
+            Log.i("VocleAudioSuite", new JSONObject().put("event", "session").put("run", run)
+                .put("sample", sample).put("attempt", attempt.getInt("attempt"))
+                .put("fingerprint", Build.FINGERPRINT).put("sha256", attempt.getString("sha256"))
+                .put("engine", "default").put("source", "regular-file").put("profile", "online-allowed")
+                .put("locale", "en-US").put("regularFilePosition", result.filePosition)
+                .put("bytesOffered", pcm.length).put("terminal", result.terminal).put("error", result.error)
+                .put("ready", result.ready).put("segmentCount", result.parts.size())
+                .put("transcript", result.transcript())
+                .put("durationMs", SystemClock.elapsedRealtime() - start).toString());
+        }
     }
 
     private static String normalize(String value) {

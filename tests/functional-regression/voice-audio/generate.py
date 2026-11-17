@@ -1,4 +1,4 @@
-"""Regenerate the synthetic fixtures with Python 3.12 and espeakng-loader 0.2.4."""
+"""Generate synthetic fixtures with Python 3.12 and espeakng-loader 0.2.4."""
 
 import audioop
 import ctypes
@@ -36,10 +36,44 @@ SAMPLES = [
      "Clarify", ["D", "E"], "Show both Asha identities, then open only the chosen E DM"),
     ("chat-with-alex", "Open chat with Doctor Alex.", "en-us+m3", 132, 46, "FR-AST-34",
      "OpenChat", "B", "Open the exact existing Alex DM after confirmation in the hosted digital smoke test"),
+    ("chat-morgan", "Show conversation with Doctor Morgan.", "en-us+f4", 160, 60, "FR-AST-36",
+     "OpenChat", "H", "Open the exact Morgan DM after confirmation"),
+    ("chat-bala-slow", "Show conversation with Doctor Bala.", "en-us+f4", 119, 54, "FR-AST-36",
+     "OpenChat", "B", "Open the exact Bala DM after confirmation"),
+    ("chat-ward", "Open general chat.", "en+m4", 144, 40, "FR-AST-36",
+     "OpenChat", "ward", "Open the exact general channel after confirmation"),
+    ("chat-needl", "Open Nurse Station chat.", "en-us+f3", 148, 58, "FR-AST-36",
+     "OpenChat", "needl", "Open the exact Needl after confirmation"),
+    ("draft-alex", "Draft a handoff to Alex.", "en-us+m3", 129, 46, "FR-AST-37",
+     "Handoff", "G", "Persist and open an unsubmitted Alex draft with no patients"),
+    ("draft-alex-bed", "Hand off bed twelve to Alex.", "en-us+f2", 135, 53, "FR-AST-37",
+     "Handoff", "G", "Persist and open an unsubmitted Alex draft with bed 12"),
+    ("unrelated", "The bicycle is red.", "en-us+f2", 158, 62, "FR-AST-38",
+     None, None, "Show unsupported feedback and stay on Home"),
+    ("cancel-alex", "Open chat with Doctor Alex.", "en+m4", 126, 43, "FR-AST-38",
+     "OpenChat", "G", "Dismiss the real proposal and stay on Home without a DM lookup"),
+    ("incomplete-chat", "Open chat.", "en-us+m4", 127, 42, "FR-AST-38",
+     "Clarify", None, "Show a target clarification with no choices and stay on Home"),
+    ("chat-wyatt", "Open chat with Doctor Wyatt.", "en-us+m3", 130, 44, "FR-AST-38",
+     "OpenChat", "W", "Reject the DM lookup because messaging consent is missing"),
+    ("draft-taylor", "Draft a handoff to Taylor.", "en-us+f2", 130, 56, "FR-AST-38",
+     "Handoff", "T", "Reject the handoff because no space is shared"),
+    ("open-profile", "Go to my profile.", "en-029+m3", 158, 43, "FR-AST-39",
+     "Navigate", None, "Navigate to the exact Profile route only after confirmation"),
+    ("search-rounds-quiet", "Find rounds.", "en-us+f3", 143, 56, "FR-AST-39",
+     "Search", None, "Open Search with an empty field after confirmation"),
+    ("send-alex", "Please tell Alex that rounds are complete.", "en-us+f3", 148, 57, "FR-AST-40",
+     "SendMessage", "G", "Persist one message with the proposed text in the exact Alex DM"),
+    ("set-rounds", "Set my status to on rounds.", "en+m3", 146, 44, "FR-AST-40",
+     "SetAvailability", None, "Persist on_rounds for the signed-in doctor"),
+    ("read-alerts", "Mark all alerts as read.", "en-us+f2", 138, 54, "FR-AST-40",
+     "MarkAlertsRead", None, "Mark every seeded actor alert read and clear the badge"),
 ]
 
 
 def main():
+    manifest = HERE / "manifest.json"
+    existing = {row["id"]: row for row in json.loads(manifest.read_text())} if manifest.exists() else {}
     synth = load_library()
     synth.espeak_Initialize.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_char_p, ctypes.c_int]
     synth.espeak_SetVoiceByName.argtypes = [ctypes.c_char_p]
@@ -83,20 +117,40 @@ def main():
                              for _ in range(len(pcm) // 2))
             pcm = audioop.add(pcm, noise, 2)
         pcm = bytes(RATE // 2) + pcm + bytes(RATE * 2)
+        if key.endswith("-quiet"):
+            pcm = audioop.mul(pcm, 2, 0.22)
         path = HERE / f"{key}.wav"
+        # Retain the accepted corpus across platform-specific synthesizer builds.
+        if key in existing and path.exists():
+            assert hashlib.sha256(path.read_bytes()).hexdigest() == existing[key]["sha256"], key
+            samples.append(existing[key])
+            continue
         with wave.open(str(path), "wb") as output:
             output.setparams((1, 2, RATE, 0, "NONE", "not compressed"))
             output.writeframes(pcm)
         samples.append({
             "id": key, "file": path.name, "phrase": phrase, "synthesisText": spoken,
-            "voice": voice, "locale": "en-GB" if voice.startswith("en+") else "en-US", "wordsPerMinute": speed,
+            "voice": voice, "locale": {"en": "en-GB", "en-029": "en-029"}.get(voice.split("+")[0], "en-US"),
+            "wordsPerMinute": speed,
             "pitch": pitch, "background": "seeded low-amplitude white noise" if key.endswith("-noise") else "clean",
             "format": "WAV PCM16 mono 16000 Hz", "durationMs": len(pcm) * 1000 // (2 * RATE),
             "caseId": case, "expectedIntent": intent, "target": target, "expectedResult": outcome,
             "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
             "provenance": f"eSpeak NG {version} via espeakng-loader 0.2.4, generated for Vocle",
+            **({"gain": 0.22} if key.endswith("-quiet") else {}),
         })
-    (HERE / "manifest.json").write_text(json.dumps(samples, indent=2) + "\n", encoding="utf-8")
+    silence = HERE / "silence.wav"
+    with wave.open(str(silence), "wb") as output:
+        output.setparams((1, 2, RATE, 0, "NONE", "not compressed"))
+        output.writeframes(bytes(RATE * 2 * 3))
+    samples.append({
+        "id": "silence", "file": silence.name, "phrase": "", "voice": None, "locale": None,
+        "format": "WAV PCM16 mono 16000 Hz", "durationMs": 3000, "caseId": "FR-AST-38",
+        "expectedIntent": None, "target": None, "expectedResult": "No final text or application action",
+        "sha256": hashlib.sha256(silence.read_bytes()).hexdigest(),
+        "provenance": "Three seconds of digitally generated zero-valued signed PCM samples",
+    })
+    manifest.write_text(json.dumps(samples, indent=2) + "\n", encoding="utf-8")
 
 
 if __name__ == "__main__":
