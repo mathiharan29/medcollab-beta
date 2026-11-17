@@ -219,9 +219,16 @@ try {
   // TTL. Prewarm assemble before minting any case fixtures so the first drive
   // is incremental and FR-MED-08 does not race token expiry.
   console.log('Prewarming Android debug assemble...');
-  const prewarm = await runLogged(flutter, ['build', 'apk', '--debug', '--no-pub',
-    '--dart-define=ENABLE_API_LOGGING=false'], workspace.app,
-    join(workspace.runRoot, 'diagnostics/prewarm-assemble.log'), 25 * 60 * 1000);
+  const prewarmArgs = ['build', 'apk', '--debug', '--no-pub', '--dart-define=ENABLE_API_LOGGING=false'];
+  const prewarmLog = join(workspace.runRoot, 'diagnostics/prewarm-assemble.log');
+  let prewarm = await runLogged(flutter, prewarmArgs, workspace.app, prewarmLog, 25 * 60 * 1000);
+  if (prewarm.exitCode !== 0 && process.env.VOCLE_AUDIO_SUITE_SCOPE &&
+      /Received status code (429|502|503) from server/.test(await readFile(prewarmLog, 'utf8'))) {
+    console.log('Gradle repository was rate-limited or unavailable. Retrying only the test APK build after 45 seconds.');
+    await pause(45000);
+    prewarm = await runLogged(flutter, prewarmArgs, workspace.app,
+      join(workspace.runRoot, 'diagnostics/prewarm-assemble-retry.log'), 25 * 60 * 1000);
+  }
   if (prewarm.exitCode !== 0) throw new Error('Android debug prewarm assemble failed');
   if (deferEmulator) {
     await writeFile(join(workspace.runRoot, 'ready-for-emulator'), `${serial}\n`);

@@ -187,7 +187,7 @@ export async function startDeviceServer({ adb, serial, caseId }) {
       }
     }
     for (const [index, label] of labels.entries()) {
-      const phone = `+91999000100${index + 1}`;
+      const phone = `+919990001${String(index + 1).padStart(3, '0')}`;
       await request('/api/auth/request-otp', { method: 'POST', body: { phone } });
       const login = await request('/api/auth/verify-otp', { method: 'POST', body: { phone, otp: await capturedOtp(inbox, phone) } });
       const name = assistant ? voiceNames[label] : `Dr Synthetic Device ${label}`;

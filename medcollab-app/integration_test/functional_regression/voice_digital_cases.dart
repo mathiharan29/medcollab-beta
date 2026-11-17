@@ -44,7 +44,7 @@ Future<void> _digital(WidgetTester tester) async {
       'delivered': entry['delivered'] == true,
       'recognitionSuccess': mode == 'silence' || native == null
           ? null : entry['recognized'] == true,
-      'transcriptMatched': entry['transcriptMatched'],
+      'transcriptMatched': mode == 'silence' ? null : entry['transcriptMatched'],
       'intentCorrect': null,
       'entityCorrect': null,
     };
@@ -190,6 +190,7 @@ Future<void> _finishDigitalAction(
     await tester.pump();
     final selected = bot.state.proposals.single as OpenChatAction;
     row['resolvedTarget'] = selected.to.rawId;
+    row['entityCorrect'] = selected.to.rawId == row['expectedTarget'];
     expect(selected.to.rawId, row['expectedTarget']);
     expect(_route(), AppRoutes.home);
     expect(await control('assistant-state'), before);

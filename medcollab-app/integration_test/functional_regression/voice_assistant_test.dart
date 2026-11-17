@@ -472,6 +472,8 @@ Future<void> _assertDraft(WidgetTester tester, Map<String, dynamic> f,
   expect(page.spaceId, f['spaceId']);
   expect(
       _route(), AppRoutes.spaceHandoffEditPath(page.spaceId, page.handoffId!));
+  expect((after['drafts'] as List).where((draft) => oldIds.contains((draft as Map)['id'])),
+      before['drafts'], reason: 'Creating a draft preserves all earlier drafts');
   expect({...after, 'drafts': before['drafts']}, before,
       reason:
           'The voice draft must never submit, notify, send a message or open a DM');

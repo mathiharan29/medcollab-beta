@@ -6,7 +6,7 @@
 
 The [feature matrix](FEATURE-REGRESSION-MATRIX.md) lists the dropdown choices, the IDs in each choice and the executor for each ID. Tests with several tags execute once per run. The workflow filters exact IDs before launching backend scenarios or Flutter tests. Backend assertions use disposable loopback MongoDB and test-owned provider fixtures inside the existing Docker isolation. Flutter uses the pinned SDK and locked dependencies.
 
-Choosing `all` selects all 306 IDs, runs the 188 backend and 103 Flutter cases, and reports the fifteen Android cases as **LOCAL_ONLY / SKIP** with `executed: false`. The hosted verdict requires all selected hosted cases to pass. Missing results, unexpected results, assertion failures and unresolved decisions keep the run red.
+Choosing `all` selects all 311 IDs and runs the 188 backend and 103 Flutter cases. The report shows the 20 Android cases as unexecuted in this selection. Six have a separate hosted digital-audio selection. The hosted verdict requires every executed backend and Flutter case to satisfy its gate. Missing results, unexpected results, assertion failures and unresolved decisions keep the run red.
 
 ## Local use
 
@@ -32,7 +32,7 @@ The catalog validation used by the existing full workflow checks the mapping, ex
 
 Select `voice-messaging` for capture, transcription, history and playback, `handoff-voice` for shift and patient audio, or `voice-assistant` for spoken and typed commands, proposals and execution. Cross-feature tests are also selectable under their related DM, Needl, Handoff, search, lifecycle and access features. The [voice audit](VOICE-COVERAGE-AUDIT.md) lists the original assertions, gaps, execution results and manual device protocols.
 
-Select **Voice Assistant — Live Audio** (`voice-assistant-live-audio`) on `master` to run only the virtual-microphone Android cases. The workflow requires a configured recognition-capable runner and reports missing infrastructure as unexecuted. `voice-assistant-prerecorded` lists the separate local file-recognition case. The [Home Voice Assistant inventory and runner guide](VOICE-ASSISTANT.md) covers both paths, the dataset and per-attempt reporting.
+Select **Voice Assistant — Live Audio** (`voice-assistant-live-audio`) on `master` to run only the virtual-microphone Android cases. The workflow requires a configured recognition-capable runner and reports missing infrastructure as unexecuted. Select `voice-assistant-prerecorded` for the complete GitHub-hosted digital PCM suite. Set the representative repetition count with `audio_repetitions`. The digital run publishes `vocle-digital-audio-evidence` with per-attempt PCM and application outcomes. [Voice Assistant coverage and evidence](VOICE-ASSISTANT-PHASE-2.md)
 
 ## Baseline feature-workflow validation (245-case catalog)
 

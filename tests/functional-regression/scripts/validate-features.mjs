@@ -3,7 +3,8 @@ import { resolve } from 'node:path';
 import { featureExecutors } from './feature-executors.mjs';
 import { matrixPath, renderFeatureMatrix } from './feature-matrix.mjs';
 import { readFeatureRegistry, validateFeatureRegistry } from './feature-registry.mjs';
-import { liveVoiceIds, deviceCases } from './device-contracts.mjs';
+import { liveVoiceIds, prerecordedVoiceIds } from './device-contracts.mjs';
+import { digitalSuiteCaseIds } from './voice-digital-suite.mjs';
 
 export const workflowPath = '.github/workflows/vocle-feature-regression.yml';
 
@@ -23,8 +24,11 @@ export function validateFeatureDropdown(workflow, features) {
 
 export async function validateFeatures(root, cases) {
   const features = validateFeatureRegistry(await readFeatureRegistry(), cases);
+  if (JSON.stringify(prerecordedVoiceIds) !== JSON.stringify(['FR-AST-34', ...digitalSuiteCaseIds])) {
+    throw new Error('The digital audio fixture plan must cover the registered prerecorded cases');
+  }
   for (const [name, audio] of [['voice-assistant-live-audio', liveVoiceIds],
-    ['voice-assistant-prerecorded', Object.keys(deviceCases).filter(id => ['file', 'digital'].includes(deviceCases[id].audio))]]) {
+    ['voice-assistant-prerecorded', prerecordedVoiceIds]]) {
     const mapped = features.get(name)?.caseIds;
     if (JSON.stringify(mapped) !== JSON.stringify(audio) ||
         [...features.values()].some(feature => feature.id !== name && feature.caseIds.some(id => audio.includes(id)))) {

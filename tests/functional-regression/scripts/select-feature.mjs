@@ -12,5 +12,5 @@ if (process.env.GITHUB_OUTPUT) {
   await appendFile(process.env.GITHUB_OUTPUT, Object.entries(counts).map(([key, count]) => `${key}=${count}\n`).join(''));
 }
 if (process.env.GITHUB_STEP_SUMMARY) {
-  await appendFile(process.env.GITHUB_STEP_SUMMARY, `## Selection\n\n${feature} selects ${selected.length} cases across ${counts.backend} backend, ${counts.flutter} Flutter and ${counts.android} local-only Android cases.\n`);
+  await appendFile(process.env.GITHUB_STEP_SUMMARY, `## Selection\n\n${feature} selects ${selected.length} cases across ${counts.backend} backend, ${counts.flutter} Flutter and ${counts.android} separately executed Android cases.\n`);
 }

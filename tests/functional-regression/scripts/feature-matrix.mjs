@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { catalogCases } from './ci-contracts.mjs';
 import { featureExecutors } from './feature-executors.mjs';
 import { readFeatureRegistry, validateFeatureRegistry } from './feature-registry.mjs';
+import { deviceCases } from './device-contracts.mjs';
 
 export const matrixPath = 'docs/regression/FEATURE-REGRESSION-MATRIX.md';
 
@@ -37,7 +38,8 @@ export function renderFeatureMatrix(cases, features, executors) {
   for (const row of cases) {
     const path = executors.get(row.id);
     const features = tags.get(row.id);
-    const layer = features.includes('voice-assistant-prerecorded') ? 'Android (hosted and local)' : layers[row.tier];
+    const audio = deviceCases[row.id]?.audio;
+    const layer = audio === 'digital' ? 'Android (hosted)' : audio === 'file' ? 'Android (hosted and local)' : layers[row.tier];
     lines.push(`| ${features.join(', ')} | \`${row.id}\` | ${row.actions.replaceAll('|', '\\|')} | ${layer} | [${path.split('/').at(-1)}](../../${path}) |`);
   }
   return lines.join('\n') + '\n';

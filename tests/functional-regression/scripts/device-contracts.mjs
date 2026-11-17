@@ -26,6 +26,7 @@ export const devicePackage = 'com.vocle.regression';
 export const deviceSdk = '3.29.3';
 export const standardDeviceIds = Object.keys(deviceCases).filter(id => !deviceCases[id].audio && !deviceCases[id].transcript);
 export const liveVoiceIds = Object.keys(deviceCases).filter(id => deviceCases[id].audio === 'live');
+export const prerecordedVoiceIds = Object.keys(deviceCases).filter(id => ['file', 'digital'].includes(deviceCases[id].audio));
 
 export function classifyDeviceDiagnostics(text) {
   const infrastructureFailure = /DeviceInfrastructureError|could not uniquely locate/.test(text);

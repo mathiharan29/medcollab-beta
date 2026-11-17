@@ -28,6 +28,7 @@
   {"sample":"unknown-clear","caseId":"FR-AST-38","action":"unknown"},
   {"sample":"incomplete-chat","caseId":"FR-AST-38","action":"unknown","smoke":true},
   {"sample":"missing-destination","caseId":"FR-AST-38","action":"unsupported"},
+  {"sample":"missing-handoff-recipient","caseId":"FR-AST-38","action":"unsupported"},
   {"sample":"ambiguous","caseId":"FR-AST-38","action":"choose","choices":["D","E"],"target":"E","repeat":true},
   {"sample":"ambiguous-jordan","caseId":"FR-AST-38","action":"choose","choices":["Y","Z"],"target":"Z","repeat":true},
   {"sample":"chat-wyatt","caseId":"FR-AST-38","action":"denied","target":"W"},
@@ -42,5 +43,6 @@
   {"sample":"read-alerts","caseId":"FR-AST-40","action":"alerts"},
   {"sample":"send-alex-clear","caseId":"FR-AST-40","action":"send","target":"G","value":"The meeting is complete"},
   {"sample":"set-on-call","caseId":"FR-AST-40","action":"availability","value":"on_call"},
-  {"sample":"read-alerts-clear","caseId":"FR-AST-40","action":"alerts"}
+  {"sample":"read-alerts-clear","caseId":"FR-AST-40","action":"alerts"},
+  {"sample":"clear-notifications","caseId":"FR-AST-40","action":"alerts"}
 ]

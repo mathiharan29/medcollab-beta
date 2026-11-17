@@ -1,4 +1,5 @@
 import { statuses } from './ci-contracts.mjs';
+import { prerecordedVoiceIds } from './device-contracts.mjs';
 
 export function collectFeatureEvidence(selected, lanes) {
   const expected = new Map(selected.map(row => [row.id, row]));
@@ -21,6 +22,10 @@ export function collectFeatureEvidence(selected, lanes) {
     }
   }
   const results = selected.map(row => {
+    if (row.tier === 'D' && prerecordedVoiceIds.includes(row.id)) return {
+      id: row.id, status: 'SKIP', executed: false, executionMode: 'HOSTED',
+      error: 'Runs in the separate prerecorded digital audio selection.',
+    };
     if (row.tier === 'D') return {
       id: row.id, status: 'SKIP', executed: false, executionMode: 'LOCAL_ONLY',
       error: 'Requires the local Android emulator runner.',

@@ -44,6 +44,13 @@ jobs:
           channel: stable
           flutter-version: '3.29.3'
           cache: true
+      - name: Cache Gradle dependencies for the synthetic test build
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: |
+            ${{ runner.temp }}/vocle-digital-gradle/caches/modules-2
+            ${{ runner.temp }}/vocle-digital-gradle/wrapper
+          key: vocle-digital-gradle-ubuntu24-flutter3.29.3-${{ hashFiles('medcollab-app/android/**/*.gradle.kts', 'medcollab-app/android/gradle/wrapper/gradle-wrapper.properties', 'medcollab-app/pubspec.lock') }}
       - name: Verify Android digital speech and Vocle actions
         env:
           VOCLE_AUDIO_SUITE_SCOPE: ${{ github.event_name == 'push' && github.ref_name != 'testing/voice-digital-audio-phase-2' && 'smoke' || 'full' }}

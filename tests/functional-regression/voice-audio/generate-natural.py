@@ -50,6 +50,8 @@ SAMPLES = {
          "Clarify", ["Y", "Z"], "Offer both Jordan IDs. Confirm only the chosen Jordan DM"),
         ("draft-taylor-clear", "Hand off to Taylor.", "norman", 1.08,
          "Handoff", "T", "Reject the handoff because no space is shared"),
+        ("missing-handoff-recipient", "Create a handoff for Doctor Alex.", "ljspeech", 1.06,
+         None, None, "Show unsupported feedback because the local grammar requires a to-recipient"),
         ("chat-unavailable", "Show chat with Doctor Alex.", "ljspeech", 1.03,
          "OpenChat", "G", "Keep Home and show the DM backend failure after confirmation"),
     ],
@@ -63,6 +65,8 @@ SAMPLES = {
         ("set-on-call", "Mark me as on call.", "norman", 1.06,
          "SetAvailability", None, "Persist on_call for the signed-in doctor"),
         ("read-alerts-clear", "Mark all alerts as read.", "ljspeech", 1.08,
+         "MarkAlertsRead", None, "Mark the actor's alerts read and clear the badge"),
+        ("clear-notifications", "Clear notifications.", "norman", 1.06,
          "MarkAlertsRead", None, "Mark the actor's alerts read and clear the badge"),
     ],
 }

@@ -61,7 +61,7 @@ const markdown = [
   `# Vocle feature regression - ${feature}`, '',
   `**${gate}** across ${selected.length} selected cases. ${report.attempted} executed.`, '',
   '| ID | Layer | Status | Executed |', '|---|---|---|---|',
-  ...report.results.map(row => `| ${row.id} | ${row.tier === 'D' ? 'Android (local only)' : row.tier === 'F' ? 'Flutter' : 'Backend'} | ${row.status} | ${row.executed ? 'Yes' : 'No'} |`),
+  ...report.results.map(row => `| ${row.id} | ${row.tier === 'D' ? 'Android (separate selection)' : row.tier === 'F' ? 'Flutter' : 'Backend'} | ${row.status} | ${row.executed ? 'Yes' : 'No'} |`),
   '', ...issues.map(issue => `- ${issue}`),
 ].join('\n') + '\n';
 await writeFile(join(output, 'feature-summary.md'), markdown);

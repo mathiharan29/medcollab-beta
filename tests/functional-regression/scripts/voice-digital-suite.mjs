@@ -79,43 +79,81 @@ export async function verifyDigitalAttempts(directory, fingerprint) {
 
 export async function writeDigitalReport(directory, cases, phases, voiceAttempts) {
   const expected = configuredDigitalAttempts();
+  const recorded = new Map();
+  const evidence = process.env.VOCLE_DIGITAL_SUITE_EVIDENCE;
+  if (evidence) {
+    try {
+      const read = file => readFile(join(evidence, file), 'utf8').then(JSON.parse);
+      const [plan, probe] = await Promise.all([read('suite.json'), read('probe.json')]);
+      const availability = probe.find(row => row.run === plan.run && row.event === 'availability');
+      // Publication can retain captured audio even if app setup could not
+      // validate the device. Only the app path can forward a result to Vocle.
+      for (const entry of await verifyDigitalAttempts(evidence, availability?.fingerprint)) {
+        if (entry.native) recorded.set(keyOf(entry), entry);
+      }
+    } catch { /* the raw probe and its setup error remain in the artifact */ }
+  }
   const completed = new Map(voiceAttempts.map(row => [`${row.id}:${keyOf(row)}`, row]));
   const appAttempts = expected.map(entry => {
     const found = completed.get(`${entry.caseId}:${keyOf(entry)}`);
     if (found) return found;
     const device = cases.find(row => row.id === entry.caseId);
     const recordedPhase = phases.some(row => row.id === entry.caseId);
+    const recognition = recorded.get(keyOf(entry));
     return {
       id: entry.caseId, sample: entry.sample, attempt: entry.attempt, sha256: entry.sha256,
       layer: 'AUDIO_TO_ACTION', intendedCommand: entry.phrase, expectedIntent: entry.intent,
       expectedTarget: null, expectedFixtureTarget: entry.target ?? null, expectedAction: entry.expectedAction,
-      recognizedTranscript: null, parsedIntent: null, resolvedTarget: null, actualAction: null,
-      recognitionError: null, recognitionSuccess: null, transcriptMatched: null,
-      intentCorrect: null, entityCorrect: null, durationMs: null,
+      recognizedTranscript: recognition?.native.transcript ?? null, parsedIntent: null,
+      resolvedTarget: null, actualAction: null,
+      recognitionError: recognition?.native.error ?? null,
+      recognitionTerminal: recognition?.native.terminal ?? null,
+      recognitionSuccess: entry.action !== 'silence' ? recognition?.recognized ?? null : null,
+      transcriptMatched: entry.action !== 'silence' ? recognition?.transcriptMatched ?? null : null,
+      intentCorrect: null, entityCorrect: null, durationMs: recognition?.native.durationMs ?? null,
       result: recordedPhase ? 'NOT_EXECUTED' : 'BLOCKED', failureCategory: 'app_setup',
       error: device?.error ?? 'No app attempt was recorded',
     };
   });
   const existingSmoke = voiceAttempts.filter(row => row.id === 'FR-AST-34');
+  if (existingSmoke.length === 0 && cases.some(row => row.id === 'FR-AST-34')) {
+    const alex = fixtures.get('chat-with-alex');
+    existingSmoke.push({
+      id: 'FR-AST-34', sample: alex.id, attempt: 1, sha256: alex.sha256,
+      layer: 'PRERECORDED_FILE', intendedCommand: alex.phrase, expectedIntent: alex.expectedIntent,
+      expectedAction: alex.expectedResult, recognizedTranscript: null, parsedIntent: null,
+      expectedTarget: null, resolvedTarget: null, actualAction: null, recognitionError: null,
+      durationMs: null, result: 'BLOCKED',
+      error: cases.find(row => row.id === 'FR-AST-34').error,
+    });
+  }
   const attempts = [...existingSmoke, ...appAttempts].map(row => ({
     ...row, result: row.result === 'ERROR' ? 'BLOCKED' : row.result,
   }));
-  const count = field => ({ correct: attempts.filter(row => row[field] === true).length,
-    measured: attempts.filter(row => typeof row[field] === 'boolean').length });
-  const metrics = {
-    nonemptyFinalSpeech: count('recognitionSuccess'),
-    intendedWording: count('transcriptMatched'),
-    correctIntent: count('intentCorrect'),
-    correctEntity: count('entityCorrect'),
-    endToEnd: { correct: attempts.filter(row => row.result === 'PASS').length, measured: attempts.length },
+  const rate = (correct, measured) => ({
+    correct, measured, percent: measured ? Number((100 * correct / measured).toFixed(1)) : null,
+  });
+  const measure = rows => {
+    const count = field => rate(rows.filter(row => row[field] === true).length,
+      rows.filter(row => typeof row[field] === 'boolean').length);
+    return {
+      nonemptyFinalSpeech: count('recognitionSuccess'),
+      intendedWording: count('transcriptMatched'),
+      correctIntent: count('intentCorrect'),
+      correctEntity: count('entityCorrect'),
+      endToEnd: rate(rows.filter(row => row.result === 'PASS').length, rows.length),
+    };
   };
+  const metrics = measure(attempts);
+  const repeated = Object.fromEntries(expected.filter(row => row.attempt === 2).map(entry =>
+    [entry.sample, measure(appAttempts.filter(row => row.sample === entry.sample))]));
   const counts = Object.fromEntries(['PASS', 'FAIL', 'BLOCKED', 'NOT_EXECUTED'].map(result =>
     [result, attempts.filter(row => row.result === result).length]));
   const cell = value => String(value == null ? '—' : typeof value === 'object' ? JSON.stringify(value) : value)
     .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('|', '&#124;').replace(/\s+/g, ' ');
   const lines = [
     '# Android digital audio to Vocle', '',
-    ...Object.entries(metrics).map(([name, metric]) => `- ${name}: ${metric.correct}/${metric.measured}`),
+    ...Object.entries(metrics).map(([name, metric]) => `- ${name}: ${metric.correct}/${metric.measured}${metric.percent == null ? '' : ` (${metric.percent}%)`}`),
     '', '| Case | Sample/attempt | Expected speech | Android final | Native error | Expected intent | Actual intent | Expected target | Actual target | Expected action | Observed action | Result | ms |',
     '|---|---|---|---|---|---|---|---|---|---|---|---|---|',
     ...attempts.map(row => `| ${[
@@ -128,7 +166,7 @@ export async function writeDigitalReport(directory, cases, phases, voiceAttempts
       `- ${row.id} ${row.sample} #${row.attempt ?? 1}: ${cell(row.error)}`), '',
   ];
   await Promise.all([
-    writeFile(join(directory, 'digital-audio-attempts.json'), JSON.stringify({ counts, metrics, attempts }, null, 2) + '\n'),
+    writeFile(join(directory, 'digital-audio-attempts.json'), JSON.stringify({ counts, metrics, repeated, attempts }, null, 2) + '\n'),
     writeFile(join(directory, 'digital-audio-attempts.md'), lines.join('\n')),
   ]);
 }
