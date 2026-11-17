@@ -51,7 +51,7 @@ jobs:
           path: |
             ${{ runner.temp }}/vocle-digital-gradle/caches/modules-2
             ${{ runner.temp }}/vocle-digital-gradle/wrapper
-          key: vocle-digital-gradle-ubuntu24-flutter3.29.3-${{ hashFiles('medcollab-app/android/**/*.gradle.kts', 'medcollab-app/android/gradle/wrapper/gradle-wrapper.properties', 'medcollab-app/pubspec.lock') }}
+          key: vocle-digital-gradle-ubuntu24-flutter3.29.3-${{ hashFiles('medcollab-app/android/**/*.gradle.kts', 'medcollab-app/android/gradle/wrapper/gradle-wrapper.properties', 'medcollab-app/pubspec.lock', 'tests/functional-regression/voice-audio/android-probe/hosted-repositories.gradle') }}
       - name: Verify Android digital speech and Vocle actions
         env:
           VOCLE_AUDIO_SUITE_SCOPE: ${{ github.event_name == 'push' && 'smoke' || 'full' }}
@@ -62,7 +62,9 @@ jobs:
           export JAVA_HOME="${JAVA_HOME_17_X64:-$JAVA_HOME}"
           export PATH="$JAVA_HOME/bin:$PATH"
           export GRADLE_USER_HOME="$RUNNER_TEMP/vocle-digital-gradle"
-          mkdir -p "$GRADLE_USER_HOME"
+          mkdir -p "$GRADLE_USER_HOME/init.d"
+          install -m 0644 tests/functional-regression/voice-audio/android-probe/hosted-repositories.gradle \
+            "$GRADLE_USER_HOME/init.d/vocle-hosted-repositories.gradle"
           printf 'org.gradle.jvmargs=-Xmx2560m -XX:MaxMetaspaceSize=1024m\norg.gradle.workers.max=2\n' > "$GRADLE_USER_HOME/gradle.properties"
           output="$RUNNER_TEMP/vocle-digital-regression"
           bash tests/functional-regression/voice-audio/android-probe/hosted-emulator.sh \

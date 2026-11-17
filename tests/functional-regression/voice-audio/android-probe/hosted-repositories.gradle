@@ -1,0 +1,29 @@
+import org.gradle.api.artifacts.repositories.MavenArtifactRepository
+
+// The hosted test build has its own Gradle home. Use Google's Maven Central
+// mirror for the same coordinates when shared runner IPs are throttled.
+def centralMirror = 'https://maven-central.storage-download.googleapis.com/maven2/'
+def useCentralMirror = { repositories ->
+    repositories.withType(MavenArtifactRepository).configureEach { repository ->
+        if (repository.url?.host in ['repo.maven.apache.org', 'repo1.maven.org']) {
+            repository.setUrl(centralMirror)
+        }
+    }
+}
+
+gradle.beforeSettings { settings ->
+    settings.pluginManagement.repositories {
+        maven {
+            name = 'HostedMavenCentral'
+            url = centralMirror
+        }
+        google()
+        gradlePluginPortal()
+    }
+    useCentralMirror(settings.dependencyResolutionManagement.repositories)
+}
+
+gradle.beforeProject { project ->
+    useCentralMirror(project.repositories)
+    useCentralMirror(project.buildscript.repositories)
+}

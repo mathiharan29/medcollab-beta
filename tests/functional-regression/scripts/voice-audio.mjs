@@ -12,6 +12,7 @@ const audio = new URL('../voice-audio/', import.meta.url);
 const manifest = JSON.parse(await readFile(new URL('manifest.json', audio), 'utf8'));
 export const voiceAudioPaths = ['manifest.json', 'digital-plan.json', 'replay.py',
   'android-probe/AudioSourceProbe.java', 'android-probe/prepare-suite.py', 'android-probe/run.sh',
+  'android-probe/hosted-repositories.gradle',
   ...manifest.map(sample => sample.file)]
   .map(file => `tests/functional-regression/voice-audio/${file}`);
 const run = promisify(execFile);
