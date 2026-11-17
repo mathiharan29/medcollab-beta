@@ -5456,6 +5456,40 @@
       "questionIds": [],
       "relatedSanityIds": [],
       "dependencies": []
+    },
+    {
+      "id": "FR-AST-41",
+      "module": "AST",
+      "moduleName": "Voice assistant",
+      "tier": "D",
+      "priority": "P1",
+      "coverage": "NEW",
+      "fixtureProfile": "D0",
+      "title": "Characterize repeated clean and controlled-noise speech on the hosted Android recognizer",
+      "actions": "Characterize repeated clean and controlled-noise speech on the hosted Android recognizer",
+      "expected": "Measure actual wording, intent, target, latency and app outcome. Require declared functional anchors and every safety check. Preserve safe failures at exploratory levels.",
+      "sourceReference": "Voice Assistant Android recognition: Sources: HomeDashboardPage, SpeechBridge, PlatformSpeechService, VoiceBotCubit, AppVoiceActionExecutor and the isolated Android device harness.",
+      "catalogLine": 617,
+      "questionIds": [],
+      "relatedSanityIds": [],
+      "dependencies": []
+    },
+    {
+      "id": "FR-AST-42",
+      "module": "AST",
+      "moduleName": "Voice assistant",
+      "tier": "D",
+      "priority": "P0",
+      "coverage": "NEW",
+      "fixtureProfile": "D0",
+      "title": "Observe recognition under competing speech, background-only input, silence and ambiguous or incomplete commands",
+      "actions": "Observe recognition under competing speech, background-only input, silence and ambiguous or incomplete commands",
+      "expected": "Assert unchanged route and persisted state before approval. Cancel unexpected actionable proposals, record hazards, and verify exact permitted choice and action.",
+      "sourceReference": "Voice Assistant Android recognition: Sources: HomeDashboardPage, SpeechBridge, PlatformSpeechService, VoiceBotCubit, AppVoiceActionExecutor and the isolated Android device harness.",
+      "catalogLine": 618,
+      "questionIds": [],
+      "relatedSanityIds": [],
+      "dependencies": []
     }
   ]
 }

@@ -30,9 +30,9 @@ STILL_PASSING. Security OBSERVATION and other uncertain statuses remain distinct
 each security suite uses its own manifest/evidence contract. Scanner step records
 are workflow checks, not application tests or published raw secret matches.
 
-The combined PR report lists 311 cases. It expects 291 backend and Flutter results.
-It lists the 20 Android cases as SKIP with `executed: false` because they run separately.
-Six use the hosted prerecorded Voice Assistant selection and fourteen have local
+The combined PR report lists 313 cases. It expects 291 backend and Flutter results.
+It lists the 22 Android cases as SKIP with `executed: false` because they run separately.
+Eight use the hosted Voice Assistant audio selections and fourteen have local
 Android coverage. Missing required hosted lanes remain ERROR. Each Android result
 keeps the execution mode established by its own run.
 

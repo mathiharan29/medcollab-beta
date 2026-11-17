@@ -185,6 +185,11 @@ export async function startDeviceServer({ adb, serial, caseId }) {
       for (const label of new Set(digital.flatMap(entry => [entry.target, ...(entry.choices ?? [])]))) {
         if (voiceNames[label] && !labels.includes(label)) labels.push(label);
       }
+      if (deviceCases[caseId].audio === 'noise') {
+        // Put likely G/B/F/C/H confusions in the real directory even
+        // when a smoke profile does not contain their intended commands.
+        for (const label of ['G', 'F', 'H']) if (!labels.includes(label)) labels.push(label);
+      }
     }
     for (const [index, label] of labels.entries()) {
       const phone = `+919990001${String(index + 1).padStart(3, '0')}`;

@@ -19,6 +19,7 @@ on:
           - voice-assistant
           - voice-assistant-live-audio
           - voice-assistant-prerecorded
+          - voice-assistant-noise
           - handoff
           - handoff-voice
           - needl
@@ -44,7 +45,7 @@ permissions:
 
 jobs:
   feature:
-    if: inputs.feature != 'voice-assistant-live-audio' && inputs.feature != 'voice-assistant-prerecorded'
+    if: inputs.feature != 'voice-assistant-live-audio' && inputs.feature != 'voice-assistant-prerecorded' && inputs.feature != 'voice-assistant-noise'
     runs-on: ubuntu-24.04
     timeout-minutes: 50
     env:
@@ -141,6 +142,12 @@ jobs:
     if: inputs.feature == 'voice-assistant-prerecorded'
     uses: ./.github/workflows/vocle-digital-audio-regression.yml
     with:
+      repetitions: ${{ inputs.audio_repetitions }}
+  voice-assistant-noise:
+    if: inputs.feature == 'voice-assistant-noise'
+    uses: ./.github/workflows/vocle-digital-audio-regression.yml
+    with:
+      noise: true
       repetitions: ${{ inputs.audio_repetitions }}
   voice-assistant-live-audio:
     if: inputs.feature == 'voice-assistant-live-audio'

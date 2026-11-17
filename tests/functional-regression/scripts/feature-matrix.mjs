@@ -39,7 +39,7 @@ export function renderFeatureMatrix(cases, features, executors) {
     const path = executors.get(row.id);
     const features = tags.get(row.id);
     const audio = deviceCases[row.id]?.audio;
-    const layer = audio === 'digital' ? 'Android (hosted)' : audio === 'file' ? 'Android (hosted and local)' : layers[row.tier];
+    const layer = ['digital', 'noise'].includes(audio) ? 'Android (hosted)' : audio === 'file' ? 'Android (hosted and local)' : layers[row.tier];
     lines.push(`| ${features.join(', ')} | \`${row.id}\` | ${row.actions.replaceAll('|', '\\|')} | ${layer} | [${path.split('/').at(-1)}](../../${path}) |`);
   }
   return lines.join('\n') + '\n';

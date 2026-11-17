@@ -171,6 +171,7 @@ public final class AudioSourceProbe extends Instrumentation {
                 .put("bytesOffered", pcm.length).put("terminal", result.terminal).put("error", result.error)
                 .put("ready", result.ready).put("segmentCount", result.parts.size())
                 .put("transcript", result.transcript())
+                .put("recognitionLatencyMs", result.recognitionLatencyMs)
                 .put("durationMs", SystemClock.elapsedRealtime() - start).toString());
         }
     }
@@ -308,6 +309,7 @@ public final class AudioSourceProbe extends Instrumentation {
             runOnMainSync(() -> {
                 instance[0] = recognizer(context, engine);
                 instance[0].setRecognitionListener(outcome);
+                outcome.started = SystemClock.elapsedRealtime();
                 instance[0].startListening(intent);
             });
             if (isPipe) {
@@ -315,6 +317,8 @@ public final class AudioSourceProbe extends Instrumentation {
                 writer.start();
             }
             outcome.done.await(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            outcome.recognitionLatencyMs = (outcome.completed > 0 ? outcome.completed
+                : SystemClock.elapsedRealtime()) - outcome.started;
         } finally {
             // Keep the read descriptor valid until the service has consumed
             // the stream. The writer owns the pipe's EOF.
@@ -394,6 +398,8 @@ public final class AudioSourceProbe extends Instrumentation {
         volatile String terminal = "timeout", writerError = "";
         volatile int error, written;
         volatile boolean ready;
+        long started, recognitionLatencyMs;
+        volatile long completed;
         long filePosition = -1;
 
         synchronized String transcript() { return String.join(" ", parts); }
@@ -402,9 +408,14 @@ public final class AudioSourceProbe extends Instrumentation {
             if (values != null && !values.isEmpty()) parts.add(values.get(0).trim());
         }
         @Override public void onSegmentResults(Bundle result) { add(result); }
-        @Override public void onEndOfSegmentedSession() { terminal = "segment-end"; done.countDown(); }
-        @Override public void onResults(Bundle result) { add(result); terminal = "results"; done.countDown(); }
-        @Override public void onError(int code) { error = code; terminal = "error"; done.countDown(); }
+        private void finishSession(String value) {
+            terminal = value;
+            completed = SystemClock.elapsedRealtime();
+            done.countDown();
+        }
+        @Override public void onEndOfSegmentedSession() { finishSession("segment-end"); }
+        @Override public void onResults(Bundle result) { add(result); finishSession("results"); }
+        @Override public void onError(int code) { error = code; finishSession("error"); }
         @Override public void onReadyForSpeech(Bundle info) { ready = true; }
         @Override public void onBeginningOfSpeech() {}
         @Override public void onRmsChanged(float rms) {}

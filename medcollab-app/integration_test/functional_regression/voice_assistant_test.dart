@@ -54,6 +54,10 @@ void main() {
       deviceCase('FR-AST-39', _digital);
     case 'assistant-digital-updates':
       deviceCase('FR-AST-40', _digital);
+    case 'assistant-noise-reliability':
+      deviceCase('FR-AST-41', _digital);
+    case 'assistant-noise-safety':
+      deviceCase('FR-AST-42', _digital);
     default:
       throw DeviceInfrastructureError('Unknown Voice Assistant phase');
   }

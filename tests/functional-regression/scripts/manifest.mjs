@@ -5,7 +5,7 @@ import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { catalogCases, completeBackendSuccess, environmentContractVersion, forkRepository, harnessRoot, selectBackendRun, statuses, upstreamRef, upstreamRepository, validateResultSet } from './ci-contracts.mjs';
 import { loadFeature } from './feature-registry.mjs';
-import { deviceCases } from './device-contracts.mjs';
+import { hostedVoiceIds } from './device-contracts.mjs';
 
 const output = resolve(process.env.VOCLE_OUTPUT_DIR || join(harnessRoot, 'output'));
 const target = process.env.VOCLE_TARGET_DIR;
@@ -72,7 +72,7 @@ const inventory = await catalogCases();
 const localInventory = feature === undefined ? inventory : await loadFeature(feature, inventory).catch(() => []);
 const wasExecuted = item => item.errorCategory !== 'REPORT_MISSING' && (feature === undefined ||
   (!['SETUP', 'DEPENDENCY'].includes(item.errorCategory) && !['BLOCKED', 'SKIP'].includes(item.status)));
-const hostedAndroid = id => ['file', 'digital'].includes(deviceCases[id]?.audio);
+const hostedAndroid = id => hostedVoiceIds.includes(id);
 const deviceInventory = localInventory.filter(row => row.tier === 'D');
 const planned = { total: inventory.length, hosted: inventory.filter(row => row.tier !== 'D').length,
   localOnly: inventory.filter(row => row.tier === 'D' && !hostedAndroid(row.id)).length,

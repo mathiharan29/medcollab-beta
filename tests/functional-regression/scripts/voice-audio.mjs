@@ -6,11 +6,12 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { digitalSampleId, verifiedDigitalTranscript } from './voice-digital-proof.mjs';
-import { digitalSuiteCaseIds, verifyDigitalAttempts, writeDigitalReport } from './voice-digital-suite.mjs';
+import { digitalSuiteCaseIds, noiseSuiteCaseIds, verifyDigitalAttempts, writeDigitalReport } from './voice-digital-suite.mjs';
 
 const audio = new URL('../voice-audio/', import.meta.url);
 const manifest = JSON.parse(await readFile(new URL('manifest.json', audio), 'utf8'));
 export const voiceAudioPaths = ['manifest.json', 'digital-plan.json', 'replay.py',
+  'noise-manifest.json', 'generate-noise.py',
   'android-probe/AudioSourceProbe.java', 'android-probe/prepare-suite.py', 'android-probe/run.sh',
   'android-probe/hosted-repositories.gradle',
   ...manifest.map(sample => sample.file)]
@@ -19,7 +20,7 @@ const run = promisify(execFile);
 const fileSampleId = () => process.env.VOCLE_DIGITAL_SOURCE_EVIDENCE ? digitalSampleId : 'chat-bala';
 
 export async function voiceAudioControls(caseId, serial, readFingerprint) {
-  if (digitalSuiteCaseIds.includes(caseId)) {
+  if ([...digitalSuiteCaseIds, ...noiseSuiteCaseIds].includes(caseId)) {
     const directory = process.env.VOCLE_DIGITAL_SUITE_EVIDENCE;
     assert.ok(directory, 'The hosted Android recognition batch must run before this app case');
     const digitalAttempts = (await verifyDigitalAttempts(directory, await readFingerprint()))
@@ -109,7 +110,7 @@ export async function writeVoiceResults(directory, cases, phases) {
     row.intendedCommand, row.recognizedTranscript, row.resolvedTarget, row.expectedAction,
     row.actualAction ?? (row.actualRoute ? `Route at failure: ${row.actualRoute}` : null),
     [row.result, row.failureCategory].filter(Boolean).join(' / ')]);
-  for (const row of cases.filter(item => !digitalSuiteCaseIds.includes(item.id) && !attempts.some(attempt => attempt.id === item.id))) {
+  for (const row of cases.filter(item => ![...digitalSuiteCaseIds, ...noiseSuiteCaseIds].includes(item.id) && !attempts.some(attempt => attempt.id === item.id))) {
     for (const sample of samples.filter(sample => sample.caseId === row.id ||
       (row.id === 'FR-AST-34' && sample.id === fileSampleId()))) {
       observed.push([row.id, row.id === 'FR-AST-34' ? 'PRERECORDED_FILE' : 'LIVE_AUDIO',

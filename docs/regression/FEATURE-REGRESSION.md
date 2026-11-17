@@ -6,7 +6,7 @@
 
 The [feature matrix](FEATURE-REGRESSION-MATRIX.md) lists the dropdown choices, the IDs in each choice and the executor for each ID. Tests with several tags execute once per run. The workflow filters exact IDs before launching backend scenarios or Flutter tests. Backend assertions use disposable loopback MongoDB and test-owned provider fixtures inside the existing Docker isolation. Flutter uses the pinned SDK and locked dependencies.
 
-Choosing `all` selects all 311 IDs and runs the 188 backend and 103 Flutter cases. The report shows the 20 Android cases as unexecuted in this selection. Six have a separate hosted digital-audio selection. The hosted verdict requires every executed backend and Flutter case to satisfy its gate. Missing results, unexpected results, assertion failures and unresolved decisions keep the run red.
+Choosing `all` selects all 313 IDs and runs the 188 backend and 103 Flutter cases. The report shows the 22 Android cases as unexecuted in this selection. Eight have dedicated hosted Voice Assistant audio selections. The hosted verdict requires every executed backend and Flutter case to satisfy its gate. Missing results, unexpected results, assertion failures and unresolved decisions keep the run red.
 
 ## Local use
 

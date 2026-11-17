@@ -1,17 +1,25 @@
 import assert from 'node:assert/strict';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { writeNoiseReport } from './voice-noise-report.mjs';
 
 const audio = new URL('../voice-audio/', import.meta.url);
 const plan = JSON.parse(await readFile(new URL('digital-plan.json', audio), 'utf8'));
 const manifest = JSON.parse(await readFile(new URL('manifest.json', audio), 'utf8'));
 const fixtures = new Map(manifest.map(row => [row.id, row]));
+const noisePlan = JSON.parse(await readFile(new URL('noise-manifest.json', audio), 'utf8')).fixtures;
 
 export const digitalSuiteCaseIds = [...new Set(plan.map(entry => entry.caseId))];
+export const noiseSuiteCaseIds = [...new Set(noisePlan.map(entry => entry.caseId))];
 
 export function requestedDigitalAttempts(scope, repetitions) {
-  assert.ok(['smoke', 'full'].includes(scope));
+  assert.ok(['smoke', 'full', 'noise-smoke', 'noise-full'].includes(scope));
   assert.ok(Number.isInteger(repetitions) && repetitions >= 1 && repetitions <= 5);
+  if (scope.startsWith('noise-')) {
+    return noisePlan.filter(entry => scope === 'noise-full' || entry.smoke).flatMap(entry =>
+      Array.from({ length: scope === 'noise-full' && entry.repeat ? repetitions : 1 },
+        (_, index) => ({ ...entry, attempt: index + 1 })));
+  }
   return plan.filter(entry => scope === 'full' || entry.smoke).flatMap(entry => {
     const fixture = fixtures.get(entry.sample);
     assert.ok(fixture, 'Digital plan references an unknown WAV');
@@ -57,6 +65,7 @@ export async function verifyDigitalAttempts(directory, fingerprint) {
     assert.equal(preparedEntry.caseId, entry.caseId);
     assert.ok(Number.isSafeInteger(preparedEntry.bytes) && preparedEntry.bytes > 0);
     assert.match(preparedEntry.pcmSha256, /^[0-9a-f]{64}$/);
+    if (entry.pcmSha256) assert.equal(preparedEntry.pcmSha256, entry.pcmSha256);
     const native = byAttempt.get(keyOf(entry));
     if (!native) return { ...entry, native: null };
     assert.equal(native.fingerprint, fingerprint);
@@ -108,6 +117,7 @@ export async function writeDigitalReport(directory, cases, phases, voiceAttempts
       resolvedTarget: null, actualAction: null,
       recognitionError: recognition?.native.error ?? null,
       recognitionTerminal: recognition?.native.terminal ?? null,
+      recognitionLatencyMs: recognition?.native.recognitionLatencyMs ?? null,
       recognitionSuccess: entry.action !== 'silence' ? recognition?.recognized ?? null : null,
       transcriptMatched: entry.action !== 'silence' ? recognition?.transcriptMatched ?? null : null,
       intentCorrect: null, entityCorrect: null, durationMs: recognition?.native.durationMs ?? null,
@@ -130,6 +140,9 @@ export async function writeDigitalReport(directory, cases, phases, voiceAttempts
   const attempts = [...existingSmoke, ...appAttempts].map(row => ({
     ...row, result: row.result === 'ERROR' ? 'BLOCKED' : row.result,
   }));
+  if (process.env.VOCLE_AUDIO_SUITE_SCOPE?.startsWith('noise-')) {
+    await writeNoiseReport(directory, expected, appAttempts, normalize);
+  }
   const rate = (correct, measured) => ({
     correct, measured, percent: measured ? Number((100 * correct / measured).toFixed(1)) : null,
   });

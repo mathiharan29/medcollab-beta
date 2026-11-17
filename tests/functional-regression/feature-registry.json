@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "catalogCount": 311,
+  "catalogCount": 313,
   "features": [
     {
       "id": "authentication",
@@ -238,6 +238,11 @@
         "FR-AST-39",
         "FR-AST-40"
       ]
+    },
+    {
+      "id": "voice-assistant-noise",
+      "name": "Voice Assistant — Noise & Reliability",
+      "caseIds": ["FR-AST-41", "FR-AST-42"]
     },
     {
       "id": "handoff",

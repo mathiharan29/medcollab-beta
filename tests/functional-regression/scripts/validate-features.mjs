@@ -3,8 +3,8 @@ import { resolve } from 'node:path';
 import { featureExecutors } from './feature-executors.mjs';
 import { matrixPath, renderFeatureMatrix } from './feature-matrix.mjs';
 import { readFeatureRegistry, validateFeatureRegistry } from './feature-registry.mjs';
-import { liveVoiceIds, prerecordedVoiceIds } from './device-contracts.mjs';
-import { digitalSuiteCaseIds } from './voice-digital-suite.mjs';
+import { liveVoiceIds, prerecordedVoiceIds, noiseVoiceIds } from './device-contracts.mjs';
+import { digitalSuiteCaseIds, noiseSuiteCaseIds } from './voice-digital-suite.mjs';
 
 export const workflowPath = '.github/workflows/vocle-feature-regression.yml';
 
@@ -27,8 +27,11 @@ export async function validateFeatures(root, cases) {
   if (JSON.stringify(prerecordedVoiceIds) !== JSON.stringify(['FR-AST-34', ...digitalSuiteCaseIds])) {
     throw new Error('The digital audio fixture plan must cover the registered prerecorded cases');
   }
+  if (JSON.stringify(noiseVoiceIds) !== JSON.stringify(noiseSuiteCaseIds)) {
+    throw new Error('The noise fixture plan must cover the registered reliability cases');
+  }
   for (const [name, audio] of [['voice-assistant-live-audio', liveVoiceIds],
-    ['voice-assistant-prerecorded', prerecordedVoiceIds]]) {
+    ['voice-assistant-prerecorded', prerecordedVoiceIds], ['voice-assistant-noise', noiseVoiceIds]]) {
     const mapped = features.get(name)?.caseIds;
     if (JSON.stringify(mapped) !== JSON.stringify(audio) ||
         [...features.values()].some(feature => feature.id !== name && feature.caseIds.some(id => audio.includes(id)))) {

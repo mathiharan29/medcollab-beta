@@ -42,6 +42,7 @@ Future<void> _digital(WidgetTester tester) async {
       'recognitionError': native?['error'],
       'recognitionTerminal': native?['terminal'],
       'recognitionDurationMs': native?['durationMs'],
+      'recognitionLatencyMs': native?['recognitionLatencyMs'],
       'delivered': entry['delivered'] == true,
       'recognitionSuccess': mode == 'silence' || native == null
           ? null
@@ -75,6 +76,12 @@ Future<void> _digital(WidgetTester tester) async {
       if (native == null) {
         throw DeviceInfrastructureError(
             'No native session record for this attempt');
+      }
+      if (entry['classification'] != null) {
+        category = 'safety_or_functional_gate';
+        await _observeNoiseAttempt(tester, bot, entry, f, before, row);
+        passed++;
+        continue;
       }
       if (mode == 'silence' || entry['recognized'] != true) {
         expect(bot.state.proposals, isEmpty);
@@ -156,6 +163,115 @@ Future<void> _digital(WidgetTester tester) async {
   await _returnHome(tester);
   expect(passed, entries.length,
       reason: 'Each digital-audio attempt has its own verdict');
+}
+
+Future<void> _observeNoiseAttempt(
+  WidgetTester tester,
+  VoiceBotCubit bot,
+  Map<String, dynamic> entry,
+  Map<String, dynamic> f,
+  Map<String, dynamic> before,
+  Map<String, Object?> row,
+) async {
+  final native = entry['native'] as Map<String, dynamic>;
+  final mode = entry['action'];
+  final functional = entry['classification'] == 'functional';
+  final passive = mode == 'background' || mode == 'silence';
+  if (entry['delivered'] != true ||
+      !(native['error'] == 0 || native['error'] == 6 || native['error'] == 7) ||
+      !['error', 'results', 'segment-end'].contains(native['terminal'])) {
+    throw DeviceInfrastructureError(
+        'Native PCM session did not complete normally: ${native['terminal']} / ${native['error']}');
+  }
+  final recognized = entry['recognized'] == true;
+  if (recognized) {
+    final text = native['transcript'] as String;
+    await bot.handleText(text);
+    await tester.pump();
+    expect(bot.state.heard, text.trim());
+    expect(bot.state.usedAi, isFalse);
+  }
+  final proposals = bot.state.proposals;
+  final proposal = proposals.singleOrNull;
+  final intent = proposal?.runtimeType.toString().replaceFirst(RegExp(r'Action$'), '');
+  final target = _digitalTarget(proposal, f);
+  final choices = proposal is ClarifyAction
+      ? (proposal.choices.map((choice) => choice.rawId).toList()..sort())
+      : null;
+  final expectedChoices = (row['expectedChoices'] as List).cast<String>();
+  final targetMatches = expectedChoices.isNotEmpty
+      ? listEquals(choices, expectedChoices)
+      : target == row['expectedTarget'];
+  final payloadMatches = switch (proposal) {
+    HandoffAction(:final shift, :final summary, :final patients) =>
+      shift == 'night' && summary.isEmpty &&
+          listEquals(patients.map((patient) => patient.bed).toList(),
+            (entry['beds'] as List? ?? []).cast<String>()) &&
+          patients.every((patient) => patient.alias == 'Bed ${patient.bed}' &&
+              patient.notes.isEmpty && patient.tasks.isEmpty),
+    NavigateAction(:final tab) => tab == entry['value'],
+    SearchAction(:final query) => query.toLowerCase() == entry['value'],
+    ClarifyAction() => choices?.length == expectedChoices.length,
+    _ => true,
+  };
+  final intentMatches = recognized && intent == entry['intent'] && proposals.length <= 1;
+  final semanticMatch = !passive && intentMatches && targetMatches && payloadMatches;
+  final actionable = proposals.where((action) => action is! ClarifyAction).toList();
+  row.addAll({
+    'parsedIntent': intent,
+    'resolvedTarget': target,
+    'proposedAction': proposal?.title,
+    'choices': choices,
+    'intentCorrect': passive ? null : intentMatches,
+    'entityCorrect': row['expectedTarget'] == null && expectedChoices.isEmpty ? null : targetMatches,
+    'incorrectTarget': target != null && row['expectedTarget'] != null && !targetMatches,
+    'hazardousProposal': actionable.isNotEmpty && !semanticMatch,
+    'matchPayload': payloadMatches,
+    'actionSuccess': false,
+  });
+  await _assertNoiseUnchanged(before, row, 'before any confirmation');
+  if (semanticMatch) {
+    await _finishDigitalAction(tester, bot, proposal, entry, f, before, row);
+    row['actionSuccess'] = true;
+  } else {
+    if (actionable.isNotEmpty) {
+      expect(bot.state.phase, VoiceBotPhase.confirm,
+          reason: 'Even an unexpected action must require confirmation');
+      expect(_confirm, findsNWidgets(actionable.length));
+      for (final action in actionable) {
+        final card = find.byKey(Key('voicebot-proposal-${action.runtimeType}'));
+        final cancel = find.descendant(of: card, matching: find.text('Cancel'));
+        await _tapDigitalControl(tester, cancel, 'Cancel the unexpected proposal');
+        expect(bot.state.proposals, isNot(contains(action)));
+      }
+      expect(_confirm, findsNothing);
+    } else {
+      expect(_confirm, findsNothing);
+    }
+    await _assertNoiseUnchanged(before, row, 'after declining or receiving no command');
+    row['actualAction'] = {
+      'route': _route(),
+      'confirmation': actionable.isEmpty ? 'not offered' : 'cancelled',
+    };
+    if (mode == 'silence') expect(entry['silencePassed'], isTrue);
+  }
+  row['safetyPassed'] = true;
+  row['result'] = semanticMatch || passive ? 'PASS' : 'FAIL';
+  if (row['result'] == 'FAIL') {
+    row['failureCategory'] = !recognized ? 'no_final_speech'
+        : row['transcriptMatched'] == true ? 'semantic_mismatch' : 'recognition_mismatch';
+  }
+  if (functional) {
+    expect(semanticMatch, isTrue, reason: 'The predeclared functional audio baseline must execute the expected action');
+  }
+}
+
+Future<void> _assertNoiseUnchanged(Map<String, dynamic> before,
+    Map<String, Object?> row, String stage) async {
+  final after = await control('assistant-state');
+  final same = _route() == AppRoutes.home && equals(before).matches(after, {});
+  row['incorrectAction'] = !same;
+  expect(same, isTrue, reason: 'Navigation and persisted state must stay unchanged $stage');
 }
 
 Future<void> _digitalScreenshot(Map<String, Object?> row) async {

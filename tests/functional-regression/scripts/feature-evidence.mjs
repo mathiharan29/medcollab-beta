@@ -1,5 +1,5 @@
 import { statuses } from './ci-contracts.mjs';
-import { prerecordedVoiceIds } from './device-contracts.mjs';
+import { hostedVoiceIds } from './device-contracts.mjs';
 
 export function collectFeatureEvidence(selected, lanes) {
   const expected = new Map(selected.map(row => [row.id, row]));
@@ -22,9 +22,9 @@ export function collectFeatureEvidence(selected, lanes) {
     }
   }
   const results = selected.map(row => {
-    if (row.tier === 'D' && prerecordedVoiceIds.includes(row.id)) return {
+    if (row.tier === 'D' && hostedVoiceIds.includes(row.id)) return {
       id: row.id, status: 'SKIP', executed: false, executionMode: 'HOSTED',
-      error: 'Runs in the separate prerecorded digital audio selection.',
+      error: 'Runs in a separate hosted Voice Assistant audio selection.',
     };
     if (row.tier === 'D') return {
       id: row.id, status: 'SKIP', executed: false, executionMode: 'LOCAL_ONLY',

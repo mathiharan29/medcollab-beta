@@ -22,6 +22,9 @@ on:
         options: ['1', '2', '3', '4', '5']
   workflow_call:
     inputs:
+      noise:
+        type: boolean
+        default: false
       repetitions:
         type: string
         default: '2'
@@ -33,6 +36,10 @@ jobs:
   digital-audio-to-dm:
     runs-on: ubuntu-24.04
     timeout-minutes: 65
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: ${{ fromJSON(github.event_name == 'push' && '["prerecorded","noise"]' || inputs.noise && '["noise"]' || '["prerecorded"]') }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -54,7 +61,7 @@ jobs:
           key: vocle-digital-gradle-ubuntu24-flutter3.29.3-${{ hashFiles('medcollab-app/android/**/*.gradle.kts', 'medcollab-app/android/gradle/wrapper/gradle-wrapper.properties', 'medcollab-app/pubspec.lock', 'tests/functional-regression/voice-audio/android-probe/hosted-repositories.gradle') }}
       - name: Verify Android digital speech and Vocle actions
         env:
-          VOCLE_AUDIO_SUITE_SCOPE: ${{ github.event_name == 'push' && 'smoke' || 'full' }}
+          VOCLE_AUDIO_SUITE_SCOPE: ${{ matrix.suite == 'noise' && (github.event_name == 'push' && 'noise-smoke' || 'noise-full') || (github.event_name == 'push' && 'smoke' || 'full') }}
           VOCLE_DIGITAL_REPETITIONS: ${{ inputs.repetitions || '2' }}
         run: |
           set -euo pipefail
@@ -76,7 +83,9 @@ jobs:
           set -euo pipefail
           output="$RUNNER_TEMP/vocle-digital-regression"
           mkdir -p "$output"
-          if [ -f "$output/device/digital-audio-attempts.md" ]; then
+          if [ -f "$output/device/voice-noise-report.md" ]; then
+            cat "$output/device/voice-noise-report.md" >> "$GITHUB_STEP_SUMMARY"
+          elif [ -f "$output/device/digital-audio-attempts.md" ]; then
             cat "$output/device/digital-audio-attempts.md" >> "$GITHUB_STEP_SUMMARY"
           fi
           node tests/reporting/stage.mjs "$output" "$RUNNER_TEMP/vocle-digital-artifact"
@@ -88,7 +97,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: vocle-digital-audio-evidence
+          name: ${{ matrix.suite == 'noise' && 'vocle-voice-reliability-evidence' || 'vocle-digital-audio-evidence' }}
           path: ${{ runner.temp }}/vocle-digital-artifact
           if-no-files-found: warn
           retention-days: 30

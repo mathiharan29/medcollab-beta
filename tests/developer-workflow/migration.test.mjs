@@ -48,13 +48,13 @@ test('the combined report leaves separately selected Android cases unexecuted',a
   const metadata=await scenarioMetadata(root);
   const hosted=normalize({scope:'full',results:metadata.filter(c=>c.tier!=='D').map(c=>({id:c.id,status:'PASS',executed:true}))},metadata,{suite:'developer'});
   const rows=addLocalOnlyAndroid(hosted.results,metadata,hosted.source,hosted.harness);
-  assert.equal(rows.length,311);assert.equal(rows.filter(r=>r.executed).length,291);assert.equal(rows.filter(r=>r.status==='PASS').length,291);
+  assert.equal(rows.length,313);assert.equal(rows.filter(r=>r.executed).length,291);assert.equal(rows.filter(r=>r.status==='PASS').length,291);
   assert.equal(rows.filter(r=>r.executionMode==='LOCAL_ONLY'&&r.status==='SKIP'&&!r.executed).length,14);
-  assert.equal(rows.filter(r=>r.executionMode==='HOSTED'&&r.status==='SKIP'&&!r.executed).length,6);
+  assert.equal(rows.filter(r=>r.executionMode==='HOSTED'&&r.status==='SKIP'&&!r.executed).length,8);
   assert.throws(()=>addLocalOnlyAndroid(rows,metadata,hosted.source,hosted.harness),/cannot be relabeled/);
   assert.equal(normalize({},metadata,{suite:'backend'}).counts.ERROR,188);
   assert.equal(normalize({},metadata,{suite:'flutter'}).counts.ERROR,103);
-  assert(summary(hosted).includes('311 total / 291 backend and Flutter / 6 separately hosted Android / 14 local Android'));
+  assert(summary(hosted).includes('313 total / 291 backend and Flutter / 8 separately hosted Android / 14 local Android'));
   const old=process.env.GITHUB_RUN_ID;process.env.GITHUB_RUN_ID='42';
   try{assert.throws(()=>normalize({},metadata,{suite:'device'}),/LOCAL_ONLY/);}finally{if(old===undefined)delete process.env.GITHUB_RUN_ID;else process.env.GITHUB_RUN_ID=old;}
 });

@@ -426,7 +426,7 @@ jobs:
           EXECUTE_RESULT: ${{ needs.execute.result }}
           FLUTTER_RESULT: ${{ needs.flutter.result }}
         run: |
-          echo 'Functional catalog: 311 total / 291 backend and Flutter / 20 separately selected Android' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Functional catalog: 313 total / 291 backend and Flutter / 22 separately selected Android' >> "$GITHUB_STEP_SUMMARY"
           test "$DETECT_RESULT" = success
           test "$EXECUTE_RESULT" = success
           test "$FLUTTER_RESULT" = success

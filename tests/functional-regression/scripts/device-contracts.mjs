@@ -11,6 +11,8 @@ export const deviceCases = Object.freeze({
   'FR-AST-38': { file: 'voice_assistant_test.dart', phases: ['assistant-digital-negative'], audio: 'digital' },
   'FR-AST-39': { file: 'voice_assistant_test.dart', phases: ['assistant-digital-navigation'], audio: 'digital' },
   'FR-AST-40': { file: 'voice_assistant_test.dart', phases: ['assistant-digital-updates'], audio: 'digital' },
+  'FR-AST-41': { file: 'voice_assistant_test.dart', phases: ['assistant-noise-reliability'], audio: 'noise' },
+  'FR-AST-42': { file: 'voice_assistant_test.dart', phases: ['assistant-noise-safety'], audio: 'noise' },
   'FR-HOF-24': { file: 'voice_test.dart', phases: ['voice-handoff'] },
   'FR-VCE-14': { file: 'voice_test.dart', phases: ['voice-dm'] },
   'FR-MED-08': { file: 'media_test.dart', phases: ['media'] },
@@ -27,6 +29,8 @@ export const deviceSdk = '3.29.3';
 export const standardDeviceIds = Object.keys(deviceCases).filter(id => !deviceCases[id].audio && !deviceCases[id].transcript);
 export const liveVoiceIds = Object.keys(deviceCases).filter(id => deviceCases[id].audio === 'live');
 export const prerecordedVoiceIds = Object.keys(deviceCases).filter(id => ['file', 'digital'].includes(deviceCases[id].audio));
+export const noiseVoiceIds = Object.keys(deviceCases).filter(id => deviceCases[id].audio === 'noise');
+export const hostedVoiceIds = [...prerecordedVoiceIds, ...noiseVoiceIds];
 
 export function classifyDeviceDiagnostics(text) {
   const infrastructureFailure = /DeviceInfrastructureError|could not uniquely locate/.test(text);
