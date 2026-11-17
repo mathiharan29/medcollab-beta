@@ -40,8 +40,8 @@ export async function main(args = process.argv.slice(2)) {
   }
   assert.deepEqual(await readdir(join(backendPath, 'runtime')), [], 'Backend runtime cleanup incomplete');
   const flutter = await read(flutterPath), device = await read(join(devicePath, 'results.json'));
-  assert(flutter.complete && flutter.source?.verified && flutter.implementedAndExecuted === 98, 'Incomplete Flutter evidence');
-  assert(!device.partial && device.executed === 10 && device.provenance?.status === 'PASS' && device.cleanup?.status === 'PASS', 'Incomplete device execution/provenance/cleanup');
+  assert(flutter.complete && flutter.source?.verified && flutter.implementedAndExecuted === catalog.filter(row => row.tier === 'F').length, 'Incomplete Flutter evidence');
+  assert(!device.partial && device.executed === catalog.filter(row => row.tier === 'D').length && device.provenance?.status === 'PASS' && device.cleanup?.status === 'PASS', 'Incomplete device execution/provenance/cleanup');
   assert.equal(device.infrastructureErrors.length, 0, 'Device infrastructure errors');
   assert(!device.cases.some(row => row.cleanup?.status === 'ERROR'), 'Device case cleanup failed');
   const lanes = [
@@ -70,15 +70,15 @@ export async function main(args = process.argv.slice(2)) {
   const rows = lanes.flatMap(lane => lane.rows);
   assert.deepEqual(execution.selectedIds.slice().sort(), lanes[0].rows.map(row => row.id).sort());
   const counts = Object.fromEntries(statuses.map(status => [status, rows.filter(row => row.status === status).length]));
-  const result = counts.ERROR ? 'ERROR' : counts.PASS === 296 ? 'PASS' : 'FAIL';
+  const result = counts.ERROR ? 'ERROR' : counts.PASS === catalog.length ? 'PASS' : 'FAIL';
   if (result === 'PASS') assert(execution.attempts.every(row => row.exitCode === 0) && flutter.flutterReporterSuccess && device.fullSuccess, 'Original lane gates must pass');
   const output = resolve(outputPath);
   await mkdir(output, { recursive: true });
   const { report } = await generate({ inputObject: {
-    scope: 'local-full-296', source: { sha: baseline, kind: 'commit', verified: true },
+    scope: `local-full-${catalog.length}`, source: { sha: baseline, kind: 'commit', verified: true },
     harness: { sha: null }, selectedIds: catalog.map(row => row.id), results: rows, tally: counts,
     gate: result, cleanup: { status: 'PASS' }, provenance: { status: 'PASS' },
-  }, suite: 'developer', output, artifact: 'Local complete 296-case catalog' });
+  }, suite: 'developer', output, artifact: `Local complete ${catalog.length}-case catalog` });
   report.title = 'Vocle full local functional regression';
   report.note += ' This is local execution across all three tiers. Application source and locks match the baseline shown above. Lane execution revisions can differ; each case retains its exact source/harness SHA. No single-revision full-suite success or hosted success marker is claimed. Android uses injected providers; iOS and real delivery are not covered.';
   const byId = new Map(rows.map(row => [row.id, row]));
@@ -90,14 +90,14 @@ export async function main(args = process.argv.slice(2)) {
   await writeReports(output, report);
   await writeFile(join(output, 'local-execution-provenance.json'), JSON.stringify({
     baselineApplicationSha: baseline, reporterCheckoutSha: git('rev-parse', 'HEAD'), sourceObjects,
-    selected: 296, executed: rows.length, counts, result,
+    selected: catalog.length, executed: rows.length, counts, result,
     byTier: Object.fromEntries(lanes.map(lane => [lane.tier, { executed: lane.rows.length,
       revisions: [...new Set(lane.rows.map(row => row.executionHarnessSha))],
       counts: Object.fromEntries(statuses.map(status => [status, lane.rows.filter(row => row.status === status).length])) }])),
     backendCleanupReports: modules.length, backendCleanup: 'PASS', deviceCleanup: device.cleanup,
     inputs, hostedSuccessClaimed: false, iosExecuted: false, providerDeliveryProven: false,
   }, null, 2) + '\n');
-  console.log(JSON.stringify({ selected: 296, executed: rows.length, counts, result }));
+  console.log(JSON.stringify({ selected: catalog.length, executed: rows.length, counts, result }));
   if (result !== 'PASS') process.exitCode = 1;
 }
 

@@ -111,8 +111,13 @@ control/event/request records under `tests/functional-regression/output/d-*`.
 Fixture tokens and OTP contents are excluded from control traces; diagnostic JWTs
 are redacted. Native phase prerequisites do not add testcase IDs or passing cases.
 
-Only a complete eight-case PASS with verified provenance and cleanup is full
-device success. Assertions fail as **FAIL**; SDK/build/control prerequisites are
+Full device success requires all 15 Android cases to pass with verified
+provenance and cleanup. The default command runs the ten standard cases. To
+include the five Voice Assistant cases, pass their IDs along with the standard
+IDs and use a speech-capable Android environment. The result records
+`selectionPassed` independently of `fullSuccess`. See the
+[Voice Assistant runner guide](regression/VOICE-ASSISTANT.md).
+Assertions fail as **FAIL**. SDK/build/control prerequisites are
 **ERROR** with `executed=false` when no case ran. Missing product expectations
 remain **NEEDS_DECISION** after safe assertions, and block full success. A subset
 never constitutes full release coverage. Application source hashes are checked

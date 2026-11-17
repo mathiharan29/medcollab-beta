@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "catalogCount": 296,
+  "catalogCount": 306,
   "features": [
     {
       "id": "authentication",
@@ -209,7 +209,29 @@
         "FR-AST-22",
         "FR-AST-23",
         "FR-AST-24",
-        "FR-AST-25"
+        "FR-AST-25",
+        "FR-AST-26",
+        "FR-AST-27",
+        "FR-AST-28",
+        "FR-AST-29",
+        "FR-AST-30",
+        "FR-AST-35"
+      ]
+    },
+    {
+      "id": "voice-assistant-live-audio",
+      "name": "Voice Assistant — Live Audio",
+      "caseIds": [
+        "FR-AST-31",
+        "FR-AST-32",
+        "FR-AST-33"
+      ]
+    },
+    {
+      "id": "voice-assistant-prerecorded",
+      "name": "Voice Assistant — Prerecorded File Recognition",
+      "caseIds": [
+        "FR-AST-34"
       ]
     },
     {

@@ -592,3 +592,20 @@ Sources: VoiceBotCubit, VoiceCommandParser, AppVoiceActionExecutor and assistant
 | FR-AST-23 | Confirm actions for an unconsented DM, a consented DM and a Needl | The executor cannot send to the denied DM and uses the exact expected DM and Needl identifiers after confirmation. | F/P0 | NEW |
 | FR-AST-24 | Confirm a voice handoff with and without a shared group | No draft without a shared group. After confirmation with a group exactly one draft opens for review with the specified beds. | F/P0 | NEW |
 | FR-AST-25 | Tap confirm again while a bot message write is pending | One confirmed proposal runs at most one write. | F/P0 | NEW |
+| FR-AST-26 | Inject final chat commands with varied wording, casing and recognition-like name variants | Confirmed person, Needl and space-channel commands navigate to the exact route IDs. | F/P0 | NEW |
+| FR-AST-27 | Inject unknown and ambiguous chat names, cancel one proposal and confirm another | Unknown names offer no choices. Explicit selection and approval open only the selected namesake. | F/P0 | NEW |
+| FR-AST-28 | Inject incomplete commands, cancel an active session, then observe timeout and duplicate finals | No premature action. Recovery opens one DM for the first final after stopping. | F/P0 | NEW |
+| FR-AST-29 | Inject search, tab, status and read-all commands | Confirmation changes the exact routes, repository state and alert badge. | F/P1 | NEW |
+| FR-AST-30 | Confirm chat with an expired session, then denied consent, then an authorized session | Failures stay on Home with feedback. Recovery opens only the intended DM. | F/P0 | NEW |
+
+### Voice Assistant Android recognition
+
+Sources: HomeDashboardPage, SpeechBridge, PlatformSpeechService, VoiceBotCubit, AppVoiceActionExecutor and the isolated Android device harness.
+
+| ID | Actions | Expected result | Tier/priority | Classification |
+|---|---|---|---|---|
+| FR-AST-31 | Replay Bala chat variants into the Android virtual microphone from Home | Capture is proven, every attempt yields the intended proposal, and confirming opens the exact existing DM. | D/P0 | NEW |
+| FR-AST-32 | Replay Priya handoff commands into the Android virtual microphone from Home | Confirmation creates exactly one private draft per attempt with the correct recipient and bed, opens its editor and issues no submit or notification. | D/P0 | NEW |
+| FR-AST-33 | Replay unknown, ambiguous and incomplete speech commands from Home | Unknown names and incomplete commands make no changes. Choosing and confirming a namesake opens only that DM. | D/P0 | NEW |
+| FR-AST-34 | Recognize a prerecorded WAV through SpeechBridge file input and confirm the resulting chat proposal | Android yields the intended text and confirmation opens the exact DM. File input uses the separate audio-source path. | D/P1 | NEW |
+| FR-AST-35 | Inject final speech events on Android Home and confirm Bala's chat and Priya's handoff | The real app opens the exact DM, creates one draft with the expected recipient and bed, and opens its exact editor with no submission or notifications. | D/P0 | NEW |

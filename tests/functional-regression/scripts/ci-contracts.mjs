@@ -17,7 +17,7 @@ export const statuses = Object.freeze(['PASS', 'FAIL', 'ERROR', 'BLOCKED', 'NEED
 
 export async function catalogCases() {
   const catalog = JSON.parse(await readFile(join(harnessRoot, 'catalog.json'), 'utf8'));
-  if (catalog.cases.length !== 296 || new Set(catalog.cases.map((item) => item.id)).size !== 296) throw new Error('Catalog size/uniqueness changed');
+  if (catalog.cases.length !== 306 || new Set(catalog.cases.map((item) => item.id)).size !== 306) throw new Error('Catalog size/uniqueness changed');
   return catalog.cases;
 }
 

@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 
 export const deviceCases = Object.freeze({
+  'FR-AST-31': { file: 'voice_assistant_test.dart', phases: ['assistant-chat'], audio: 'live' },
+  'FR-AST-32': { file: 'voice_assistant_test.dart', phases: ['assistant-draft'], audio: 'live' },
+  'FR-AST-33': { file: 'voice_assistant_test.dart', phases: ['assistant-negative'], audio: 'live' },
+  'FR-AST-34': { file: 'voice_assistant_test.dart', phases: ['assistant-file'], audio: 'file' },
+  'FR-AST-35': { file: 'voice_assistant_test.dart', phases: ['assistant-transcript'], transcript: true },
   'FR-HOF-24': { file: 'voice_test.dart', phases: ['voice-handoff'] },
   'FR-VCE-14': { file: 'voice_test.dart', phases: ['voice-dm'] },
   'FR-MED-08': { file: 'media_test.dart', phases: ['media'] },
@@ -14,6 +19,8 @@ export const deviceCases = Object.freeze({
 });
 export const devicePackage = 'com.vocle.regression';
 export const deviceSdk = '3.29.3';
+export const standardDeviceIds = Object.keys(deviceCases).filter(id => !deviceCases[id].audio && !deviceCases[id].transcript);
+export const liveVoiceIds = Object.keys(deviceCases).filter(id => deviceCases[id].audio === 'live');
 
 export function classifyDeviceDiagnostics(text) {
   const infrastructureFailure = /DeviceInfrastructureError|could not uniquely locate/.test(text);
@@ -55,7 +62,7 @@ export function emulatorSerial(raw) {
 }
 
 export function selectedDeviceCases(raw) {
-  const ids = raw ? raw.split(',') : Object.keys(deviceCases);
+  const ids = raw ? raw.split(',') : standardDeviceIds;
   assert.ok(ids.length > 0);
   assert.equal(new Set(ids).size, ids.length);
   for (const id of ids) assert.ok(deviceCases[id], `Unknown device ID ${id}`);

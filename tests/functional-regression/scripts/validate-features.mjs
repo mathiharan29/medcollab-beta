@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { featureExecutors } from './feature-executors.mjs';
 import { matrixPath, renderFeatureMatrix } from './feature-matrix.mjs';
 import { readFeatureRegistry, validateFeatureRegistry } from './feature-registry.mjs';
+import { liveVoiceIds, deviceCases } from './device-contracts.mjs';
 
 export const workflowPath = '.github/workflows/vocle-feature-regression.yml';
 
@@ -22,6 +23,14 @@ export function validateFeatureDropdown(workflow, features) {
 
 export async function validateFeatures(root, cases) {
   const features = validateFeatureRegistry(await readFeatureRegistry(), cases);
+  for (const [name, audio] of [['voice-assistant-live-audio', liveVoiceIds],
+    ['voice-assistant-prerecorded', Object.keys(deviceCases).filter(id => deviceCases[id].audio === 'file')]]) {
+    const mapped = features.get(name)?.caseIds;
+    if (JSON.stringify(mapped) !== JSON.stringify(audio) ||
+        [...features.values()].some(feature => feature.id !== name && feature.caseIds.some(id => audio.includes(id)))) {
+      throw new Error(`The ${name} feature must exclusively select its own Android recognition cases`);
+    }
+  }
   const [workflow, matrix, executors] = await Promise.all([
     readFile(resolve(root, workflowPath), 'utf8'),
     readFile(resolve(root, matrixPath), 'utf8'),

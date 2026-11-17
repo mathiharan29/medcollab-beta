@@ -1,6 +1,6 @@
 # Vocle functional regression coverage matrix
 
-The current catalog contains **296 cases** across 188 backend, 98 Flutter and 10 Android cases marked LOCAL_ONLY. The [feature matrix](regression/FEATURE-REGRESSION-MATRIX.md) lists the selectable IDs and executors. The [voice audit](regression/VOICE-COVERAGE-AUDIT.md) records the voice-specific baseline evidence and expansion. The historical 245-case inventory below retains its original counts and evidence references.
+The current catalog contains **306 cases** across 188 backend, 103 Flutter and 15 Android cases marked LOCAL_ONLY. The [feature matrix](regression/FEATURE-REGRESSION-MATRIX.md) lists the selectable IDs and executors. The [voice audit](regression/VOICE-COVERAGE-AUDIT.md) records the voice-specific baseline evidence and expansion. The historical 245-case inventory below retains its original counts and evidence references.
 
 ## Reconciled totals
 

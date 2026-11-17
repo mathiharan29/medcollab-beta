@@ -13,7 +13,7 @@ for(const entry of await readdir(backend,{withFileTypes:true})){
   parts.push(report);inputs.push({path,sha256:createHash('sha256').update(bytes).digest('hex')});
 }
 const bytes=await readFile(resolve(flutterArg)),flutter=JSON.parse(bytes);
-if(flutter.source?.verified!==true||!flutter.complete||flutter.implementedAndExecuted!==98)throw new Error('Full Flutter execution/source evidence required');
+if(flutter.source?.verified!==true||!flutter.complete||flutter.implementedAndExecuted!==103)throw new Error('Full Flutter execution/source evidence required');
 const catalog=JSON.parse(await readFile(new URL('../catalog.json',import.meta.url))).cases;
 const selected=catalog.filter(c=>c.module==='NDL').map(c=>c.id);
 const rows=[...parts.flatMap(p=>p.results),...flutter.cases.filter(r=>r.id.startsWith('FR-NDL-'))];

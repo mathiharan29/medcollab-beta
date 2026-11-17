@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { captureContext, executionIdentity } from '../../developer-workflow/context.mjs';
 import { devicePackage } from './device-contracts.mjs';
+import { voiceAudioPaths } from './voice-audio.mjs';
 
 async function stripDesktopPlatforms(app) {
   // Flutter plugin registration creates Windows/Linux ephemeral symlinks. On
@@ -63,6 +64,8 @@ export async function prepareDeviceWorkspace(sha = command('git', ['rev-parse', 
   for (const file of [
     'tests/functional-regression/scripts/device-contracts.mjs',
     'tests/functional-regression/scripts/device-server.mjs',
+    'tests/functional-regression/scripts/voice-audio.mjs',
+    ...voiceAudioPaths,
     'tests/functional-regression/scripts/run-device.mjs',
     'tests/functional-regression/scripts/prepare-device-workspace.mjs',
     'tests/functional-regression/providers/preload.cjs',
@@ -106,7 +109,8 @@ export async function prepareDeviceWorkspace(sha = command('git', ['rev-parse', 
     await cp(resolve(process.env.VOCLE_ANDROID_TRUSTSTORE), join(app, 'android/gradle-truststore.jks'));
   }
   await writeFile(propertiesPath, properties);
-  const tracked = command('git', ['ls-tree', '-r', '--name-only', sha, 'medcollab-app/lib', 'medcollab-backend/src', 'medcollab-backend/package-lock.json'], root).split(/\r?\n/);
+  const tracked = command('git', ['ls-tree', '-r', '--name-only', sha, 'medcollab-app/lib',
+    'medcollab-app/android/app/src/main', 'medcollab-backend/src', 'medcollab-backend/package-lock.json'], root).split(/\r?\n/);
   const sourceHashes = {};
   for (const file of tracked) sourceHashes[file] = hash(await readFile(join(target, file)));
   const provenance = { context: captureContext(root), execution: executionIdentity(), executionMode: 'LOCAL_ONLY', sourceSha: sha, harnessSha: command('git', ['rev-parse', 'HEAD'], root),

@@ -7,6 +7,7 @@ import { existsSync } from 'node:fs';
 import os from 'node:os';
 import { deviceCases, devicePackage, deviceSdk, emulatorSerial, selectedDeviceCases, validateRestart, classifyDeviceDiagnostics } from './device-contracts.mjs';
 import { prepareDeviceWorkspace, verifyDeviceSource, verifyDeviceCleanupPath, command, hash } from './prepare-device-workspace.mjs';
+import { parseVoiceAttempts, writeVoiceResults } from './voice-audio.mjs';
 
 const root = resolve(import.meta.dirname, '../../..');
 // Lean WHPX emulators occasionally reset adb-reverse sockets; do not abort the
@@ -29,7 +30,7 @@ let workspace, active, provenance = { status: 'ERROR' }, cleanup = { status: 'ER
 const results = [], phases = [];
 let serial;
 
-async function runLogged(bin, args, cwd, log, timeoutMs) {
+async function runLogged(bin, args, cwd, log, timeoutMs, extraEnv = {}) {
   // The SDK is initialized and version-checked before this call. Invoke its
   // cached tool directly on Windows so a batch/console child cannot retain the
   // disposable app directory handle after the Flutter command has finished.
@@ -45,7 +46,7 @@ async function runLogged(bin, args, cwd, log, timeoutMs) {
   const child = spawn(batch ? 'cmd.exe' : bin,
     batch ? ['/d', '/s', '/c', `""${bin}" ${args.map((arg) => `"${arg}"`).join(' ')}"`] : args,
     { cwd, env: { ...process.env, CI: 'true', FLUTTER_SUPPRESS_ANALYTICS: 'true', GRADLE_OPTS: '-Dorg.gradle.daemon=false -Dorg.gradle.vfs.watch=false',
-      'ORG_GRADLE_PROJECT_kotlin.compiler.execution.strategy': 'in-process' }, windowsHide: true, windowsVerbatimArguments: batch,
+      'ORG_GRADLE_PROJECT_kotlin.compiler.execution.strategy': 'in-process', ...extraEnv }, windowsHide: true, windowsVerbatimArguments: batch,
       stdio: ['ignore', 'pipe', 'pipe'], shell: false });
   const chunks = [];
   const resourceCaptures = [];
@@ -96,6 +97,7 @@ async function runLogged(bin, args, cwd, log, timeoutMs) {
   return { ...status, log: log.slice(workspace.runRoot.length + 1), completed: status.exitCode !== null,
     toolProcessId: child.pid, ownedResourceCleanup,
     nativeRecord,
+    audioAttempts: parseVoiceAttempts(text),
     ...classifyDeviceDiagnostics(text) };
 }
 
@@ -148,13 +150,14 @@ async function requireEmulator(expectedSerial) {
   throw new Error(`Timed out waiting for Android emulator ${expectedSerial}`);
 }
 
-async function ensurePackageManager(serial) {
+async function ensurePackageManager(serial, { failFast = false } = {}) {
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       const boot = command(adb, ['-s', serial, 'shell', 'getprop', 'sys.boot_completed'], root).trim();
       const pm = command(adb, ['-s', serial, 'shell', 'pm', 'path', 'android'], root);
       if (boot.split(/\s+/)[0] === '1' && pm.includes('package:')) return serial;
     } catch { /* fall through to soft reboot */ }
+    if (failFast) break;
     if (attempt === 0) {
       console.log(`Emulator package manager unhealthy; soft-rebooting ${serial}...`);
       try { command(adb, ['-s', serial, 'reboot'], root); } catch { /* reboot best-effort */ }
@@ -228,7 +231,7 @@ try {
   for (const id of selected) {
     let caseCleanup = { status: 'ERROR' };
     try {
-      serial = await ensurePackageManager(serial);
+      serial = await ensurePackageManager(serial, { failFast: Boolean(deviceCases[id].audio) });
       const packages = command(adb, ['-s', serial, 'shell', 'pm', 'list', 'packages', devicePackage], root);
       if (packages.includes(`package:${devicePackage}`)) command(adb, ['-s', serial, 'uninstall', devicePackage], root);
       active = await startDeviceServer({ adb, serial, caseId: id });
@@ -248,11 +251,13 @@ try {
           `--dart-define=DEVICE_CONTROL_URL=${active.controlOrigin}`, `--dart-define=DEVICE_RUN_ID=${active.runId}`,
           `--dart-define=DEVICE_PHASE=${phase}`];
         // First assembleDebug on a cold disposable Gradle cache often exceeds 10m.
+        const speechInput = deviceCases[id].audio || deviceCases[id].transcript;
+        const audioEnv = speechInput ? { VOCLE_DEVICE_DRIVER_SECONDS: '660' } : {};
         let phaseResult = await runLogged(flutter, args, workspace.app,
-          join(workspace.runRoot, 'diagnostics', `${id}-${phase}.log`), 25 * 60 * 1000);
+          join(workspace.runRoot, 'diagnostics', `${id}-${phase}.log`), 25 * 60 * 1000, audioEnv);
         // One infra-only retry for driver attach flakes (RPCError / TimeoutException).
         // Never retry assertion failures — those are product verdicts.
-        if (phaseResult.exitCode !== 0 && phaseResult.infrastructureFailure && !phaseResult.assertionFailure) {
+        if (!deviceCases[id].audio && phaseResult.exitCode !== 0 && phaseResult.infrastructureFailure && !phaseResult.assertionFailure) {
           console.log(`Infra retry once for ${id} native phase ${phase}`);
           try { await active.forceStop(); } catch { /* force-stop best-effort */ }
           await pause(2000);
@@ -293,7 +298,8 @@ try {
           records[0].error = 'Flutter reported a subsequent failure after the case body; inspect phase diagnostics';
         }
       }
-      else results.push({ id, status: failedPhase?.assertionFailure ? 'FAIL' : 'ERROR', executed: Boolean(failedPhase?.assertionFailure),
+      else results.push({ id, status: failedPhase?.assertionFailure ? 'FAIL' : 'ERROR',
+        executed: Boolean(failedPhase?.assertionFailure || failedPhase?.audioAttempts.some(row => row.result !== 'NOT_EXECUTED')),
         error: 'Device phase ended without a complete catalog result; inspect phase diagnostics', phaseEvidence: phases.filter((row) => row.id === id) });
       if (id === 'FR-NAV-05' && results.at(-1).status === 'PASS') validateRestart(active.checkpoints, deviceCases[id].phases, active.runId);
       if (id === 'FR-JRN-06' && results.at(-1).status === 'PASS') validateRestart(active.checkpoints, deviceCases[id].phases, active.runId);
@@ -354,19 +360,23 @@ try {
   await mkdir(directory, { recursive: true });
   const counts = Object.fromEntries(['PASS', 'FAIL', 'ERROR', 'BLOCKED', 'NEEDS_DECISION', 'SKIP'].map((status) =>
     [status, results.filter((row) => row.status === status).length]));
+  const selectionPassed = counts.PASS === selected.length && !results.some(row => row.infrastructureError || row.cleanup?.status === 'ERROR') &&
+    provenance.status === 'PASS' && cleanup.status === 'PASS';
   const report = { context: workspace?.provenance.context || captureContext(root), execution: executionIdentity(), executionMode: 'LOCAL_ONLY', sourceKind: 'committed-fork-archive', environmentContractVersion: 1, tier: 'D', platform: 'Android emulator', selected, planned: Object.keys(deviceCases).length,
     sourceSha: workspace?.provenance.sourceSha || null, harnessSha: workspace?.provenance.harnessSha || null,
     executed: results.filter((row) => row.executed).length, counts, cases: results, phases, provenance, cleanup,
     infrastructureErrors: results.filter((row) => row.infrastructureError).map((row) => ({ id: row.id, error: row.infrastructureError })),
-    fullSuccess: selected.length === 8 && counts.PASS === 8 && !results.some((row) => row.infrastructureError) && provenance.status === 'PASS' && cleanup.status === 'PASS',
+    selectionPassed, fullSuccess: selectionPassed && selected.length === Object.keys(deviceCases).length,
     providerDeliveryProven: false, iosImplemented: false, transportOutage: 'test-owned local gateway; no claim of carrier/radio delivery',
     generatedAt: new Date().toISOString() };
   await writeFile(join(directory, 'results.json'), JSON.stringify(report, null, 2));
-  await writeFile(join(directory, 'coverage.json'), JSON.stringify({ planned: 8, selected, executed: report.executed, counts, fullSuccess: report.fullSuccess }, null, 2));
+  await writeFile(join(directory, 'coverage.json'), JSON.stringify({ planned: report.planned, selected, executed: report.executed, counts, fullSuccess: report.fullSuccess }, null, 2));
   await writeFile(join(directory, 'cleanup.json'), JSON.stringify(cleanup, null, 2));
+  const voiceResults = results.filter(row => deviceCases[row.id].audio);
+  if (voiceResults.length) await writeVoiceResults(directory, voiceResults, phases);
   const escape = (value) => String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('"', '&quot;');
   await writeFile(join(directory, 'junit.xml'), `<testsuite name="Vocle Android device" tests="${results.length}" failures="${counts.FAIL + counts.NEEDS_DECISION}" errors="${counts.ERROR + counts.BLOCKED}">\n${results.map((row) => `<testcase name="${row.id}">${row.status === 'PASS' ? '' : `<${row.status === 'FAIL' || row.status === 'NEEDS_DECISION' ? 'failure' : 'error'} message="${row.status}">${escape(row.error || '')}</${row.status === 'FAIL' || row.status === 'NEEDS_DECISION' ? 'failure' : 'error'}>`}</testcase>`).join('\n')}\n</testsuite>\n`);
   await writeFile(join(directory, 'report.md'), `# Android device regression\n\nSource: ${report.sourceSha}; harness: ${report.harnessSha}.\nExecuted: ${report.executed}/${selected.length}; full success: ${report.fullSuccess}.\n\n| ID | Status | Executed |\n| --- | --- | --- |\n${results.map((row) => `| ${row.id} | ${row.status} | ${row.executed} |`).join('\n')}\n\nProvenance: ${provenance.status}; cleanup: ${cleanup.status}.\nNo real provider delivery or iOS coverage claimed.\n`);
   console.log(JSON.stringify({ reportDirectory: directory, counts, executed: report.executed, fullSuccess: report.fullSuccess }));
-  if (!report.fullSuccess) process.exitCode = 1;
+  if (!report.selectionPassed) process.exitCode = 1;
 }

@@ -34,16 +34,16 @@ test('workflow entry points support complete PR and manual execution with cleanu
   const developer=await readFile(join(directory,'vocle-developer-qa.yml'),'utf8');assert.equal((developer.match(/uses: .\/.github\/workflows\/vocle-security-environment-test.yml/g)||[]).length,1);
   for(const file of await readdir(directory)){const text=await readFile(join(directory,file),'utf8');assert(!text.includes('uses: ./.github/workflows/vocle-sanity.yml'));}
 });
-test('hosted Android inventory is local-only SKIP; 286 hosted passes never become 296 executed passes',async()=>{
+test('hosted Android inventory is local-only SKIP; 291 hosted passes never become 306 executed passes',async()=>{
   const metadata=await scenarioMetadata(root);
   const hosted=normalize({scope:'full',results:metadata.filter(c=>c.tier!=='D').map(c=>({id:c.id,status:'PASS',executed:true}))},metadata,{suite:'developer'});
   const rows=addLocalOnlyAndroid(hosted.results,metadata,hosted.source,hosted.harness);
-  assert.equal(rows.length,296);assert.equal(rows.filter(r=>r.executed).length,286);assert.equal(rows.filter(r=>r.status==='PASS').length,286);
-  assert.equal(rows.filter(r=>r.executionMode==='LOCAL_ONLY'&&r.status==='SKIP'&&!r.executed).length,10);
+  assert.equal(rows.length,306);assert.equal(rows.filter(r=>r.executed).length,291);assert.equal(rows.filter(r=>r.status==='PASS').length,291);
+  assert.equal(rows.filter(r=>r.executionMode==='LOCAL_ONLY'&&r.status==='SKIP'&&!r.executed).length,15);
   assert.throws(()=>addLocalOnlyAndroid(rows,metadata,hosted.source,hosted.harness),/cannot be relabeled/);
   assert.equal(normalize({},metadata,{suite:'backend'}).counts.ERROR,188);
-  assert.equal(normalize({},metadata,{suite:'flutter'}).counts.ERROR,98);
-  assert(summary(hosted).includes('296 total / 286 hosted / 10 LOCAL_ONLY'));
+  assert.equal(normalize({},metadata,{suite:'flutter'}).counts.ERROR,103);
+  assert(summary(hosted).includes('306 total / 291 hosted / 15 LOCAL_ONLY'));
   const old=process.env.GITHUB_RUN_ID;process.env.GITHUB_RUN_ID='42';
   try{assert.throws(()=>normalize({},metadata,{suite:'device'}),/LOCAL_ONLY/);}finally{if(old===undefined)delete process.env.GITHUB_RUN_ID;else process.env.GITHUB_RUN_ID=old;}
 });

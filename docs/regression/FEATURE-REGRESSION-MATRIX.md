@@ -13,7 +13,9 @@ To regenerate this file after updating the registry, run `node tests/functional-
 | Direct messaging and consent (`direct-messaging`) | 27 | 7 | 0 | 1 | 35 |
 | Group and channel messaging (`group-messaging`) | 35 | 2 | 0 | 0 | 37 |
 | Voice messaging (`voice-messaging`) | 5 | 12 | 0 | 1 | 18 |
-| Voice assistant (`voice-assistant`) | 2 | 23 | 0 | 0 | 25 |
+| Voice assistant (`voice-assistant`) | 2 | 28 | 0 | 1 | 31 |
+| Voice Assistant — Live Audio (`voice-assistant-live-audio`) | 0 | 0 | 0 | 3 | 3 |
+| Voice Assistant — Prerecorded File Recognition (`voice-assistant-prerecorded`) | 0 | 0 | 0 | 1 | 1 |
 | Handoffs (`handoff`) | 24 | 15 | 0 | 2 | 41 |
 | Handoff Voice (`handoff-voice`) | 3 | 11 | 0 | 1 | 15 |
 | Needl (`needl`) | 47 | 33 | 0 | 0 | 80 |
@@ -29,7 +31,7 @@ To regenerate this file after updating the registry, run `node tests/functional-
 | Support and platform operations (`support-and-ops`) | 6 | 1 | 0 | 0 | 7 |
 | Access and privacy (`access-and-privacy`) | 47 | 3 | 0 | 1 | 51 |
 
-The catalog has **296 unique cases** and **565 feature assignments**. A test with several tags counts once in each feature and once in `all`.
+The catalog has **306 unique cases** and **575 feature assignments**. A test with several tags counts once in each feature and once in `all`.
 
 The Security column counts dedicated security-suite IDs. The separate API and realtime, MongoDB, offline media and Cloudinary inventories use their existing workflows. Access and privacy checks inside this functional catalog keep their backend, Flutter or Android layer.
 
@@ -335,3 +337,13 @@ See the [voice coverage audit](VOICE-COVERAGE-AUDIT.md) for the baseline evidenc
 | direct-messaging, voice-assistant, needl, access-and-privacy | `FR-AST-23` | Confirm actions for an unconsented DM, a consented DM and a Needl | Flutter | [voice_action_executor_test.dart](../../medcollab-app/test/functional_regression/voice_action_executor_test.dart) |
 | voice-assistant, handoff, handoff-voice, navigation, access-and-privacy | `FR-AST-24` | Confirm a voice handoff with and without a shared group | Flutter | [voice_action_executor_test.dart](../../medcollab-app/test/functional_regression/voice_action_executor_test.dart) |
 | direct-messaging, voice-assistant | `FR-AST-25` | Tap confirm again while a bot message write is pending | Flutter | [voice_bot_cubit_test.dart](../../medcollab-app/test/functional_regression/voice_bot_cubit_test.dart) |
+| voice-assistant | `FR-AST-26` | Inject final chat commands with varied wording, casing and recognition-like name variants | Flutter | [voice_action_executor_test.dart](../../medcollab-app/test/functional_regression/voice_action_executor_test.dart) |
+| voice-assistant | `FR-AST-27` | Inject unknown and ambiguous chat names, cancel one proposal and confirm another | Flutter | [voice_action_executor_test.dart](../../medcollab-app/test/functional_regression/voice_action_executor_test.dart) |
+| voice-assistant | `FR-AST-28` | Inject incomplete commands, cancel an active session, then observe timeout and duplicate finals | Flutter | [voice_action_executor_test.dart](../../medcollab-app/test/functional_regression/voice_action_executor_test.dart) |
+| voice-assistant | `FR-AST-29` | Inject search, tab, status and read-all commands | Flutter | [voice_action_executor_test.dart](../../medcollab-app/test/functional_regression/voice_action_executor_test.dart) |
+| voice-assistant | `FR-AST-30` | Confirm chat with an expired session, then denied consent, then an authorized session | Flutter | [voice_action_executor_test.dart](../../medcollab-app/test/functional_regression/voice_action_executor_test.dart) |
+| voice-assistant-live-audio | `FR-AST-31` | Replay Bala chat variants into the Android virtual microphone from Home | Android (local) | [voice_assistant_test.dart](../../medcollab-app/integration_test/functional_regression/voice_assistant_test.dart) |
+| voice-assistant-live-audio | `FR-AST-32` | Replay Priya handoff commands into the Android virtual microphone from Home | Android (local) | [voice_assistant_test.dart](../../medcollab-app/integration_test/functional_regression/voice_assistant_test.dart) |
+| voice-assistant-live-audio | `FR-AST-33` | Replay unknown, ambiguous and incomplete speech commands from Home | Android (local) | [voice_assistant_test.dart](../../medcollab-app/integration_test/functional_regression/voice_assistant_test.dart) |
+| voice-assistant-prerecorded | `FR-AST-34` | Recognize a prerecorded WAV through SpeechBridge file input and confirm the resulting chat proposal | Android (local) | [voice_assistant_test.dart](../../medcollab-app/integration_test/functional_regression/voice_assistant_test.dart) |
+| voice-assistant | `FR-AST-35` | Inject final speech events on Android Home and confirm Bala's chat and Priya's handoff | Android (local) | [voice_assistant_test.dart](../../medcollab-app/integration_test/functional_regression/voice_assistant_test.dart) |

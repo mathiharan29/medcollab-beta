@@ -12,6 +12,7 @@ import { createHttp } from '../src/http.mjs';
 import { capturedOtp } from '../src/fixtures.mjs';
 import { connectSocket } from '../src/socket.mjs';
 import { deviceCases, devicePackage, emulatorSerial, resumedActivityState as resumed, activityLifecycleStates } from './device-contracts.mjs';
+import { voiceAudioControls } from './voice-audio.mjs';
 
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 async function observe(read, accept, reason, timeout = 15000) {
@@ -93,6 +94,8 @@ export async function startDeviceServer({ adb, serial, caseId }) {
   };
   const foreground = () => native('shell', 'dumpsys', 'activity', 'activities');
   const activity = `${devicePackage}/com.example.medcollab_app.MainActivity`;
+  const voice = await voiceAudioControls(caseId, serial);
+  const assistant = Boolean(voice || deviceCases[caseId].transcript);
   let uri, fixture;
   let cleaned = false;
   const db = (action) => inspectDatabase(backendRoot, uri, action);
@@ -162,19 +165,27 @@ export async function startDeviceServer({ adb, serial, caseId }) {
     backend = await startBackend(uri, backendPort, runtime, inbox, { extraEnv: { API_BASE_URL: apiOrigin } });
     const request = createHttp(`http://127.0.0.1:${backendPort}`);
     const people = {};
-    for (const [index, label] of ['A', 'B', 'C'].entries()) {
+    const voiceNames = { A: 'Dr Runner', B: 'Dr Bala', C: 'Dr Priya', D: 'Dr Asha Rao', E: 'Dr Asha Rao', F: 'Dr Bela' };
+    const labels = ['A', 'B', 'C'];
+    if (caseId === 'FR-AST-31') labels.push('F');
+    if (caseId === 'FR-AST-33') labels.push('D', 'E');
+    for (const [index, label] of labels.entries()) {
       const phone = `+91999000100${index + 1}`;
       await request('/api/auth/request-otp', { method: 'POST', body: { phone } });
       const login = await request('/api/auth/verify-otp', { method: 'POST', body: { phone, otp: await capturedOtp(inbox, phone) } });
+      const name = assistant ? voiceNames[label] : `Dr Synthetic Device ${label}`;
+      const speciality = label === 'D' ? 'Cardiology' : 'E' ? 'Nephrology' : 'Synthetic Medicine';
       const profile = await request('/api/users/me', { method: 'PUT', token: login.data.accessToken,
-        body: { name: `Dr Synthetic Device ${label}`, institution: 'Vocle Synthetic Institute', speciality: 'Synthetic Medicine' } });
-      assert.equal(profile.data.user.name, `Dr Synthetic Device ${label}`);
+        body: { name, institution: 'Vocle Synthetic Institute', speciality } });
+      assert.equal(profile.data.user.name, name);
       people[label] = { phone, userId: profile.data.user._id, token: login.data.accessToken, refreshToken: login.data.refreshToken };
     }
     const created = await request('/api/spaces', { method: 'POST', token: people.A.token,
       body: { name: 'Synthetic Device Space', type: 'department' }, expectedStatus: 201 });
     const spaceId = created.data.space._id;
-    await request('/api/spaces/join', { method: 'POST', token: people.B.token, body: { inviteCode: created.data.space.inviteCode } });
+    for (const label of assistant ? labels.slice(1) : ['B']) {
+      await request('/api/spaces/join', { method: 'POST', token: people[label].token, body: { inviteCode: created.data.space.inviteCode } });
+    }
     const channelId = created.data.channels.find((item) => item.name === 'general')._id;
     const other = await request(`/api/spaces/${spaceId}/channels`, { method: 'POST', token: people.A.token,
       body: { name: 'synthetic-device-other' }, expectedStatus: 201 });
@@ -198,18 +209,19 @@ export async function startDeviceServer({ adb, serial, caseId }) {
       senderSocket = await connectSocket(backendRoot, `http://127.0.0.1:${backendPort}`, people.A.token);
       senderSocket.on('handoff_acknowledged', (payload) => { if (ackListening && payload?.handoffId === handoffId) ackEvents.push(payload.handoffId); });
     }
-    let voiceDmId;
-    if (caseId === 'FR-VCE-14') {
+    const voiceDms = {};
+    for (const label of assistant ? labels.filter(label => label !== 'A' && label !== 'C') : caseId === 'FR-VCE-14' ? ['B'] : []) {
       const consent = await request('/api/message-requests', {
-        method: 'POST', token: people.A.token, body: { toUserId: people.B.userId }, expectedStatus: 201,
+        method: 'POST', token: people.A.token, body: { toUserId: people[label].userId }, expectedStatus: 201,
       });
-      await request(`/api/message-requests/${consent.data.request.id}/accept`, { method: 'POST', token: people.B.token });
+      await request(`/api/message-requests/${consent.data.request.id}/accept`, { method: 'POST', token: people[label].token });
       const direct = await request('/api/channels/dm', {
-        method: 'POST', token: people.A.token, body: { userId: people.B.userId },
+        method: 'POST', token: people.A.token, body: { userId: people[label].userId },
       });
-      voiceDmId = direct.data.channel._id;
+      voiceDms[label] = direct.data.channel._id;
     }
-    fixture = { voiceDmId, ...people, spaceId, channelId, otherChannelId: other.data.channel._id,
+    const voiceDmId = voiceDms.B;
+    fixture = { voiceDmId, voiceDms, ...people, spaceId, channelId, otherChannelId: other.data.channel._id,
       invites: invites.slice(0, 4), pendingInvite: invites[4], handoffId };
     const oid = (connection, value) => new connection.base.Types.ObjectId(value);
     const membership = async (space, label) => db(async (connection) => {
@@ -233,6 +245,17 @@ export async function startDeviceServer({ adb, serial, caseId }) {
       acknowledgeRequests: requests.filter((row) => row.method === 'POST' && row.pathname === `/api/handoffs/${handoffId}/acknowledge`).length,
       senderNotificationCount: await connection.collection('notifications').countDocuments({ userId: oid(connection, people.A.userId), referenceId: oid(connection, handoffId), type: 'handoff_acknowledged' }),
       senderEventHandoffIds: ackEvents,
+    }));
+    const voiceState = () => db(async (connection) => ({
+      drafts: (await connection.collection('handoffs').find({ fromUserId: oid(connection, people.A.userId) }).toArray())
+        .map(row => ({ id: String(row._id), toUserId: String(row.toUserId), channelId: String(row.channelId),
+          spaceId: String(row.spaceId), status: row.status, shiftType: row.shiftType, summary: row.shiftSummary,
+          beds: row.patients.map(patient => patient.bedNumber), aliases: row.patients.map(patient => patient.clinicalAlias) }))
+        .sort((a, b) => a.id.localeCompare(b.id)),
+      notifications: await connection.collection('notifications').countDocuments(),
+      messages: await connection.collection('messages').countDocuments(),
+      dmOpens: requests.filter(row => row.method === 'POST' && row.pathname === '/api/channels/dm').length,
+      submits: requests.filter(row => row.method === 'POST' && /^\/api\/handoffs\/[^/]+\/submit$/.test(row.pathname)).length,
     }));
     controlServer = createServer(async (req, res) => {
       res.setHeader('content-type', 'application/json');
@@ -261,6 +284,14 @@ export async function startDeviceServer({ adb, serial, caseId }) {
             break;
           }
           case 'otp': assert.ok(people[input.label]); answer = { otp: await capturedOtp(inbox, people[input.label].phone) }; break;
+          case 'assistant-samples':
+            assert.ok(voice); answer = { samples: voice.samples, repetitions: voice.repetitions }; break;
+          case 'assistant-audio':
+            assert.ok(voice); answer = await voice.replay(input.sample, { probe: input.probe === true }); break;
+          case 'assistant-file':
+            assert.ok(voice); answer = await voice.file(); break;
+          case 'assistant-state':
+            assert.ok(assistant); answer = await voiceState(); break;
           case 'result':
             assert.equal(input.id, caseId); assert.equal(input.runId, runId);
             assert.equal(input.phase, deviceCases[caseId].phases.at(-1));

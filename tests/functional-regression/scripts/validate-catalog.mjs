@@ -15,15 +15,15 @@ const expect = (condition, message) => { if (!condition) issues.push(message); }
 const ids = stored.cases.map((row) => row.id);
 const byId = new Map(stored.cases.map((row) => [row.id, row]));
 const count = (predicate) => stored.cases.filter(predicate).length;
-const moduleTotals = { AUTH: 13, PRO: 6, DISC: 4, SPC: 11, CH: 8, REQ: 9, DM: 14, MSG: 13, THR: 6, SOC: 7, HOF: 29, MED: 11, NOT: 9, PUSH: 6, RT: 10, SRCH: 6, SUP: 5, NAV: 5, OFF: 6, SAVE: 3, HOME: 3, LINK: 4, RUN: 4, JRN: 6, NDL: 55, ADM: 2, AST: 25, VCE: 16 };
+const moduleTotals = { AUTH: 13, PRO: 6, DISC: 4, SPC: 11, CH: 8, REQ: 9, DM: 14, MSG: 13, THR: 6, SOC: 7, HOF: 29, MED: 11, NOT: 9, PUSH: 6, RT: 10, SRCH: 6, SUP: 5, NAV: 5, OFF: 6, SAVE: 3, HOME: 3, LINK: 4, RUN: 4, JRN: 6, NDL: 55, ADM: 2, AST: 35, VCE: 16 };
 
 expect(stored.schemaVersion === 1, 'Unsupported schemaVersion');
-expect(stored.cases.length === 296, `Expected 296 cases; found ${stored.cases.length}`);
+expect(stored.cases.length === 306, `Expected 306 cases; found ${stored.cases.length}`);
 expect(new Set(ids).size === ids.length, 'Duplicate catalog IDs');
 expect(count((row) => row.coverage === 'EXISTING') === 48, 'Expected 48 retained sanity cases');
-expect(count((row) => row.coverage === 'NEW') === 248, 'Expected 248 new cases');
-for (const [tier, expected] of Object.entries({ B: 188, F: 98, D: 10 })) expect(count((row) => row.tier === tier) === expected, `${tier} tier count mismatch`);
-for (const [priority, expected] of Object.entries({ P0: 155, P1: 131, P2: 10 })) expect(count((row) => row.priority === priority) === expected, `${priority} priority count mismatch`);
+expect(count((row) => row.coverage === 'NEW') === 258, 'Expected 258 new cases');
+for (const [tier, expected] of Object.entries({ B: 188, F: 103, D: 15 })) expect(count((row) => row.tier === tier) === expected, `${tier} tier count mismatch`);
+for (const [priority, expected] of Object.entries({ P0: 163, P1: 133, P2: 10 })) expect(count((row) => row.priority === priority) === expected, `${priority} priority count mismatch`);
 for (const [module, expected] of Object.entries(moduleTotals)) expect(count((row) => row.module === module) === expected, `${module} module count mismatch`);
 expect(Object.keys(moduleNames).length === Object.keys(moduleTotals).length, 'Module mapping count mismatch');
 

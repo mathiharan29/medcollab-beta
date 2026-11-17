@@ -17,6 +17,8 @@ on:
           - group-messaging
           - voice-messaging
           - voice-assistant
+          - voice-assistant-live-audio
+          - voice-assistant-prerecorded
           - handoff
           - handoff-voice
           - needl
@@ -37,6 +39,7 @@ permissions:
 
 jobs:
   feature:
+    if: inputs.feature != 'voice-assistant-live-audio'
     runs-on: ubuntu-24.04
     timeout-minutes: 50
     env:
@@ -127,5 +130,57 @@ jobs:
         with:
           name: vocle-feature-${{ inputs.feature }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/vocle-feature-artifact
+          if-no-files-found: error
+          retention-days: 90
+  voice-assistant-live-audio:
+    if: inputs.feature == 'voice-assistant-live-audio'
+    runs-on: ${{ github.ref == 'refs/heads/master' && vars.VOCLE_LIVE_AUDIO_RUNNER == 'enabled' && fromJSON('["self-hosted","linux","vocle-live-audio"]') || 'ubuntu-24.04' }}
+    timeout-minutes: 120
+    concurrency:
+      group: vocle-live-audio-emulator
+      cancel-in-progress: false
+    env:
+      VOCLE_FEATURE: voice-assistant-live-audio
+    steps:
+      - name: Report the runner requirement
+        if: github.ref != 'refs/heads/master' || vars.VOCLE_LIVE_AUDIO_RUNNER != 'enabled'
+        run: |
+          message='NOT EXECUTED. Voice Assistant Live Audio requires master and a configured self-hosted Linux runner with the vocle-live-audio label, a local Android recognizer, and working emulator microphone gRPC.'
+          echo "$message" >> "$GITHUB_STEP_SUMMARY"
+          echo "::error::$message"
+          exit 1
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - id: live
+        name: Run the selected Android virtual microphone cases
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = mathiharan29/medcollab-beta
+          node tests/functional-regression/scripts/verify-target.mjs . "$GITHUB_SHA"
+          node tests/functional-regression/scripts/validate-catalog.mjs
+          output="$(mktemp -d "$RUNNER_TEMP/vocle-live-audio.XXXXXX")"
+          echo "output=$output" >> "$GITHUB_OUTPUT"
+          node tests/functional-regression/scripts/select-feature.mjs > "$output/selection.json"
+          ids="$(node -e 'process.stdout.write(require(process.argv[1]).ids.join(","))' "$output/selection.json")"
+          node tests/functional-regression/scripts/run-device.mjs --source-sha="$GITHUB_SHA" \
+            --cases="$ids" --output="$output/android"
+      - id: audio-stage
+        name: Sanitize audio regression evidence
+        if: ${{ !cancelled() && steps.live.outputs.output != '' }}
+        env:
+          OUTPUT: ${{ steps.live.outputs.output }}
+        run: |
+          if [ -f "$OUTPUT/android/voice-assistant-attempts.md" ]; then
+            cat "$OUTPUT/android/voice-assistant-attempts.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          node tests/reporting/stage.mjs "$OUTPUT" "$OUTPUT-sanitized"
+      - name: Upload live audio evidence
+        if: ${{ !cancelled() && steps.audio-stage.outcome == 'success' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: vocle-feature-voice-assistant-live-audio-${{ github.run_attempt }}
+          path: ${{ steps.live.outputs.output }}-sanitized
           if-no-files-found: error
           retention-days: 90
