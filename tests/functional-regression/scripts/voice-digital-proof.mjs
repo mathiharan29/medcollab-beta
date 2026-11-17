@@ -48,6 +48,6 @@ export async function verifiedDigitalTranscript(directory, sample, runningFinger
     sample: sample.id, transcript: speech.transcript, phrase: sample.phrase,
     wavSha256: fixture.wavSha256, pcmSha256: fixture.pcmSha256,
     engine: speech.engine, profile: speech.profile, source: speech.source,
-    pcmBytes: fixture.pcmBytes, fingerprint: runningFingerprint,
+    pcmBytes: fixture.pcmBytes, fingerprint: runningFingerprint, terminal: speech.terminal,
   };
 }

@@ -33,6 +33,10 @@ on:
           - realtime
           - support-and-ops
           - access-and-privacy
+      audio_repetitions:
+        description: Repetitions for representative prerecorded audio fixtures (1-5)
+        type: number
+        default: 2
 
 permissions:
   contents: read
@@ -135,6 +139,8 @@ jobs:
   voice-assistant-prerecorded:
     if: inputs.feature == 'voice-assistant-prerecorded'
     uses: ./.github/workflows/vocle-digital-audio-regression.yml
+    with:
+      repetitions: ${{ inputs.audio_repetitions }}
   voice-assistant-live-audio:
     if: inputs.feature == 'voice-assistant-live-audio'
     runs-on: ${{ github.ref == 'refs/heads/master' && vars.VOCLE_LIVE_AUDIO_RUNNER == 'enabled' && fromJSON('["self-hosted","linux","vocle-live-audio"]') || 'ubuntu-24.04' }}

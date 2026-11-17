@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -11,6 +12,7 @@ import 'package:medcollab_app/core/router/app_routes.dart';
 import 'package:medcollab_app/features/handoffs/presentation/cubit/handoff_form_cubit.dart';
 import 'package:medcollab_app/features/handoffs/presentation/pages/handoff_form_page.dart';
 import 'package:medcollab_app/features/messages/presentation/pages/channel_chat_page.dart';
+import 'package:medcollab_app/features/search/presentation/pages/global_search_page.dart';
 import 'package:medcollab_app/features/voice_bot/domain/voice_actions.dart';
 import 'package:medcollab_app/features/voice_bot/presentation/voice_bot_cubit.dart';
 import 'package:medcollab_app/features/voice_bot/presentation/voice_bot_launcher.dart';
@@ -19,6 +21,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 
 import 'support/device_harness.dart';
+
+part 'voice_digital_cases.dart';
 
 final _opener = find.byKey(const Key('open-voice-bot'));
 final _panel = find.byType(VoiceBotPanel);
@@ -40,6 +44,16 @@ void main() {
       deviceCase('FR-AST-34', _file);
     case 'assistant-transcript':
       deviceCase('FR-AST-35', _transcript);
+    case 'assistant-digital-chat':
+      deviceCase('FR-AST-36', _digital);
+    case 'assistant-digital-draft':
+      deviceCase('FR-AST-37', _digital);
+    case 'assistant-digital-negative':
+      deviceCase('FR-AST-38', _digital);
+    case 'assistant-digital-navigation':
+      deviceCase('FR-AST-39', _digital);
+    case 'assistant-digital-updates':
+      deviceCase('FR-AST-40', _digital);
     default:
       throw DeviceInfrastructureError('Unknown Voice Assistant phase');
   }
@@ -419,7 +433,8 @@ Future<void> _assertChat(WidgetTester tester, Map<String, dynamic> f,
 }
 
 Future<void> _assertDraft(WidgetTester tester, Map<String, dynamic> f,
-    Map<String, dynamic> before, Map<String, Object?> row) async {
+    Map<String, dynamic> before, Map<String, Object?> row,
+    {String recipient = 'C', List<String> beds = const ['7']}) async {
   final editor = find.byType(HandoffFormPage).hitTestable();
   await until(tester, () => editor.evaluate().isNotEmpty,
       'draft editor opens after creation');
@@ -431,9 +446,6 @@ Future<void> _assertDraft(WidgetTester tester, Map<String, dynamic> f,
   await until(tester, () => form.evaluate().length == 1, 'persisted draft populates its form');
   final content = tester.widget<BlocProvider<HandoffFormCubit>>(form).child!;
   final formState = tester.element(find.byWidget(content)).read<HandoffFormCubit>().state;
-  expect(formState.assignedDoctor?.id, _person(f, 'C'));
-  expect(formState.patients.map((patient) => patient.bedNumber), ['7']);
-  expect(formState.isSent, isFalse);
   final after = await control('assistant-state');
   final oldIds =
       (before['drafts'] as List).map((draft) => (draft as Map)['id']).toSet();
@@ -441,17 +453,20 @@ Future<void> _assertDraft(WidgetTester tester, Map<String, dynamic> f,
       .where((draft) => !oldIds.contains((draft as Map)['id']))
       .toList();
   row['actualAction'] = {'editorId': page.handoffId, 'newDrafts': drafts};
+  expect(formState.assignedDoctor?.id, _person(f, recipient));
+  expect(formState.patients.map((patient) => patient.bedNumber), beds);
+  expect(formState.isSent, isFalse);
   expect(drafts, [
     {
       'id': page.handoffId,
-      'toUserId': _person(f, 'C'),
+      'toUserId': _person(f, recipient),
       'channelId': f['channelId'],
       'spaceId': f['spaceId'],
       'status': 'draft',
       'shiftType': 'night',
       'summary': '',
-      'beds': ['7'],
-      'aliases': ['Bed 7'],
+      'beds': beds,
+      'aliases': [for (final bed in beds) 'Bed $bed'],
     }
   ]);
   expect(page.spaceId, f['spaceId']);
@@ -464,6 +479,7 @@ Future<void> _assertDraft(WidgetTester tester, Map<String, dynamic> f,
 
 Future<void> _file(WidgetTester tester) async {
   await _launch(tester);
+  final timer = Stopwatch()..start();
   final file = File(
       '${(await getTemporaryDirectory()).path}/vocle-regression-speech.wav');
   final row = <String, Object?>{
@@ -485,6 +501,12 @@ Future<void> _file(WidgetTester tester) async {
       row['expectedAction'] = 'Open the existing Alex DM after confirmation';
       row['nativeRecognition'] = digital;
       row['recognitionStart'] = 'verified_android_digital_file_input';
+      row['sha256'] = digital['wavSha256'];
+      row['pcmSha256'] = digital['pcmSha256'];
+      row['expectedIntent'] = 'OpenChat';
+      row['recognitionError'] = 0;
+      row['recognitionSuccess'] = true;
+      row['transcriptMatched'] = true;
       recognizerCalled = true;
       transcript = digital['transcript'] as String;
     } else {
@@ -512,16 +534,22 @@ Future<void> _file(WidgetTester tester) async {
     final action = bot.state.proposals.single as OpenChatAction;
     final f = await fixture();
     row['resolvedTarget'] = action.to.rawId;
+    row['expectedTarget'] = _person(f, 'B');
+    row['parsedIntent'] = 'OpenChat';
+    row['intentCorrect'] = true;
+    row['entityCorrect'] = row['resolvedTarget'] == row['expectedTarget'];
     expect(action.to.rawId, _person(f, 'B'));
     expect(await control('assistant-state'), before);
     await _tapConfirm(tester);
     await _assertChat(tester, f, 'B', before, row);
+    if (digital != null) await _digitalScreenshot(row);
     row['result'] = 'PASS';
   } catch (error) {
     row['result'] = recognizerCalled ? 'FAIL' : 'NOT_EXECUTED';
     row['error'] = error.toString();
     rethrow;
   } finally {
+    row['durationMs'] = timer.elapsedMilliseconds;
     _recordAttempt(row);
     if (await file.exists()) await file.delete();
   }

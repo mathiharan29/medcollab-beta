@@ -150,6 +150,8 @@ def main():
         "sha256": hashlib.sha256(silence.read_bytes()).hexdigest(),
         "provenance": "Three seconds of digitally generated zero-valued signed PCM samples",
     })
+    generated = {sample["id"] for sample in samples}
+    samples.extend(sample for key, sample in existing.items() if key not in generated)
     manifest.write_text(json.dumps(samples, indent=2) + "\n", encoding="utf-8")
 
 

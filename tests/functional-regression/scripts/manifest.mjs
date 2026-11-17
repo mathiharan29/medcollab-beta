@@ -5,6 +5,7 @@ import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { catalogCases, completeBackendSuccess, environmentContractVersion, forkRepository, harnessRoot, selectBackendRun, statuses, upstreamRef, upstreamRepository, validateResultSet } from './ci-contracts.mjs';
 import { loadFeature } from './feature-registry.mjs';
+import { deviceCases } from './device-contracts.mjs';
 
 const output = resolve(process.env.VOCLE_OUTPUT_DIR || join(harnessRoot, 'output'));
 const target = process.env.VOCLE_TARGET_DIR;
@@ -71,7 +72,16 @@ const inventory = await catalogCases();
 const localInventory = feature === undefined ? inventory : await loadFeature(feature, inventory).catch(() => []);
 const wasExecuted = item => item.errorCategory !== 'REPORT_MISSING' && (feature === undefined ||
   (!['SETUP', 'DEPENDENCY'].includes(item.errorCategory) && !['BLOCKED', 'SKIP'].includes(item.status)));
-const coverage = { planned: { total: 306, hosted: 291, localOnly: 15, backend: 188, flutter: 103, device: 15 }, localOnlyCases: localInventory.filter(c => c.tier === 'D').map(c => ({ id: c.id, executionMode: 'LOCAL_ONLY', executed: false, status: 'SKIP' })), scope, selected: selected.length, executed: enriched.filter(wasExecuted).length, tally, byTier: Object.fromEntries(['B', 'F', 'D'].map((tier) => [tier, { selected: selected.filter((item) => item.tier === tier).length, executed: enriched.filter((item) => item.tier === tier && wasExecuted(item)).length }])), byPriority: Object.fromEntries(['P0', 'P1', 'P2'].map((priority) => [priority, { selected: selected.filter((item) => item.priority === priority).length, executed: enriched.filter((item) => item.priority === priority && wasExecuted(item)).length }])) };
+const hostedAndroid = id => ['file', 'digital'].includes(deviceCases[id]?.audio);
+const deviceInventory = localInventory.filter(row => row.tier === 'D');
+const planned = { total: inventory.length, hosted: inventory.filter(row => row.tier !== 'D').length,
+  localOnly: inventory.filter(row => row.tier === 'D' && !hostedAndroid(row.id)).length,
+  hostedAndroid: inventory.filter(row => hostedAndroid(row.id)).length,
+  backend: inventory.filter(row => row.tier === 'B').length, flutter: inventory.filter(row => row.tier === 'F').length,
+  device: inventory.filter(row => row.tier === 'D').length };
+const coverage = { planned, localOnlyCases: deviceInventory.filter(c => !hostedAndroid(c.id)).map(c => ({ id: c.id, executionMode: 'LOCAL_ONLY', executed: false, status: 'SKIP' })),
+  separateHostedDeviceCases: deviceInventory.filter(c => hostedAndroid(c.id)).map(c => ({ id: c.id, executionMode: 'HOSTED', executed: false, status: 'SKIP' })),
+  scope, selected: selected.length, executed: enriched.filter(wasExecuted).length, tally, byTier: Object.fromEntries(['B', 'F', 'D'].map((tier) => [tier, { selected: selected.filter((item) => item.tier === tier).length, executed: enriched.filter((item) => item.tier === tier && wasExecuted(item)).length }])), byPriority: Object.fromEntries(['P0', 'P1', 'P2'].map((priority) => [priority, { selected: selected.filter((item) => item.priority === priority).length, executed: enriched.filter((item) => item.priority === priority && wasExecuted(item)).length }])) };
 const verifiedBackendAll = result === 'PASS' && completeBackendSuccess({ scope, selected, tally, cleanup, provenance });
 const manifest = { context: captureContext(harnessRoot), execution: executionIdentity(), schemaVersion: 1, environmentContractVersion, scope, feature, sourceKind, targetSha, harnessSha, fingerprint, selectedIds: selected.map((item) => item.id), tally, result, verifiedBackendAll, integrityError, runId: process.env.GITHUB_RUN_ID || null, attempt: process.env.GITHUB_RUN_ATTEMPT || null };
 await Promise.all([
@@ -81,7 +91,7 @@ await Promise.all([
   writeFile(join(output, 'provenance.json'), `${JSON.stringify(provenance, null, 2)}\n`),
   writeFile(join(output, 'cleanup.json'), `${JSON.stringify(cleanup, null, 2)}\n`),
   writeFile(join(output, 'junit.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<testsuite name="vocle-functional-regression" tests="${enriched.length}" failures="${tally.FAIL + tally.BLOCKED + tally.NEEDS_DECISION}" errors="${tally.ERROR}" skipped="${tally.SKIP}">\n${enriched.map((item) => `  <testcase classname="${xml(item.module || byId.get(item.id)?.module || 'UNKNOWN')}" name="${xml(item.id)}" time="${((item.durationMs || 0) / 1000).toFixed(3)}">${item.status === 'PASS' ? '' : item.status === 'ERROR' ? `<error message="${xml(item.error || 'Infrastructure error')}"/>` : item.status === 'SKIP' ? `<skipped message="${xml(item.error || 'Unselected scope')}"/>` : `<failure message="${xml(item.status + ': ' + (item.error || 'Functional requirement not met'))}"/>`}</testcase>`).join('\n')}\n</testsuite>\n`),
-  writeFile(join(output, 'report.md'), `# Vocle functional regression\n\n- Scope: ${scope}; source: ${sourceKind} \`${targetSha || 'unresolved'}\`\n- Result: **${result}**; backend-all success: **${verifiedBackendAll}**\n- PASS ${tally.PASS}; FAIL ${tally.FAIL}; ERROR ${tally.ERROR}; BLOCKED ${tally.BLOCKED}; NEEDS_DECISION ${tally.NEEDS_DECISION}; SKIP ${tally.SKIP}\n- Selected ${selected.length}; executed ${coverage.executed}; catalog 306 total / 291 hosted / 15 LOCAL_ONLY (B/F/D 188/103/15)\n- Provenance ${provenance.status}; cleanup ${cleanup.status}${integrityError ? `\n- Integrity error: ${integrityError}` : ''}\n\n${enriched.filter((item) => item.status !== 'PASS').map((item) => `- ${item.id} **${item.status}**: ${item.error || ''}`).join('\n')}\n`.trimEnd() + '\n'),
+  writeFile(join(output, 'report.md'), `# Vocle functional regression\n\n- Scope: ${scope}; source: ${sourceKind} \`${targetSha || 'unresolved'}\`\n- Result: **${result}**; backend-all success: **${verifiedBackendAll}**\n- PASS ${tally.PASS}; FAIL ${tally.FAIL}; ERROR ${tally.ERROR}; BLOCKED ${tally.BLOCKED}; NEEDS_DECISION ${tally.NEEDS_DECISION}; SKIP ${tally.SKIP}\n- Selected ${selected.length}; executed ${coverage.executed}\n- Catalog ${planned.total} total. ${planned.hosted} backend and Flutter. ${planned.hostedAndroid} separately hosted Android and ${planned.localOnly} local Android.\n- Provenance ${provenance.status}; cleanup ${cleanup.status}${integrityError ? `\n- Integrity error: ${integrityError}` : ''}\n\n${enriched.filter((item) => item.status !== 'PASS').map((item) => `- ${item.id} **${item.status}**: ${item.error || ''}`).join('\n')}\n`.trimEnd() + '\n'),
 ]);
 if (process.env.GITHUB_OUTPUT) await writeFile(process.env.GITHUB_OUTPUT, `result=${result}\nreport_ready=${integrityError ? 'false' : 'true'}\nverified_backend_all=${verifiedBackendAll}\n`, { flag: 'a' });
 console.log(JSON.stringify({ result, scope, selected: selected.length, tally, verifiedBackendAll, integrityError }, null, 2));

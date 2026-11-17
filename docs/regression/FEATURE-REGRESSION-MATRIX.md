@@ -15,7 +15,7 @@ To regenerate this file after updating the registry, run `node tests/functional-
 | Voice messaging (`voice-messaging`) | 5 | 12 | 0 | 1 | 18 |
 | Voice assistant (`voice-assistant`) | 2 | 28 | 0 | 1 | 31 |
 | Voice Assistant — Live Audio (`voice-assistant-live-audio`) | 0 | 0 | 0 | 3 | 3 |
-| Voice Assistant — Prerecorded File Recognition (`voice-assistant-prerecorded`) | 0 | 0 | 0 | 1 | 1 |
+| Voice Assistant — Prerecorded File Recognition (`voice-assistant-prerecorded`) | 0 | 0 | 0 | 6 | 6 |
 | Handoffs (`handoff`) | 24 | 15 | 0 | 2 | 41 |
 | Handoff Voice (`handoff-voice`) | 3 | 11 | 0 | 1 | 15 |
 | Needl (`needl`) | 47 | 33 | 0 | 0 | 80 |
@@ -31,7 +31,7 @@ To regenerate this file after updating the registry, run `node tests/functional-
 | Support and platform operations (`support-and-ops`) | 6 | 1 | 0 | 0 | 7 |
 | Access and privacy (`access-and-privacy`) | 47 | 3 | 0 | 1 | 51 |
 
-The catalog has **306 unique cases** and **575 feature assignments**. A test with several tags counts once in each feature and once in `all`.
+The catalog has **311 unique cases** and **580 feature assignments**. A test with several tags counts once in each feature and once in `all`.
 
 The Security column counts dedicated security-suite IDs. The separate API and realtime, MongoDB, offline media and Cloudinary inventories use their existing workflows. Access and privacy checks inside this functional catalog keep their backend, Flutter or Android layer.
 
@@ -347,3 +347,8 @@ See the [voice coverage audit](VOICE-COVERAGE-AUDIT.md) for the baseline evidenc
 | voice-assistant-live-audio | `FR-AST-33` | Replay unknown, ambiguous and incomplete speech commands from Home | Android (local) | [voice_assistant_test.dart](../../medcollab-app/integration_test/functional_regression/voice_assistant_test.dart) |
 | voice-assistant-prerecorded | `FR-AST-34` | Recognize a prerecorded WAV through Android digital file input and confirm the resulting chat proposal | Android (hosted and local) | [voice_assistant_test.dart](../../medcollab-app/integration_test/functional_regression/voice_assistant_test.dart) |
 | voice-assistant | `FR-AST-35` | Inject final speech events on Android Home and confirm Bala's chat and Priya's handoff | Android (local) | [voice_assistant_test.dart](../../medcollab-app/integration_test/functional_regression/voice_assistant_test.dart) |
+| voice-assistant-prerecorded | `FR-AST-36` | Recognize digital chat WAVs for distinct people, similar names, an existing Needl and a space channel | Android (hosted and local) | [voice_assistant_test.dart](../../medcollab-app/integration_test/functional_regression/voice_assistant_test.dart) |
+| voice-assistant-prerecorded | `FR-AST-37` | Recognize digital handoff WAVs with and without bed details | Android (hosted and local) | [voice_assistant_test.dart](../../medcollab-app/integration_test/functional_regression/voice_assistant_test.dart) |
+| voice-assistant-prerecorded | `FR-AST-38` | Recognize digital audio with missing, unknown, ambiguous, denied or cancelled commands and silence | Android (hosted and local) | [voice_assistant_test.dart](../../medcollab-app/integration_test/functional_regression/voice_assistant_test.dart) |
+| voice-assistant-prerecorded | `FR-AST-39` | Recognize digital navigation and Search commands | Android (hosted and local) | [voice_assistant_test.dart](../../medcollab-app/integration_test/functional_regression/voice_assistant_test.dart) |
+| voice-assistant-prerecorded | `FR-AST-40` | Recognize digital message, availability and alert commands | Android (hosted and local) | [voice_assistant_test.dart](../../medcollab-app/integration_test/functional_regression/voice_assistant_test.dart) |

@@ -6,15 +6,26 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { digitalSampleId, verifiedDigitalTranscript } from './voice-digital-proof.mjs';
+import { digitalSuiteCaseIds, verifyDigitalAttempts, writeDigitalReport } from './voice-digital-suite.mjs';
 
 const audio = new URL('../voice-audio/', import.meta.url);
 const manifest = JSON.parse(await readFile(new URL('manifest.json', audio), 'utf8'));
-export const voiceAudioPaths = ['manifest.json', 'replay.py', ...manifest.map(sample => sample.file)]
+export const voiceAudioPaths = ['manifest.json', 'digital-plan.json', 'replay.py',
+  'android-probe/AudioSourceProbe.java', 'android-probe/prepare-suite.py', 'android-probe/run.sh',
+  ...manifest.map(sample => sample.file)]
   .map(file => `tests/functional-regression/voice-audio/${file}`);
 const run = promisify(execFile);
 const fileSampleId = () => process.env.VOCLE_DIGITAL_SOURCE_EVIDENCE ? digitalSampleId : 'chat-bala';
 
 export async function voiceAudioControls(caseId, serial, readFingerprint) {
+  if (digitalSuiteCaseIds.includes(caseId)) {
+    const directory = process.env.VOCLE_DIGITAL_SUITE_EVIDENCE;
+    assert.ok(directory, 'The hosted Android recognition batch must run before this app case');
+    const digitalAttempts = (await verifyDigitalAttempts(directory, await readFingerprint()))
+      .filter(row => row.caseId === caseId);
+    assert.ok(digitalAttempts.length, 'The digital profile omitted the selected case');
+    return { digitalAttempts };
+  }
   const deviceCase = manifest.some(sample => sample.caseId === caseId);
   const prerecorded = caseId === 'FR-AST-34';
   if (!deviceCase && !prerecorded) return null;
@@ -83,6 +94,7 @@ export async function writeVoiceResults(directory, cases, phases) {
     const fallback = phases.filter(phase => phase.id === id).flatMap(phase => phase.audioAttempts ?? []);
     return (fromCase.length ? fromCase : fallback).map(row => ({ ...row, id }));
   });
+  if (process.env.VOCLE_AUDIO_SUITE_SCOPE) await writeDigitalReport(directory, cases, phases, attempts);
   const rates = Object.fromEntries(['LIVE_AUDIO', 'PRERECORDED_FILE'].map(layer => {
     const attempted = attempts.filter(row => row.layer === layer && row.result !== 'NOT_EXECUTED');
     const passed = attempted.filter(row => row.result === 'PASS').length;
@@ -92,11 +104,11 @@ export async function writeVoiceResults(directory, cases, phases) {
     ? sample.id === fileSampleId() : row.id === sample.caseId));
   const cell = value => String(value == null ? '—' : typeof value === 'object' ? JSON.stringify(value) : value)
     .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('|', '&#124;').replace(/\s+/g, ' ');
-  const observed = attempts.map(row => [row.id, row.layer, `${row.sample} #${row.attempt ?? 1}`,
+  const observed = attempts.filter(row => row.layer !== 'AUDIO_TO_ACTION').map(row => [row.id, row.layer, `${row.sample} #${row.attempt ?? 1}`,
     row.intendedCommand, row.recognizedTranscript, row.resolvedTarget, row.expectedAction,
     row.actualAction ?? (row.actualRoute ? `Route at failure: ${row.actualRoute}` : null),
     [row.result, row.failureCategory].filter(Boolean).join(' / ')]);
-  for (const row of cases.filter(item => !attempts.some(attempt => attempt.id === item.id))) {
+  for (const row of cases.filter(item => !digitalSuiteCaseIds.includes(item.id) && !attempts.some(attempt => attempt.id === item.id))) {
     for (const sample of samples.filter(sample => sample.caseId === row.id ||
       (row.id === 'FR-AST-34' && sample.id === fileSampleId()))) {
       observed.push([row.id, row.id === 'FR-AST-34' ? 'PRERECORDED_FILE' : 'LIVE_AUDIO',

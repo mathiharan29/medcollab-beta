@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "catalogCount": 306,
+  "catalogCount": 311,
   "features": [
     {
       "id": "authentication",
@@ -231,7 +231,12 @@
       "id": "voice-assistant-prerecorded",
       "name": "Voice Assistant — Prerecorded File Recognition",
       "caseIds": [
-        "FR-AST-34"
+        "FR-AST-34",
+        "FR-AST-36",
+        "FR-AST-37",
+        "FR-AST-38",
+        "FR-AST-39",
+        "FR-AST-40"
       ]
     },
     {

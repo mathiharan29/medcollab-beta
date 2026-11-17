@@ -24,7 +24,7 @@ export function validateFeatureDropdown(workflow, features) {
 export async function validateFeatures(root, cases) {
   const features = validateFeatureRegistry(await readFeatureRegistry(), cases);
   for (const [name, audio] of [['voice-assistant-live-audio', liveVoiceIds],
-    ['voice-assistant-prerecorded', Object.keys(deviceCases).filter(id => deviceCases[id].audio === 'file')]]) {
+    ['voice-assistant-prerecorded', Object.keys(deviceCases).filter(id => ['file', 'digital'].includes(deviceCases[id].audio))]]) {
     const mapped = features.get(name)?.caseIds;
     if (JSON.stringify(mapped) !== JSON.stringify(audio) ||
         [...features.values()].some(feature => feature.id !== name && feature.caseIds.some(id => audio.includes(id)))) {

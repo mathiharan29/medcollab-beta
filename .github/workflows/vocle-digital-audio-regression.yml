@@ -2,7 +2,7 @@ name: Vocle — Voice Assistant Digital Audio
 
 on:
   push:
-    branches: [master, testing/voice-digital-audio-probe]
+    branches: [master, testing/voice-digital-audio-probe, testing/voice-digital-audio-phase-2]
     paths:
       - '.github/workflows/vocle-digital-audio-regression.yml'
       - 'tests/functional-regression/voice-audio/**'
@@ -11,9 +11,19 @@ on:
       - 'tests/functional-regression/scripts/prepare-device-workspace.mjs'
       - 'tests/functional-regression/scripts/run-device.mjs'
       - 'medcollab-app/integration_test/functional_regression/voice_assistant_test.dart'
+      - 'medcollab-app/integration_test/functional_regression/voice_digital_cases.dart'
       - 'medcollab-app/lib/features/voice_bot/**'
   workflow_dispatch:
+    inputs:
+      repetitions:
+        description: Full-suite repetitions for the representative fixtures (1-5)
+        type: number
+        default: 2
   workflow_call:
+    inputs:
+      repetitions:
+        type: number
+        default: 2
 
 permissions:
   contents: read
@@ -34,7 +44,10 @@ jobs:
           channel: stable
           flutter-version: '3.29.3'
           cache: true
-      - name: Recognize the digital WAV and confirm the exact Vocle DM
+      - name: Verify Android digital speech and Vocle actions
+        env:
+          VOCLE_AUDIO_SUITE_SCOPE: ${{ github.event_name == 'push' && github.ref_name != 'testing/voice-digital-audio-phase-2' && 'smoke' || 'full' }}
+          VOCLE_DIGITAL_REPETITIONS: ${{ inputs.repetitions || 2 }}
         run: |
           set -euo pipefail
           export FLUTTER_SUPPRESS_ANALYTICS=true
@@ -53,10 +66,14 @@ jobs:
           set -euo pipefail
           output="$RUNNER_TEMP/vocle-digital-regression"
           mkdir -p "$output"
-          if [ -f "$output/device/voice-assistant-attempts.md" ]; then
-            cat "$output/device/voice-assistant-attempts.md" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f "$output/device/digital-audio-attempts.md" ]; then
+            cat "$output/device/digital-audio-attempts.md" >> "$GITHUB_STEP_SUMMARY"
           fi
           node tests/reporting/stage.mjs "$output" "$RUNNER_TEMP/vocle-digital-artifact"
+          if [ -d "$output/device/screenshots" ]; then
+            mkdir -p "$RUNNER_TEMP/vocle-digital-artifact/device/screenshots"
+            cp "$output/device/screenshots/"*.png "$RUNNER_TEMP/vocle-digital-artifact/device/screenshots/"
+          fi
       - name: Upload recognition and app action evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

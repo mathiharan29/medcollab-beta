@@ -84,7 +84,7 @@ export async function startDeviceServer({ adb, serial, caseId }) {
   await mkdir(inbox, { recursive: true });
   const controlRecords = [], checkpoints = [], results = [], requests = [];
   let mongo, backend, gateway, controlServer, senderSocket;
-  let outage = false, logoutFailure = false, logoutFaults = 0;
+  let outage = false, logoutFailure = false, logoutFaults = 0, digitalDmFailure = false;
   let ackListening = false; const ackEvents = [];
   const sockets = new Set();
   const native = async (...args) => {
@@ -96,6 +96,8 @@ export async function startDeviceServer({ adb, serial, caseId }) {
   const activity = `${devicePackage}/com.example.medcollab_app.MainActivity`;
   const voice = await voiceAudioControls(caseId, serial, () => native('shell', 'getprop', 'ro.build.fingerprint'));
   const assistant = Boolean(voice || deviceCases[caseId].transcript);
+  const digital = voice?.digitalAttempts;
+  let seededActorAlerts = [];
   let uri, fixture;
   let cleaned = false;
   const db = (action) => inspectDatabase(backendRoot, uri, action);
@@ -120,7 +122,14 @@ export async function startDeviceServer({ adb, serial, caseId }) {
     await new Promise((resolve) => reserved.close(resolve));
     gateway = createServer((req, res) => {
       const pathname = new URL(req.url, 'http://127.0.0.1').pathname;
-      requests.push({ method: req.method, pathname });
+      const record = { method: req.method, pathname };
+      requests.push(record);
+      if (digitalDmFailure && req.method === 'POST' && pathname === '/api/channels/dm') {
+        record.status = 503;
+        res.writeHead(503, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ success: false, message: 'Synthetic DM backend outage' }));
+        return;
+      }
       if (outage || logoutFailure && pathname === '/api/auth/logout') {
         if (pathname === '/api/auth/logout') logoutFaults++;
         res.writeHead(503, { 'content-type': 'application/json' });
@@ -128,6 +137,7 @@ export async function startDeviceServer({ adb, serial, caseId }) {
         return;
       }
       const upstream = httpRequest({ hostname: '127.0.0.1', port: backendPort, method: req.method, path: req.url, headers: req.headers }, (response) => {
+        if (digital) record.status = response.statusCode;
         res.writeHead(response.statusCode, response.headers); response.pipe(res);
       });
       upstream.on('error', () => { if (!res.headersSent) res.writeHead(502); res.end(); });
@@ -166,16 +176,23 @@ export async function startDeviceServer({ adb, serial, caseId }) {
     const request = createHttp(`http://127.0.0.1:${backendPort}`);
     const people = {};
     const voiceNames = { A: 'Dr Runner', B: voice?.digitalRecognition ? 'Dr Alex' : 'Dr Bala',
-      C: 'Dr Priya', D: 'Dr Asha Rao', E: 'Dr Asha Rao', F: 'Dr Bela' };
+      C: 'Dr Priya', D: 'Dr Asha Rao', E: 'Dr Asha Rao', F: 'Dr Bela', G: 'Dr Alex',
+      H: 'Dr Morgan', W: 'Dr Wyatt', T: 'Dr Taylor', Y: 'Dr Jordan Lee', Z: 'Dr Jordan Lee' };
     const labels = ['A', 'B', 'C'];
     if (caseId === 'FR-AST-31') labels.push('F');
     if (caseId === 'FR-AST-33') labels.push('D', 'E');
+    if (digital) {
+      for (const label of new Set(digital.flatMap(entry => [entry.target, ...(entry.choices ?? [])]))) {
+        if (voiceNames[label] && !labels.includes(label)) labels.push(label);
+      }
+    }
     for (const [index, label] of labels.entries()) {
       const phone = `+91999000100${index + 1}`;
       await request('/api/auth/request-otp', { method: 'POST', body: { phone } });
       const login = await request('/api/auth/verify-otp', { method: 'POST', body: { phone, otp: await capturedOtp(inbox, phone) } });
       const name = assistant ? voiceNames[label] : `Dr Synthetic Device ${label}`;
-      const speciality = label === 'D' ? 'Cardiology' : 'E' ? 'Nephrology' : 'Synthetic Medicine';
+      const speciality = ['D', 'Y'].includes(label) ? 'Cardiology'
+        : ['E', 'Z'].includes(label) ? 'Nephrology' : 'Synthetic Medicine';
       const profile = await request('/api/users/me', { method: 'PUT', token: login.data.accessToken,
         body: { name, institution: 'Vocle Synthetic Institute', speciality } });
       assert.equal(profile.data.user.name, name);
@@ -184,7 +201,7 @@ export async function startDeviceServer({ adb, serial, caseId }) {
     const created = await request('/api/spaces', { method: 'POST', token: people.A.token,
       body: { name: 'Synthetic Device Space', type: 'department' }, expectedStatus: 201 });
     const spaceId = created.data.space._id;
-    for (const label of assistant ? labels.slice(1) : ['B']) {
+    for (const label of assistant ? labels.slice(1).filter(label => label !== 'T') : ['B']) {
       await request('/api/spaces/join', { method: 'POST', token: people[label].token, body: { inviteCode: created.data.space.inviteCode } });
     }
     const channelId = created.data.channels.find((item) => item.name === 'general')._id;
@@ -211,7 +228,7 @@ export async function startDeviceServer({ adb, serial, caseId }) {
       senderSocket.on('handoff_acknowledged', (payload) => { if (ackListening && payload?.handoffId === handoffId) ackEvents.push(payload.handoffId); });
     }
     const voiceDms = {};
-    for (const label of assistant ? labels.filter(label => label !== 'A' && label !== 'C') : caseId === 'FR-VCE-14' ? ['B'] : []) {
+    for (const label of assistant ? labels.filter(label => !['A', 'C', 'W'].includes(label)) : caseId === 'FR-VCE-14' ? ['B'] : []) {
       const consent = await request('/api/message-requests', {
         method: 'POST', token: people.A.token, body: { toUserId: people[label].userId }, expectedStatus: 201,
       });
@@ -222,9 +239,27 @@ export async function startDeviceServer({ adb, serial, caseId }) {
       voiceDms[label] = direct.data.channel._id;
     }
     const voiceDmId = voiceDms.B;
+    let voiceNeedlId;
+    if (digital?.some(entry => entry.action === 'needl')) {
+      const made = await request('/api/channels/group-dm', { method: 'POST', token: people.A.token,
+        body: { userIds: [people.B.userId, people.G.userId] } });
+      voiceNeedlId = made.data.channel._id;
+      await request(`/api/channels/${voiceNeedlId}`, { method: 'PUT', token: people.A.token,
+        body: { name: 'Nurse Station' } });
+    }
     fixture = { voiceDmId, voiceDms, ...people, spaceId, channelId, otherChannelId: other.data.channel._id,
-      invites: invites.slice(0, 4), pendingInvite: invites[4], handoffId };
+      invites: invites.slice(0, 4), pendingInvite: invites[4], handoffId, voiceNeedlId };
     const oid = (connection, value) => new connection.base.Types.ObjectId(value);
+    if (digital?.some(entry => entry.action === 'alerts')) {
+      await db(async connection => {
+        const rows = ['A', 'A', 'G'].map((label, index) => ({
+          userId: oid(connection, people[label].userId), type: 'mention', title: `Synthetic alert ${index + 1}`,
+          body: 'Synthetic voice regression alert', read: false, createdAt: new Date(), updatedAt: new Date(),
+        }));
+        const inserted = await connection.collection('notifications').insertMany(rows);
+        seededActorAlerts = [inserted.insertedIds[0], inserted.insertedIds[1]];
+      });
+    }
     const membership = async (space, label) => db(async (connection) => {
       assert.ok(Object.values(fixture.invites).some((row) => row.spaceId === space) || fixture.pendingInvite?.spaceId === space);
       assert.ok(people[label]);
@@ -257,6 +292,14 @@ export async function startDeviceServer({ adb, serial, caseId }) {
       messages: await connection.collection('messages').countDocuments(),
       dmOpens: requests.filter(row => row.method === 'POST' && row.pathname === '/api/channels/dm').length,
       submits: requests.filter(row => row.method === 'POST' && /^\/api\/handoffs\/[^/]+\/submit$/.test(row.pathname)).length,
+      ...(digital ? {
+        availability: (await connection.collection('users').findOne({ _id: oid(connection, people.A.userId) })).availability.status,
+        actorUnread: await connection.collection('notifications').countDocuments({ userId: oid(connection, people.A.userId), read: false }),
+        otherUnread: await connection.collection('notifications').countDocuments({ userId: { $ne: oid(connection, people.A.userId) }, read: false }),
+        sent: (await connection.collection('messages')
+          .find({ senderId: oid(connection, people.A.userId), type: 'text' }).sort({ _id: 1 }).toArray())
+          .map(message => ({ id: String(message._id), channelId: String(message.channelId), text: message.content.text })),
+      } : {}),
     }));
     controlServer = createServer(async (req, res) => {
       res.setHeader('content-type', 'application/json');
@@ -291,6 +334,35 @@ export async function startDeviceServer({ adb, serial, caseId }) {
             assert.ok(voice); answer = await voice.replay(input.sample, { probe: input.probe === true }); break;
           case 'assistant-file':
             assert.ok(voice); answer = await voice.file(); break;
+          case 'assistant-digital':
+            assert.ok(digital); answer = { attempts: digital }; break;
+          case 'assistant-alerts-reset':
+            assert.equal(seededActorAlerts.length, 2);
+            await db(connection => connection.collection('notifications').updateMany(
+              { _id: { $in: seededActorAlerts } }, { $set: { read: false, readAt: null } }));
+            answer = { reset: true }; break;
+          case 'assistant-dm-failure':
+            assert.ok(digital?.some(entry => entry.action === 'unavailable'));
+            digitalDmFailure = input.enabled === true;
+            answer = { enabled: digitalDmFailure }; break;
+          case 'assistant-dm-response':
+            assert.ok(digital);
+            answer = { code: requests.findLast(row => row.method === 'POST' && row.pathname === '/api/channels/dm')?.status };
+            break;
+          case 'assistant-screenshot': {
+            assert.ok(voice?.digitalRecognition || digital);
+            assert.ok(input.sample === voice?.digitalRecognition?.sample ||
+              digital?.some(entry => entry.sample === input.sample && entry.attempt === input.attempt));
+            assert.ok(Number.isInteger(input.attempt) && input.attempt >= 1 && input.attempt <= 5);
+            const directory = join(outputRoot, 'screenshots');
+            const { stdout } = await promisify(execFile)(adb, ['-s', serial, 'exec-out', 'screencap', '-p'],
+              { cwd: runtime, encoding: 'buffer', timeout: 12000, maxBuffer: 4 * 1024 * 1024, windowsHide: true });
+            assert.equal(stdout.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
+            await mkdir(directory, { recursive: true });
+            const file = `${caseId}-${input.sample}-${input.attempt}.png`;
+            await writeFile(join(directory, file), stdout);
+            answer = { file }; break;
+          }
           case 'assistant-state':
             assert.ok(assistant); answer = await voiceState(); break;
           case 'result':
