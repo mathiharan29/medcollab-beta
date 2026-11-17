@@ -339,23 +339,34 @@ try {
     results.push({ id, status: 'ERROR', executed: false, error: error.message, errorCategory: 'DEVICE_PREREQUISITE' });
   }
 } finally {
+  const cleanupErrors = [];
+  let dedicatedTestAppRemoved = false;
+  let isolatedTargetRemoved = false;
   try {
     if (active) await active.close();
+  } catch (error) { cleanupErrors.push(error.message); }
+  try {
     if (serial) {
       const packages = command(adb, ['-s', serial, 'shell', 'pm', 'list', 'packages', devicePackage], root);
       if (packages.includes(`package:${devicePackage}`)) command(adb, ['-s', serial, 'uninstall', devicePackage], root);
+      dedicatedTestAppRemoved = true;
     }
+  } catch (error) { cleanupErrors.push(error.message); }
+  try {
     if (workspace) {
       provenance = await verifyDeviceSource(workspace);
       // Keep logs/source archive/provenance; remove test-owned credentials and
       // dependencies with the isolated target after checking unchanged source.
       verifyDeviceCleanupPath(workspace);
       await rm(workspace.target, { recursive: true, force: true, maxRetries: 5, retryDelay: 250 });
+      isolatedTargetRemoved = true;
       await rm(join(workspace.runRoot, 'mongo-binaries'), { recursive: true, force: true, maxRetries: 5, retryDelay: 250 });
     }
-    cleanup = { status: results.some((row) => row.cleanup?.status === 'ERROR') || phases.some((row) => row.ownedResourceCleanup?.status === 'ERROR') ? 'ERROR' : 'PASS',
-      dedicatedTestAppRemoved: Boolean(serial), isolatedTargetRemoved: Boolean(workspace) };
-  } catch (error) { cleanup = { status: 'ERROR', error: error.message }; }
+  } catch (error) { cleanupErrors.push(error.message); }
+  const cleanupFailed = cleanupErrors.length || results.some(row => row.cleanup?.status === 'ERROR') ||
+    phases.some(row => row.ownedResourceCleanup?.status === 'ERROR');
+  cleanup = { status: cleanupFailed ? 'ERROR' : 'PASS', dedicatedTestAppRemoved, isolatedTargetRemoved,
+    ...(cleanupErrors.length ? { error: cleanupErrors.join('\n') } : {}) };
   const directory = workspace?.runRoot || (option('output') ? resolve(option('output')) : resolve(root, 'tests/functional-regression/output/device-prerequisites'));
   await mkdir(directory, { recursive: true });
   const counts = Object.fromEntries(['PASS', 'FAIL', 'ERROR', 'BLOCKED', 'NEEDS_DECISION', 'SKIP'].map((status) =>
