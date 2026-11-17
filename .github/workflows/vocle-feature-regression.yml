@@ -35,8 +35,9 @@ on:
           - access-and-privacy
       audio_repetitions:
         description: Repetitions for representative prerecorded audio fixtures (1-5)
-        type: number
-        default: 2
+        type: choice
+        default: '2'
+        options: ['1', '2', '3', '4', '5']
 
 permissions:
   contents: read

@@ -17,13 +17,14 @@ on:
     inputs:
       repetitions:
         description: Full-suite repetitions for the representative fixtures (1-5)
-        type: number
-        default: 2
+        type: choice
+        default: '2'
+        options: ['1', '2', '3', '4', '5']
   workflow_call:
     inputs:
       repetitions:
-        type: number
-        default: 2
+        type: string
+        default: '2'
 
 permissions:
   contents: read
@@ -54,7 +55,7 @@ jobs:
       - name: Verify Android digital speech and Vocle actions
         env:
           VOCLE_AUDIO_SUITE_SCOPE: ${{ github.event_name == 'push' && 'smoke' || 'full' }}
-          VOCLE_DIGITAL_REPETITIONS: ${{ inputs.repetitions || 2 }}
+          VOCLE_DIGITAL_REPETITIONS: ${{ inputs.repetitions || '2' }}
         run: |
           set -euo pipefail
           export FLUTTER_SUPPRESS_ANALYTICS=true
