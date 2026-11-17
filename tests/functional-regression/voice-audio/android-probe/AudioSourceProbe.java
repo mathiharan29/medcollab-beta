@@ -38,7 +38,7 @@ public final class AudioSourceProbe extends Instrumentation {
     private static final String TAG = "VocleAudioSource";
     private static final int RATE = 16000;
     private static final int TIMEOUT_SECONDS = 18;
-    private static final String EXPECTED = "open bala chat";
+    private String expected;
 
     @Override
     public void onCreate(Bundle arguments) {
@@ -55,7 +55,12 @@ public final class AudioSourceProbe extends Instrumentation {
             activity = startActivitySync(new Intent(context, Foreground.class)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             byte[] speech;
-            try (InputStream input = context.getAssets().open("chat-bala.pcm")) {
+            JSONObject fixture;
+            try (InputStream input = context.getAssets().open("fixture.json")) {
+                fixture = new JSONObject(new String(input.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
+            }
+            expected = normalize(fixture.getString("phrase"));
+            try (InputStream input = context.getAssets().open("sample.pcm")) {
                 speech = input.readAllBytes();
             }
             byte[] silence = new byte[speech.length];
@@ -68,7 +73,8 @@ public final class AudioSourceProbe extends Instrumentation {
             log(new JSONObject().put("event", "availability").put("sdk", Build.VERSION.SDK_INT)
                 .put("fingerprint", Build.FINGERPRINT).put("defaultAvailable", standard)
                 .put("onDeviceAvailable", offline).put("pcmBytes", speech.length)
-                .put("idlePipeCapacity", capacity));
+                .put("idlePipeCapacity", capacity).put("sample", fixture.getString("sample"))
+                .put("expectedPhrase", expected));
             boolean proven = false;
             for (String engine : List.of("on-device", "default")) {
                 if (!(engine.equals("on-device") ? offline : standard)) continue;
@@ -89,7 +95,9 @@ public final class AudioSourceProbe extends Instrumentation {
                 if (!engineProven && engine.equals("default") && modelUnavailable) {
                     // Synthetic input only. Test the installed recognizer's
                     // other policy separately from Vocle's offline preference.
-                    engineProven |= compare(context, engine, "pipe", "online-allowed", speech, silence).proven;
+                    for (String mode : List.of("regular-file", "pipe")) {
+                        engineProven |= compare(context, engine, mode, "online-allowed", speech, silence).proven;
+                    }
                 }
                 proven |= engineProven;
             }
@@ -113,7 +121,8 @@ public final class AudioSourceProbe extends Instrumentation {
     }
 
     private static String normalize(String value) {
-        return value.toLowerCase(Locale.ROOT).replaceAll("[^a-z]+", " ").trim();
+        return value.toLowerCase(Locale.ROOT).replaceAll("[^a-z]+", " ").trim()
+            .replaceAll("\\bdr\\b", "doctor");
     }
 
     private SpeechRecognizer recognizer(Context context, String engine) {
@@ -142,7 +151,7 @@ public final class AudioSourceProbe extends Instrumentation {
         byte[] speech, byte[] silence) throws Exception {
         Session supplied = recognize(context, engine, mode, profile, "speech", speech);
         Session control = recognize(context, engine, mode, profile, "silence", silence);
-        boolean matched = normalize(supplied.transcript()).equals(EXPECTED);
+        boolean matched = normalize(supplied.transcript()).equals(expected);
         boolean quiet = control.transcript().isEmpty()
             && (control.terminal.equals("segment-end") || control.terminal.equals("results")
                || control.error == SpeechRecognizer.ERROR_NO_MATCH

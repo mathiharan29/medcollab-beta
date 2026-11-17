@@ -13,13 +13,13 @@ trap 'rm -rf -- "$build"' EXIT
 mkdir -p "$build/assets" "$build/classes" "$output"
 
 # Validate and strip the checked-in RIFF container without transcoding.
-python3 - "$fixture_dir" "$build/assets/chat-bala.pcm" > "$output/fixture.json" <<'PY'
+python3 - "$fixture_dir" "$build/assets/sample.pcm" "${VOCLE_PROBE_SAMPLE:-chat-bala}" > "$output/fixture.json" <<'PY'
 import hashlib, json, struct, sys, wave
 from pathlib import Path
 
-fixtures, destination = map(Path, sys.argv[1:])
+fixtures, destination = map(Path, sys.argv[1:3])
 sample = next(row for row in json.loads((fixtures / "manifest.json").read_text())
-              if row["id"] == "chat-bala")
+              if row["id"] == sys.argv[3])
 wav = fixtures / sample["file"]
 assert hashlib.sha256(wav.read_bytes()).hexdigest() == sample["sha256"]
 with wave.open(str(wav), "rb") as stream:
@@ -31,12 +31,13 @@ peak = max(abs(sample[0]) for sample in struct.iter_unpack("<h", pcm))
 assert peak > 512
 destination.write_bytes(pcm)
 print(json.dumps({
-    "sample": "chat-bala", "wavSha256": sample["sha256"],
+    "sample": sample["id"], "phrase": sample["phrase"], "wavSha256": sample["sha256"],
     "pcmSha256": hashlib.sha256(pcm).hexdigest(), "pcmBytes": len(pcm),
     "frames": frames, "channels": 1, "rate": 16000, "encoding": "signed little-endian PCM16",
     "peak": peak, "silenceControlBytes": len(pcm),
 }, indent=2))
 PY
+cp "$output/fixture.json" "$build/assets/fixture.json"
 
 javac --release 11 -classpath "$platform" -d "$build/classes" "$here/AudioSourceProbe.java"
 jar cf "$build/classes.jar" -C "$build/classes" .

@@ -40,6 +40,8 @@ jobs:
           test -s "$ANDROID_AVD_HOME/vocle-audio-source.ini"
           "$ANDROID_HOME/emulator/emulator" -list-avds | grep -Fx vocle-audio-source
       - name: Run standalone recognition probe with emulator audio disabled
+        env:
+          VOCLE_PROBE_SAMPLE: chat-with-bala
         run: |
           set -euo pipefail
           output="$RUNNER_TEMP/vocle-audio-source"
