@@ -34,6 +34,8 @@ Select `voice-messaging` for capture, transcription, history and playback, `hand
 
 Select **Voice Assistant — Live Audio** (`voice-assistant-live-audio`) on `master` to run only the virtual-microphone Android cases. The workflow requires a configured recognition-capable runner and reports missing infrastructure as unexecuted. Select `voice-assistant-prerecorded` for the complete GitHub-hosted digital PCM suite. Set the representative repetition count with `audio_repetitions`. The digital run publishes `vocle-digital-audio-evidence` with per-attempt PCM and application outcomes. [Voice Assistant coverage and evidence](VOICE-ASSISTANT-PHASE-2.md)
 
+Select `voice-assistant-noise` for the controlled noise characterization and safety cases on GitHub-hosted Android. It uses the same repetition input and publishes `vocle-voice-reliability-evidence`. The report keeps exploratory outcomes, functional gates and safety checks visible. [Reliability study](VOICE-ASSISTANT-RELIABILITY.md), [user guide](VOICE-ASSISTANT-USER-GUIDE.md)
+
 ## Baseline feature-workflow validation (245-case catalog)
 
 The backend and Flutter observed ID sets matched the selected IDs exactly in the following isolated test runs. Android counts are listed as local only in the hosted feature plan.
