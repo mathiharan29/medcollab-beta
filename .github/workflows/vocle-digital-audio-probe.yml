@@ -44,15 +44,23 @@ jobs:
           set -euo pipefail
           output="$RUNNER_TEMP/vocle-audio-source"
           mkdir -p "$output"
+          adb="$ANDROID_HOME/platform-tools/adb"
+          android_user_dir="${ANDROID_USER_HOME:-$HOME/.android}"
+          mkdir -p "$android_user_dir"
+          if [ ! -s "$android_user_dir/adbkey.pub" ]; then
+            "$adb" keygen "$android_user_dir/adbkey"
+          fi
+          export ADB_VENDOR_KEYS="$android_user_dir/adbkey"
+          "$adb" start-server
           "$ANDROID_HOME/emulator/emulator" -avd vocle-audio-source -no-window -no-audio \
-            -no-snapshot -no-boot-anim -gpu swiftshader -memory 3072 -cores 2 \
+            -no-snapshot -wipe-data -no-boot-anim -gpu swiftshader -memory 3072 -cores 2 \
             > "$output/emulator.log" 2>&1 &
           emulator_pid=$!
           trap 'kill "$emulator_pid" 2>/dev/null || true' EXIT
-          adb="$ANDROID_HOME/platform-tools/adb"
           end=$((SECONDS + 240))
           until [ "$(timeout 8 "$adb" shell getprop sys.boot_completed | tr -d '\r')" = 1 ] && timeout 8 "$adb" shell pm path android; do
             if [ "$SECONDS" -ge "$end" ] || ! kill -0 "$emulator_pid" 2>/dev/null; then
+              timeout 8 "$adb" devices -l > "$output/adb-devices.txt" || true
               echo "::error::The Android emulator never became ready"
               exit 1
             fi
