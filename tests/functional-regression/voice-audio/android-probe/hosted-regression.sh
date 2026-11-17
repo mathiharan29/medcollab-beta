@@ -9,4 +9,5 @@ bash "$here/run.sh" "$output/probe"
 export VOCLE_DIGITAL_SOURCE_EVIDENCE="$output/probe"
 node tests/functional-regression/scripts/validate-catalog.mjs
 node tests/functional-regression/scripts/run-device.mjs --cases=FR-AST-34 \
-  --emulator=emulator-5554 --source-sha="$(git rev-parse HEAD)" --output="$output/device"
+  --emulator=emulator-5554 --adb-bin="$ANDROID_HOME/platform-tools/adb" \
+  --source-sha="$(git rev-parse HEAD)" --output="$output/device"

@@ -8,6 +8,7 @@ import os from 'node:os';
 import { deviceCases, devicePackage, deviceSdk, emulatorSerial, selectedDeviceCases, validateRestart, classifyDeviceDiagnostics } from './device-contracts.mjs';
 import { prepareDeviceWorkspace, verifyDeviceSource, verifyDeviceCleanupPath, command, hash } from './prepare-device-workspace.mjs';
 import { parseVoiceAttempts, writeVoiceResults } from './voice-audio.mjs';
+import { androidExecutionMode } from './voice-digital-proof.mjs';
 
 const root = resolve(import.meta.dirname, '../../..');
 // Lean WHPX emulators occasionally reset adb-reverse sockets; do not abort the
@@ -373,7 +374,7 @@ try {
     [status, results.filter((row) => row.status === status).length]));
   const selectionPassed = counts.PASS === selected.length && !results.some(row => row.infrastructureError || row.cleanup?.status === 'ERROR') &&
     provenance.status === 'PASS' && cleanup.status === 'PASS';
-  const report = { context: workspace?.provenance.context || captureContext(root), execution: executionIdentity(), executionMode: 'LOCAL_ONLY', sourceKind: 'committed-fork-archive', environmentContractVersion: 1, tier: 'D', platform: 'Android emulator', selected, planned: Object.keys(deviceCases).length,
+  const report = { context: workspace?.provenance.context || captureContext(root), execution: executionIdentity(), executionMode: androidExecutionMode(), sourceKind: 'committed-fork-archive', environmentContractVersion: 1, tier: 'D', platform: 'Android emulator', selected, planned: Object.keys(deviceCases).length,
     sourceSha: workspace?.provenance.sourceSha || null, harnessSha: workspace?.provenance.harnessSha || null,
     executed: results.filter((row) => row.executed).length, counts, cases: results, phases, provenance, cleanup,
     infrastructureErrors: results.filter((row) => row.infrastructureError).map((row) => ({ id: row.id, error: row.infrastructureError })),

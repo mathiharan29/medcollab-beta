@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { captureContext, executionIdentity } from '../../developer-workflow/context.mjs';
 import { devicePackage } from './device-contracts.mjs';
 import { voiceAudioPaths } from './voice-audio.mjs';
+import { androidExecutionMode } from './voice-digital-proof.mjs';
 
 async function stripDesktopPlatforms(app) {
   // Flutter plugin registration creates Windows/Linux ephemeral symlinks. On
@@ -114,7 +115,7 @@ export async function prepareDeviceWorkspace(sha = command('git', ['rev-parse', 
     'medcollab-app/android/app/src/main', 'medcollab-backend/src', 'medcollab-backend/package-lock.json'], root).split(/\r?\n/);
   const sourceHashes = {};
   for (const file of tracked) sourceHashes[file] = hash(await readFile(join(target, file)));
-  const provenance = { context: captureContext(root), execution: executionIdentity(), executionMode: 'LOCAL_ONLY', sourceSha: sha, harnessSha: command('git', ['rev-parse', 'HEAD'], root),
+  const provenance = { context: captureContext(root), execution: executionIdentity(), executionMode: androidExecutionMode(), sourceSha: sha, harnessSha: command('git', ['rev-parse', 'HEAD'], root),
     sourceKind: 'committed-fork-archive', sourceHashes, harnessHashes, temporaryTarget: target,
     originalPubspecHash: hash(originalPubspec), originalAppLockHash: hash(await readFile(join(app, 'pubspec.lock'))),
     isolatedTestOverlays: ['integration_test SDK and existing plugin interface dev dependencies (original versions verified unchanged)', `Android applicationId ${devicePackage}`, 'debug cleartext HTTP permission', ...(process.env.VOCLE_ANDROID_TRUSTSTORE ? ['JDK trusted CA store for committed Gradle SSL arguments'] : [])],

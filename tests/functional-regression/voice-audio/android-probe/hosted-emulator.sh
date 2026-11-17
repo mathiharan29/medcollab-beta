@@ -8,6 +8,7 @@ sdk="${ANDROID_HOME:?Android SDK required}"
 cmdline="$sdk/cmdline-tools/latest/bin"
 adb="$sdk/platform-tools/adb"
 emulator="$sdk/emulator/emulator"
+export PATH="$sdk/platform-tools:$PATH"
 mkdir -p "$output"
 sudo chmod a+rw /dev/kvm
 "$cmdline/sdkmanager" --install "emulator" "platform-tools" "platforms;android-35" "build-tools;35.0.0" "$image"

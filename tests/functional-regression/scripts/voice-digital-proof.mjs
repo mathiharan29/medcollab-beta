@@ -3,6 +3,8 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 export const digitalSampleId = 'chat-with-alex';
+export const androidExecutionMode = () =>
+  process.env.GITHUB_RUN_ID && process.env.VOCLE_DIGITAL_SOURCE_EVIDENCE ? 'HOSTED' : 'LOCAL_ONLY';
 
 const normalize = text => text.toLowerCase().replace(/[^a-z]+/g, ' ').trim().replace(/\bdr\b/g, 'doctor');
 
