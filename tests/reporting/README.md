@@ -30,11 +30,11 @@ STILL_PASSING. Security OBSERVATION and other uncertain statuses remain distinct
 each security suite uses its own manifest/evidence contract. Scanner step records
 are workflow checks, not application tests or published raw secret matches.
 
-Combined PR coverage is 306 total / 291 hosted / 15 LOCAL_ONLY. All fifteen Android
-IDs display LOCAL_ONLY, underlying SKIP and executed false. Missing required hosted
-lanes remain ERROR. Verified local Android outcomes are reported separately and
-cannot be relabeled as hosted results. Counts from overlapping suites or developer
-matrix profiles are not summed as unique cases.
+The combined PR report lists 311 cases. It expects 291 backend and Flutter results.
+It lists the 20 Android cases as SKIP with `executed: false` because they run separately.
+Six use the hosted prerecorded Voice Assistant selection and fourteen have local
+Android coverage. Missing required hosted lanes remain ERROR. Each Android result
+keeps the execution mode established by its own run.
 
 `hosted-check.mjs` supports read-only inspect, download and job-log operations.
 `browser-check.mjs BROWSER [REPORT_JSON] [OUTPUT]` checks offline interaction,

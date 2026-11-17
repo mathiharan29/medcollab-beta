@@ -35,12 +35,12 @@ for(const lane of report.lanes||[]){const p=node('p'),a=node('a',lane.artifact.n
 for(const [file,title] of [['dashboard.html','Dashboard'],['detailed-report.md','Detailed report'],['results.json','JSON'],['junit.xml','JUnit'],['summary.md','Summary']]){const a=node('a',title,'file-link');a.href='vocle-regression-'+file;a.download='vocle-regression-'+file;$('file-links').append(a);}
 $('artifact-help').textContent='GitHub artifact downloads require sign-in. Local file buttons work after extracting all five reports together. Original workflow gates remain unchanged.';
 const coverage=report.catalogCoverage;
-const catalogText=coverage?'Functional catalog: '+coverage.total+' total / '+coverage.hosted+' hosted / '+coverage.localOnly+' LOCAL_ONLY. ':'';
+const catalogText=coverage?'Functional catalog: '+coverage.total+' total / '+coverage.hosted+' backend and Flutter / '+(coverage.hostedAndroid||0)+' separately hosted Android / '+coverage.localOnly+' local Android. ':'';
 $('scope').textContent=catalogText+'Selected '+report.selected+'; recorded '+report.recorded+'; attempted '+report.attempted+'. A failed case can leave later steps unreached. Missing evidence never means PASS.';
 $('note').textContent=report.note;
 if(report.applicationFailures?.length){const panel=node('section',undefined,'panel');panel.append(node('h2','Application prerequisite failures'));for(const failure of report.applicationFailures)panel.append(node('pre',JSON.stringify(failure,null,2),'FAIL'));$('note').after(panel);}
 const localOnly=report.catalogCoverage?.cases||report.results.filter(r=>r.executionMode==='LOCAL_ONLY');
-if(localOnly.length){const panel=node('section',undefined,'panel');panel.style.marginTop='18px';panel.append(node('h2','Android local availability'));for(const r of localOnly)panel.append(node('p',r.id+' • LOCAL_ONLY • executed '+Boolean(r.executed)+' • '+r.status));$('scope').after(panel);}
+if(localOnly.length){const panel=node('section',undefined,'panel');panel.style.marginTop='18px';panel.append(node('h2','Android coverage'));for(const r of localOnly)panel.append(node('p',r.id+' • '+r.executionMode+' • executed '+Boolean(r.executed)+' • '+r.status));$('scope').after(panel);}
 
 const jobs=report.workflowJobs||[];for(const j of jobs){const d=node('details',undefined,'job'),s=node('summary');s.append(node('span',j.conclusion||'unknown','tag'),node('span',j.name));d.append(s);const list=node('ul');for(const step of j.steps||[])list.append(node('li',step.name+' • '+(step.conclusion||step.status)));d.append(list);$('workflow-jobs').append(d);}if(!jobs.length)$('workflow-panel').hidden=true;
 for(const s of statuses){const c=node('button',undefined,'card '+s);c.type='button';c.append(node('span',s.replaceAll('_',' ')),node('strong',report.counts[s]||0),node('span','Filter results ↗','card-hint'));c.addEventListener('click',()=>{$('status').value=$('status').value===s?'':s;filter();});$('cards').append(c);}

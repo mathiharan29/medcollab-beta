@@ -2,7 +2,7 @@ name: Vocle — Voice Assistant Digital Audio
 
 on:
   push:
-    branches: [master, testing/voice-digital-audio-probe, testing/voice-digital-audio-phase-2]
+    branches: [master, testing/voice-digital-audio-probe]
     paths:
       - '.github/workflows/vocle-digital-audio-regression.yml'
       - 'tests/functional-regression/voice-audio/**'
@@ -53,7 +53,7 @@ jobs:
           key: vocle-digital-gradle-ubuntu24-flutter3.29.3-${{ hashFiles('medcollab-app/android/**/*.gradle.kts', 'medcollab-app/android/gradle/wrapper/gradle-wrapper.properties', 'medcollab-app/pubspec.lock') }}
       - name: Verify Android digital speech and Vocle actions
         env:
-          VOCLE_AUDIO_SUITE_SCOPE: ${{ github.event_name == 'push' && github.ref_name != 'testing/voice-digital-audio-phase-2' && 'smoke' || 'full' }}
+          VOCLE_AUDIO_SUITE_SCOPE: ${{ github.event_name == 'push' && 'smoke' || 'full' }}
           VOCLE_DIGITAL_REPETITIONS: ${{ inputs.repetitions || 2 }}
         run: |
           set -euo pipefail

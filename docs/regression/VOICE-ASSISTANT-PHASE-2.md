@@ -22,12 +22,12 @@ The AI tools cover open chat, send message, create draft, availability, mark ale
 
 ## Cases and fixtures
 
-The functional catalog grows from 306 to 311 cases and the Android inventory from 15 to 20. The prerecorded selection grows from one to six cases. The corpus grows from 10 to 46 checked WAVs, including the original nine and the Phase 1 Alex sample. The manifest records exact utterances, provenance, voice, duration, gain and format. The attempt plan binds each fixture to a case, intent, stable fixture target label, action and repeat policy. The runner records the actual database IDs assigned for those labels. The new recordings include distinct eSpeak and Piper voices, fast/slow speech, reduced gain, a Caribbean English voice and generated silence. Existing British and US voices, paused and noise samples stay in the corpus. The two Piper voices synthesize audio only. Their training recordings are public domain. The GitHub jobs use the checked WAVs directly. [Fixture manifest](../../tests/functional-regression/voice-audio/manifest.json), [attempt plan](../../tests/functional-regression/voice-audio/digital-plan.json), [eSpeak English variants](https://github.com/espeak-ng/espeak-ng/blob/master/docs/languages/gmw/en.md), [Piper voice models and licensing](https://github.com/OHF-Voice/piper1-gpl/blob/main/docs/COMMERCIAL_USE.md)
+The functional catalog grows from 306 to 311 cases and the Android inventory from 15 to 20. The prerecorded selection grows from one to six cases. The corpus grows from 10 to 48 checked WAVs, including the original nine and the Phase 1 Alex sample. The manifest records exact utterances, provenance, voice, duration, gain and format. The attempt plan binds each fixture to a case, intent, stable fixture target label, action and repeat policy. The runner records the actual database IDs assigned for those labels. The new recordings include distinct eSpeak and Piper voices, fast/slow speech, reduced gain, a Caribbean English voice and generated silence. Existing British and US voices, paused and noise samples stay in the corpus. The two Piper voices synthesize audio only. Their training recordings are public domain. The GitHub jobs use the checked WAVs directly. [Fixture manifest](../../tests/functional-regression/voice-audio/manifest.json), [attempt plan](../../tests/functional-regression/voice-audio/digital-plan.json), [eSpeak English variants](https://github.com/espeak-ng/espeak-ng/blob/master/docs/languages/gmw/en.md), [Piper voice models and licensing](https://github.com/OHF-Voice/piper1-gpl/blob/main/docs/COMMERCIAL_USE.md)
 
 | ID | Fixture coverage | Conditions and assertions |
 |---|---|---|
 | FR-AST-34 | `chat-with-alex` and its equal-length native silence control | The existing standalone exact-phrase comparison and real confirmed synthetic Alex DM remain the hosted baseline |
-| FR-AST-36 | Alex, Morgan, four Bala/Bela voice variants, exact Needl and space channel | Each target has a distinct seeded ID. Confirmation uses the actual proposal and opens exactly the expected conversation. A mismatched transcript is recorded with no confirmation or side effect |
+| FR-AST-36 | Alex, Morgan, original and added Bala/Bela variants, exact Needl and space channel | Each target has a distinct seeded ID. Confirmation uses the actual proposal and opens exactly the expected conversation. A mismatched transcript is recorded with no confirmation or side effect |
 | FR-AST-37 | Alex and Priya draft audio, including original bed seven, pauses and a bed twelve variant | A shared synthetic group has a known general channel. Examine the real editor, the matching persisted draft ID, recipient, space/channel, shift and bed values. Require zero new submissions, notifications, messages and DM opens |
 | FR-AST-38 | Silence, unrelated speech, cancellation, incomplete and missing-target phrases, unknown Zelda, two namesake pairs, missing Wyatt messaging consent, a Taylor handoff without shared group, and a synthetic DM backend outage | Check route and persistence around the actual proposal. Exact namesake choices precede explicit choice and confirmation. Expected rejection or cancellation preserves only allowed effects |
 | FR-AST-39 | Profile navigation and two Search recordings | Real confirmation precedes the route transition. Search opens with its implemented empty input |
@@ -37,9 +37,34 @@ Each row runs in a dedicated app and disposable backend and database. Each attem
 
 ## GitHub Actions selection and evidence
 
-- Relevant pushes to `master` exercise the standalone Alex gate, an Alex draft, cancellation, incomplete chat and silence. The same workflow is callable by **Feature Regression → voice-assistant-prerecorded** for the full audio fixture plan. Representative repetitions default to two and accept integers from one to five. [Digital workflow](../../.github/workflows/vocle-digital-audio-regression.yml), [Feature Regression](../../.github/workflows/vocle-feature-regression.yml)
+- Relevant pushes to `master` exercise the standalone Alex gate, Alex drafts with and without bed 12, cancellation, incomplete chat and silence. The same workflow is callable by **Feature Regression → voice-assistant-prerecorded** for the full audio fixture plan. Representative repetitions default to two and accept integers from one to five. [Digital workflow](../../.github/workflows/vocle-digital-audio-regression.yml), [Feature Regression](../../.github/workflows/vocle-feature-regression.yml)
 - `FR-AST-35` and the broader `voice-assistant` selection provide transcript-only assertions. The live microphone selection retains its configured runner requirement. The full backend and Flutter job retains its normal scope. [Layer definitions and existing coverage](VOICE-ASSISTANT.md)
 - `batch/probe.json` records every native regular-file session. `device/digital-audio-attempts.json` and its Markdown equivalent combine recognition, interpretation, resolution and action postconditions. The recognition rate counts nonempty terminal speech across observed speech sessions. Wording and intent accuracy use their measured rows. Entity accuracy uses attempts where a target ID or choice set is expected. The action rate includes all planned attempts. Published results distinguish assertion failure, infrastructure blocking and unexecuted attempts.
+
+## Native recognition diagnosis
+
+The 46-fixture pilot recorded all 52 sessions on hosted Android. Every descriptor reached EOF. Android returned a nonempty final on all 51 speech sessions and matched the intended wording on 22. Silence returned error 7 with no text. These figures measure recognition. The independent pilot never launches Vocle. [Full native pilot](https://github.com/mathiharan29/medcollab-beta/actions/runs/44054018847)
+
+| Fixture | Observed transcripts | Exact wording |
+|---|---|---:|
+| Original Alex | “open chat with Dr Alex” twice | 2/2 |
+| Original short Bala | “open heart attack” twice | 0/2 |
+| Original longer Bala | “open calculator” twice in this run. An earlier run produced “open chat with Dr mama” and “open chat with Dr Marla” | 0/2 |
+| Original noisy Bala | “open calculator” | 0/1 |
+| Slower Bala and distinct Piper Bala | “no conversation with doctor” and “open chat with Dr Waller” | 0/2 |
+| Clear Alex handoff | “hand off to Alex” twice | 2/2 |
+| Clear Alex handoff with bed | “hand off bed 12 to Alex” | 1/1 |
+| Original Priya command, paused variant, distinct Piper Priya | “I'm not bad Kevin”, “Master Hand off format Heaven Aprilia”, and “hand off bed 7 to printer” | 0/3 |
+| Original Asha ambiguity | “open Snapchat” and “open a shotgun” | 0/2 |
+| Jordan ambiguity | “open chat with Dr Jordan” twice | 2/2 |
+
+Bala audio files passed their checksums and PCM format checks, and Android reached each file's EOF. The observed wrong words are already present in Android's terminal response, before Vocle's parsing, directory lookup or state transitions. Even the distinct slower and Piper Bala samples failed their expected target. The experiments locate the observed failure at recognition and leave the relative contribution of name pronunciation and the service's model unresolved. The original WAVs and their exact intended targets remain in the full suite. [Original corpus pilot](https://github.com/mathiharan29/medcollab-beta/actions/runs/44050275663), [Piper comparison](https://github.com/mathiharan29/medcollab-beta/actions/runs/44052608456)
+
+## Hosted application evidence
+
+The first full workflow recorded the native transcripts before a Maven Central HTTP 429 blocked the app build. The subsequent run executed all six selected cases. It verified the Phase 1 Alex DM and two separate digital Alex drafts, each with the correct recipient, exact persisted ID, night shift, matching editor and no submission or notification. Silence, unrelated speech, missing names, cancellation, missing consent, an HTTP 503 response, Profile navigation and on-call persistence also passed. [Build blocked by dependency throttling](https://github.com/mathiharan29/medcollab-beta/actions/runs/44052608332), [first full app execution](https://github.com/mathiharan29/medcollab-beta/actions/runs/44054018751)
+
+The same full run showed missed Flutter test taps during modal transitions. The action test now waits for the sheet transition and a hit-testable control before tapping once. Chat fixtures start with their seeded consent and Needl alerts already read, so the navigation check can require unchanged notification state. The alert command seeds its own exact two unread actor notifications. The bare `General` fixture stays in the plan. Android recognized it exactly and Vocle returned no candidate because the parser includes the stripped channel alias in its word list but requires a name hit. The qualified Cedar Ward recording exercises the intended channel route with the same expected channel ID. [Name scoring](../../medcollab-app/lib/features/voice_bot/domain/voice_command_parser.dart)
 
 ## Remaining boundaries
 

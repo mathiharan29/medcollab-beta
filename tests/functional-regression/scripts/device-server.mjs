@@ -199,7 +199,8 @@ export async function startDeviceServer({ adb, serial, caseId }) {
       people[label] = { phone, userId: profile.data.user._id, token: login.data.accessToken, refreshToken: login.data.refreshToken };
     }
     const created = await request('/api/spaces', { method: 'POST', token: people.A.token,
-      body: { name: 'Synthetic Device Space', type: 'department' }, expectedStatus: 201 });
+      body: { name: digital?.some(entry => entry.action === 'channel') ? 'Cedar Ward' : 'Synthetic Device Space',
+        type: 'department' }, expectedStatus: 201 });
     const spaceId = created.data.space._id;
     for (const label of assistant ? labels.slice(1).filter(label => label !== 'T') : ['B']) {
       await request('/api/spaces/join', { method: 'POST', token: people[label].token, body: { inviteCode: created.data.space.inviteCode } });
@@ -250,6 +251,13 @@ export async function startDeviceServer({ adb, serial, caseId }) {
     fixture = { voiceDmId, voiceDms, ...people, spaceId, channelId, otherChannelId: other.data.channel._id,
       invites: invites.slice(0, 4), pendingInvite: invites[4], handoffId, voiceNeedlId };
     const oid = (connection, value) => new connection.base.Types.ObjectId(value);
+    if (digital) {
+      // Consent and Needl seeding can create notifications for the actor.
+      // Start voice attempts with a read inbox, then seed the alert test's
+      // own unread rows. Opening a seeded chat has no unread fixture to clear.
+      await db(connection => connection.collection('notifications').updateMany(
+        { userId: oid(connection, people.A.userId), read: false }, { $set: { read: true, readAt: new Date() } }));
+    }
     if (digital?.some(entry => entry.action === 'alerts')) {
       await db(async connection => {
         const rows = ['A', 'A', 'G'].map((label, index) => ({
