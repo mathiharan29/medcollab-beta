@@ -5,18 +5,20 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
+import { digitalSampleId, verifiedDigitalTranscript } from './voice-digital-proof.mjs';
 
 const audio = new URL('../voice-audio/', import.meta.url);
 const manifest = JSON.parse(await readFile(new URL('manifest.json', audio), 'utf8'));
 export const voiceAudioPaths = ['manifest.json', 'replay.py', ...manifest.map(sample => sample.file)]
   .map(file => `tests/functional-regression/voice-audio/${file}`);
 const run = promisify(execFile);
+const fileSampleId = () => process.env.VOCLE_DIGITAL_SOURCE_EVIDENCE ? digitalSampleId : 'chat-bala';
 
-export async function voiceAudioControls(caseId, serial) {
+export async function voiceAudioControls(caseId, serial, readFingerprint) {
   const deviceCase = manifest.some(sample => sample.caseId === caseId);
   const prerecorded = caseId === 'FR-AST-34';
   if (!deviceCase && !prerecorded) return null;
-  const samples = manifest.filter(sample => prerecorded ? sample.id === 'chat-bala' : sample.caseId === caseId);
+  const samples = manifest.filter(sample => prerecorded ? sample.id === fileSampleId() : sample.caseId === caseId);
   const repetitions = Number(process.env.VOCLE_VOICE_REPETITIONS ?? '3');
   assert.ok(Number.isInteger(repetitions) && repetitions >= 1 && repetitions <= 10,
     'VOCLE_VOICE_REPETITIONS must be an integer in 1–10');
@@ -25,6 +27,10 @@ export async function voiceAudioControls(caseId, serial) {
     const data = await readFile(new URL(sample.file, audio));
     assert.equal(createHash('sha256').update(data).digest('hex'), sample.sha256);
   }
+  const digitalRecognition = prerecorded && process.env.VOCLE_DIGITAL_SOURCE_EVIDENCE
+    ? await verifiedDigitalTranscript(process.env.VOCLE_DIGITAL_SOURCE_EVIDENCE, samples[0],
+      await readFingerprint())
+    : null;
   async function replay(id, { probe = false } = {}) {
     const sample = samples.find(row => row.id === id) ||
       (probe && manifest.find(row => row.id === id));
@@ -43,10 +49,11 @@ export async function voiceAudioControls(caseId, serial) {
     }
   }
   return {
-    samples, repetitions,
+    samples, repetitions, digitalRecognition,
     replay,
     async file() {
       assert.ok(prerecorded);
+      if (digitalRecognition) return { digitalRecognition };
       return { wav: (await readFile(new URL(samples[0].file, audio))).toString('base64') };
     },
   };
@@ -81,8 +88,8 @@ export async function writeVoiceResults(directory, cases, phases) {
     const passed = attempted.filter(row => row.result === 'PASS').length;
     return [layer, { attempted: attempted.length, passed, successRate: attempted.length ? passed / attempted.length : null }];
   }));
-  const samples = manifest.filter(sample => cases.some(row => row.id === sample.caseId) ||
-    (sample.id === 'chat-bala' && cases.some(row => row.id === 'FR-AST-34')));
+  const samples = manifest.filter(sample => cases.some(row => row.id === 'FR-AST-34'
+    ? sample.id === fileSampleId() : row.id === sample.caseId));
   const cell = value => String(value == null ? '—' : typeof value === 'object' ? JSON.stringify(value) : value)
     .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('|', '&#124;').replace(/\s+/g, ' ');
   const observed = attempts.map(row => [row.id, row.layer, `${row.sample} #${row.attempt ?? 1}`,
@@ -91,7 +98,7 @@ export async function writeVoiceResults(directory, cases, phases) {
     [row.result, row.failureCategory].filter(Boolean).join(' / ')]);
   for (const row of cases.filter(item => !attempts.some(attempt => attempt.id === item.id))) {
     for (const sample of samples.filter(sample => sample.caseId === row.id ||
-      (row.id === 'FR-AST-34' && sample.id === 'chat-bala'))) {
+      (row.id === 'FR-AST-34' && sample.id === fileSampleId()))) {
       observed.push([row.id, row.id === 'FR-AST-34' ? 'PRERECORDED_FILE' : 'LIVE_AUDIO',
         sample.id, sample.phrase, null, null, sample.expectedResult, null,
         `${row.status}, no attempt evidence`]);

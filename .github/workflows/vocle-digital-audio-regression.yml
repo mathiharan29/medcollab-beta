@@ -1,0 +1,62 @@
+name: Vocle — Voice Assistant Digital Audio
+
+on:
+  push:
+    branches: [testing/voice-digital-audio-probe]
+    paths:
+      - '.github/workflows/vocle-digital-audio-regression.yml'
+      - 'tests/functional-regression/voice-audio/**'
+      - 'tests/functional-regression/scripts/**'
+      - 'medcollab-app/integration_test/functional_regression/voice_assistant_test.dart'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  digital-audio-to-dm:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: stable
+          flutter-version: '3.29.3'
+          cache: true
+      - name: Recognize the digital WAV and confirm the exact Vocle DM
+        run: |
+          set -euo pipefail
+          export FLUTTER_SUPPRESS_ANALYTICS=true
+          export JAVA_HOME="${JAVA_HOME_17_X64:-$JAVA_HOME}"
+          export PATH="$JAVA_HOME/bin:$PATH"
+          export GRADLE_USER_HOME="$RUNNER_TEMP/vocle-digital-gradle"
+          mkdir -p "$GRADLE_USER_HOME"
+          printf 'org.gradle.jvmargs=-Xmx2560m -XX:MaxMetaspaceSize=1024m\norg.gradle.workers.max=2\n' > "$GRADLE_USER_HOME/gradle.properties"
+          output="$RUNNER_TEMP/vocle-digital-regression"
+          bash tests/functional-regression/voice-audio/android-probe/hosted-emulator.sh \
+            'system-images;android-35;google_apis;x86_64' "$output" \
+            bash tests/functional-regression/voice-audio/android-probe/hosted-regression.sh "$output"
+      - name: Stage evidence
+        if: always()
+        run: |
+          set -euo pipefail
+          output="$RUNNER_TEMP/vocle-digital-regression"
+          mkdir -p "$output"
+          if [ -f "$output/device/voice-assistant-attempts.md" ]; then
+            cat "$output/device/voice-assistant-attempts.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          node tests/reporting/stage.mjs "$output" "$RUNNER_TEMP/vocle-digital-artifact"
+      - name: Upload recognition and app action evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: vocle-digital-audio-evidence
+          path: ${{ runner.temp }}/vocle-digital-artifact
+          if-no-files-found: warn
+          retention-days: 30

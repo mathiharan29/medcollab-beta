@@ -94,7 +94,7 @@ export async function startDeviceServer({ adb, serial, caseId }) {
   };
   const foreground = () => native('shell', 'dumpsys', 'activity', 'activities');
   const activity = `${devicePackage}/com.example.medcollab_app.MainActivity`;
-  const voice = await voiceAudioControls(caseId, serial);
+  const voice = await voiceAudioControls(caseId, serial, () => native('shell', 'getprop', 'ro.build.fingerprint'));
   const assistant = Boolean(voice || deviceCases[caseId].transcript);
   let uri, fixture;
   let cleaned = false;
@@ -165,7 +165,8 @@ export async function startDeviceServer({ adb, serial, caseId }) {
     backend = await startBackend(uri, backendPort, runtime, inbox, { extraEnv: { API_BASE_URL: apiOrigin } });
     const request = createHttp(`http://127.0.0.1:${backendPort}`);
     const people = {};
-    const voiceNames = { A: 'Dr Runner', B: 'Dr Bala', C: 'Dr Priya', D: 'Dr Asha Rao', E: 'Dr Asha Rao', F: 'Dr Bela' };
+    const voiceNames = { A: 'Dr Runner', B: voice?.digitalRecognition ? 'Dr Alex' : 'Dr Bala',
+      C: 'Dr Priya', D: 'Dr Asha Rao', E: 'Dr Asha Rao', F: 'Dr Bela' };
     const labels = ['A', 'B', 'C'];
     if (caseId === 'FR-AST-31') labels.push('F');
     if (caseId === 'FR-AST-33') labels.push('D', 'E');

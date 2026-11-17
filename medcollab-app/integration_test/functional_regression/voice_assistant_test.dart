@@ -381,6 +381,7 @@ void _checkTranscript(String sample, String transcript) {
     'chat-bala-noise' =>
       r'^open (?:(?:the )?chat with (?:dr |doctor )?bala|bala chat)$',
     'chat-bela' => r'^open bela chat$',
+    'chat-with-alex' => r'^open chat with (?:dr|doctor) alex$',
     'draft-priya' ||
     'draft-priya-paused' =>
       r'^(?:draft (?:a )?)?hand ?off (?:for )?bed (?:7|seven) to priya$',
@@ -427,9 +428,11 @@ Future<void> _assertDraft(WidgetTester tester, Map<String, dynamic> f,
     of: editor,
     matching: find.byType(BlocProvider<HandoffFormCubit>),
   );
-  await until(tester, () => form.evaluate().length == 1, 'persisted draft populates its form');
+  await until(tester, () => form.evaluate().length == 1,
+      'persisted draft populates its form');
   final content = tester.widget<BlocProvider<HandoffFormCubit>>(form).child!;
-  final formState = tester.element(find.byWidget(content)).read<HandoffFormCubit>().state;
+  final formState =
+      tester.element(find.byWidget(content)).read<HandoffFormCubit>().state;
   expect(formState.assignedDoctor?.id, _person(f, 'C'));
   expect(formState.patients.map((patient) => patient.bedNumber), ['7']);
   expect(formState.isSent, isFalse);
@@ -473,19 +476,34 @@ Future<void> _file(WidgetTester tester) async {
   };
   var recognizerCalled = false;
   try {
-    final caps = await deps.speechService.capabilities();
-    if (!caps.fileInput)
-      throw DeviceInfrastructureError('Android file recognition unavailable');
     final clip = await control('assistant-file');
-    await file.writeAsBytes(base64Decode(clip['wav'] as String));
-    recognizerCalled = true;
-    row['recognitionStart'] = 'file_input_invoked';
-    _recordStart(row);
-    final transcript = await deps.speechService.transcribeFile(file.path);
+    final digital = clip['digitalRecognition'] as Map<String, dynamic>?;
+    final String? transcript;
+    if (digital != null) {
+      // The host validated a real final result and its silence control from
+      // Android on this emulator. The test passes the raw result to Vocle.
+      row['sample'] = digital['sample'];
+      row['intendedCommand'] = digital['phrase'];
+      row['expectedAction'] = 'Open the existing Alex DM after confirmation';
+      row['nativeRecognition'] = digital;
+      row['recognitionStart'] = 'verified_android_digital_file_input';
+      recognizerCalled = true;
+      transcript = digital['transcript'] as String;
+    } else {
+      final caps = await deps.speechService.capabilities();
+      if (!caps.fileInput) {
+        throw DeviceInfrastructureError('Android file recognition unavailable');
+      }
+      await file.writeAsBytes(base64Decode(clip['wav'] as String));
+      recognizerCalled = true;
+      row['recognitionStart'] = 'file_input_invoked';
+      _recordStart(row);
+      transcript = await deps.speechService.transcribeFile(file.path);
+    }
     row['recognizedTranscript'] = transcript;
     expect(transcript, isNotNull,
-        reason: 'SpeechBridge must recognize the supplied file');
-    _checkTranscript('chat-bala', transcript!);
+        reason: 'Android must recognize the supplied digital file');
+    _checkTranscript(row['sample'] as String, transcript!);
     final before = await control('assistant-state');
     unawaited(openVoiceBot(tester.element(_opener), listen: false));
     await until(tester, () => _panel.evaluate().length == 1,
@@ -541,7 +559,8 @@ Future<void> _transcript(WidgetTester tester) async {
 
   try {
     final beforeChat = await control('assistant-state');
-    final chat = (await say('Open Bala chat')).proposals.single as OpenChatAction;
+    final chat =
+        (await say('Open Bala chat')).proposals.single as OpenChatAction;
     final chatRow = <String, Object?>{
       'layer': 'TRANSCRIPT_INJECTION',
       'transcript': 'Open Bala chat',
