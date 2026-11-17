@@ -1,0 +1,14 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.vocle.audiosourceprobe">
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
+    <application android:label="Vocle Audio Source Probe" android:debuggable="true">
+        <activity android:name=".AudioSourceProbe$Foreground" android:exported="false" />
+    </application>
+    <instrumentation android:name=".AudioSourceProbe"
+        android:targetPackage="com.vocle.audiosourceprobe" />
+</manifest>
