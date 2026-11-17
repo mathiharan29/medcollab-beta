@@ -34,6 +34,8 @@ SAMPLES = [
      "FR-AST-33", None, None, "Show unsupported feedback and leave the database unchanged"),
     ("ambiguous", "Open Asha chat.", "en+m2", 142, 45, "FR-AST-33",
      "Clarify", ["D", "E"], "Show both Asha identities, then open only the chosen E DM"),
+    ("chat-with-alex", "Open chat with Doctor Alex.", "en-us+m3", 132, 46, "FR-AST-34",
+     "OpenChat", "B", "Open the exact existing Alex DM after confirmation in the hosted digital smoke test"),
 ]
 
 

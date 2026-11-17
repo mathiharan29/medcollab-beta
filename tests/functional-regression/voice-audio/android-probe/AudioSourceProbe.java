@@ -22,6 +22,7 @@ import android.util.Log;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,10 +40,12 @@ public final class AudioSourceProbe extends Instrumentation {
     private static final int RATE = 16000;
     private static final int TIMEOUT_SECONDS = 18;
     private String expected;
+    private boolean onlineOnly;
 
     @Override
     public void onCreate(Bundle arguments) {
         super.onCreate(arguments);
+        onlineOnly = arguments != null && "true".equals(arguments.getString("onlineOnly"));
         start();
     }
 
@@ -57,7 +60,7 @@ public final class AudioSourceProbe extends Instrumentation {
             byte[] speech;
             JSONObject fixture;
             try (InputStream input = context.getAssets().open("fixture.json")) {
-                fixture = new JSONObject(new String(input.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
+                fixture = new JSONObject(new String(input.readAllBytes(), StandardCharsets.UTF_8));
             }
             expected = normalize(fixture.getString("phrase"));
             try (InputStream input = context.getAssets().open("sample.pcm")) {
@@ -78,6 +81,14 @@ public final class AudioSourceProbe extends Instrumentation {
             boolean proven = false;
             for (String engine : List.of("on-device", "default")) {
                 if (!(engine.equals("on-device") ? offline : standard)) continue;
+                if (onlineOnly) {
+                    if (engine.equals("default")) {
+                        for (String mode : List.of("regular-file", "pipe")) {
+                            proven |= compare(context, engine, mode, "online-allowed", speech, silence).proven;
+                        }
+                    }
+                    continue;
+                }
                 checkSupport(context, engine);
                 boolean modelUnavailable = false;
                 boolean engineProven = false;
@@ -158,11 +169,14 @@ public final class AudioSourceProbe extends Instrumentation {
                || control.error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT);
         boolean consumed = mode.equals("pipe")
             && supplied.written == speech.length && control.written == silence.length;
-        boolean passed = matched && quiet && consumed
+        boolean sharedCursorAtEof = mode.equals("regular-file")
+            && supplied.filePosition == speech.length && control.filePosition == silence.length;
+        boolean passed = matched && quiet && (consumed || sharedCursorAtEof)
             && supplied.error == 0 && !supplied.terminal.equals("timeout");
         log(new JSONObject().put("event", "comparison").put("engine", engine)
             .put("source", mode).put("profile", profile).put("expectedPhraseMatched", matched)
             .put("silenceControlPassed", quiet).put("pipeConsumptionProven", consumed)
+            .put("sharedFileCursorAtEof", sharedCursorAtEof)
             .put("sourceProven", passed));
         return new Comparison(passed, supplied.error == SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE);
     }
@@ -281,6 +295,9 @@ public final class AudioSourceProbe extends Instrumentation {
             .put("terminal", outcome.terminal).put("error", outcome.error)
             .put("ready", outcome.ready).put("segmentCount", outcome.parts.size())
             .put("transcript", outcome.transcript()));
+        // destroy() hands session release to the remote service. Leave time
+        // for that teardown before opening the next independent control.
+        SystemClock.sleep(1000);
         return outcome;
     }
 

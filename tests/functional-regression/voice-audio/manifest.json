@@ -172,5 +172,24 @@
     "expectedResult": "Show both Asha identities, then open only the chosen E DM",
     "sha256": "d66c4d5a39813f13018f359102846d32102e306991d06144e31cd81005822410",
     "provenance": "eSpeak NG 1.52.0 via espeakng-loader 0.2.4, generated for Vocle"
+  },
+  {
+    "id": "chat-with-alex",
+    "file": "chat-with-alex.wav",
+    "phrase": "Open chat with Doctor Alex.",
+    "synthesisText": "Open chat with Doctor Alex.",
+    "voice": "en-us+m3",
+    "locale": "en-US",
+    "wordsPerMinute": 132,
+    "pitch": 46,
+    "background": "clean",
+    "format": "WAV PCM16 mono 16000 Hz",
+    "durationMs": 3388,
+    "caseId": "FR-AST-34",
+    "expectedIntent": "OpenChat",
+    "target": "B",
+    "expectedResult": "Open the exact existing Alex DM after confirmation in the hosted digital smoke test",
+    "sha256": "6b317c6412e502a189623f4bc6cf7aadaffd4511f1889543094bb7512ab23e05",
+    "provenance": "eSpeak NG 1.52.0 via espeakng-loader 0.2.4, generated for Vocle"
   }
 ]

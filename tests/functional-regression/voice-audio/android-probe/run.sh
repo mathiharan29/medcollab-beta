@@ -61,7 +61,8 @@ keytool -genkeypair -keystore "$build/debug.keystore" -storepass android -keypas
 
 "$adb" install -g "$build/probe.apk"
 set +e
-timeout 420 "$adb" shell am instrument -w com.vocle.audiosourceprobe/.AudioSourceProbe \
+timeout 420 "$adb" shell am instrument -w -e onlineOnly "${VOCLE_PROBE_ONLINE_ONLY:-false}" \
+  com.vocle.audiosourceprobe/.AudioSourceProbe \
   2>&1 | tee "$output/instrumentation.txt"
 status="${PIPESTATUS[0]}"
 set -e

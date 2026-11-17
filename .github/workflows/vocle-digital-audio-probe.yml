@@ -18,8 +18,12 @@ jobs:
         include:
           - api: 35
             target: google_apis
+            sample: chat-with-alex
+            online_only: 'true'
           - api: 36
             target: google_apis_playstore
+            sample: chat-with-bala
+            online_only: 'false'
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -41,7 +45,8 @@ jobs:
           "$ANDROID_HOME/emulator/emulator" -list-avds | grep -Fx vocle-audio-source
       - name: Run standalone recognition probe with emulator audio disabled
         env:
-          VOCLE_PROBE_SAMPLE: chat-with-bala
+          VOCLE_PROBE_SAMPLE: ${{ matrix.sample }}
+          VOCLE_PROBE_ONLINE_ONLY: ${{ matrix.online_only }}
         run: |
           set -euo pipefail
           output="$RUNNER_TEMP/vocle-audio-source"
