@@ -44,7 +44,7 @@ class AddMembersPage extends StatefulWidget {
     required Set<String> existingMemberIds,
     String? spaceName,
   }) async {
-    final added = await Navigator.of(context).push<bool>(
+    final added = await Navigator.of(context, rootNavigator: true).push<bool>(
       MaterialPageRoute(
         fullscreenDialog: true,
         builder: (_) => AddMembersPage(

@@ -47,8 +47,13 @@ class ComposerShell extends StatelessWidget {
                 child: DecoratedBox(
                 decoration: BoxDecoration(
                   color: AppColors.surfaceCard,
-                  borderRadius: BorderRadius.circular(ComposerMetrics.bar / 2),
-                  border: Border.all(color: AppColors.borderDefault, width: 0.5),
+                  // Vocle composer: a clinical card field (14 px corners and
+                  // a teal hairline), not a messenger pill.
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: AppColors.tealPrimary.withValues(alpha: AppColors.isDark ? 0.35 : 0.28),
+                    width: 1,
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black
@@ -141,10 +146,11 @@ class ComposerRoundButton extends StatelessWidget {
         child: Material(
           key: const Key('composer-action'),
           color: AppColors.tealDark.withValues(alpha: busy ? 0.5 : 1),
-          shape: const CircleBorder(),
+          // Rounded square "action key" matching the card composer.
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           elevation: 0,
           child: InkWell(
-            customBorder: const CircleBorder(),
+            customBorder: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             onTap: busy ? null : onTap,
             child: SizedBox.square(
               dimension: ComposerMetrics.bar,

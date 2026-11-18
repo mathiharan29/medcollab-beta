@@ -257,6 +257,20 @@ const messageSchema = new mongoose.Schema(
       type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
       default: [],
     },
+
+    // Sender-chosen idempotency key (FR-AST-25): a retry or a second tap
+    // with the same key returns the stored message instead of a new one.
+    clientMessageId: {
+      type: String,
+      default: undefined,
+    },
+
+    // Set on history copied into an expanded Needl: the source message id.
+    // Lets an interrupted copy be redone without duplicates (FR-NDL-29).
+    copiedFromId: {
+      type: mongoose.Schema.Types.ObjectId,
+      default: undefined,
+    },
   },
   {
     timestamps: true, // createdAt is our message timestamp
@@ -283,6 +297,13 @@ messageSchema.index({ spaceId: 1, createdAt: -1 });
 
 // Mention-based notification lookup
 messageSchema.index({ mentions: 1 });
+
+// One stored message per (sender, chat, client key). Partial: old messages
+// have no key.
+messageSchema.index(
+  { senderId: 1, channelId: 1, clientMessageId: 1 },
+  { unique: true, partialFilterExpression: { clientMessageId: { $type: 'string' } } }
+);
 
 // ── Pre-save Hook ─────────────────────────────────────────────────────────────
 // When a message is soft-deleted, blank out its content.

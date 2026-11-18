@@ -427,6 +427,8 @@ Future<void> showNeedlMembersSheet(
   await showModalBottomSheet<void>(
     context: context,
     showDragHandle: true,
+    isScrollControlled: true,
+    constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.8),
     backgroundColor: AppColors.surfaceCard,
     builder: (sheetContext) {
       return SafeArea(
@@ -459,9 +461,11 @@ Future<void> showNeedlMembersSheet(
                   ],
                 ),
               ),
-              SizedBox(
-                height: MediaQuery.sizeOf(sheetContext).height * 0.55,
+              // FR-NDL-53: as tall as the members need, scrolling past the
+              // sheet's limit — never a fixed height that overflows it.
+              Flexible(
                 child: ListView.separated(
+                  shrinkWrap: true,
                   itemCount: sorted.length,
                   separatorBuilder: (_, __) => const Divider(height: 1),
                   itemBuilder: (context, index) {

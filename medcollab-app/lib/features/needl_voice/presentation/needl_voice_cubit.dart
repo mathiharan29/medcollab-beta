@@ -111,10 +111,17 @@ class NeedlVoiceCubit extends Cubit<NeedlVoiceState> with SafeEmit<NeedlVoiceSta
 
   Future<void> load() async {
     try {
-      final page = await _messages.getMessages(channelId, limit: 50);
+      final page = await _messages.getVoiceMessages(channelId, limit: 50);
+      final fetched = page.messages.where(_isVoiceClip).toList();
+      // FR-VCE-12: clips (and transcripts) that arrived live while the
+      // history was loading are newer than this snapshot — keep them.
+      final live = {for (final c in state.clips) c.id: c};
       emit(state.copyWith(
         loading: false,
-        clips: page.messages.where((m) => m.type == MessageType.audio).toList(),
+        clips: [
+          for (final m in fetched) live.remove(m.id) ?? m,
+          ...live.values,
+        ],
       ));
     } catch (e) {
       emit(state.copyWith(loading: false, error: 'Could not load voice messages'));
@@ -206,7 +213,7 @@ class NeedlVoiceCubit extends Cubit<NeedlVoiceState> with SafeEmit<NeedlVoiceSta
   // ── realtime ────────────────────────────────────────────────────────────
   void _onNew(Map<String, dynamic> raw) {
     final m = MessageModel.fromJson(raw);
-    if (m.channelId != channelId || m.type != MessageType.audio || m.threadId != null) return;
+    if (m.channelId != channelId || !_isVoiceClip(m) || m.threadId != null) return;
     if (state.clips.any((c) => c.id == m.id)) return;
     // My own clip is already shown (optimistic) — replaced on send.
     if (m.sender.id == currentUserId) return;
@@ -214,9 +221,22 @@ class NeedlVoiceCubit extends Cubit<NeedlVoiceState> with SafeEmit<NeedlVoiceSta
     _clearRecording(m.sender.id);
     if (state.autoplay && !_recordingNow) {
       _queue.add(m.id);
-      if (!_playback.isPlaying && !_playback.isLoading) _playNext();
+      if (!_playerBusy) unawaited(_playNext());
     }
   }
+
+  /// Needl Voice is its own space: only clips recorded in voice mode
+  /// (normal chat voice notes stay in the chat). Messages from an older
+  /// server without the flag are still audio-only.
+  static bool _isVoiceClip(MessageModel m) =>
+      m.type == MessageType.audio && m.content.voiceMode != false;
+
+  /// Playing, loading, or PAUSED part-way (FR-VCE-15): a new arrival waits
+  /// in the queue instead of taking the player away from the paused clip.
+  bool get _playerBusy =>
+      _playback.isPlaying ||
+      _playback.isLoading ||
+      (_playback.currentId != null && _playback.position > Duration.zero);
 
   void _onUpdated(Map<String, dynamic> raw) {
     final id = raw['messageId']?.toString() ?? '';
@@ -261,22 +281,34 @@ class NeedlVoiceCubit extends Cubit<NeedlVoiceState> with SafeEmit<NeedlVoiceSta
     if (_playback.isPlaying) _lastPlaying = current;
     if (ended) {
       _lastPlaying = null;
-      if (_queue.isNotEmpty && !_recordingNow) _playNext();
+      if (_queue.isNotEmpty && !_recordingNow) unawaited(_playNext());
     }
   }
 
-  void _playNext() {
-    while (_queue.isNotEmpty) {
-      final id = _queue.removeAt(0);
-      final clip = state.clips.where((c) => c.id == id).firstOrNull;
-      final url = clip?.content.mediaUrl;
-      if (clip == null || url == null || url.isEmpty) continue;
-      unawaited(_playback.toggle(
-        playbackId(id),
-        url,
-        knownDuration: Duration(milliseconds: clip.content.durationMs ?? 0),
-      ));
-      return;
+  bool _advancing = false;
+
+  /// Play the oldest queued clip. FR-VCE-16: a clip that fails to load stays
+  /// listed (it can be retried by tapping it) and the queue moves on.
+  Future<void> _playNext() async {
+    if (_advancing) return;
+    _advancing = true;
+    try {
+      while (_queue.isNotEmpty && !_recordingNow && !isClosed) {
+        final id = _queue.removeAt(0);
+        final clip = state.clips.where((c) => c.id == id).firstOrNull;
+        final url = clip?.content.mediaUrl;
+        if (clip == null || url == null || url.isEmpty) continue;
+        final pid = playbackId(id);
+        await _playback.toggle(
+          pid,
+          url,
+          knownDuration: Duration(milliseconds: clip.content.durationMs ?? 0),
+        );
+        final failed = _playback.currentId == null && _playback.error != null;
+        if (!failed) return;
+      }
+    } finally {
+      _advancing = false;
     }
   }
 

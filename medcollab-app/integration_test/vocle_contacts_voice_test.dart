@@ -157,7 +157,7 @@ void main() {
     await tester.pumpAndSettle(const Duration(milliseconds: 100));
     await _step(tester, 'open_chat_theme',
         () => _tap(tester, find.text('Chat theme')), find.text('Save'));
-    await _tap(tester, find.text('Mint'));
+    await _tap(tester, find.text('Scrubs'));
     await _tap(tester, find.text('This chat only'));
     await _step(tester, 'save_chat_theme',
         () => _tap(tester, find.text('Save')), _text('Theme saved for this chat'));

@@ -324,6 +324,17 @@ const updateHandoff = asyncHandler(async (req, res) => {
   }
   const input = { ...req.body, ...voice };
 
+  // FR-HOF-02: a corrected shift date must be a real date — never report
+  // success while storing (or silently keeping) something else.
+  if (input.shiftDate !== undefined) {
+    const raw = input.shiftDate;
+    const parsed = typeof raw === 'string' && /^\d{4}-\d{2}-\d{2}/.test(raw) ? new Date(raw) : null;
+    if (!parsed || Number.isNaN(parsed.getTime())) {
+      return respond.badRequest(res, 'Invalid shift date');
+    }
+    input.shiftDate = parsed;
+  }
+
   const allowed = ['patients', 'shiftSummary', 'shiftDate', 'shiftType', 'voiceNote'];
   allowed.forEach((f) => {
     if (input[f] !== undefined) handoff[f] = input[f];

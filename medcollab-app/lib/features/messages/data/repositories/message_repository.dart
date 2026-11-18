@@ -28,6 +28,27 @@ class MessageRepository extends BaseRepository {
           if (before != null) 'before': before,
         },
         parser: (json) => MessagesPage(
+          messages: parseNestedList(json, 'messages', MessageModel.fromJson)
+              // Needl Voice clips live in their own space, never in the chat.
+              .where((m) => m.content.voiceMode != true)
+              .toList(),
+          hasMore: json['hasMore'] as bool? ?? false,
+        ),
+      ),
+    );
+  }
+
+  /// Needl Voice history: only clips recorded in voice mode (`?mode=voice`).
+  Future<MessagesPage> getVoiceMessages(String channelId, {String? before, int limit = 50}) {
+    return execute(
+      () => apiClient.get(
+        ApiEndpoints.channelMessages(channelId),
+        queryParameters: {
+          'limit': limit,
+          'mode': 'voice',
+          if (before != null) 'before': before,
+        },
+        parser: (json) => MessagesPage(
           messages: parseNestedList(json, 'messages', MessageModel.fromJson),
           hasMore: json['hasMore'] as bool? ?? false,
         ),
@@ -35,11 +56,14 @@ class MessageRepository extends BaseRepository {
     );
   }
 
+  /// [clientMessageId]: idempotency key — a retry with the same key returns
+  /// the first stored copy instead of sending twice (FR-AST-25).
   Future<MessageModel> sendTextMessage({
     required String channelId,
     required String text,
     List<String> mentions = const [],
     String? replyToId,
+    String? clientMessageId,
   }) {
     return _sendMessage(
       channelId: channelId,
@@ -47,6 +71,7 @@ class MessageRepository extends BaseRepository {
       content: MessageContent(text: text),
       mentions: mentions,
       replyToId: replyToId,
+      clientMessageId: clientMessageId,
     );
   }
 
@@ -125,6 +150,7 @@ class MessageRepository extends BaseRepository {
     required MessageContent content,
     List<String> mentions = const [],
     String? replyToId,
+    String? clientMessageId,
   }) {
     return execute(
       () => apiClient.post(
@@ -134,6 +160,7 @@ class MessageRepository extends BaseRepository {
           'content': content.toJson(),
           if (mentions.isNotEmpty) 'mentions': mentions,
           if (replyToId != null && replyToId.isNotEmpty) 'replyToId': replyToId,
+          if (clientMessageId != null) 'clientMessageId': clientMessageId,
         },
         parser: (json) =>
             parseNested(json, 'message', MessageModel.fromJson),

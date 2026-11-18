@@ -27,6 +27,9 @@ async function conversations({ identity, request }, labels) {
 }
 
 const history = (channelId) => `/api/channels/${channelId}/messages`;
+// Needl Voice is a separate space (beta feedback 2026-11-18): clips are read
+// from the voice history; the text chat history never contains them.
+const voiceHistory = (channelId) => `/api/channels/${channelId}/messages?mode=voice`;
 const transcriptPath = (channelId, messageId) => `${history(channelId)}/${messageId}/transcript`;
 
 async function sendVoice(request, token, channelId, media) {
@@ -82,7 +85,9 @@ await runModule('voice', [{
         assert.equal(content.mediaUrl, media.url);
       }
 
-      const reloaded = (await request(history(dm), { token: b.token })).data.messages.filter(message => message._id === clip._id);
+      const chatHistory = (await request(history(dm), { token: b.token })).data.messages;
+      assert.ok(chatHistory.every(message => message._id !== clip._id), 'Needl Voice clips stay out of the text chat');
+      const reloaded = (await request(voiceHistory(dm), { token: b.token })).data.messages.filter(message => message._id === clip._id);
       assert.equal(reloaded.length, 1);
       assert.equal(reloaded[0].content.transcript, text);
       assert.equal(reloaded[0].content.transcriptStatus, 'done');
@@ -114,7 +119,7 @@ await runModule('voice', [{
     await request(`${history(needl)}/${clip._id}?scope=me`, { method: 'DELETE', token: b.token });
     assert.deepEqual(await matches(b), []);
     assert.deepEqual(await matches(c), [clip._id], 'A personal deletion cannot hide audio for another Needl member');
-    const peerHistory = (await request(history(needl), { token: c.token })).data.messages;
+    const peerHistory = (await request(voiceHistory(needl), { token: c.token })).data.messages;
     const visible = peerHistory.find(message => message._id === clip._id);
     assert.equal(visible.content.mediaUrl, voice.url);
     assert.equal(visible.content.transcript, 'Synthetic zephyrite update');
@@ -140,7 +145,7 @@ await runModule('voice', [{
       method: 'POST', token: a.token, body: { type: 'text', content: { text: 'Synthetic text control' } }, expectedStatus: 201,
     })).data.message;
     await edit(request, a.token, dm, text._id, valid, 400);
-    const read = async () => (await request(history(dm), { token: b.token })).data.messages.find(message => message._id === clip._id).content;
+    const read = async () => (await request(voiceHistory(dm), { token: b.token })).data.messages.find(message => message._id === clip._id).content;
     assert.equal((await read()).transcriptStatus, 'pending');
     assert.equal((await read()).transcript ?? null, null);
     const renewed = await request('/api/auth/refresh', { method: 'POST', body: { refreshToken } });

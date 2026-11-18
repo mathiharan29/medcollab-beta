@@ -468,6 +468,66 @@ const createGroupDM = asyncHandler(async (req, res) => {
  * with optional history copy.
  * Body: { userIds: string[], history: 'all' | 'today' | 'none' }
  */
+/**
+ * Copy a Needl's history into the expanded conversation. Thread and quote
+ * links are remapped to the copies; every copy records its source id so an
+ * interrupted copy can be removed and redone (FR-NDL-29). Includes
+ * soft-deleted rows so the destination shows "This message was deleted".
+ */
+async function copyNeedlHistory({ Message, mongoose, sourceId, channel, since }) {
+  const filter = { channelId: sourceId };
+  if (since) filter.createdAt = { $gte: since };
+  const messages = await Message.find(filter).sort({ createdAt: 1 }).lean();
+  if (messages.length === 0) return;
+
+  const idMap = new Map();
+  for (const m of messages) idMap.set(String(m._id), new mongoose.Types.ObjectId());
+
+  const copies = messages.map((m) => {
+    const mappedThread = m.threadId ? idMap.get(String(m.threadId)) || null : null;
+    let replyTo = undefined;
+    if (m.replyTo?.messageId) {
+      replyTo = {
+        ...m.replyTo,
+        // Remap when the quoted parent was copied; otherwise keep text snapshot.
+        messageId: idMap.get(String(m.replyTo.messageId)) || m.replyTo.messageId,
+      };
+    }
+    return {
+      _id: idMap.get(String(m._id)),
+      channelId: channel._id,
+      spaceId: null,
+      senderId: m.senderId,
+      type: m.type,
+      content: m.content,
+      priority: m.priority,
+      mentions: m.mentions || [],
+      replyTo,
+      threadId: mappedThread,
+      replyCount: m.replyCount || 0,
+      isDeleted: Boolean(m.isDeleted),
+      deletedAt: m.deletedAt || null,
+      copiedFromId: m._id,
+      createdAt: m.createdAt,
+      updatedAt: m.updatedAt,
+    };
+  });
+  await Message.insertMany(copies, { ordered: true });
+
+  // Preview points at the source message id (product Q2) so deep-links
+  // back to the origin conversation remain stable.
+  const last = messages[messages.length - 1];
+  await Channel.findByIdAndUpdate(channel._id, {
+    lastMessage: {
+      messageId: last._id,
+      text: last.isDeleted ? 'This message was deleted' : last.content?.text?.slice(0, 200) || null,
+      senderName: null,
+      type: last.type,
+      sentAt: last.createdAt,
+    },
+  });
+}
+
 const expandDM = asyncHandler(async (req, res) => {
   const source = await Channel.findById(req.params.id);
   if (!source) return respond.notFound(res, 'Conversation not found');
@@ -544,108 +604,111 @@ const expandDM = asyncHandler(async (req, res) => {
       .slice(0, 4)
       .join(', ') || 'Needl';
 
-  let createdChannel = false;
-  if (!channel) {
-    createdChannel = true;
-    channel = await Channel.create({
-      spaceId: null,
-      type: CHANNEL_TYPES.DIRECT,
-      members: memberIds,
-      memberPairKey: pairKey,
-      createdBy: req.user._id,
-      name: needlTitle,
-    });
-
-    if (history !== 'none') {
-      // Include soft-deleted rows so destination shows "This message was deleted".
-      const filter = { channelId: source._id };
-      if (history === 'today') {
-        // Product Q2: "today" boundary is the caller's phone local midnight.
-        // Client sends todayStart (ISO). Copied timestamps stay the original
-        // server-stored createdAt values.
-        let start = null;
-        if (req.body.todayStart) {
-          const parsed = new Date(req.body.todayStart);
-          if (!Number.isNaN(parsed.getTime())) start = parsed;
-        } else if (Number.isFinite(Number(req.body.timezoneOffsetMinutes))) {
-          const offsetMin = Number(req.body.timezoneOffsetMinutes);
-          const now = new Date();
-          const local = new Date(now.getTime() - offsetMin * 60 * 1000);
-          start = new Date(Date.UTC(
-            local.getUTCFullYear(),
-            local.getUTCMonth(),
-            local.getUTCDate(),
-            0, 0, 0, 0
-          ));
-          start = new Date(start.getTime() + offsetMin * 60 * 1000);
-        }
-        if (!start) {
-          start = new Date();
-          start.setHours(0, 0, 0, 0);
-        }
-        filter.createdAt = { $gte: start };
-      }
-
-      const messages = await Message.find(filter).sort({ createdAt: 1 }).lean();
-
-      if (messages.length > 0) {
-        const idMap = new Map();
-        for (const m of messages) {
-          idMap.set(String(m._id), new mongoose.Types.ObjectId());
-        }
-
-        const copies = messages.map((m) => {
-          const sourceId = String(m._id);
-          const mappedThread = m.threadId
-            ? idMap.get(String(m.threadId)) || null
-            : null;
-          let replyTo = undefined;
-          if (m.replyTo?.messageId) {
-            const mappedQuote = idMap.get(String(m.replyTo.messageId));
-            replyTo = {
-              ...m.replyTo,
-              // Remap when the quoted parent was copied; otherwise keep text snapshot.
-              messageId: mappedQuote || m.replyTo.messageId,
-            };
-          }
-          return {
-            _id: idMap.get(sourceId),
-            channelId: channel._id,
-            spaceId: null,
-            senderId: m.senderId,
-            type: m.type,
-            content: m.content,
-            priority: m.priority,
-            mentions: m.mentions || [],
-            replyTo,
-            threadId: mappedThread,
-            replyCount: m.replyCount || 0,
-            isDeleted: Boolean(m.isDeleted),
-            deletedAt: m.deletedAt || null,
-            createdAt: m.createdAt,
-            updatedAt: m.updatedAt,
-          };
-        });
-        await Message.insertMany(copies, { ordered: true });
-
-        // Preview points at the source message id (product Q2) so deep-links
-        // back to the origin conversation remain stable.
-        const last = messages[messages.length - 1];
-        const previewText = last.isDeleted
-          ? 'This message was deleted'
-          : last.content?.text?.slice(0, 200) || null;
-        await Channel.findByIdAndUpdate(channel._id, {
-          lastMessage: {
-            messageId: last._id,
-            text: previewText,
-            senderName: null,
-            type: last.type,
-            sentAt: last.createdAt,
-          },
-        });
-      }
+  // History boundary for 'today': the caller's phone local midnight
+  // (product Q2). Copied timestamps stay the original createdAt values.
+  let since = null;
+  if (history === 'today') {
+    if (req.body.todayStart) {
+      const parsed = new Date(req.body.todayStart);
+      if (!Number.isNaN(parsed.getTime())) since = parsed;
+    } else if (Number.isFinite(Number(req.body.timezoneOffsetMinutes))) {
+      const offsetMin = Number(req.body.timezoneOffsetMinutes);
+      const now = new Date();
+      const local = new Date(now.getTime() - offsetMin * 60 * 1000);
+      since = new Date(Date.UTC(
+        local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate(), 0, 0, 0, 0
+      ));
+      since = new Date(since.getTime() + offsetMin * 60 * 1000);
     }
-  } else {
+    if (!since) {
+      since = new Date();
+      since.setHours(0, 0, 0, 0);
+    }
+  }
+
+  let createdChannel = false;
+  let joinedRace = false;
+  if (!channel) {
+    try {
+      channel = await Channel.create({
+        spaceId: null,
+        type: CHANNEL_TYPES.DIRECT,
+        members: memberIds,
+        memberPairKey: pairKey,
+        createdBy: req.user._id,
+        name: needlTitle,
+        historyCopy: {
+          sourceId: source._id,
+          mode: history === 'none' ? undefined : history,
+          since,
+          // 'none' has nothing to copy; the activity line still needs posting.
+          status: 'copying',
+          startedAt: new Date(),
+          addedBy: req.user._id,
+          addedUserIds: uniqueNew,
+        },
+      });
+      createdChannel = true;
+    } catch (err) {
+      // FR-NDL-28: a concurrent identical expansion created it first — the
+      // unique pair key lets exactly one win; this request joins it.
+      if (err?.code !== 11000) throw err;
+      joinedRace = true;
+      channel = await Channel.findOne({ type: CHANNEL_TYPES.DIRECT, memberPairKey: pairKey });
+      if (!channel) throw err;
+    }
+  }
+
+  // Claim the copy: the creator holds it; a later request may resume one
+  // that failed (FR-NDL-29) or was abandoned by a crashed request.
+  let ownsCopy = createdChannel;
+  if (!ownsCopy && channel.historyCopy?.status && channel.historyCopy.status !== 'done') {
+    const claimed = await Channel.findOneAndUpdate(
+      {
+        _id: channel._id,
+        $or: [
+          { 'historyCopy.status': 'failed' },
+          { 'historyCopy.status': 'copying', 'historyCopy.startedAt': { $lt: new Date(Date.now() - 2 * 60 * 1000) } },
+        ],
+      },
+      { $set: { 'historyCopy.status': 'copying', 'historyCopy.startedAt': new Date() } },
+      { new: true }
+    );
+    if (claimed) {
+      channel = claimed;
+      ownsCopy = true;
+    }
+  }
+
+  const sysMsg = require('../../utils/systemMessages');
+  if (ownsCopy) {
+    const plan = channel.historyCopy;
+    try {
+      if (plan.mode) {
+        // A resumed copy first removes whatever a failed attempt left.
+        await Message.deleteMany({ channelId: channel._id, copiedFromId: { $exists: true } });
+        await copyNeedlHistory({ Message, mongoose, sourceId: plan.sourceId, channel, since: plan.mode === 'today' ? plan.since : null });
+      }
+      const addedUsers = await User.find({ _id: { $in: plan.addedUserIds } }).select('name displayTitle').lean();
+      const actor = String(plan.addedBy) === String(req.user._id)
+        ? req.user
+        : await User.findById(plan.addedBy).select('name displayTitle').lean();
+      // Activity line in the new conversation people were added to (REQ 2).
+      await sysMsg.postSystemMessage({
+        channel,
+        actor: actor || req.user,
+        event: sysMsg.SYSTEM_EVENTS.MEMBER_ADDED,
+        text: `${sysMsg.personName(actor || req.user)} added ${sysMsg.joinNames(addedUsers.map(sysMsg.personName))}`
+          + (!plan.mode ? '' : plan.mode === 'all' ? ' · earlier messages shared' : " · today's messages shared"),
+        targetUserIds: plan.addedUserIds,
+        notifyUserIds: memberIds,
+      });
+      await Channel.updateOne({ _id: channel._id }, { $set: { 'historyCopy.status': 'done' } });
+    } catch (err) {
+      await Channel.updateOne({ _id: channel._id }, { $set: { 'historyCopy.status': 'failed' } }).catch(() => {});
+      throw err;
+    }
+  } else if (!createdChannel && channel.historyCopy?.status !== 'copying') {
     const current = (channel.name || '').trim();
     const otherLabels = usersForTitle
       .map(
@@ -659,24 +722,11 @@ const expandDM = asyncHandler(async (req, res) => {
     }
   }
 
-  // Activity line in the new conversation people were added to (REQ 2).
-  const sysMsg = require('../../utils/systemMessages');
-  const newUsers = createdChannel
-    ? await User.find({ _id: { $in: uniqueNew } }).select('name displayTitle').lean()
-    : [];
-  if (createdChannel) await sysMsg.postSystemMessage({
-    channel,
-    actor: req.user,
-    event: sysMsg.SYSTEM_EVENTS.MEMBER_ADDED,
-    text: `${sysMsg.personName(req.user)} added ${sysMsg.joinNames(newUsers.map(sysMsg.personName))}`
-      + (history === 'none' ? '' : history === 'all' ? ' · earlier messages shared' : " · today's messages shared"),
-    targetUserIds: uniqueNew,
-    notifyUserIds: memberIds,
-  });
-
+  const newUsers = [];
   // Members still looking at the OLD conversation must learn about it live
   // (beta 11-14, issue 8): a line there that opens the new Needl.
-  if (channel._id.toString() !== source._id.toString()) {
+  // A request that lost the creation race adds no second line.
+  if (!joinedRace && channel._id.toString() !== source._id.toString()) {
     const addedUsers = newUsers.length
       ? newUsers
       : await User.find({ _id: { $in: uniqueNew } }).select('name displayTitle').lean();

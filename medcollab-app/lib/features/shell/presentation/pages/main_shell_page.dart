@@ -11,6 +11,7 @@ import 'package:medcollab_app/features/notifications/presentation/pages/notifica
 import 'package:medcollab_app/features/profile/presentation/pages/profile_page.dart';
 import 'package:medcollab_app/core/router/shell_tab_history.dart';
 import 'package:medcollab_app/features/shell/presentation/cubit/nav_badges_cubit.dart';
+import 'package:medcollab_app/features/voice_bot/presentation/voice_bot_launcher.dart';
 import 'package:medcollab_app/shared/presentation/widgets/app_nav_bar.dart';
 
 /// Bottom navigation shell — Vocle redesign Step 2 ([AppNavBar]).
@@ -70,8 +71,22 @@ class _MainShellPageState extends State<MainShellPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Bottom-right belongs to the assistant on every tab (tab pages keep
+    // their own action buttons bottom-left; sub-pages open above the shell).
+    const lift = 0.0;
     return Scaffold(
-      body: widget.navigationShell,
+      body: Stack(
+        children: [
+          Positioned.fill(child: widget.navigationShell),
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOut,
+            right: 16,
+            bottom: 16 + lift,
+            child: const AssistantFab(),
+          ),
+        ],
+      ),
       bottomNavigationBar: BlocBuilder<NavBadgesCubit, NavBadgesState>(
         builder: (context, badges) {
           return AppNavBar(

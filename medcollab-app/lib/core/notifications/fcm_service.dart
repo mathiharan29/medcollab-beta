@@ -91,6 +91,7 @@ class PushPayload {
     this.handoffId,
     this.title,
     this.body,
+    this.voiceMode = false,
   });
 
   factory PushPayload.fromMap(Map<String, dynamic> data) {
@@ -103,6 +104,7 @@ class PushPayload {
       handoffId: data['handoffId']?.toString(),
       title: data['title']?.toString(),
       body: data['body']?.toString(),
+      voiceMode: data['voiceMode']?.toString() == 'true',
     );
   }
 
@@ -114,6 +116,9 @@ class PushPayload {
   final String? handoffId;
   final String? title;
   final String? body;
+
+  /// A Needl Voice clip: opens the voice space, not the text chat.
+  final bool voiceMode;
 
   bool get isEmergency =>
       type.toLowerCase().contains('emergency') ||

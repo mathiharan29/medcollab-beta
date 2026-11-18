@@ -9,7 +9,12 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         // On-device speech: Needl Voice transcripts + voice bot (issues 13/14).
-        speech = SpeechBridge(applicationContext, flutterEngine.dartExecutor.binaryMessenger)
+        speech = SpeechBridge(applicationContext, flutterEngine.dartExecutor.binaryMessenger) { this }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        if (speech?.onPermissionResult(requestCode, grantResults) == true) return
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {

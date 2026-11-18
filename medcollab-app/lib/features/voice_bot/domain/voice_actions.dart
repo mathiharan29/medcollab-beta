@@ -94,6 +94,9 @@ sealed class VoiceAction extends Equatable {
         return SearchAction(j['query']?.toString() ?? '');
       case 'ask_clarification':
         return ClarifyAction(j['question']?.toString() ?? '');
+      case 'reply':
+        final text = j['text']?.toString().trim() ?? '';
+        return text.isEmpty ? null : ReplyAction(text);
     }
     return null;
   }
@@ -119,15 +122,25 @@ class OpenChatAction extends VoiceAction {
 }
 
 class HandoffAction extends VoiceAction {
-  const HandoffAction({required this.to, this.shift = 'night', this.summary = '', this.patients = const []});
+  const HandoffAction({
+    required this.to,
+    this.shift = 'night',
+    this.summary = '',
+    this.patients = const [],
+    this.unclear = const [],
+  });
   final VoiceTarget to;
   final String shift;
   final String summary;
   final List<VoicePatient> patients;
+
+  /// Parts of what was heard that were NOT put into the draft (shown on the
+  /// card so a misheard bed or summary is never silently accepted).
+  final List<String> unclear;
   @override
   String get title => 'Draft handoff to ${to.name}';
   @override
-  List<Object?> get props => [to, shift, summary, patients];
+  List<Object?> get props => [to, shift, summary, patients, unclear];
 }
 
 class MarkAlertsReadAction extends VoiceAction {
@@ -170,11 +183,32 @@ class NavigateAction extends VoiceAction {
 /// The bot needs one answer (e.g. which of two doctors). [choices] are the
 /// candidates; picking one re-runs the request with that target.
 class ClarifyAction extends VoiceAction {
-  const ClarifyAction(this.question, {this.choices = const []});
+  const ClarifyAction(this.question, {this.choices = const [], this.rebuild, this.unmatched = false, this.peopleOnly = false});
   final String question;
   final List<VoiceTarget> choices;
+
+  /// Rebuilds the original request (send / handoff / open) for the target
+  /// the doctor picks, so picking keeps the message or beds that were said.
+  final VoiceAction Function(VoiceTarget)? rebuild;
+
+  /// The spoken name matched nobody: no choices are offered (no guessing);
+  /// the panel lets the doctor pick from the full colleague list instead.
+  final bool unmatched;
+
+  /// The request needs a person (handoff), not a chat.
+  final bool peopleOnly;
   @override
   String get title => question;
   @override
-  List<Object?> get props => [question, choices];
+  List<Object?> get props => [question, choices, unmatched];
+}
+
+/// The assistant's answer to a question (nothing happens in the app).
+class ReplyAction extends VoiceAction {
+  const ReplyAction(this.text);
+  final String text;
+  @override
+  String get title => text;
+  @override
+  List<Object?> get props => [text];
 }

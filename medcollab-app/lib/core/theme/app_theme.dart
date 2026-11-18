@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:medcollab_app/core/theme/fast_page_transitions.dart';
 import 'package:medcollab_app/core/theme/app_colors.dart';
 import 'package:medcollab_app/core/theme/app_design_system.dart';
 import 'package:medcollab_app/core/theme/app_radius.dart';
@@ -180,6 +181,19 @@ abstract final class AppTheme {
       canvasColor: t.background,
       fontFamily: 'Roboto',
       textTheme: text,
+      // Page changes feel instant (beta feedback: "still so much time to move
+      // around"): a 200 ms fade-and-slide instead of the default 300 ms
+      // zoom, which also snapshots both pages every frame.
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: VocleFastPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.windows: VocleFastPageTransitionsBuilder(),
+          TargetPlatform.linux: VocleFastPageTransitionsBuilder(),
+          TargetPlatform.fuchsia: VocleFastPageTransitionsBuilder(),
+        },
+      ),
       // Same density/tap targets in both themes.
       visualDensity: VisualDensity.standard,
       materialTapTargetSize: MaterialTapTargetSize.padded,

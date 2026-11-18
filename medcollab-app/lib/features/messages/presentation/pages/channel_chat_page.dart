@@ -881,16 +881,8 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
                 ),
               ),
               actions: [
-                // Needl Voice (issue 13): talk instead of type.
-                IconButton(
-                  key: const Key('open-needl-voice'),
-                  tooltip: 'Needl Voice',
-                  icon: const Icon(Icons.graphic_eq_rounded, color: AppColors.tealPrimary),
-                  onPressed: () => context.push(
-                    AppRoutes.needlVoicePath(widget.channelId),
-                    extra: NeedlVoiceArgs(title: title, subtitle: subtitle),
-                  ),
-                ),
+                // Needl Voice is its own space (Messages → Voice), not a
+                // mode of this text chat.
                 PopupMenuButton<String>(
                   icon: const Icon(
                     Icons.more_vert,

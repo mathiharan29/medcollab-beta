@@ -30,11 +30,27 @@ class AssistantRepository extends BaseRepository {
 
   /// Sentence → proposed actions (validated server-side against the
   /// doctor's own circle). Never executes anything.
-  Future<List<VoiceAction>> interpret(String text) {
+  ///
+  /// [history]: the conversation so far, so follow-ups ("send that to Bala
+  /// too", "and what about potassium?") are understood. [context]: which
+  /// screen the doctor is on ({screen, chat, chatId}).
+  Future<List<VoiceAction>> interpret(
+    String text, {
+    List<({bool fromUser, String text})> history = const [],
+    Map<String, String>? context,
+  }) {
     return execute(
       () => apiClient.post(
         '/api/assistant/interpret',
-        data: {'text': text},
+        data: {
+          'text': text,
+          if (history.isNotEmpty)
+            'history': [
+              for (final t in history.length > 8 ? history.sublist(history.length - 8) : history)
+                {'role': t.fromUser ? 'user' : 'assistant', 'text': t.text},
+            ],
+          if (context != null && context.isNotEmpty) 'context': context,
+        },
         parser: (json) => [
           for (final a in (json['actions'] as List? ?? const []))
             if (a is Map) VoiceAction.fromJson(Map<String, dynamic>.from(a)),
@@ -84,14 +100,24 @@ class VoiceDirectoryLoader {
       }
     }
     sharedGroups.clear();
-    for (final s in spaces) {
+    // Every group's members at once, not one round-trip after another.
+    final memberLists = await Future.wait(spaces.map((s) async {
+      try {
+        return await _members.getSpaceMembers(s.id);
+      } catch (_) {
+        return null;
+      }
+    }));
+    for (var i = 0; i < spaces.length; i++) {
+      final s = spaces[i];
       final general = s.channels.where((c) => c.type == ChannelType.general).firstOrNull ??
           s.channels.firstOrNull;
       for (final c in s.channels) {
         chats.add(VoiceTarget(id: 'c:${c.id}', name: '${s.name} #${c.name}', kind: 'group', spaceId: s.id));
       }
       try {
-        final members = await _members.getSpaceMembers(s.id);
+        final members = memberLists[i];
+        if (members == null) throw StateError('members unavailable');
         for (final m in members) {
           addPerson(m.user.id, m.user.displayName,
               username: m.user.vocleUsername, speciality: m.user.speciality);

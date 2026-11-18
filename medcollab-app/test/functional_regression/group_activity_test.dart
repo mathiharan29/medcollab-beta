@@ -161,16 +161,16 @@ void main() {
     await openTheme(tester);
     expect(find.text('Chat theme'), findsOneWidget);
 
-    await tester.tap(find.text('Mint'));
+    await tester.tap(find.text('Scrubs'));
     await tester.pumpAndSettle();
     expect(store.current.value, ChatWallpaper.doodle,
         reason: 'nothing changes until Save');
 
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
-    expect(store.current.value, ChatWallpaper.mint);
+    expect(store.current.value, ChatWallpaper.scrubs);
     final prefs = await SharedPreferences.getInstance();
-    expect(prefs.getString('chat_wallpaper_v1'), 'mint');
+    expect(prefs.getString('chat_wallpaper_v1'), 'scrubs');
     expect(find.text('Theme saved for all chats'), findsOneWidget);
 
     // Chat background and own bubbles follow the theme.
@@ -184,8 +184,8 @@ void main() {
       ),
     ));
     final box = tester.widget<DecoratedBox>(find.byType(DecoratedBox).first);
-    expect((box.decoration as BoxDecoration).color, ChatWallpaper.mint.light);
-    expect(bubble, ChatWallpaper.mint.bubbleLight);
+    expect((box.decoration as BoxDecoration).color, ChatWallpaper.scrubs.light);
+    expect(bubble, ChatWallpaper.scrubs.bubbleLight);
   });
 
   testWidgets('chat theme: "This chat only" leaves other chats alone',
@@ -194,19 +194,19 @@ void main() {
     final store = ChatWallpaperStore.instance..resetForTest();
     await openTheme(tester, channelId: 'needl-1');
     await tester.tap(find.text('This chat'));
-    await tester.tap(find.text('Sky'));
+    await tester.tap(find.text('Scrubs'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
-    expect(store.resolve('needl-1'), ChatWallpaper.sky);
+    expect(store.resolve('needl-1'), ChatWallpaper.scrubs);
     expect(store.resolve('other-chat'), ChatWallpaper.doodle);
     expect(find.text('Theme saved for this chat'), findsOneWidget);
 
     // Back without saving changes nothing.
     await openTheme(tester, channelId: 'needl-1');
-    await tester.tap(find.text('Blush'));
+    await tester.tap(find.text('Plain'));
     await tester.pageBack();
     await tester.pumpAndSettle();
-    expect(store.resolve('needl-1'), ChatWallpaper.sky);
+    expect(store.resolve('needl-1'), ChatWallpaper.scrubs);
   });
 }

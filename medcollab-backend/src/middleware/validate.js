@@ -180,6 +180,10 @@ const validateSendMessage = [
     .optional({ nullable: true })
     .isIn(['pending', 'done', 'unavailable']).withMessage('Invalid transcript status'),
   body('content.voiceMode').optional({ nullable: true }).isBoolean(),
+  // Idempotency key: a retried / double-tapped send returns the first copy.
+  body('clientMessageId')
+    .optional({ nullable: true })
+    .matches(/^[A-Za-z0-9_-]{8,64}$/).withMessage('Invalid clientMessageId'),
   body('content.text').custom((value, { req }) => {
     const type = req.body?.type || 'text';
     if (type === 'text') {

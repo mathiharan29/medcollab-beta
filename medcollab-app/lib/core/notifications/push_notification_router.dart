@@ -17,7 +17,7 @@ abstract final class PushNotificationRouter {
   static void open(PushPayload payload) {
     final targetRoute = _routeFor(payload);
     final channelId = payload.channelId;
-    if (channelId != null && channelId.isNotEmpty) {
+    if (channelId != null && channelId.isNotEmpty && !payload.voiceMode) {
       unawaited(_prefetch(channelId));
     }
 
@@ -51,6 +51,9 @@ abstract final class PushNotificationRouter {
         payload.spaceId!,
         payload.handoffId!,
       );
+    }
+    if (payload.voiceMode && payload.channelId != null && payload.channelId!.isNotEmpty) {
+      return AppRoutes.needlVoicePath(payload.channelId!);
     }
     if (payload.channelId != null && payload.channelId!.isNotEmpty) {
       final spaceId = payload.spaceId;

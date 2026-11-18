@@ -1,31 +1,32 @@
 import 'dart:convert';
-import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:medcollab_app/core/theme/app_colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Chat themes (REQ 2 / feedback #4): background + your own bubble colour,
-/// quiet clinical colours; the default adds a faint medical doodle.
+/// Chat themes — Vocle's own clinical look (beta feedback: "unique,
+/// medical, not WhatsApp"). Three curated themes, each tuned for BOTH light
+/// and dark (the old Mint / Sky / Sand / Blush were dropped: they clashed in
+/// dark mode). Saved ids of removed themes fall back to [clinical].
 enum ChatWallpaper {
-  // Dark: neutral near-black like the rest of the dark theme (issue 1 —
-  // was navy), sent bubbles match AppColorsDark.bubbleMine.
-  doodle('doodle', 'Vocle', Color(0xFFEFF3F1), Color(0xFF0B0F12),
-      Color(0xFF0D1B3E), Color(0xFF005C4B)),
+  /// Cool case-sheet canvas with faint ECG traces.
+  clinical('doodle', 'Clinical', Color(0xFFEDF2F5), Color(0xFF0D1317),
+      Color(0xFF0D1B3E), Color(0xFF0F4C5C)),
+
+  /// Theatre-scrubs green, no pattern.
+  scrubs('scrubs', 'Scrubs', Color(0xFFE4F0EC), Color(0xFF0D1A18),
+      Color(0xFF0F5E54), Color(0xFF125A50)),
+
+  /// Quiet neutral, no pattern.
   plain('plain', 'Plain', Color(0xFFF4F6F8), Color(0xFF0F1113),
-      Color(0xFF0D1B3E), Color(0xFF005C4B)),
-  mint('mint', 'Mint', Color(0xFFDDF1EA), Color(0xFF0D2B26),
-      Color(0xFF0F766E), Color(0xFF0F766E)),
-  sky('sky', 'Sky', Color(0xFFDDEBF7), Color(0xFF0E2238),
-      Color(0xFF1D4E89), Color(0xFF1E4F8A)),
-  sand('sand', 'Sand', Color(0xFFF3EBDD), Color(0xFF2A2216),
-      Color(0xFF8A5A1E), Color(0xFF7A5220)),
-  blush('blush', 'Blush', Color(0xFFF5E4E8), Color(0xFF2B1A22),
-      Color(0xFF9D2B52), Color(0xFF8C2A4C));
+      Color(0xFF0D1B3E), Color(0xFF0F4C5C));
 
   const ChatWallpaper(this.id, this.label, this.light, this.dark,
       this.bubbleLight, this.bubbleDark);
+
+  /// Kept as the original ids so saved choices survive the update.
+  static const ChatWallpaper doodle = ChatWallpaper.clinical;
 
   final String id;
   final String label;
@@ -36,12 +37,11 @@ enum ChatWallpaper {
 
   Color get color => AppColors.isDark ? dark : light;
   Color get mineBubble => AppColors.isDark ? bubbleDark : bubbleLight;
-  bool get hasDoodle => this == ChatWallpaper.doodle;
+  bool get hasDoodle => this == ChatWallpaper.clinical;
 
   static ChatWallpaper fromId(String? id) => ChatWallpaper.values
-      .firstWhere((w) => w.id == id, orElse: () => ChatWallpaper.doodle);
+      .firstWhere((w) => w.id == id, orElse: () => ChatWallpaper.clinical);
 }
-
 /// Saved themes: one for all chats plus optional per-chat overrides.
 class ChatWallpaperStore {
   ChatWallpaperStore._();
@@ -52,7 +52,7 @@ class ChatWallpaperStore {
 
   /// Theme for all chats.
   final ValueNotifier<ChatWallpaper> current =
-      ValueNotifier(ChatWallpaper.doodle);
+      ValueNotifier(ChatWallpaper.clinical);
 
   /// channelId → theme id. Notifies on any change.
   final ValueNotifier<Map<String, String>> perChat = ValueNotifier(const {});
@@ -109,7 +109,7 @@ class ChatWallpaperStore {
   @visibleForTesting
   void resetForTest() {
     _loaded = false;
-    current.value = ChatWallpaper.doodle;
+    current.value = ChatWallpaper.clinical;
     perChat.value = const {};
   }
 }
@@ -181,113 +181,78 @@ class _ChatWallpaperBackgroundState extends State<ChatWallpaperBackground> {
   }
 }
 
-/// Faint repeating clinical doodle.
+/// Vocle's chat canvas: faint ECG traces across the page with a few
+/// clinical crosses — a monitor strip, not a messenger doodle.
 class ChatDoodlePainter extends CustomPainter {
   const ChatDoodlePainter({required this.dark});
 
   final bool dark;
-  static const double _tile = 96;
+  static const double _band = 132;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = (dark ? Colors.white : const Color(0xFF0D1B3E))
-          .withValues(alpha: dark ? 0.05 : 0.06)
+    final ink = dark ? const Color(0xFF2DD4BF) : const Color(0xFF0D1B3E);
+    final trace = Paint()
+      ..color = ink.withValues(alpha: dark ? 0.07 : 0.055)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.4
+      ..strokeWidth = 1.3
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
+    final mark = Paint()
+      ..color = ink.withValues(alpha: dark ? 0.06 : 0.045)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
 
     var row = 0;
-    for (double y = 0; y < size.height + _tile; y += _tile, row++) {
-      final shift = row.isOdd ? _tile / 2 : 0.0;
-      var col = 0;
-      for (double x = -shift; x < size.width + _tile; x += _tile, col++) {
-        canvas.save();
-        canvas.translate(x, y);
-        switch ((row + col) % 5) {
-          case 0:
-            _cross(canvas, paint, const Offset(24, 24));
-          case 1:
-            _pulse(canvas, paint, const Offset(14, 30));
-          case 2:
-            _pill(canvas, paint, const Offset(30, 26));
-          case 3:
-            _drop(canvas, paint, const Offset(28, 18));
-          default:
-            _ring(canvas, paint, const Offset(30, 30));
-        }
-        canvas.restore();
+    for (double y = 40; y < size.height + _band; y += _band, row++) {
+      // One PQRST complex every 180 px, shifted per row so it never looks tiled.
+      final path = Path()..moveTo(0, y);
+      final phase = (row * 67) % 180;
+      for (double x = -phase.toDouble(); x < size.width + 180; x += 180) {
+        path
+          ..lineTo(x + 40, y)
+          ..quadraticBezierTo(x + 48, y - 6, x + 56, y) // P
+          ..lineTo(x + 66, y)
+          ..lineTo(x + 70, y + 5) // Q
+          ..lineTo(x + 76, y - 26) // R
+          ..lineTo(x + 82, y + 10) // S
+          ..lineTo(x + 86, y)
+          ..lineTo(x + 100, y)
+          ..quadraticBezierTo(x + 112, y - 10, x + 124, y) // T
+          ..lineTo(x + 180, y);
       }
+      canvas.drawPath(path, trace);
+      // A small cross between traces, alternating sides.
+      final cx = row.isEven ? size.width * 0.18 : size.width * 0.78;
+      final cy = y + _band / 2;
+      _cross(canvas, mark, Offset(cx, cy));
     }
   }
 
   void _cross(Canvas c, Paint p, Offset o) {
-    final path = Path()
-      ..moveTo(o.dx - 4, o.dy - 12)
-      ..lineTo(o.dx + 4, o.dy - 12)
-      ..lineTo(o.dx + 4, o.dy - 4)
-      ..lineTo(o.dx + 12, o.dy - 4)
-      ..lineTo(o.dx + 12, o.dy + 4)
-      ..lineTo(o.dx + 4, o.dy + 4)
-      ..lineTo(o.dx + 4, o.dy + 12)
-      ..lineTo(o.dx - 4, o.dy + 12)
-      ..lineTo(o.dx - 4, o.dy + 4)
-      ..lineTo(o.dx - 12, o.dy + 4)
-      ..lineTo(o.dx - 12, o.dy - 4)
-      ..lineTo(o.dx - 4, o.dy - 4)
-      ..close();
-    c.drawPath(path, p);
-  }
-
-  void _pulse(Canvas c, Paint p, Offset o) {
+    const a = 3.5, b = 9.0;
     c.drawPath(
       Path()
-        ..moveTo(o.dx, o.dy)
-        ..lineTo(o.dx + 12, o.dy)
-        ..lineTo(o.dx + 17, o.dy - 12)
-        ..lineTo(o.dx + 24, o.dy + 12)
-        ..lineTo(o.dx + 29, o.dy)
-        ..lineTo(o.dx + 42, o.dy),
+        ..moveTo(o.dx - a, o.dy - b)
+        ..lineTo(o.dx + a, o.dy - b)
+        ..lineTo(o.dx + a, o.dy - a)
+        ..lineTo(o.dx + b, o.dy - a)
+        ..lineTo(o.dx + b, o.dy + a)
+        ..lineTo(o.dx + a, o.dy + a)
+        ..lineTo(o.dx + a, o.dy + b)
+        ..lineTo(o.dx - a, o.dy + b)
+        ..lineTo(o.dx - a, o.dy + a)
+        ..lineTo(o.dx - b, o.dy + a)
+        ..lineTo(o.dx - b, o.dy - a)
+        ..lineTo(o.dx - a, o.dy - a)
+        ..close(),
       p,
     );
-  }
-
-  void _pill(Canvas c, Paint p, Offset o) {
-    c.save();
-    c.translate(o.dx, o.dy);
-    c.rotate(-math.pi / 5);
-    c.drawRRect(
-      RRect.fromRectAndRadius(
-        const Rect.fromLTWH(-16, -6, 32, 12),
-        const Radius.circular(6),
-      ),
-      p,
-    );
-    c.drawLine(const Offset(0, -6), const Offset(0, 6), p);
-    c.restore();
-  }
-
-  void _drop(Canvas c, Paint p, Offset o) {
-    c.drawPath(
-      Path()
-        ..moveTo(o.dx, o.dy - 10)
-        ..quadraticBezierTo(o.dx + 11, o.dy + 4, o.dx, o.dy + 10)
-        ..quadraticBezierTo(o.dx - 11, o.dy + 4, o.dx, o.dy - 10),
-      p,
-    );
-  }
-
-  void _ring(Canvas c, Paint p, Offset o) {
-    c.drawCircle(o, 7, p);
-    c.drawLine(Offset(o.dx - 7, o.dy), Offset(o.dx - 16, o.dy - 14), p);
-    c.drawLine(Offset(o.dx + 7, o.dy), Offset(o.dx + 16, o.dy - 14), p);
   }
 
   @override
   bool shouldRepaint(ChatDoodlePainter old) => old.dark != dark;
 }
-
 /// "Chat theme": preview, then Save — for this chat only or all chats.
 /// Nothing changes until Save is tapped.
 class ChatWallpaperPage extends StatefulWidget {
@@ -302,7 +267,7 @@ class ChatWallpaperPage extends StatefulWidget {
     String? channelId,
     String? chatName,
   }) =>
-      Navigator.of(context).push(
+      Navigator.of(context, rootNavigator: true).push(
         MaterialPageRoute(
           builder: (_) =>
               ChatWallpaperPage(channelId: channelId, chatName: chatName),

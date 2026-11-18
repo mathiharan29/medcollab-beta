@@ -1,7 +1,12 @@
 package com.example.medcollab_app
 
+import android.Manifest
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.provider.Settings
 import android.media.AudioFormat
 import android.os.Build
 import android.os.Bundle
@@ -28,8 +33,47 @@ import java.util.Locale
  *
  * Channels: method `vocle/speech`, events `vocle/speech/events`.
  */
-class SpeechBridge(private val context: Context, messenger: BinaryMessenger) :
-    MethodChannel.MethodCallHandler, EventChannel.StreamHandler {
+class SpeechBridge(
+    private val context: Context,
+    messenger: BinaryMessenger,
+    private val activity: () -> Activity?,
+) : MethodChannel.MethodCallHandler, EventChannel.StreamHandler {
+
+    companion object { const val MIC_REQUEST = 4711 }
+    private var pendingMic: MethodChannel.Result? = null
+
+    private fun micGranted() =
+        context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+
+    /** Asks for the microphone (the system prompt) when needed. */
+    private fun micPermission(request: Boolean, result: MethodChannel.Result) {
+        if (micGranted()) { result.success("granted"); return }
+        val act = activity()
+        if (!request || act == null) { result.success("denied"); return }
+        pendingMic?.success("denied")
+        pendingMic = result
+        act.requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), MIC_REQUEST)
+    }
+
+    /** From MainActivity.onRequestPermissionsResult. */
+    fun onPermissionResult(requestCode: Int, grantResults: IntArray): Boolean {
+        if (requestCode != MIC_REQUEST) return false
+        val r = pendingMic ?: return true
+        pendingMic = null
+        val granted = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
+        val act = activity()
+        // Denied and Android will no longer show the prompt → Settings only.
+        val blocked = !granted && act != null &&
+            !act.shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO)
+        r.success(if (granted) "granted" else if (blocked) "blocked" else "denied")
+        return true
+    }
+
+    private fun openAppSettings() {
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null))
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        try { context.startActivity(intent) } catch (_: Exception) {}
+    }
 
     private val main = Handler(Looper.getMainLooper())
     private val methods = MethodChannel(messenger, "vocle/speech")
@@ -100,7 +144,13 @@ class SpeechBridge(private val context: Context, messenger: BinaryMessenger) :
                 call.argument<String>("language") ?: "en-IN",
                 result,
             )
-            "startListening" -> startListening(call.argument<String>("language") ?: "en-IN", result)
+            "micPermission" -> micPermission(call.argument<Boolean>("request") ?: true, result)
+            "openAppSettings" -> { openAppSettings(); result.success(null) }
+            "startListening" -> startListening(
+                call.argument<String>("language") ?: "en-IN",
+                call.argument<List<String>>("hints") ?: emptyList(),
+                result,
+            )
             "stopListening" -> { main.post { liveRecognizer?.stopListening() }; result.success(null) }
             "cancelListening" -> { main.post { releaseLive() }; result.success(null) }
             "speak" -> speak(call.argument<String>("text") ?: "", call.argument<String>("language") ?: "en-IN", result)
@@ -246,45 +296,89 @@ class SpeechBridge(private val context: Context, messenger: BinaryMessenger) :
     }
 
     // ── Live listening (voice bot) ──────────────────────────────────────────
-    private fun startListening(language: String, result: MethodChannel.Result) {
+    private var liveHints: List<String> = emptyList()
+
+    private fun startListening(language: String, hints: List<String>, result: MethodChannel.Result) {
         if (!SpeechRecognizer.isRecognitionAvailable(context)) { result.error("unavailable", "No recognizer", null); return }
+        if (!micGranted()) { result.error("no_permission", "Microphone not allowed", null); return }
+        liveHints = hints
         val languages = languageChain(language)
         main.post {
-            listenWith(languages, 0, language)
+            listenWith(languages, 0, language, onDevice = onDeviceAvailable())
             result.success(null)
         }
     }
 
-    private fun listenWith(languages: List<String>, index: Int, preferred: String) {
+    /**
+     * One recognition session. On-device first; when no on-device English
+     * pack exists (field probe: ERROR_LANGUAGE_UNAVAILABLE), the phone's
+     * standard recognizer is tried once (commands only — Needl Voice clips
+     * stay on-device). A watchdog ends a session that heard speech but never
+     * returned a result (field run: no final callback within 18 s).
+     */
+    private fun listenWith(languages: List<String>, index: Int, preferred: String, onDevice: Boolean) {
             releaseLive()
-            val r = newRecognizer()
+            val r = if (onDevice) SpeechRecognizer.createOnDeviceSpeechRecognizer(context)
+                    else SpeechRecognizer.createSpeechRecognizer(context)
             liveRecognizer = r
+            val engine = if (onDevice) "on_device" else "online"
+            var finished = false
+            val stall = Runnable {
+                if (liveRecognizer === r && !finished) {
+                    finished = true
+                    emit(mapOf("type" to "error", "code" to "stalled", "text" to "no result"))
+                    releaseLive()
+                }
+            }
+            // Hard cap for one command, even if speech never ends.
+            main.postDelayed(stall, 25_000)
             r.setRecognitionListener(object : RecognitionListener {
                 override fun onPartialResults(partialResults: Bundle) {
                     partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()
                         ?.let { emit(mapOf("type" to "partial", "text" to it)) }
                 }
                 override fun onResults(results: Bundle) {
-                    val text = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull() ?: ""
-                    emit(mapOf("type" to "final", "text" to text))
+                    if (liveRecognizer !== r || finished) return
+                    finished = true
+                    main.removeCallbacks(stall)
+                    val all = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION) ?: arrayListOf()
+                    val scores = results.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES)
+                    val text = all.firstOrNull() ?: ""
+                    emit(mapOf(
+                        "type" to "final",
+                        "text" to text,
+                        "alternatives" to all.drop(1).take(4),
+                        // -1 / 0 mean "not reported" on many recognisers.
+                        "confidence" to scores?.firstOrNull()?.takeIf { it > 0f }?.toDouble(),
+                        "engine" to engine,
+                    ))
                     releaseLive()
                 }
                 override fun onRmsChanged(rmsdB: Float) {
                     emit(mapOf("type" to "level", "level" to ((rmsdB + 2f) / 12f).coerceIn(0f, 1f).toDouble()))
                 }
                 override fun onError(error: Int) {
-                    if (liveRecognizer !== r) return // superseded / cancelled
-                    if (isLanguageError(error) && index + 1 < languages.size) {
-                        if (index == 0) requestModelDownload(preferred)
-                        main.post { listenWith(languages, index + 1, preferred) }
-                        return
+                    if (liveRecognizer !== r || finished) return // superseded / cancelled
+                    main.removeCallbacks(stall)
+                    if (isLanguageError(error)) {
+                        if (index + 1 < languages.size) {
+                            if (index == 0) requestModelDownload(preferred)
+                            main.post { listenWith(languages, index + 1, preferred, onDevice) }
+                            return
+                        }
+                        if (onDevice) {
+                            main.post { listenWith(languages, 0, preferred, onDevice = false) }
+                            return
+                        }
                     }
+                    finished = true
                     val code = when (error) {
                         SpeechRecognizer.ERROR_NO_MATCH -> "no_match"
                         SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "timeout"
                         SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "no_permission"
                         SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "busy"
-                        SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "network"
+                        SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT,
+                        SpeechRecognizer.ERROR_SERVER, SpeechRecognizer.ERROR_SERVER_DISCONNECTED -> "network"
                         SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED,
                         SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE -> "language"
                         else -> "error"
@@ -295,17 +389,24 @@ class SpeechBridge(private val context: Context, messenger: BinaryMessenger) :
                 override fun onReadyForSpeech(params: Bundle?) {}
                 override fun onBeginningOfSpeech() {}
                 override fun onBufferReceived(buffer: ByteArray?) {}
-                override fun onEndOfSpeech() {}
+                override fun onEndOfSpeech() {
+                    // Speech ended: a result should follow within seconds.
+                    main.removeCallbacks(stall)
+                    main.postDelayed(stall, 8_000)
+                }
                 override fun onEvent(eventType: Int, params: Bundle?) {}
             })
             r.startListening(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                 putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
                 putExtra(RecognizerIntent.EXTRA_LANGUAGE, languages[index])
                 putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-                putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
+                putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 5)
+                putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, onDevice)
+                if (Build.VERSION.SDK_INT >= 33 && liveHints.isNotEmpty()) {
+                    putStringArrayListExtra(RecognizerIntent.EXTRA_BIASING_STRINGS, ArrayList(liveHints))
+                }
             })
     }
-
     private fun releaseLive() {
         liveRecognizer?.let {
             try { it.cancel() } catch (_: Exception) {}

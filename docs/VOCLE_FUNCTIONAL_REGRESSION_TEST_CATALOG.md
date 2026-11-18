@@ -526,7 +526,7 @@ Sources: NeedlVoiceCubit, NeedlVoiceView, VoiceRecorderController, VoiceNotePlay
 
 | ID | Actions | Expected result | Tier/priority | Classification |
 |---|---|---|---|---|
-| FR-VCE-01 | Record peer typing then send and transcribe audio in a consented DM | Recipient sees matching typing, audio arrival, transcript event and durable history, and downloads original bytes. | B/P0 | NEW |
+| FR-VCE-01 | Record peer typing then send and transcribe audio in a consented DM | Recipient sees matching typing, audio arrival, transcript event and durable voice history (`?mode=voice`), downloads original bytes, and the text chat history never contains the clip (beta 11-18: Needl Voice is a separate space). | B/P0 | NEW |
 | FR-VCE-02 | Find a Needl transcript after it is written and hide the clip for one member | Search uses the transcript and honors membership and personal deletion. The other Needl member retains the clip and the separate DM never lists it. | B/P0 | NEW |
 | FR-VCE-03 | Expire the clip sender token and try unauthorized and invalid transcript edits | Expired, other-user, cross-chat and over-limit attempts preserve pending state. Refresh allows the sender to save and later clear the transcript without losing audio. | B/P0 | NEW |
 | FR-VCE-04 | Load the voice view from mixed chat history | Only the existing audio clip is listed. | F/P1 | NEW |
@@ -539,7 +539,7 @@ Sources: NeedlVoiceCubit, NeedlVoiceView, VoiceRecorderController, VoiceNotePlay
 | FR-VCE-11 | Pause and resume a clip with another clip queued | The paused position stays intact and the next clip waits for completion. | F/P1 | NEW |
 | FR-VCE-12 | Receive a live clip and transcript before old history returns | The initial history and the live clip coexist, with the live transcript preserved. | F/P0 | NEW |
 | FR-VCE-13 | Leave the voice view while recording | Playback stops at recording start, closing the cubit clears the signal, and later socket clips cannot play or send. | F/P1 | NEW |
-| FR-VCE-14 | Deny microphone permission, slide to discard, then hold and send in a DM | Denied/discarded capture makes no upload or message. The one granted clip reaches recipient history and replays on the native player. | D/P0 | NEW |
+| FR-VCE-14 | Open the DM from the Needl Voice list, deny microphone permission, slide to discard, then hold and send | Denied/discarded capture makes no upload or message. The one granted clip reaches the recipient's voice history and replays on the native player. Needl Voice is entered from Messages → Needl Voice, not from the text chat (beta 11-18). | D/P0 | NEW |
 | FR-VCE-15 | Receive another clip while voice playback is paused | The paused clip and its position stay active while the new clip waits. | F/P0 | NEW |
 | FR-VCE-16 | Fail an audio load with another incoming clip queued | The failed clip remains visible and the next clip loads and plays. | F/P0 | NEW |
 

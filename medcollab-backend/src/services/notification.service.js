@@ -306,7 +306,7 @@ const notifyNewMessage = async ({ recipientIds, message, sender, channel }) => {
           : message.type === 'video'
             ? 'Sent a video'
             : message.type === 'audio'
-              ? '🎤 Voice message'
+              ? message.content?.voiceMode ? '🎙 Needl Voice clip' : '🎤 Voice message'
               : 'Sent a file',
       referenceId: message._id,
       referenceType: 'Message',
@@ -315,6 +315,8 @@ const notifyNewMessage = async ({ recipientIds, message, sender, channel }) => {
         ...(channel.spaceId ? { spaceId: channel.spaceId } : {}),
         channelId: channel._id,
         messageId: message._id,
+        // Opens Needl Voice (its own space), not the text chat.
+        ...(message.content?.voiceMode ? { voiceMode: true } : {}),
       },
       actor: sender,
       priority: message.priority,

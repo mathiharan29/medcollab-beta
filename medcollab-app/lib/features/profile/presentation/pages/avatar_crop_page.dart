@@ -16,7 +16,7 @@ class AvatarCropPage extends StatefulWidget {
     BuildContext context, {
     required Uint8List imageBytes,
   }) {
-    return Navigator.of(context).push<Uint8List>(
+    return Navigator.of(context, rootNavigator: true).push<Uint8List>(
       MaterialPageRoute(
         builder: (_) => AvatarCropPage(imageBytes: imageBytes),
         fullscreenDialog: true,

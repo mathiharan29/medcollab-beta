@@ -340,6 +340,8 @@ class _AlertTile extends StatelessWidget {
       context.push(
         AppRoutes.spaceHandoffDetailPath(meta.spaceId!, meta.handoffId!),
       );
+    } else if (meta.voiceMode && meta.channelId != null) {
+      context.push(AppRoutes.needlVoicePath(meta.channelId!));
     } else if (meta.channelId != null &&
         (meta.spaceId == null || meta.spaceId!.isEmpty)) {
       context.push(AppRoutes.dmPath(meta.channelId!));

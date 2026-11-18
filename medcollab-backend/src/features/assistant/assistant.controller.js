@@ -127,6 +127,19 @@ const TOOLS = [
     },
   },
   {
+    name: 'reply',
+    description: 'Answer the doctor directly: a general question (about Vocle, medicine or anything else), small talk, or a follow-up about the conversation so far. Nothing happens in the app.',
+    strict: true,
+    input_schema: {
+      type: 'object',
+      properties: {
+        text: { type: 'string', description: '1-4 short sentences, plain words, suitable for reading aloud' },
+      },
+      required: ['text'],
+      additionalProperties: false,
+    },
+  },
+  {
     name: 'ask_clarification',
     description: 'Ask the doctor one short question when the request is ambiguous (e.g. two people match) or not something Vocle can do.',
     strict: true,
@@ -147,9 +160,31 @@ const SYSTEM = [
   'If more than one person or chat could match, or nobody does, call ask_clarification instead of guessing.',
   'Keep message text faithful to what was said; never add clinical facts, doses or advice.',
   'Patients are identified by bed and a short clinical alias, never by name.',
-  'If the request is not something these tools can do, call ask_clarification and say briefly what you can do.',
+  'If the doctor asks a question or talks to you rather than asking for an app action, answer with the reply tool: brief, plain, friendly.',
+  'For clinical questions give general reference information only (typical ranges, common definitions, guideline-level facts), say when it should be checked against local protocol or a senior, and never invent patient-specific facts.',
+  'The earlier turns of this conversation are given to you: use them to resolve "that", "him", "the same", "again", "also" and follow-up questions.',
+  'You are told which screen the doctor is on; "this chat" means that chat.',
   'You may call several tools when the doctor asked for several things.',
 ].join('\n');
+
+const MAX_TURNS = 8;
+/** Earlier turns from the phone: [{ role: 'user'|'assistant', text }]. */
+function cleanHistory(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((t) => t && (t.role === 'user' || t.role === 'assistant') && typeof t.text === 'string' && t.text.trim())
+    .slice(-MAX_TURNS)
+    .map((t) => ({ role: t.role, text: t.text.trim().slice(0, 600) }));
+}
+
+/** Which screen the doctor is on (route + chat title only). */
+function cleanContext(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const screen = typeof raw.screen === 'string' ? raw.screen.slice(0, 40) : null;
+  const chat = typeof raw.chat === 'string' ? raw.chat.slice(0, 120) : null;
+  const chatId = typeof raw.chatId === 'string' && /^c:[a-f0-9]{24}$/i.test(raw.chatId) ? raw.chatId : null;
+  return screen || chat ? { screen, chat, chatId } : null;
+}
 
 /** The caller's own circle: people they chat with or share a group with, and their chats. */
 async function buildDirectory(userId) {
@@ -257,6 +292,11 @@ function validateActions(blocks, directory) {
       case 'ask_clarification':
         actions.push({ type: 'ask_clarification', question: String(input.question || '').slice(0, 300) });
         break;
+      case 'reply':
+        if (String(input.text || '').trim()) {
+          actions.push({ type: 'reply', text: String(input.text).trim().slice(0, 1200) });
+        }
+        break;
       default:
         break;
     }
@@ -296,10 +336,16 @@ const interpret = asyncHandler(async (req, res) => {
   if (!allow(req.user._id)) return respond.tooManyRequests(res, 'Too many voice requests — try again in a minute');
 
   const directory = await buildDirectory(req.user._id);
+  const history = cleanHistory(req.body?.history);
+  const context = cleanContext(req.body?.context);
   const userContent = [
     'Directory (JSON):',
     JSON.stringify({ people: directory.people, chats: directory.chats }),
     '',
+    ...(context ? [`Current screen: ${JSON.stringify(context)}`, ''] : []),
+    ...(history.length
+      ? ['Conversation so far:', ...history.map((t) => `${t.role === 'user' ? 'Doctor' : 'Assistant'}: ${t.text}`), '']
+      : []),
     `The doctor said: "${text}"`,
   ].join('\n');
 
@@ -346,8 +392,10 @@ const interpret = asyncHandler(async (req, res) => {
     llm: true,
     actions: actions.length
       ? actions
-      : [{ type: 'ask_clarification', question: say || 'Sorry, I did not get that. Who should I message, and what should I say?' }],
+      : say
+        ? [{ type: 'reply', text: say }]
+        : [{ type: 'ask_clarification', question: 'Sorry, I did not get that. Could you say it again?' }],
   });
 });
 
-module.exports = { capabilities, interpret, _test: { validateActions, buildDirectory, TOOLS } };
+module.exports = { capabilities, interpret, _test: { validateActions, buildDirectory, cleanHistory, cleanContext, TOOLS } };

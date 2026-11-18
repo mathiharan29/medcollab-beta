@@ -71,6 +71,7 @@ const refreshLastMessage = async (channelId) => {
     channelId,
     threadId: null,
     isDeleted: { $ne: true },
+    'content.voiceMode': { $ne: true },
   })
     .sort({ createdAt: -1, _id: -1 })
     .populate('senderId', 'name')
@@ -127,6 +128,9 @@ const getMessages = asyncHandler(async (req, res) => {
     channelId: req.params.channelId,
     threadId: null,          // Root messages only — threads fetched separately
     isDeleted: false,
+    // Needl Voice is its own space: `?mode=voice` returns only voice-mode
+    // clips; the normal chat never shows them.
+    'content.voiceMode': req.query.mode === 'voice' ? true : { $ne: true },
     ...(await personalVisibility(req.user._id, access.channel._id)),
   };
 
@@ -181,7 +185,18 @@ const sendMessage = asyncHandler(async (req, res) => {
     threadId,
     mentions,
     replyToId,
+    clientMessageId,
   } = req.body;
+
+  // Idempotent resend (FR-AST-25): same sender + chat + key → the first copy,
+  // with no second preview update, socket event or push.
+  const findExisting = () =>
+    Message.findOne({ senderId: req.user._id, channelId: channel._id, clientMessageId })
+      .populate('senderId', 'name displayTitle role avatarUrl');
+  if (clientMessageId) {
+    const existing = await findExisting();
+    if (existing) return respond.ok(res, 'Message already sent', { message: existing, duplicate: true });
+  }
 
   // Persist trimmed text so route length checks match Mongo maxlength.
   // Server-only fields (activity lines) can never come from a client.
@@ -192,6 +207,10 @@ const sendMessage = asyncHandler(async (req, res) => {
     delete clientContent.transcript;
     delete clientContent.transcriptStatus;
     delete clientContent.voiceMode;
+  } else {
+    // Always explicit for audio, so every client can tell a Needl Voice clip
+    // (voice space) from a chat voice note (normal chat).
+    clientContent.voiceMode = clientContent.voiceMode === true;
   }
   const content =
     rawContent && typeof clientContent.text === 'string'
@@ -298,17 +317,29 @@ const sendMessage = asyncHandler(async (req, res) => {
     ? MESSAGE_PRIORITY.EMERGENCY
     : priority;
 
-  const message = await Message.create({
-    channelId: channel._id,
-    spaceId: channel.spaceId || null,
-    senderId: req.user._id,
-    type,
-    content,
-    priority: effectivePriority,
-    threadId: threadId || null,
-    ...(replyTo ? { replyTo } : {}),
-    mentions: mentions || [],
-  });
+  let message;
+  try {
+    message = await Message.create({
+      channelId: channel._id,
+      spaceId: channel.spaceId || null,
+      senderId: req.user._id,
+      type,
+      content,
+      priority: effectivePriority,
+      threadId: threadId || null,
+      ...(replyTo ? { replyTo } : {}),
+      mentions: mentions || [],
+      ...(clientMessageId ? { clientMessageId } : {}),
+    });
+  } catch (err) {
+    // Two identical requests raced past the lookup: the unique index lets
+    // exactly one win; the other returns the winner.
+    if (clientMessageId && err?.code === 11000) {
+      const existing = await findExisting();
+      if (existing) return respond.ok(res, 'Message already sent', { message: existing, duplicate: true });
+    }
+    throw err;
+  }
 
   // Populate sender for the response + socket broadcast
   await message.populate('senderId', 'name displayTitle role avatarUrl');
@@ -317,15 +348,27 @@ const sendMessage = asyncHandler(async (req, res) => {
   // reloads don't still show "No messages yet".
   const lastMessageText = messagePreviewText(message);
 
-  await Channel.findByIdAndUpdate(channel._id, {
-    lastMessage: {
-      messageId: message._id,
-      text: lastMessageText,
-      senderName: req.user.name,
-      type,
-      sentAt: message.createdAt,
-    },
-  });
+  if (message.content?.voiceMode === true) {
+    // Needl Voice keeps its own "last clip"; the chat preview is untouched.
+    await Channel.findByIdAndUpdate(channel._id, {
+      lastVoice: {
+        messageId: message._id,
+        senderName: req.user.name,
+        durationMs: message.content?.durationMs || null,
+        sentAt: message.createdAt,
+      },
+    });
+  } else {
+    await Channel.findByIdAndUpdate(channel._id, {
+      lastMessage: {
+        messageId: message._id,
+        text: lastMessageText,
+        senderName: req.user.name,
+        type,
+        sentAt: message.createdAt,
+      },
+    });
+  }
   if (threadId) {
     // Reply count before the response, so reopening the chat right away
     // never shows a stale "N replies". Never touch a foreign parent (VR-S1).

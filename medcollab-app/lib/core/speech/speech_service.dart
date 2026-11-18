@@ -36,8 +36,17 @@ class SpeechPartial extends SpeechEvent {
 }
 
 class SpeechFinal extends SpeechEvent {
-  const SpeechFinal(this.text);
+  const SpeechFinal(this.text, {this.alternatives = const [], this.confidence, this.engine});
   final String text;
+
+  /// The recogniser's other hypotheses, best first (excluding [text]).
+  final List<String> alternatives;
+
+  /// 0..1 when the recogniser reports one; null when it does not.
+  final double? confidence;
+
+  /// on_device | online — which recogniser produced the result.
+  final String? engine;
 }
 
 class SpeechLevel extends SpeechEvent {
@@ -50,7 +59,8 @@ class SpeechLevel extends SpeechEvent {
 class SpeechError extends SpeechEvent {
   const SpeechError(this.code, this.message);
 
-  /// no_match | timeout | no_permission | busy | network | unavailable | error
+  /// no_match | timeout | stalled | no_permission | busy | network |
+  /// language | unavailable | error
   final String code;
   final String message;
 }
@@ -82,6 +92,25 @@ class PlatformSpeechService implements SpeechService {
 
   /// en-IN by default: Indian English names, drug names and accents.
   static const defaultLanguage = 'en-IN';
+
+  /// Words the recogniser should lean towards (Android 13+): the doctor's
+  /// colleague and chat names, so "Bala" is not heard as "mama".
+  List<String> hints = const [];
+
+  /// Microphone access: 'granted' | 'denied' | 'blocked' (denied with
+  /// "don't ask again" — only Settings can change it). [request] shows the
+  /// system prompt when Android still allows it.
+  Future<String> micPermission({bool request = true}) async {
+    try {
+      return await _channel.invokeMethod<String>('micPermission', {'request': request}) ?? 'denied';
+    } on MissingPluginException {
+      return 'granted'; // not Android (tests / desktop)
+    } on PlatformException {
+      return 'denied';
+    }
+  }
+
+  Future<void> openAppSettings() => _channel.invokeMethod<void>('openAppSettings').catchError((_) {});
 
   @override
   Future<SpeechCapabilities> capabilities() async {
@@ -129,7 +158,13 @@ class PlatformSpeechService implements SpeechService {
             case 'partial':
               out.add(SpeechPartial(text));
             case 'final':
-              out.add(SpeechFinal(text));
+              final alts = (raw['alternatives'] as List?)?.map((e) => e.toString()).where((e) => e.trim().isNotEmpty && e != text).toList();
+              out.add(SpeechFinal(
+                text,
+                alternatives: alts ?? const [],
+                confidence: (raw['confidence'] as num?)?.toDouble(),
+                engine: raw['engine']?.toString(),
+              ));
               out.close();
             case 'level':
               out.add(SpeechLevel(((raw['level'] as num?)?.toDouble() ?? 0).clamp(0, 1)));
@@ -141,7 +176,7 @@ class PlatformSpeechService implements SpeechService {
           out.add(SpeechError('error', '$e'));
           out.close();
         });
-        _channel.invokeMethod<void>('startListening', {'language': language}).catchError((Object e) {
+        _channel.invokeMethod<void>('startListening', {'language': language, 'hints': hints.take(100).toList()}).catchError((Object e) {
           out.add(SpeechError(e is PlatformException ? e.code : 'unavailable', '$e'));
           out.close();
         });

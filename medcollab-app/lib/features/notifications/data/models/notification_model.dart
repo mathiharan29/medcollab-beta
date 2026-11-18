@@ -17,6 +17,7 @@ class NotificationMetadata extends Equatable {
     this.channelId,
     this.messageId,
     this.handoffId,
+    this.voiceMode = false,
   });
 
   factory NotificationMetadata.fromJson(Map<String, dynamic>? json) {
@@ -26,8 +27,12 @@ class NotificationMetadata extends Equatable {
       channelId: _cleanId(json['channelId']),
       messageId: _cleanId(json['messageId']),
       handoffId: _cleanId(json['handoffId']),
+      voiceMode: json['voiceMode'] == true || json['voiceMode']?.toString() == 'true',
     );
   }
+
+  /// A Needl Voice clip (opens the voice space).
+  final bool voiceMode;
 
   /// Mongo nulls and the literal string "null" must not open fake routes.
   static String? _cleanId(dynamic value) {
@@ -43,7 +48,7 @@ class NotificationMetadata extends Equatable {
   final String? handoffId;
 
   @override
-  List<Object?> get props => [spaceId, channelId, messageId, handoffId];
+  List<Object?> get props => [spaceId, channelId, messageId, handoffId, voiceMode];
 }
 
 class AppNotificationModel extends Equatable {

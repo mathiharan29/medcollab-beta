@@ -83,6 +83,8 @@ const personalizeLastMessages = async (channels, userId) => {
         threadId: null,
         isDeleted: { $ne: true },
         hiddenFor: { $ne: userId },
+        // Needl Voice clips are not chat messages (separate voice space).
+        'content.voiceMode': { $ne: true },
         ...(cutoff ? { createdAt: { $gt: cutoff } } : {}),
       })
         .sort({ createdAt: -1, _id: -1 })

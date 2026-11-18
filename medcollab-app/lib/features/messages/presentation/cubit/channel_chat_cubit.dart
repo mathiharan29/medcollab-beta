@@ -695,6 +695,8 @@ class ChannelChatCubit extends Cubit<ChannelChatState> with SafeEmit<ChannelChat
         _socketClient.onMapEvent(SocketEvents.newMessage).listen((data) {
       final message = _parseSocketMessage(data);
       if (message == null) return;
+      // Needl Voice clips belong to the voice space, never the text chat.
+      if (message.content.voiceMode == true) return;
 
       final msgChannelId = message.channelId.isNotEmpty
           ? message.channelId

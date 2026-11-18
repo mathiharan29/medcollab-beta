@@ -247,6 +247,16 @@ class _MessagesHeader extends StatelessWidget {
                   Expanded(
                     child: Text('Messages', style: AppTextStyles.screenTitle),
                   ),
+                  // Needl Voice: its own voice-only space (not a chat mode).
+                  IconButton(
+                    key: const Key('open-voice-hub'),
+                    tooltip: 'Needl Voice',
+                    onPressed: () => context.push(AppRoutes.voiceHub),
+                    icon: Icon(
+                      Icons.record_voice_over_outlined,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
                   IconButton(
                     tooltip: 'Search',
                     onPressed: onSearch,
@@ -456,6 +466,8 @@ class _GroupsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
+      // Bottom-left: bottom-right belongs to the Vocle assistant.
+      floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
       floatingActionButton: AppFab(
         heroTag: 'messages-groups-new-group-fab',
         label: '+ New group',
@@ -534,7 +546,7 @@ class _GroupsTab extends StatelessWidget {
                 timestamp: timestamp,
                 unreadCount: _spaceUnread(space, unreadByChannel),
                 onTap: () async {
-                  await Navigator.of(context).push(
+                  await Navigator.of(context, rootNavigator: true).push(
                     MaterialPageRoute<void>(
                       builder: (_) => SpaceSubgroupsPage(
                         space: space,

@@ -437,7 +437,9 @@ export async function startDeviceServer({ adb, serial, caseId }) {
           }
           case 'voice-dm-received': {
             assert.ok(voiceDmId, 'Expected a dedicated voice DM');
-            const read = async () => (await request(`/api/channels/${voiceDmId}/messages`, {
+            // Needl Voice clips live in the voice space (`?mode=voice`), not
+            // the text chat history (beta 11-18).
+            const read = async () => (await request(`/api/channels/${voiceDmId}/messages?mode=voice`, {
               token: people.B.token,
             })).data.messages.filter(message => message.type === 'audio');
             const clips = await observe(read, rows => rows.some(message =>

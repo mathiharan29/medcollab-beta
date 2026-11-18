@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:go_router/go_router.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
 import 'package:medcollab_app/core/error/app_exception.dart';
@@ -40,13 +42,24 @@ class AppVoiceActionExecutor implements VoiceActionExecutor {
   final UserRepository users;
   final VoiceDirectoryLoader directory;
 
+  final Expando<String> _keys = Expando('voice-send-key');
+  static final Random _rng = Random.secure();
+  static String _newKey() =>
+      'vb-${DateTime.now().microsecondsSinceEpoch}-${_rng.nextInt(1 << 32).toRadixString(36)}';
+
   @override
   Future<String> execute(VoiceAction action) async {
     try {
       switch (action) {
         case SendMessageAction(:final to, :final text):
           final channelId = to.isPerson ? (await channels.createOrGetDM(to.rawId)).id : to.rawId;
-          await messages.sendTextMessage(channelId: channelId, text: text);
+          // One key per confirmed card: a network retry of the same card is
+          // stored once by the server (FR-AST-25).
+          await messages.sendTextMessage(
+            channelId: channelId,
+            text: text,
+            clientMessageId: _keys[action] ??= _newKey(),
+          );
           return 'Sent to ${to.name}.';
         case OpenChatAction(:final to):
           if (to.isPerson) {
@@ -105,6 +118,8 @@ class AppVoiceActionExecutor implements VoiceActionExecutor {
           return 'Opening $tab.';
         case ClarifyAction(:final question):
           return question;
+        case ReplyAction(:final text):
+          return text;
       }
     } on ForbiddenException {
       return 'You need an accepted message request before messaging them.';

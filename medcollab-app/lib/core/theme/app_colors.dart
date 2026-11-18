@@ -90,8 +90,9 @@ abstract final class AppColorsDark {
   static const Color statusErrorTint = Color(0xFF3A1A1C);
   static const Color statusNeutTint = Color(0xFF26292D);
   static const Color shadow = Color(0x33000000);
-  /// Own bubble: deep teal-green (as WhatsApp dark), readable white text.
-  static const Color bubbleMine = Color(0xFF005C4B);
+  /// Own bubble: Vocle "petrol" — a clinical deep teal-blue (not a
+  /// messenger green), readable white text.
+  static const Color bubbleMine = Color(0xFF0F4C5C);
 }
 
 /// Vocle colour tokens that follow the active theme (REQ 6).

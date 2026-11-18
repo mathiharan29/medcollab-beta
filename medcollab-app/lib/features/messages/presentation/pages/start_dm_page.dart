@@ -228,8 +228,13 @@ class _StartDmPageState extends State<StartDmPage> {
     return PhoneUtils.toE164(local);
   }
 
+  /// FR-NDL-39: every keystroke starts a new generation; a slower response
+  /// for an older query ("Be") can never overwrite a newer one ("Ze").
+  int _querySeq = 0;
+
   void _onQueryChanged(String query) {
     _debounce?.cancel();
+    final seq = ++_querySeq;
     final trimmed = query.trim();
 
     if (trimmed.isEmpty) {
@@ -243,7 +248,7 @@ class _StartDmPageState extends State<StartDmPage> {
     }
 
     if (_isPhoneQuery(trimmed)) {
-      _debounce = Timer(_debounceDuration, () => _lookupPhone(trimmed));
+      _debounce = Timer(_debounceDuration, () => _lookupPhone(trimmed, seq));
       return;
     }
 
@@ -269,7 +274,7 @@ class _StartDmPageState extends State<StartDmPage> {
       try {
         final users = await AppDependencies.instance.memberRepository
             .searchMembers(query: trimmed);
-        if (!mounted) return;
+        if (!mounted || seq != _querySeq) return;
         final lower = trimmed.toLowerCase();
         final includeSelf = selfUser != null &&
             (selfUser.displayName.toLowerCase().contains(lower) ||
@@ -283,7 +288,7 @@ class _StartDmPageState extends State<StartDmPage> {
           _searching = false;
         });
       } catch (_) {
-        if (!mounted) return;
+        if (!mounted || seq != _querySeq) return;
         setState(() {
           _searching = false;
           _error = 'Could not search colleagues';
@@ -292,7 +297,8 @@ class _StartDmPageState extends State<StartDmPage> {
     });
   }
 
-  Future<void> _lookupPhone(String raw) async {
+  Future<void> _lookupPhone(String raw, [int? seq]) async {
+    seq ??= ++_querySeq;
     if (!mounted) return;
     setState(() {
       _searching = true;
@@ -304,21 +310,21 @@ class _StartDmPageState extends State<StartDmPage> {
     try {
       final result = await AppDependencies.instance.userRepository
           .lookupByPhone(_phoneE164(raw));
-      if (!mounted) return;
+      if (!mounted || seq != _querySeq) return;
       setState(() {
         _phoneLookup = result;
         _searching = false;
         _error = null;
       });
     } on NotFoundException catch (e) {
-      if (!mounted) return;
+      if (!mounted || seq != _querySeq) return;
       setState(() {
         _phoneLookup = null;
         _searching = false;
         _error = e.message;
       });
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || seq != _querySeq) return;
       setState(() {
         _phoneLookup = null;
         _searching = false;

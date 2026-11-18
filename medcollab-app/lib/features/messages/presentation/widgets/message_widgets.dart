@@ -1486,7 +1486,7 @@ class MessageListView extends StatelessWidget {
 }
 
 void _openImage(BuildContext context, String url, MessageModel message) {
-  Navigator.of(context).push(
+  Navigator.of(context, rootNavigator: true).push(
     MaterialPageRoute<void>(
       builder: (_) => _ImagePreviewRoute(
         imageUrl: url,

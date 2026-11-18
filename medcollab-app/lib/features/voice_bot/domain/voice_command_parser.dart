@@ -56,32 +56,52 @@ class VoiceCommandParser {
     }
 
     // ── handoff ──────────────────────────────────────────────────────────
+    // Summary text only after an explicit separator ("saying", "notes", a
+    // comma or dash). Other words after the name are never put into the
+    // draft: they are shown as "not understood" so the doctor checks them
+    // (field test: "hand off bed 12 to Alex the sky").
     final handoff = RegExp(
-      r'^(?:create |make |start |draft |send )?(?:a )?hand ?-?off(?: of| for)?(?<beds> .+?)? to (?<who>.+?)(?:,|\.| -| saying| with notes?| notes?)?(?<rest> .*)?$',
+      r'^(?:please )?(?:create |make |start |draft |send |do )?(?:a )?hand ?-?(?:off|over)(?: of| for)?(?<beds> .+?)? to (?<who>.+?)(?:(?<sep>(?:,|\s-)\s*(?:saying|with notes?|notes?:?|summary:?)?|\s(?:saying|with notes?|notes?:?|summary:?))\s*(?<rest>.*))?$',
     ).firstMatch(lower);
     if (handoff != null) {
-      final who = handoff.namedGroup('who')!;
+      final whoRaw = handoff.namedGroup('who')!.trim();
       final rest = handoff.namedGroup('rest')?.trim() ?? '';
       final bedsText = handoff.namedGroup('beds')?.trim() ?? '';
+      final beds = _beds(bedsText);
+      final unclear = <String>[
+        if (bedsText.isNotEmpty && beds.isEmpty) '“$bedsText” was not understood as a bed number',
+      ];
+      // Longest leading part of the spoken name that matches someone; the
+      // leftover words are reported, never guessed into the handoff.
+      final words = whoRaw.split(' ');
+      var who = whoRaw;
+      for (var n = words.length; n >= 1; n--) {
+        final candidate = words.take(n).join(' ');
+        if (_match(candidate, peopleOnly: true, strict: true).isNotEmpty) {
+          who = candidate;
+          if (n < words.length) {
+            unclear.add('“${_original(text, words.skip(n).join(' '))}” after the name was not used');
+          }
+          break;
+        }
+      }
       return _withTarget(who, people: true, build: (t) {
-        final beds = RegExp(r'\b(?:bed|beds)\s+([a-z0-9-]+(?:\s*(?:,|and)\s*[a-z0-9-]+)*)')
-            .firstMatch(bedsText)
-            ?.group(1)
-            ?.split(RegExp(r'\s*(?:,|and)\s*'))
-            .where((b) => b.isNotEmpty)
-            .toList() ??
-            const <String>[];
         return HandoffAction(
           to: t,
           shift: _shift(lower),
-          summary: rest.isEmpty ? '' : _original(text, rest),
-          patients: [for (final b in beds) VoicePatient(bed: b.toUpperCase(), alias: 'Bed ${b.toUpperCase()}')],
+          summary: rest.isEmpty ? '' : _sentence(_original(text, rest)),
+          patients: [for (final b in beds) VoicePatient(bed: b, alias: 'Bed $b')],
+          unclear: unclear,
         );
       });
     }
-
     // ── open chat ────────────────────────────────────────────────────────
-    final open = RegExp(r'^(?:open|show|go to)(?: the)?(?: chat| conversation)?(?: with)? (.+?)(?:\s+chat)?$').firstMatch(lower);
+    // "open chat with Bala", "show conversation with Dr Morgan", "take me to
+    // the Cedar ward chat", and — verb lost by the recogniser — "conversation
+    // with Dr Morgan".
+    final open = RegExp(
+      r'^(?:(?:please )?(?:open|show|go to|take me to|switch to|pull up|bring up|start)(?: up)?(?: (?:the|a))?(?: (?:chat|conversation|messages|dm|chats))?(?: (?:with|to|for))? |(?:chat|conversation|messages|dm) (?:with|to) )(.+?)(?:\s+(?:chat|conversation|messages))?$',
+    ).firstMatch(lower);
     if (open != null) {
       return _withTarget(open.group(1)!, build: OpenChatAction.new);
     }
@@ -128,16 +148,49 @@ class VoiceCommandParser {
   ParseResult _withTarget(String who, {required VoiceAction Function(VoiceTarget) build, bool people = false}) {
     final matches = _match(who, peopleOnly: people);
     if (matches.isEmpty) {
-      return ParseResult([ClarifyAction('I could not find “${who.trim()}” among your colleagues. Who did you mean?')]);
+      // Never guess a near-sounding name (that could reach the wrong
+      // doctor): no suggestions; the doctor picks someone explicitly from
+      // their colleagues list (and the request is rebuilt for that person).
+      return ParseResult([
+        ClarifyAction(
+          'I could not find “${who.trim()}” among your colleagues. Who did you mean?',
+          rebuild: build,
+          unmatched: true,
+          peopleOnly: people,
+        ),
+      ]);
     }
-    if (matches.length > 1) return ParseResult([_clarify(who, matches)]);
+    if (matches.length > 1) return ParseResult([_clarify(who, matches, build)]);
     return ParseResult([build(matches.first)]);
   }
 
-  ClarifyAction _clarify(String who, List<VoiceTarget> matches) => ClarifyAction(
+  ClarifyAction _clarify(String who, List<VoiceTarget> matches, [VoiceAction Function(VoiceTarget)? build]) =>
+      ClarifyAction(
         'Which “${who.trim()}” did you mean?',
         choices: matches.take(5).toList(),
+        rebuild: build,
       );
+
+  static const _numberWords = {
+    'one': '1', 'two': '2', 'three': '3', 'four': '4', 'five': '5', 'six': '6', 'seven': '7',
+    'eight': '8', 'nine': '9', 'ten': '10', 'eleven': '11', 'twelve': '12', 'thirteen': '13',
+    'fourteen': '14', 'fifteen': '15', 'sixteen': '16', 'seventeen': '17', 'eighteen': '18',
+    'nineteen': '19', 'twenty': '20', 'thirty': '30', 'forty': '40', 'fifty': '50',
+  };
+
+  /// Bed numbers ONLY from an explicit "bed …" phrase ("bed 12", "beds 4
+  /// and 5", "bed twelve"). "at 12:00" is a time, not a bed — never guessed.
+  static List<String> _beds(String s) {
+    final m = RegExp(r'\b(?:bed|beds|bed number|bed no)\s+([a-z0-9-]+(?:\s*(?:,|and|&)\s*(?:bed\s+)?[a-z0-9-]+)*)').firstMatch(s);
+    if (m == null) return const [];
+    final out = <String>[];
+    for (final raw in m.group(1)!.split(RegExp(r'\s*(?:,|and|&)\s*(?:bed\s+)?'))) {
+      final b = _numberWords[raw] ?? raw;
+      if (b.isEmpty || !RegExp(r'^[a-z]?\d+[a-z]?(?:-\d+)?$|^[a-z]{1,3}-?\d+$').hasMatch(b)) continue;
+      out.add(b.toUpperCase());
+    }
+    return out;
+  }
 
   static List<String> _tokens(String s) => s
       .toLowerCase()
@@ -154,10 +207,14 @@ class VoiceCommandParser {
     var best = 0;
     final scored = <(int, VoiceTarget)>[];
     for (final t in pool) {
-      final words = [
+      // "#general" is said "general" — the stripped alias is part of the
+      // chat's NAME (FR-AST: "open chat with General" asked to clarify).
+      final nameWords = [
         ..._tokens(t.name),
-        // "#general" is said "general".
         for (final w in _tokens(t.name)) if (w.startsWith('#')) w.substring(1),
+      ];
+      final words = [
+        ...nameWords,
         if (t.username != null) t.username!.toLowerCase(),
         if (t.username != null) '@${t.username!.toLowerCase()}',
         ..._tokens(t.speciality ?? ''),
@@ -168,7 +225,7 @@ class VoiceCommandParser {
       for (final w in q) {
         if (words.contains(w)) {
           score += 3;
-          if (_tokens(t.name).contains(w) || w.startsWith('@') || w == t.username?.toLowerCase()) nameHits++;
+          if (nameWords.contains(w) || w.startsWith('@') || w == t.username?.toLowerCase()) nameHits++;
         } else if (w.length >= 3 && words.any((x) => x.startsWith(w))) {
           score += 1;
           nameHits++;
@@ -191,7 +248,11 @@ class VoiceCommandParser {
 
   static String? _availability(String l) {
     if (RegExp(r"\b(do not disturb|dnd)\b").hasMatch(l)) return 'do_not_disturb';
-    final m = RegExp(r"^(?:set (?:my )?(?:status|availability) (?:to |as )?|i(?: am|'m) (?:now )?|mark me (?:as )?)(.+)$").firstMatch(l);
+    var m = RegExp(r"^(?:set (?:my )?(?:status|availability) (?:to |as )?|change (?:my )?(?:status|availability) (?:to |as )?|update (?:my )?(?:status|availability) (?:to |as )?|i(?: am|'m) (?:now )?|mark me (?:as )?|put me (?:as |on )?)(.+)$").firstMatch(l);
+    // Same meaning, other words: "my status is on rounds", "status: in OT"
+    // ("that's my status long rounds" from the recogniser) — only when a
+    // status word AND a known status are both present.
+    m ??= RegExp(r'\b(?:status|availability)\b(?: is| to| as|:)?(.+)$').firstMatch(l);
     if (m == null) return null;
     final s = m.group(1)!;
     if (RegExp(r'\b(ot|operation theatre|theater|surgery)\b').hasMatch(s)) return 'in_ot';

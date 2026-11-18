@@ -17,6 +17,8 @@ class ChannelModel extends Equatable {
     this.peer,
     this.members = const [],
     this.isNeedl = false,
+    this.lastVoiceAt,
+    this.lastVoiceSender,
   });
 
   factory ChannelModel.fromJson(Map<String, dynamic> json) {
@@ -47,6 +49,8 @@ class ChannelModel extends Equatable {
       peer: peerJson != null ? UserModel.fromJson(peerJson) : null,
       members: members,
       isNeedl: json['isNeedl'] == true,
+      lastVoiceAt: DateTime.tryParse(asJsonMap(json['lastVoice'])?['sentAt']?.toString() ?? '')?.toLocal(),
+      lastVoiceSender: asJsonMap(json['lastVoice'])?['senderName']?.toString(),
     );
   }
 
@@ -63,6 +67,10 @@ class ChannelModel extends Equatable {
 
   /// Server-provided multi-person DM flag (Slack-style MPIM).
   final bool isNeedl;
+
+  /// Needl Voice's own last clip (separate from the chat's [lastMessage]).
+  final DateTime? lastVoiceAt;
+  final String? lastVoiceSender;
 
   bool get isDirect => type == ChannelType.direct;
 
@@ -129,6 +137,8 @@ class ChannelModel extends Equatable {
     UserModel? peer,
     List<UserModel>? members,
     bool? isNeedl,
+    DateTime? lastVoiceAt,
+    String? lastVoiceSender,
   }) {
     return ChannelModel(
       id: id ?? this.id,
@@ -142,6 +152,8 @@ class ChannelModel extends Equatable {
       peer: peer ?? this.peer,
       members: members ?? this.members,
       isNeedl: isNeedl ?? this.isNeedl,
+      lastVoiceAt: lastVoiceAt ?? this.lastVoiceAt,
+      lastVoiceSender: lastVoiceSender ?? this.lastVoiceSender,
     );
   }
 
@@ -158,5 +170,7 @@ class ChannelModel extends Equatable {
         peer,
         members,
         isNeedl,
+        lastVoiceAt,
+        lastVoiceSender,
       ];
 }

@@ -17,27 +17,44 @@ abstract final class AppDecorations {
     );
   }
 
+  /// Vocle's own message shape — a clinical "chart note" card, not a
+  /// messenger speech bubble: soft 12 px corners, the sender's top corner
+  /// squared like a clipped note, and incoming notes carry a teal margin
+  /// rule on their left edge (like a ruled case sheet).
   static BoxDecoration bubble({required bool isMine}) {
     if (isMine) {
       return BoxDecoration(
-        color: AppColors.navyPrimary,
+        color: AppColors.bubbleMine,
         borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(16),
-          topRight: Radius.circular(16),
-          bottomLeft: Radius.circular(16),
-          bottomRight: Radius.circular(4),
+          topLeft: Radius.circular(12),
+          topRight: Radius.circular(3),
+          bottomLeft: Radius.circular(12),
+          bottomRight: Radius.circular(12),
         ),
       );
     }
+    final rule = AppColors.tealPrimary.withValues(alpha: AppColors.isDark ? 0.55 : 0.45);
     return BoxDecoration(
       color: AppColors.surfaceCard,
       borderRadius: const BorderRadius.only(
-        topLeft: Radius.circular(16),
-        topRight: Radius.circular(16),
-        bottomLeft: Radius.circular(4),
-        bottomRight: Radius.circular(16),
+        topLeft: Radius.circular(3),
+        topRight: Radius.circular(12),
+        bottomLeft: Radius.circular(12),
+        bottomRight: Radius.circular(12),
       ),
-      border: Border.all(color: AppColors.borderDefault, width: 0.5),
+      border: Border(
+        left: BorderSide(color: rule, width: 3),
+        top: BorderSide(color: rule, width: 0.5),
+        right: BorderSide(color: rule, width: 0.5),
+        bottom: BorderSide(color: rule, width: 0.5),
+      ),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: AppColors.isDark ? 0.18 : 0.04),
+          blurRadius: 3,
+          offset: const Offset(0, 1),
+        ),
+      ],
     );
   }
 

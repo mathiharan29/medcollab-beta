@@ -510,9 +510,11 @@ void main() {
         'fileInput=${caps.fileInput} tts=${caps.tts}');
     router.go(AppRoutes.messages);
     await _real(tester, const Duration(seconds: 1));
-    unawaited(router.push(AppRoutes.dmPath(dmArjun)));
-    await _waitFor(tester, find.byKey(const Key('open-needl-voice')));
-    await _tap(tester, find.byKey(const Key('open-needl-voice')));
+    // Since 11-18 Needl Voice is its own space: Messages → Needl Voice → chat.
+    await _waitFor(tester, find.byKey(const Key('open-voice-hub')));
+    await _tap(tester, find.byKey(const Key('open-voice-hub')));
+    await _waitFor(tester, find.byKey(Key('voice-hub-chat-$dmArjun')));
+    await _tap(tester, find.byKey(Key('voice-hub-chat-$dmArjun')));
     await _waitFor(tester, find.byKey(const Key('needl-voice-talk')), timeout: const Duration(seconds: 20));
     await _real(tester, const Duration(seconds: 2));
     await _shot(tester, '40_needl_voice_open');
@@ -531,7 +533,10 @@ void main() {
     final w2 = Stopwatch()..start();
     while (mine == null && w2.elapsed.inSeconds < 30) {
       await _real(tester, const Duration(seconds: 1));
-      mine = (await arjunDm()).cast<Map>().where((m) => m['type'] == 'audio' &&
+      final voice = (await d.get('/channels/$dmArjun/messages',
+              queryParameters: {'mode': 'voice'}, options: arjun))
+          .data['data']['messages'] as List;
+      mine = voice.cast<Map>().where((m) => m['type'] == 'audio' &&
           m['content']?['voiceMode'] == true).lastOrNull;
     }
     expect(mine, isNotNull, reason: 'the clip reached Arjun as a voice message');

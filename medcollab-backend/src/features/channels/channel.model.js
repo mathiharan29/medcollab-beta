@@ -140,6 +140,35 @@ const channelSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+
+    // Needl Voice's own "last clip" (the chat's lastMessage ignores clips).
+    lastVoice: {
+      messageId: { type: mongoose.Schema.Types.ObjectId, ref: 'Message', default: null },
+      senderName: { type: String, default: null },
+      durationMs: { type: Number, default: null },
+      sentAt: { type: Date, default: null },
+    },
+
+    // Needl Voice's own "last clip" (the chat's lastMessage ignores clips).
+    lastVoice: {
+      messageId: { type: mongoose.Schema.Types.ObjectId, ref: 'Message', default: null },
+      senderName: { type: String, default: null },
+      durationMs: { type: Number, default: null },
+      sentAt: { type: Date, default: null },
+    },
+
+    // Needl expansion history copy (FR-NDL-28/29). 'copying' while one
+    // request copies; 'failed' lets the next request resume; 'done' after.
+    historyCopy: {
+      sourceId: { type: mongoose.Schema.Types.ObjectId, ref: 'Channel' },
+      mode: { type: String, enum: ['all', 'today'] },
+      since: { type: Date, default: null },
+      status: { type: String, enum: ['copying', 'failed', 'done'] },
+      startedAt: { type: Date },
+      // Who/when for the "X added Y" line, posted once the copy is done.
+      addedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      addedUserIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    },
   },
   {
     timestamps: true,

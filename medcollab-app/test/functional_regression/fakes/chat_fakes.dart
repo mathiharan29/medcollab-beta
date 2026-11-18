@@ -30,11 +30,20 @@ class FakeMessageRepository extends MessageRepository {
     return onGetMessages?.call() ?? const MessagesPage(messages: [], hasMore: false);
   }
 
+  /// Needl Voice history uses the same fake history source.
+  @override
+  Future<MessagesPage> getVoiceMessages(String channelId, {String? before, int limit = 50}) =>
+      getMessages(channelId, before: before, limit: limit);
+
+  final List<String?> clientMessageIds = [];
+
   @override
   Future<MessageModel> sendTextMessage({
     required String channelId, required String text,
     List<String> mentions = const [], String? replyToId,
+    String? clientMessageId,
   }) {
+    clientMessageIds.add(clientMessageId);
     textSendCount++;
     sentChannelIds.add(channelId);
     return onSendText!(text, replyToId);
