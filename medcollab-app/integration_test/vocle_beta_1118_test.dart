@@ -247,8 +247,8 @@ void main() {
     unawaited(router.push(AppRoutes.dmPath(dmArjun)));
     await _waitFor(tester, find.byKey(const Key('composer-field')));
     await _real(tester, const Duration(seconds: 2));
-    // E5: the text chat has no Needl Voice entry any more.
-    expect(find.byKey(const Key('open-needl-voice')), findsNothing);
+    // Beta 11-26: Needl Voice is opened from the chat header again.
+    expect(find.byKey(const Key('open-needl-voice')), findsOneWidget);
     await _shot(tester, '71_chat_clinical_light');
     await tester.element(find.byType(Scaffold).first).read<ThemeModeCubit>().setMode(ThemeMode.dark);
     await _real(tester, const Duration(seconds: 2));
@@ -271,13 +271,12 @@ void main() {
     await _shot(tester, '73_chat_themes');
     await _back(tester);
 
-    // ── E5: Needl Voice is its own space ─────────────────────────────────
+    // ── E5: Needl Voice, opened from the chat, stored apart from it ───────
     router.go(AppRoutes.messages);
     await _real(tester, const Duration(seconds: 1));
-    await _tap(tester, find.byKey(const Key('open-voice-hub')));
-    await _waitFor(tester, find.byKey(Key('voice-hub-chat-$dmArjun')));
-    await _shot(tester, '74_voice_hub');
-    await _tap(tester, find.byKey(Key('voice-hub-chat-$dmArjun')));
+    unawaited(router.push(AppRoutes.dmPath(dmArjun)));
+    await _waitFor(tester, find.byKey(const Key('open-needl-voice')));
+    await _tap(tester, find.byKey(const Key('open-needl-voice')));
     await _waitFor(tester, find.byKey(const Key('needl-voice-talk')), timeout: const Duration(seconds: 20));
     Future<List<Map>> voiceClips() async =>
         ((await d.get('/channels/$dmArjun/messages', queryParameters: {'mode': 'voice'}, options: arjunH))
@@ -304,10 +303,6 @@ void main() {
     _log('STEP e5_separate clip=${clip!['_id']} inChat=false');
     await _shot(tester, '75_needl_voice_clip_sent');
     await _back(tester);
-    await _real(tester, const Duration(seconds: 1));
-    await _shot(tester, '76_voice_hub_after_clip');
-    await _back(tester);
-    unawaited(router.push(AppRoutes.dmPath(dmArjun)));
     await _waitFor(tester, find.byKey(const Key('composer-field')));
     await _real(tester, const Duration(seconds: 2));
     await _shot(tester, '77_text_chat_without_voice_clip');
@@ -342,7 +337,6 @@ void main() {
       (times['dm'] ??= []).add(await timePush(AppRoutes.dmPath(dmArjun), find.byKey(const Key('composer-field'))));
       (times['needl'] ??= []).add(await timePush(AppRoutes.dmPath(needl), find.byKey(const Key('composer-field'))));
       (times['search'] ??= []).add(await timePush(AppRoutes.search, find.byType(TextField)));
-      (times['voice_hub'] ??= []).add(await timePush(AppRoutes.voiceHub, find.byKey(const Key('voice-hub-search'))));
     }
     for (final e in times.entries) {
       final v = [...e.value]..sort();

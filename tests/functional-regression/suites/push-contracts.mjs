@@ -170,7 +170,11 @@ const cases = [{
         assert.equal(item.message.data.channelId, channelId);
         assert.equal(item.message.data.messageId, sent._id);
         assert.ok(Object.values(item.message.data).every((value) => typeof value === 'string'));
-        assert.equal(item.message.android.collapseKey, channelId);
+        // Beta 11-26: pushes are not collapsible, so an offline phone gets
+        // every chat's messages when data returns (FCM keeps only one
+        // collapsible push per key and four keys per device).
+        assert.equal(item.message.android.collapseKey, undefined);
+        assert.equal(item.message.android.priority, 'high');
         assert.equal(item.message.apns.payload.aps['thread-id'], channelId);
       }
       const deadline = Date.now() + 5000;

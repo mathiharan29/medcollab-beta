@@ -56,6 +56,33 @@ class MessageRepository extends BaseRepository {
     );
   }
 
+  /// Forward [source] into [toChannelId] (beta 11-26). The server copies the
+  /// stored original (text, photo, file, voice note) and tags it
+  /// "Forwarded from …"; [clientMessageId] makes a retry store it once.
+  Future<MessageModel> forwardMessage({
+    required String toChannelId,
+    required MessageModel source,
+    required String sourceChannelId,
+    String? clientMessageId,
+  }) {
+    final content = source.content.toJson()
+      ..remove('transcript')
+      ..remove('transcriptStatus')
+      ..remove('voiceMode');
+    return execute(
+      () => apiClient.post(
+        ApiEndpoints.channelMessages(toChannelId),
+        data: {
+          'type': source.type.value,
+          'content': content,
+          'forwardOf': {'channelId': sourceChannelId, 'messageId': source.id},
+          if (clientMessageId != null) 'clientMessageId': clientMessageId,
+        },
+        parser: (json) => parseNested(json, 'message', MessageModel.fromJson),
+      ),
+    );
+  }
+
   /// [clientMessageId]: idempotency key — a retry with the same key returns
   /// the first stored copy instead of sending twice (FR-AST-25).
   Future<MessageModel> sendTextMessage({
@@ -221,11 +248,13 @@ class MessageRepository extends BaseRepository {
     required String channelId,
     required String messageId,
     required String emoji,
+    // true = add, false = remove; null = toggle (older behaviour).
+    bool? active,
   }) {
     return execute(
       () => apiClient.post(
         ApiEndpoints.messageReact(channelId, messageId),
-        data: {'emoji': emoji},
+        data: {'emoji': emoji, if (active != null) 'active': active},
         parser: (json) {
           final raw = json['reactions'];
           if (raw is! List) return <MessageReaction>[];

@@ -38,7 +38,9 @@ const cases = [{
         const stored = await connection.collection('messages').findOne({ _id: new connection.base.Types.ObjectId(root._id) });
         assert.deepEqual(new Set(stored.reactions.map((item) => item.emoji)), new Set(final.map((item) => item.emoji)));
       });
-      assert.deepEqual(owners.filter(([, id]) => id === people.B.userId).map(([emoji]) => emoji), ['❤️'], 'Switching emoji must replace B prior reaction');
+      // Product decision 2026-11-26: a doctor may add several emojis to one
+      // message (adding ❤️ keeps B's 👍); the same emoji again removes it.
+      assert.deepEqual(new Set(owners.filter(([, id]) => id === people.B.userId).map(([emoji]) => emoji)), new Set(['👍', '❤️']), 'Adding another emoji must keep B prior reaction');
       assert.equal(owners.filter(([, id]) => id === people.A.userId).length, 0, 'A removal must leave B intact');
     } finally { socket.disconnect(); }
   },

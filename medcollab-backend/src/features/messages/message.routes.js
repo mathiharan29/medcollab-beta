@@ -198,7 +198,9 @@ router.post(
   '/:id/react',
   validateMongoId('id'),
   [
-    body('emoji').notEmpty().withMessage('Emoji is required'),
+    body('emoji').isString().trim().notEmpty().withMessage('Emoji is required')
+      .isLength({ max: 16 }).withMessage('Invalid emoji'),
+    body('active').optional().isBoolean(),
     handleValidationErrors,
   ],
   messageController.toggleReaction

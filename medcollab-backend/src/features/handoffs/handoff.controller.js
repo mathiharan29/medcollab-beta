@@ -557,7 +557,15 @@ const acknowledgeHandoff = asyncHandler(async (req, res) => {
  */
 const addHandoffNote = asyncHandler(async (req, res) => {
   const text = (req.body.text || '').trim();
-  if (!text) return respond.badRequest(res, 'Note text is required');
+  // A reply can be spoken (voice note), typed, or both.
+  let voiceNote = null;
+  try {
+    voiceNote = cleanVoiceNote(req.body.voiceNote ?? null, req, null);
+  } catch (err) {
+    if (err instanceof VoiceNoteError) return respond.badRequest(res, err.message);
+    throw err;
+  }
+  if (!text && !voiceNote) return respond.badRequest(res, 'Note text is required');
   if (text.length > 1000) {
     return respond.badRequest(res, 'Note cannot exceed 1000 characters');
   }
@@ -581,6 +589,7 @@ const addHandoffNote = asyncHandler(async (req, res) => {
   handoff.writeBackNotes.push({
     authorId: req.user._id,
     text,
+    ...(voiceNote ? { voiceNote } : {}),
     kind,
     createdAt: new Date(),
   });

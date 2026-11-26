@@ -217,7 +217,7 @@ class SpeechBridge(
             fun retryOrFail(error: Int) {
                 if (done) return
                 if (isLanguageError(error) && index + 1 < languages.size) {
-                    if (index == 0) requestModelDownload(language)
+                    // No automatic pack download: Android shows it as a system dialog at a random moment over the chat (beta 11-26); the fallback language is used instead.
                     done = true
                     recognizer.destroy()
                     try { pfd.close() } catch (_: Exception) {}
@@ -362,7 +362,7 @@ class SpeechBridge(
                     main.removeCallbacks(stall)
                     if (isLanguageError(error)) {
                         if (index + 1 < languages.size) {
-                            if (index == 0) requestModelDownload(preferred)
+                            // No automatic pack download: Android shows it as a system dialog at a random moment over the chat (beta 11-26); the fallback language is used instead.
                             main.post { listenWith(languages, index + 1, preferred, onDevice) }
                             return
                         }

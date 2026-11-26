@@ -31,12 +31,10 @@ void main() {
     await deviceStorage.clearAll();
     final dm = (await fixture())['voiceDmId'] as String;
     await control('microphone-permission', {'granted': false});
-    // Needl Voice is a separate space (beta 11-18): entered from its own
-    // list (Messages → Needl Voice), never from the text chat.
-    await launch(tester, session: 'A', entryRoute: AppRoutes.voiceHub);
-    final opener = find.byKey(Key('voice-hub-chat-$dm'));
+    await launch(tester, session: 'A', entryRoute: AppRoutes.dmPath(dm));
+    final opener = find.byKey(const Key('open-needl-voice'));
     await until(tester, () => opener.hitTestable().evaluate().isNotEmpty,
-        'the Needl Voice list offers the DM');
+        'normal DM exposes the Needl Voice entry');
     await tester.tap(opener);
     final before = await control('media-counts', {'channelId': dm});
 

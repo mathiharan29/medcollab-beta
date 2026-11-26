@@ -61,9 +61,8 @@ abstract final class AppRoutes {
 
   static String dmPath(String channelId) => '/dm/$channelId';
 
-  /// Needl Voice (issue 13): a separate voice-only space. [voiceHub] lists
-  /// the conversations; [needlVoice] is one voice conversation.
-  static const String voiceHub = '/voice';
+  /// Needl Voice (issue 13): the voice-only view of a chat, opened from that
+  /// chat's header; its clips are kept apart from the text messages.
   static const String needlVoice = '/voice/:channelId';
   static String needlVoicePath(String channelId) => '/voice/$channelId';
 

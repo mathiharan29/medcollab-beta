@@ -56,8 +56,8 @@ String? logicalParentOf(String location) {
       return AppRoutes.profile;
     case 'notifications': // /notifications/settings
       return AppRoutes.profile;
-    case 'voice': // one voice conversation → Needl Voice list → Messages
-      return s.length >= 2 ? AppRoutes.voiceHub : AppRoutes.messages;
+    case 'voice': // Needl Voice opened without its chat below it
+      return AppRoutes.messages;
     case 'links':
     case 'join':
     case 'join-scan':

@@ -21,7 +21,6 @@ import 'package:medcollab_app/features/messages/presentation/pages/channel_chat_
 import 'package:medcollab_app/features/messages/presentation/pages/start_dm_page.dart';
 import 'package:medcollab_app/features/messages/presentation/pages/thread_page.dart';
 import 'package:medcollab_app/features/needl_voice/presentation/needl_voice_page.dart';
-import 'package:medcollab_app/features/needl_voice/presentation/voice_hub_page.dart';
 import 'package:medcollab_app/features/notifications/presentation/pages/notification_settings_page.dart';
 import 'package:medcollab_app/features/profile/presentation/pages/edit_profile_page.dart';
 import 'package:medcollab_app/features/search/presentation/pages/global_search_page.dart';
@@ -271,10 +270,6 @@ class AppRouter {
         },
       ),
       GoRoute(
-        path: AppRoutes.voiceHub,
-        builder: (context, state) => const VoiceHubPage(),
-      ),
-      GoRoute(
         path: AppRoutes.needlVoice,
         builder: (context, state) {
           final extra = state.extra;
@@ -496,7 +491,7 @@ class AppRouter {
     if (AppRoutes.shellPaths.contains(location)) return true;
     if (location.startsWith('/spaces')) return true;
     if (location.startsWith('/dm')) return true;
-    if (location == AppRoutes.voiceHub || location.startsWith('/voice/')) return true;
+    if (location.startsWith('/voice/')) return true;
     if (location.startsWith('/links/')) return true;
     if (location.startsWith('/join')) return true;
     if (location.startsWith('/profile')) return true;

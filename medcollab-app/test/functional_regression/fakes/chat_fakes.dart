@@ -37,6 +37,22 @@ class FakeMessageRepository extends MessageRepository {
 
   final List<String?> clientMessageIds = [];
 
+  /// Forwards: (target, source message id, source chat, key).
+  final List<({String to, String sourceId, String sourceChannelId, String? key})> forwards = [];
+  Future<MessageModel> Function(String toChannelId)? onForward;
+
+  @override
+  Future<MessageModel> forwardMessage({
+    required String toChannelId,
+    required MessageModel source,
+    required String sourceChannelId,
+    String? clientMessageId,
+  }) {
+    forwards.add((to: toChannelId, sourceId: source.id, sourceChannelId: sourceChannelId, key: clientMessageId));
+    return onForward?.call(toChannelId) ??
+        Future.value(source.copyWith(id: 'fwd-${forwards.length}', channelId: toChannelId));
+  }
+
   @override
   Future<MessageModel> sendTextMessage({
     required String channelId, required String text,

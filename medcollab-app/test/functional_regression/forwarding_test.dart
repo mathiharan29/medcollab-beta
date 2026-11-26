@@ -53,10 +53,8 @@ void main() {
         mediaUrl: 'https://synthetic.invalid/file.jpg',
       ),
     );
-    final sent = <String>[];
     var fail = true;
-    messages.onSendText = (text, replyTo) async {
-      sent.add(text);
+    messages.onForward = (to) async {
       if (fail) {
         fail = false;
         throw const ServerException('Synthetic forward failure');
@@ -65,7 +63,7 @@ void main() {
         id: 'forwarded-message',
         channelId: 'destination-group',
         sender: UserModel(id: 'doctor-b', name: 'Doctor B'),
-        content: MessageContent(text: 'Forwarded'),
+        content: MessageContent(text: 'Synthetic shift note'),
       );
     };
     await tester.pumpWidget(MaterialApp(home: Scaffold(body: Builder(
@@ -85,22 +83,24 @@ void main() {
 
     await tester.tap(find.text('#Team group'));
     await tester.pumpAndSettle();
-    expect(sent.length, 1);
+    expect(messages.forwards.length, 1);
     expect(find.text('Forward message'), findsOneWidget,
         reason: 'A failed send keeps the target sheet open for retry');
     expect(find.text('Synthetic forward failure'), findsOneWidget);
     await tester.tap(find.text('#Team group'));
     await tester.pumpAndSettle();
-    expect(sent.length, 2);
-    expect(messages.textSendCount, 2);
+    expect(messages.forwards.length, 2);
     expect(find.text('Forward message'), findsNothing);
-    expect(messages.sentChannelIds, ['destination-group', 'destination-group']);
-    expect(sent.last, contains('Forwarded from Doctor A'));
-    expect(sent.last, contains('vocle://c/source-channel/m/source-message'));
-    expect(sent.last, contains('Synthetic shift note'));
-    expect(sent.last, contains('https://synthetic.invalid/file.jpg'));
-    expect(sent.first, sent.last,
-        reason: 'Retry must preserve exact source attribution and media URL');
+    // Beta 11-26: a forward is a server-side copy of the source message
+    // (its text and media) tagged "Forwarded from" — never a text message
+    // carrying the vocle:// link and the storage URL.
+    expect(messages.textSendCount, 0);
+    expect(messages.forwards.map((f) => f.to), ['destination-group', 'destination-group']);
+    expect(messages.forwards.map((f) => (f.sourceId, f.sourceChannelId)).toSet(),
+        {('source-message', 'source-channel')});
+    expect(messages.forwards.first.key, isNotNull);
+    expect(messages.forwards.first.key, messages.forwards.last.key,
+        reason: 'Retry must reuse the same key so the server stores the forward once');
   });
 
   testWidgets('FR-LINK-02: copy exact message link and resolve route',

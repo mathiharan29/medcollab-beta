@@ -30,8 +30,17 @@ class LastMessagePreview extends Equatable {
   final DateTime? sentAt;
 
   /// Sidebar-friendly label (handles media with empty text).
+  /// Older forwards were plain text with a vocle:// link (beta 11-26).
+  static final _legacyForward = RegExp(
+    r'^\s*(?:↪️|↪)?\s*Forwarded from [^\n]*\n\s*vocle://\S*\s*',
+  );
+
   String get previewLabel {
-    final t = text?.trim();
+    var t = text?.trim();
+    if (t != null && _legacyForward.hasMatch(t)) {
+      t = t.replaceFirst(_legacyForward, '').trim();
+      return t.isEmpty ? '↪ Forwarded message' : '↪ $t';
+    }
     if (t != null && t.isNotEmpty) return t;
     return switch (type) {
       MessageType.image => '📷 Photo',

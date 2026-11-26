@@ -136,6 +136,7 @@ class MessageModel extends Equatable {
     this.mentions = const [],
     this.readBy = const [],
     this.reactions = const [],
+    this.forwarded,
   });
 
   factory MessageModel.fromJson(Map<String, dynamic> json) {
@@ -200,6 +201,7 @@ class MessageModel extends Equatable {
               .map(MessageReaction.fromJson)
               .toList()
           : const [],
+      forwarded: ForwardInfo.fromJson(asJsonMap(json['forwarded'])),
     );
   }
 
@@ -222,6 +224,14 @@ class MessageModel extends Equatable {
   final List<MessageReadReceipt> readBy;
   final List<MessageReaction> reactions;
 
+  /// Set when this message is a forwarded copy (beta 11-26).
+  final ForwardInfo? forwarded;
+
+  /// [forwarded], or the same details read from an older forward that was
+  /// sent as plain text with a vocle:// link.
+  ForwardInfo? get forwardInfo =>
+      forwarded ?? (type == MessageType.text ? ForwardInfo.fromLegacyText(content.text) : null);
+
   bool get isThreadReply => threadId != null && threadId!.isNotEmpty;
   bool get hasThread => replyCount > 0;
   bool get hasQuoteReply => replyTo != null && replyTo!.messageId.isNotEmpty;
@@ -237,6 +247,8 @@ class MessageModel extends Equatable {
     if (type == MessageType.document) {
       return content.fileName ?? content.text ?? 'Document';
     }
+    final legacy = forwarded == null ? ForwardInfo.fromLegacyText(content.text) : null;
+    if (legacy != null) return legacy.body;
     return content.text ?? '';
   }
 
@@ -259,6 +271,7 @@ class MessageModel extends Equatable {
     List<String>? mentions,
     List<MessageReadReceipt>? readBy,
     List<MessageReaction>? reactions,
+    ForwardInfo? forwarded,
     bool clearReplyTo = false,
   }) {
     return MessageModel(
@@ -280,6 +293,7 @@ class MessageModel extends Equatable {
       mentions: mentions ?? this.mentions,
       readBy: readBy ?? this.readBy,
       reactions: reactions ?? this.reactions,
+      forwarded: forwarded ?? this.forwarded,
     );
   }
 
@@ -303,6 +317,7 @@ class MessageModel extends Equatable {
         mentions,
         readBy,
         reactions,
+        forwarded,
       ];
 }
 
@@ -337,4 +352,80 @@ class MessageReaction extends Equatable {
 
   @override
   List<Object?> get props => [emoji, userIds];
+}
+
+/// Where a forwarded message came from (beta 11-26).
+class ForwardInfo extends Equatable {
+  const ForwardInfo({
+    required this.fromName,
+    this.sourceChannelId,
+    this.sourceMessageId,
+    this.body = '',
+    this.legacyMediaUrl,
+  });
+
+  static ForwardInfo? fromJson(Map<String, dynamic>? json) {
+    if (json == null) return null;
+    final name = json['fromName']?.toString().trim() ?? '';
+    if (name.isEmpty) return null;
+    String? id(Object? v) {
+      final s = v?.toString() ?? '';
+      return s.isEmpty || s == 'null' ? null : s;
+    }
+
+    return ForwardInfo(
+      fromName: name,
+      sourceChannelId: id(json['sourceChannelId']),
+      sourceMessageId: id(json['sourceMessageId']),
+    );
+  }
+
+  static final _legacy = RegExp(
+    r'^\s*(?:↪️|↪)?\s*Forwarded from ([^\n]+)\n\s*vocle://c/([A-Za-z0-9]+)/m/([A-Za-z0-9]+)[ \t]*(?:\n([\s\S]*))?$',
+  );
+  static final _url = RegExp(r'^https?://\S+$');
+
+  /// Older app versions forwarded as text: "↪️ Forwarded from X",
+  /// "vocle://c/…/m/…", the text, and a storage URL for media. Read those
+  /// back so the chat shows a clean forward instead of the raw link.
+  static ForwardInfo? fromLegacyText(String? text) {
+    if (text == null) return null;
+    final m = _legacy.firstMatch(text);
+    if (m == null) return null;
+    final lines = (m.group(4) ?? '').split('\n');
+    String? media;
+    while (lines.isNotEmpty && lines.last.trim().isEmpty) {
+      lines.removeLast();
+    }
+    if (lines.isNotEmpty && _url.hasMatch(lines.last.trim())) {
+      media = lines.removeLast().trim();
+    }
+    return ForwardInfo(
+      fromName: m.group(1)!.trim(),
+      sourceChannelId: m.group(2),
+      sourceMessageId: m.group(3),
+      body: lines.join('\n').trim(),
+      legacyMediaUrl: media,
+    );
+  }
+
+  /// Text for quotes and previews: a legacy forward's text without its link.
+  static String clean(String text) => fromLegacyText(text)?.body.isNotEmpty == true
+      ? fromLegacyText(text)!.body
+      : fromLegacyText(text) != null
+          ? 'Forwarded message'
+          : text;
+
+  final String fromName;
+  final String? sourceChannelId;
+  final String? sourceMessageId;
+
+  /// Legacy text forwards only: the forwarded text and media link.
+  final String body;
+  final String? legacyMediaUrl;
+
+  bool get canOpenSource => sourceChannelId != null && sourceMessageId != null;
+
+  @override
+  List<Object?> get props => [fromName, sourceChannelId, sourceMessageId, body, legacyMediaUrl];
 }

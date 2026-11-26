@@ -881,8 +881,18 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
                 ),
               ),
               actions: [
-                // Needl Voice is its own space (Messages → Voice), not a
-                // mode of this text chat.
+                // Needl Voice: entered from the chat it belongs to (beta
+                // 11-26). Its clips are stored and shown only there — the
+                // text chat never mixes them in.
+                IconButton(
+                  key: const Key('open-needl-voice'),
+                  tooltip: 'Needl Voice',
+                  icon: const Icon(Icons.graphic_eq_rounded, color: AppColors.tealPrimary),
+                  onPressed: () => context.push(
+                    AppRoutes.needlVoicePath(widget.channelId),
+                    extra: NeedlVoiceArgs(title: title, subtitle: subtitle),
+                  ),
+                ),
                 PopupMenuButton<String>(
                   icon: const Icon(
                     Icons.more_vert,
@@ -1120,7 +1130,10 @@ class _ChannelChatPageState extends State<ChannelChatPage> {
                           if (state.error != null)
                             Padding(
                               padding: const EdgeInsets.all(8),
-                              child: ErrorBanner(message: state.error!),
+                              child: ErrorBanner(
+                                message: state.error!,
+                                onDismiss: context.read<ChannelChatCubit>().dismissError,
+                              ),
                             ),
                           Expanded(
                             child: state.messages.isEmpty

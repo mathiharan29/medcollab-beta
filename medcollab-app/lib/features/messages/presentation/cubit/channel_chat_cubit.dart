@@ -588,7 +588,10 @@ class ChannelChatCubit extends Cubit<ChannelChatState> with SafeEmit<ChannelChat
       final messageId =
           data['messageId']?.toString() ?? data['_id']?.toString() ?? '';
       final reactionsRaw = data['reactions'];
+      // While this phone still sends taps for the message, its own view is
+      // newer than any echo; the last request's answer settles it.
       if (messageId.isNotEmpty && reactionsRaw is List) {
+        if ((_reactionPending[messageId] ?? 0) > 0) return;
         final reactions = reactionsRaw
             .map(asJsonMap)
             .whereType<Map<String, dynamic>>()
@@ -734,21 +737,109 @@ class ChannelChatCubit extends Cubit<ChannelChatState> with SafeEmit<ChannelChat
     unawaited(_markChannelNotificationsRead());
   }
 
-  Future<void> toggleReaction(String messageId, String emoji) async {
+  /// Per message: the chain of reaction requests still being sent, and how
+  /// many. Taps show at once; requests go out one after another with the
+  /// state the doctor sees (`active`), so fast double taps can't collide or
+  /// flip a reaction back (beta 11-26: "double tap → vanished → Something
+  /// went wrong").
+  /// A failed action shows a banner; once the chat itself is on screen the
+  /// banner is a passing notice, not a stuck "Something went wrong".
+  Timer? _errorTimer;
+
+  @override
+  void onChange(Change<ChannelChatState> change) {
+    super.onChange(change);
+    final error = change.nextState.error;
+    if (error == null || error == change.currentState.error) return;
+    _errorTimer?.cancel();
+    if (change.nextState.messages.isEmpty) return;
+    _errorTimer = Timer(const Duration(seconds: 6), () {
+      if (!isClosed && state.error == error) dismissError();
+    });
+  }
+
+  void dismissError() {
+    _errorTimer?.cancel();
+    if (state.error != null) emit(state.copyWith());
+  }
+
+  final Map<String, Future<void>> _reactionChain = {};
+  final Map<String, int> _reactionPending = {};
+
+  Future<void> toggleReaction(String messageId, String emoji) {
+    final index = state.messages.indexWhere((m) => m.id == messageId);
+    if (index < 0) return Future.value();
+    final mine = state.messages[index].reactions
+        .any((r) => r.emoji == emoji && r.reactedBy(currentUserId));
+    return setReaction(messageId, emoji, !mine);
+  }
+
+  Future<void> setReaction(String messageId, String emoji, bool active) {
+    _applyLocalReaction(messageId, emoji, active);
+    _reactionPending[messageId] = (_reactionPending[messageId] ?? 0) + 1;
+    final previous = _reactionChain[messageId] ?? Future<void>.value();
+    final next = previous.then((_) => _sendReaction(messageId, emoji, active));
+    _reactionChain[messageId] = next;
+    return next;
+  }
+
+  Future<void> _sendReaction(String messageId, String emoji, bool active) async {
+    List<MessageReaction>? server;
+    String? failure;
     try {
-      final reactions = await _messageRepository.toggleReaction(
+      server = await _messageRepository.toggleReaction(
         channelId: channelId,
         messageId: messageId,
         emoji: emoji,
+        active: active,
       );
-      final index = state.messages.indexWhere((m) => m.id == messageId);
-      if (index < 0) return;
-      final updated = List<MessageModel>.from(state.messages);
-      updated[index] = updated[index].copyWith(reactions: reactions);
-      emit(state.copyWith(messages: updated));
     } on AppException catch (e) {
-      emit(state.copyWith(error: e.message));
+      failure = e.message;
+    } catch (_) {
+      failure = "Couldn't update the reaction. Check the connection and try again.";
     }
+    final left = (_reactionPending[messageId] ?? 1) - 1;
+    if (left <= 0) {
+      _reactionPending.remove(messageId);
+      _reactionChain.remove(messageId);
+    } else {
+      _reactionPending[messageId] = left;
+    }
+    if (isClosed) return;
+    if (failure != null) {
+      _applyLocalReaction(messageId, emoji, !active); // undo the optimistic tap
+      emit(state.copyWith(error: failure));
+      return;
+    }
+    // Only the last answer for this message replaces the local view; earlier
+    // answers would briefly undo taps still on their way.
+    if (left > 0 || server == null) return;
+    final index = state.messages.indexWhere((m) => m.id == messageId);
+    if (index < 0) return;
+    final updated = List<MessageModel>.from(state.messages);
+    updated[index] = updated[index].copyWith(reactions: server);
+    emit(state.copyWith(messages: updated));
+  }
+
+  void _applyLocalReaction(String messageId, String emoji, bool active) {
+    final index = state.messages.indexWhere((m) => m.id == messageId);
+    if (index < 0) return;
+    final me = currentUserId;
+    final groups = <MessageReaction>[];
+    var found = false;
+    for (final r in state.messages[index].reactions) {
+      if (r.emoji != emoji) {
+        groups.add(r);
+        continue;
+      }
+      found = true;
+      final ids = [for (final id in r.userIds) if (id != me) id, if (active) me];
+      if (ids.isNotEmpty) groups.add(MessageReaction(emoji: emoji, userIds: ids));
+    }
+    if (!found && active) groups.add(MessageReaction(emoji: emoji, userIds: [me]));
+    final updated = List<MessageModel>.from(state.messages);
+    updated[index] = updated[index].copyWith(reactions: groups);
+    emit(state.copyWith(messages: updated));
   }
 
   void _applyThreadReplyToRoot(MessageModel reply) {
@@ -831,6 +922,7 @@ class ChannelChatCubit extends Cubit<ChannelChatState> with SafeEmit<ChannelChat
 
   @override
   Future<void> close() {
+    _errorTimer?.cancel();
     emitTypingStop();
     ActiveChatTracker.instance.leave(channelId);
     for (final timer in _typingExpiry.values) {

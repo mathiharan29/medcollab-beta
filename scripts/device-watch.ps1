@@ -107,7 +107,7 @@ for ($i = 0; $i -lt 20000; $i++) {
   foreach ($raw in $log) {
     # adb output on Windows keeps a trailing CR on each line.
     $line = "$raw".TrimEnd("`r", "`n", ' ')
-    if ($line -match '(SHOT_\w+|DO_NET_SLOW|DO_NET_FAST|DO_ALLOW_MIC|DO_SHADE_REPLY:.+|TIMING .+|STEP .+)$') {
+    if ($line -match '(SHOT_\w+|DO_NET_SLOW|DO_NET_FAST|DO_ALLOW_MIC|DO_BACK\w*|DO_LONGPRESS:\d+:\d+|DO_SHADE_REPLY:.+|TIMING .+|STEP .+)$') {
       $tok = $Matches[1].Trim()
       if ($handled.ContainsKey($tok)) { continue }
       $handled[$tok] = 1
@@ -117,6 +117,19 @@ for ($i = 0; $i -lt 20000; $i++) {
         '^DO_NET_FAST' { & $adb emu network delay none | Out-Null; "network delay off" }
         '^DO_SHADE_REPLY:(.+)' { ShadeReply $Matches[1] }
         '^DO_ALLOW_MIC' { AllowMic }
+        '^DO_LONGPRESS:(\d+):(\d+)' { & $adb shell input swipe $Matches[1] $Matches[2] $Matches[1] $Matches[2] 1000; "real long-press $($Matches[1]),$($Matches[2])" }
+        '^DO_BACK' {
+          # A native screen (e.g. the photo picker) is in front: capture it, then
+          # press Back until Vocle is in front again.
+          Start-Sleep 3; Shot ('native_' + ($tok -replace '^DO_BACK_?',''))
+          for ($k = 0; $k -lt 10; $k++) {
+            $focus = "$((& $adb shell dumpsys window) -match 'mCurrentFocus')"
+            if ($focus -match $Package) { break }        # Vocle is in front
+            if ($focus -notmatch '\{') { Start-Sleep 1; continue }  # in transition: wait
+            & $adb shell input keyevent 4; Start-Sleep 2
+          }
+          "back"
+        }
         default { $tok }
       }
     }

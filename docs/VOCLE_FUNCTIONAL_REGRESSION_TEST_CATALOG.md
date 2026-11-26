@@ -234,7 +234,7 @@ C with six distinct live messages. Sources B/features/messages/message.model.js/
 
 | ID | Title and actions | Expected result | Tier/priority | Coverage / question |
 |---|---|---|---|---|
-| FR-SOC-01 | A and B toggle same emoji; A removes; B uses another; reread/events | One emoji per user; switching replaces B's prior emoji; removal leaves other users intact; event matches stored set | B/P1 | partial: messaging-and-needl-06 |
+| FR-SOC-01 | A and B toggle same emoji; A removes; B adds another; reread/events | Several emojis per user (beta 11-26); adding keeps B's prior emoji; the same emoji again removes it; removal leaves other users intact; event matches stored set | B/P1 | partial: messaging-and-needl-06 |
 | FR-SOC-02 | Submit invalid/empty emoji, then react to a permanently deleted message | Invalid emoji leaves existing reactions unchanged; deleted target returns 404 and remains absent | B/P1 | NEW |
 | FR-SOC-03 | Pin five distinct; sixth rejected; unpin one then pin sixth; reload detail | At most five, populated message/sender and pinnedBy/time retained, freed slot reusable | B/P1 | partial: messaging-and-needl-06 |
 | FR-SOC-04 | Re-pin same ID below cap and at cap; unpin absent ID | Re-pin below cap returns 409; at cap returns 400 (cap checked first); absent unpin succeeds; cardinality unchanged | B/P2 | NEW |
@@ -282,7 +282,7 @@ N; sources B/features/notifications/notification.controller.js/model; B/services
 
 | ID | Title and actions | Expected result | Tier/priority | Coverage / question |
 |---|---|---|---|---|
-| FR-NOT-01 | B joins viewed channel; A sends ordinary then emergency; B leaves and A sends ordinary | Ordinary suppressed while viewing; emergency still stored; later ordinary stored; sender excluded | B/P0 | partial: notifications-01,-02 |
+| FR-NOT-01 | B joins viewed channel; A sends ordinary then emergency; B leaves and A sends ordinary | Ordinary not stored in Alerts while viewing (the phone push is still sent — beta 11-26, lost-data case); emergency still stored; later ordinary stored; sender excluded | B/P0 | partial: notifications-01,-02 |
 | FR-NOT-02 | Mention B and self while B viewing/not viewing; inspect records | Self mention excluded; viewed B mention suppressed; non-viewed B gets mention; ordinary and mention may both exist by type | B/P1 | partial: notifications-02 |
 | FR-NOT-03 | Seed read/unread types across 3 pages; query unreadOnly/type/limit/before | Filtered pages no overlap, correct hasMore; returned unreadCount is total user unread, not filtered page length | B/P1 | partial: notifications-03 |
 | FR-NOT-04 | Channel read with string/ObjectId metadata, unrelated channel, then repeat | Both representations read, unrelated unchanged, repeat modifiedCount=0; count reconciles | B/P1 | partial: notifications-03 |
@@ -389,7 +389,7 @@ F0/D0+C; sources F/features/messages/presentation/widgets/forward_message_sheet.
 
 | ID | Title and actions | Expected result | Tier/priority | Coverage / question |
 |---|---|---|---|---|
-| FR-LINK-01 | Forward text and media to chosen existing chat; fake failure then retry | Text payload includes attribution/source link/body/media URL; one successful destination message; failure retains sheet | F/P1 | NEW; native media forwarding not promised |
+| FR-LINK-01 | Forward text and media to chosen existing chat; fake failure then retry | Forward is a server-side copy of the source (text/photo/file) tagged "Forwarded from" — no pasted link or storage URL (beta 11-26); retry reuses one key so one destination message is stored; failure retains sheet | F/P1 | NEW |
 | FR-LINK-02 | Copy source link, attempt router resolution | Copied vocle://c/<id>/m/<id> string exact; opening target currently incomplete, Q13 required | F/P2 | Q13 |
 | FR-LINK-03 | Push channel/DM/handoff/missing target; rapid taps; logged-out then login | Latest debounced route wins; auth queues intended destination; missing target falls back to notification/handoff list | F/P0 | NEW |
 | FR-LINK-04 | Device scan invite QR/raw code/link, deny camera, cancel; preview then join | Supported code extracted, no accidental join on cancel, permission recovery; join reflects actual member/pending response | D/P1 | partial: phone_utils_test.dart parsing; Q14 pending UI |
@@ -539,7 +539,7 @@ Sources: NeedlVoiceCubit, NeedlVoiceView, VoiceRecorderController, VoiceNotePlay
 | FR-VCE-11 | Pause and resume a clip with another clip queued | The paused position stays intact and the next clip waits for completion. | F/P1 | NEW |
 | FR-VCE-12 | Receive a live clip and transcript before old history returns | The initial history and the live clip coexist, with the live transcript preserved. | F/P0 | NEW |
 | FR-VCE-13 | Leave the voice view while recording | Playback stops at recording start, closing the cubit clears the signal, and later socket clips cannot play or send. | F/P1 | NEW |
-| FR-VCE-14 | Open the DM from the Needl Voice list, deny microphone permission, slide to discard, then hold and send | Denied/discarded capture makes no upload or message. The one granted clip reaches the recipient's voice history and replays on the native player. Needl Voice is entered from Messages → Needl Voice, not from the text chat (beta 11-18). | D/P0 | NEW |
+| FR-VCE-14 | Open Needl Voice from the DM header, deny microphone permission, slide to discard, then hold and send | Denied/discarded capture makes no upload or message. The one granted clip reaches the recipient's voice history (not the text chat) and replays on the native player (beta 11-26: entered from the chat, stored separately). | D/P0 | NEW |
 | FR-VCE-15 | Receive another clip while voice playback is paused | The paused clip and its position stay active while the new clip waits. | F/P0 | NEW |
 | FR-VCE-16 | Fail an audio load with another incoming clip queued | The failed clip remains visible and the next clip loads and plays. | F/P0 | NEW |
 

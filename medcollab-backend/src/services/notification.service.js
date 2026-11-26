@@ -51,10 +51,13 @@ const sendNotification = async ({
   metadata = {},
   actor = null,
   priority = MESSAGE_PRIORITY.NORMAL,
+  // Phone push only, no Alerts entry: for someone whose phone still looks
+  // connected to the chat (it may have just lost data — beta 11-26).
+  pushOnly = false,
 }) => {
   try {
     // 1. Create persistent inbox record
-    const notification = await Notification.create({
+    const notification = pushOnly ? null : await Notification.create({
       userId,
       type,
       title,
@@ -70,7 +73,7 @@ const sendNotification = async ({
 
     // 2. Emit via socket (instant, if user is connected)
     try {
-      emitNotification(userId, notification.toObject());
+      if (notification) emitNotification(userId, notification.toObject());
     } catch (socketErr) {
       // Socket might not be initialised yet in tests — non-fatal
       logger.debug(`Socket emit skipped: ${socketErr.message}`);
@@ -91,7 +94,7 @@ const sendNotification = async ({
           body,
           data: {
             type,
-            notificationId: notification._id.toString(),
+            notificationId: notification ? notification._id.toString() : '',
             ...flattenMetadata(metadata),
           },
           priority,
@@ -171,7 +174,11 @@ const sendFCMPush = async ({ tokens, title, body, data = {}, priority }) => {
           },
           android: {
             priority: 'high',
-            collapseKey: stringData.channelId || stringData.handoffId || 'vocle',
+            // No collapseKey (beta 11-26): while a phone is offline FCM keeps
+            // only ONE collapsible push per key and at most four keys per
+            // device, so chats beyond that were dropped. The app groups
+            // messages per chat itself. Kept for a day while offline.
+            ttl: 24 * 60 * 60 * 1000,
           },
           apns: {
             payload: {
@@ -279,22 +286,24 @@ const flattenMetadata = (metadata) => {
 
 // ── Convenience helpers for common notification types ─────────────────────────
 
-const notifyNewMessage = async ({ recipientIds, message, sender, channel }) => {
+const notifyNewMessage = async ({ recipientIds, message, sender, channel, viewing: snapshot }) => {
   const isEmergency = message.priority === MESSAGE_PRIORITY.EMERGENCY;
+
   const { getUserIdsViewingChannel } = require('../socket/channelViewers');
-  const viewing = await getUserIdsViewingChannel(channel._id);
+  const viewing = snapshot || await getUserIdsViewingChannel(channel._id);
 
-  // Skip inbox + FCM for people already reading this chat (except emergency).
-  const recipients = recipientIds.filter((id) => {
-    const sid = id.toString();
-    if (sid === sender._id.toString()) return false;
-    if (!isEmergency && viewing.has(sid)) return false;
-    return true;
-  });
+  // People reading this chat get no Alerts entry (FR-NOT-01) — but they DO
+  // get the phone push (beta 11-26). A phone that just lost mobile data
+  // still looks connected for up to ~85 s; skipping its push meant those
+  // messages never arrived once data came back. When the chat really is on
+  // screen the app hides the banner itself.
+  const others = recipientIds.filter((id) => id.toString() !== sender._id.toString());
+  const recipients = others.filter((id) => isEmergency || !viewing.has(id.toString()));
+  const pushOnly = others.filter((id) => !isEmergency && viewing.has(id.toString()));
 
-  if (recipients.length === 0) return;
+  if (recipients.length === 0 && pushOnly.length === 0) return;
 
-  await sendBulkNotification(recipients, {
+  const options = {
       type: isEmergency
         ? NOTIFICATION_TYPES.EMERGENCY_ALERT
         : NOTIFICATION_TYPES.NEW_MESSAGE,
@@ -320,16 +329,19 @@ const notifyNewMessage = async ({ recipientIds, message, sender, channel }) => {
       },
       actor: sender,
       priority: message.priority,
-    }
-  );
+    };
+  await Promise.all([
+    recipients.length ? sendBulkNotification(recipients, options) : null,
+    pushOnly.length ? sendBulkNotification(pushOnly, { ...options, pushOnly: true }) : null,
+  ]);
 };
 
-const notifyMention = async ({ mentionedUserIds, message, sender, channel }) => {
+const notifyMention = async ({ mentionedUserIds, message, sender, channel, viewing: snapshot }) => {
   const senderId = sender?._id?.toString?.() || sender?._id || '';
   const { getUserIdsViewingChannel } = require('../socket/channelViewers');
   const { canAccessChannel } = require('../utils/channelAccess');
   const User = require('../features/users/user.model');
-  const viewing = await getUserIdsViewingChannel(channel._id);
+  const viewing = snapshot || await getUserIdsViewingChannel(channel._id);
 
   const unique = [
     ...new Set(
@@ -351,6 +363,7 @@ const notifyMention = async ({ mentionedUserIds, message, sender, channel }) => 
 
   const recipients = [];
   for (const id of activeIds) {
+    // Viewers already get the message push (push-only, see notifyNewMessage).
     if (viewing.has(id)) continue;
     // Must be able to read the channel — no preview leak (VR-N3).
     if (!(await canAccessChannel(id, channel._id))) continue;

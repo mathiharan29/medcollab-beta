@@ -125,24 +125,22 @@ class _ForwardSheetBodyState extends State<_ForwardSheetBody> {
     );
   }
 
+  /// One key per target: a retry after a failure stores the forward once.
+  final Map<String, String> _keys = {};
+
   Future<void> _forwardTo(ChannelModel channel) async {
     if (_busyId != null) return;
     setState(() => _busyId = channel.id);
-    final payload = StringBuffer()
-      ..writeln('↪️ Forwarded from ${widget.message.sender.displayName}')
-      ..writeln(widget.link);
-    if (widget.body.isNotEmpty) {
-      payload
-        ..writeln()
-        ..writeln(widget.body);
-    }
-    if (widget.mediaUrl != null && widget.mediaUrl!.isNotEmpty) {
-      payload.writeln(widget.mediaUrl);
-    }
+    // A real copy of the message — its text, photo or file — tagged
+    // "Forwarded from …" (beta 11-26), never a pasted link + storage URL.
+    final key = _keys[channel.id] ??=
+        'fw-${DateTime.now().microsecondsSinceEpoch}-${channel.id.hashCode.abs()}';
     try {
-      await AppDependencies.instance.messageRepository.sendTextMessage(
-        channelId: channel.id,
-        text: payload.toString().trim(),
+      await AppDependencies.instance.messageRepository.forwardMessage(
+        toChannelId: channel.id,
+        source: widget.message,
+        sourceChannelId: widget.sourceChannelId,
+        clientMessageId: key,
       );
       if (!mounted) return;
       Navigator.pop(context);

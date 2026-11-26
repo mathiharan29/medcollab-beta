@@ -45,8 +45,18 @@ class MessageReplyTo extends Equatable {
   final String? text;
   final MessageType type;
 
+  /// Older forwards were plain text: "↪️ Forwarded from X" + a vocle://
+  /// link (often cut short in quotes). Show the forwarded text instead.
+  static final _legacyForward = RegExp(
+    r'^\s*(?:↪️|↪)?\s*Forwarded from [^\n]*\n\s*vocle://\S*\s*',
+  );
+
   String get previewLabel {
-    final t = (text ?? '').trim();
+    var t = (text ?? '').trim();
+    if (_legacyForward.hasMatch(t)) {
+      t = t.replaceFirst(_legacyForward, '').trim();
+      if (t.isEmpty) return 'Forwarded message';
+    }
     if (t.isNotEmpty) return t;
     switch (type) {
       case MessageType.image:

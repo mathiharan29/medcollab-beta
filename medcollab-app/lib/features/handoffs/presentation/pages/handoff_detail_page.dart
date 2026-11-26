@@ -13,6 +13,7 @@ import 'package:medcollab_app/core/theme/app_radius.dart';
 import 'package:medcollab_app/core/theme/app_text_styles.dart';
 import 'package:medcollab_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:medcollab_app/features/handoffs/data/models/handoff_model.dart';
+import 'package:medcollab_app/features/handoffs/data/models/handoff_voice_note.dart';
 import 'package:medcollab_app/features/handoffs/presentation/utils/handoff_priority_colors.dart';
 import 'package:medcollab_app/features/handoffs/presentation/widgets/handoff_card.dart';
 import 'package:medcollab_app/features/handoffs/presentation/widgets/handoff_widgets.dart';
@@ -194,7 +195,10 @@ class _HandoffDetailPageState extends State<HandoffDetailPage> {
   Future<void> _composeWriteBack(HandoffModel handoff) async {
     final controller = TextEditingController();
     String kind = 'note';
-    final result = await showModalBottomSheet<Map<String, String>>(
+    HandoffVoiceNote? voice;
+    var voiceBusy = false;
+    final result = await showModalBottomSheet<
+        ({String text, String kind, HandoffVoiceNote? voice})>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
@@ -254,12 +258,27 @@ class _HandoffDetailPageState extends State<HandoffDetailPage> {
                       border: OutlineInputBorder(),
                     ),
                   ),
+                  const SizedBox(height: 4),
+                  // Reply by voice (beta 11-26): alone or with text.
+                  HandoffVoiceNoteField(
+                    key: const Key('write-back-voice'),
+                    value: voice,
+                    playbackId: 'write-back-draft',
+                    label: 'Voice reply',
+                    hint: 'Optional — speak your reply instead of typing.',
+                    onChanged: (v) => setLocal(() => voice = v),
+                    onBusyChanged: (b) => setLocal(() => voiceBusy = b),
+                  ),
                   const SizedBox(height: 12),
                   FilledButton(
-                    onPressed: () => Navigator.pop(ctx, {
-                      'text': controller.text.trim(),
-                      'kind': kind,
-                    }),
+                    key: const Key('write-back-post'),
+                    onPressed: voiceBusy
+                        ? null
+                        : () => Navigator.pop(ctx, (
+                              text: controller.text.trim(),
+                              kind: kind,
+                              voice: voice,
+                            )),
                     child: const Text('Post note'),
                   ),
                 ],
@@ -270,7 +289,9 @@ class _HandoffDetailPageState extends State<HandoffDetailPage> {
       },
     );
     controller.dispose();
-    if (result == null || result['text']?.isEmpty != false || !mounted) return;
+    if (result == null || (result.text.isEmpty && result.voice == null) || !mounted) {
+      return;
+    }
 
     setState(() {
       _isBusy = true;
@@ -279,8 +300,9 @@ class _HandoffDetailPageState extends State<HandoffDetailPage> {
     try {
       await _repository.addNote(
         handoff.id,
-        text: result['text']!,
-        kind: result['kind'] ?? 'note',
+        text: result.text,
+        kind: result.kind,
+        voiceNote: result.voice,
       );
       if (mounted) _reload();
     } on AppException catch (e) {
@@ -688,8 +710,17 @@ class _HandoffDetailPageState extends State<HandoffDetailPage> {
                                       color: AppColors.textPrimary,
                                     ),
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(n.text, style: AppTextStyles.body),
+                                  if (n.voiceNote != null) ...[
+                                    const SizedBox(height: 6),
+                                    HandoffVoiceNotePlayer(
+                                      note: n.voiceNote!,
+                                      playbackId: 'write-back-${n.id}',
+                                    ),
+                                  ],
+                                  if (n.text.isNotEmpty) ...[
+                                    const SizedBox(height: 4),
+                                    Text(n.text, style: AppTextStyles.body),
+                                  ],
                                   if (n.createdAt != null) ...[
                                     const SizedBox(height: 4),
                                     Text(

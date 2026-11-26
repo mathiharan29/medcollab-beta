@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:medcollab_app/core/constants/app_enums.dart';
 import 'package:medcollab_app/core/theme/app_colors.dart';
@@ -49,6 +50,40 @@ class MessageComposer extends StatelessWidget {
   final String hintText;
   final bool isBusy;
   final bool showTopBorder;
+
+  void _showCameraMenu(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              key: const Key('camera-take-photo'),
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: const Text('Take photo'),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                onPickCamera?.call();
+              },
+            ),
+            ListTile(
+              key: const Key('camera-from-gallery'),
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Choose from gallery'),
+              subtitle: const Text('Photos and videos on this phone'),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                onPickGallery?.call();
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
 
   void _showAttachMenu(BuildContext context) {
     showModalBottomSheet<void>(
@@ -178,7 +213,13 @@ class MessageComposer extends StatelessWidget {
                 ComposerIconButton(
                   icon: Icons.photo_camera_outlined,
                   tooltip: 'Camera',
-                  onPressed: isBusy ? null : onPickCamera,
+                  // Like WhatsApp: take a photo, or pick one already on the
+                  // phone (beta 11-26).
+                  onPressed: isBusy
+                      ? null
+                      : onPickGallery == null
+                          ? onPickCamera
+                          : () => _showCameraMenu(context),
                 ),
               if (!(canCamera && empty)) const SizedBox(width: 4),
             ],
@@ -653,25 +694,29 @@ class MessageBubble extends StatelessWidget {
                   (r) {
                     final mine =
                         currentUserId != null && r.reactedBy(currentUserId!);
-                    return InkWell(
-                      onTap: () {
-                        if (mine && onReact != null) {
-                          onReact!(r.emoji);
-                          return;
-                        }
-                        _showReactionPeople(
+                    void people() => _showReactionPeople(
                           context,
                           emoji: r.emoji,
                           userIds: r.userIds,
                           nameByUserId: nameByUserId,
+                          currentUserId: currentUserId,
+                          onRemoveMine: mine && onReact != null
+                              ? () => onReact!(r.emoji)
+                              : null,
                         );
+                    return InkWell(
+                      key: Key('reaction-${message.id}-${r.emoji}'),
+                      // Someone else's emoji: tap to add yours (+1). Yours:
+                      // the list with "Remove" — a stray double tap no
+                      // longer makes it vanish (beta 11-26).
+                      onTap: () {
+                        if (!mine && onReact != null) {
+                          onReact!(r.emoji);
+                          return;
+                        }
+                        people();
                       },
-                      onLongPress: () => _showReactionPeople(
-                        context,
-                        emoji: r.emoji,
-                        userIds: r.userIds,
-                        nameByUserId: nameByUserId,
-                      ),
+                      onLongPress: people,
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
@@ -751,7 +796,10 @@ void _showReactionPeople(
   required String emoji,
   required List<String> userIds,
   required Map<String, String> nameByUserId,
+  String? currentUserId,
+  VoidCallback? onRemoveMine,
 }) {
+  final openedAt = DateTime.now();
   showModalBottomSheet<void>(
     context: context,
     showDragHandle: true,
@@ -777,10 +825,30 @@ void _showReactionPeople(
                 ListTile(
                   dense: true,
                   title: Text(
-                    nameByUserId[id]?.trim().isNotEmpty == true
-                        ? nameByUserId[id]!.trim()
-                        : 'Colleague',
+                    id == currentUserId
+                        ? 'You'
+                        : nameByUserId[id]?.trim().isNotEmpty == true
+                            ? nameByUserId[id]!.trim()
+                            : 'Colleague',
                   ),
+                  subtitle: id == currentUserId && onRemoveMine != null
+                      ? const Text('Tap to remove')
+                      : null,
+                  // Only the explicit button removes it, and not in the
+                  // first moment after the sheet opens: the second tap of a
+                  // double tap on the chip used to land here and remove the
+                  // reaction (found on device, beta 11-26).
+                  trailing: id == currentUserId && onRemoveMine != null
+                      ? TextButton(
+                          key: const Key('reaction-remove-mine'),
+                          onPressed: () {
+                            if (DateTime.now().difference(openedAt) < const Duration(milliseconds: 600)) return;
+                            Navigator.pop(ctx);
+                            onRemoveMine();
+                          },
+                          child: const Text('Remove'),
+                        )
+                      : null,
                 ),
               if (userIds.isEmpty)
                 const ListTile(
@@ -961,6 +1029,8 @@ class MessageBubbleContent extends StatelessWidget {
                 onTap: onJumpToQuoted,
               ),
             ),
+          if (!message.isDeleted && message.forwardInfo != null)
+            _ForwardedTag(info: message.forwardInfo!, isMine: isMine),
           _MessageBody(
             message: message,
             isMine: isMine,
@@ -970,6 +1040,31 @@ class MessageBubbleContent extends StatelessWidget {
             onImageTap: onImageTap,
             onDocumentTap: onDocumentTap,
           ),
+          if (!message.isDeleted && message.forwardInfo?.legacyMediaUrl != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: InkWell(
+                onTap: () {
+                  final url = message.forwardInfo!.legacyMediaUrl!;
+                  final image = RegExp(r'\.(jpe?g|png|gif|webp|heic)(\?|$)', caseSensitive: false).hasMatch(url);
+                  image ? onImageTap(url) : onDocumentTap(url);
+                },
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.attach_file_rounded, size: 16, color: isMine ? AppColors.textOnDarkMuted : AppColors.tealDark),
+                    const SizedBox(width: 4),
+                    Text(
+                      'View attachment',
+                      style: AppTextStyles.caption.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: isMine ? AppColors.textOnDark : AppColors.tealDark,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           if (showTimestamp ||
               (isMine &&
                   (message.deliveryState == MessageDeliveryState.failed ||
@@ -1148,6 +1243,47 @@ class ReplyQuoteBar extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// "↪ Forwarded from Dr X" above a forwarded message (beta 11-26). Tapping
+/// opens the original when the reader can see that chat.
+class _ForwardedTag extends StatelessWidget {
+  const _ForwardedTag({required this.info, required this.isMine});
+
+  final ForwardInfo info;
+  final bool isMine;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isMine ? AppColors.textOnDarkMuted : AppColors.textSecondary;
+    final row = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.shortcut_rounded, size: 15, color: color),
+        const SizedBox(width: 4),
+        Flexible(
+          child: Text(
+            'Forwarded from ${info.fromName}',
+            key: const Key('forwarded-tag'),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.caption.copyWith(fontStyle: FontStyle.italic, color: color),
+          ),
+        ),
+      ],
+    );
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: info.canOpenSource
+          ? InkWell(
+              onTap: () => GoRouter.of(context).push(
+                '/links/c/${info.sourceChannelId}/m/${info.sourceMessageId}',
+              ),
+              child: row,
+            )
+          : row,
     );
   }
 }

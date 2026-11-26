@@ -189,11 +189,16 @@ class HandoffRepository extends BaseRepository {
     String handoffId, {
     required String text,
     String kind = 'note',
+    HandoffVoiceNote? voiceNote,
   }) {
     return execute(
       () => apiClient.post(
         ApiEndpoints.handoffNotes(handoffId),
-        data: {'text': text, 'kind': kind},
+        data: {
+          'text': text,
+          'kind': kind,
+          if (voiceNote != null) 'voiceNote': voiceNote.toJson(),
+        },
         parser: (json) =>
             parseNested(json, 'handoff', HandoffModel.fromJson),
       ),

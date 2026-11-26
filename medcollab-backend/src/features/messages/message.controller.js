@@ -178,8 +178,8 @@ const sendMessage = asyncHandler(async (req, res) => {
     return respond.forbidden(res, 'Only admins can post in this channel');
   }
 
+  let type = req.body.type || MESSAGE_TYPES.TEXT;
   const {
-    type = MESSAGE_TYPES.TEXT,
     content: rawContent,
     priority = MESSAGE_PRIORITY.NORMAL,
     threadId,
@@ -198,6 +198,50 @@ const sendMessage = asyncHandler(async (req, res) => {
     if (existing) return respond.ok(res, 'Message already sent', { message: existing, duplicate: true });
   }
 
+  // Forward (beta 11-26): copy the ORIGINAL message the caller can read —
+  // its real text, photo, file or voice note — tagged "Forwarded from …",
+  // instead of pasting a vocle:// link and a storage URL as text. The copy
+  // comes from the stored source, never from the client's body.
+  let forwarded = null;
+  let forwardedContent = null;
+  if (req.body.forwardOf) {
+    const srcChannelId = String(req.body.forwardOf.channelId || '');
+    const srcId = String(req.body.forwardOf.messageId || '');
+    const isId = (v) => /^[a-f0-9]{24}$/i.test(v);
+    if (!isId(srcChannelId) || !isId(srcId)) return respond.badRequest(res, 'Invalid message to forward');
+    const { canAccessChannel } = require('../../utils/channelAccess');
+    if (!(await canAccessChannel(req.user._id, srcChannelId))) {
+      return respond.forbidden(res, 'You cannot forward from that chat');
+    }
+    const src = await Message.findOne({
+      _id: srcId,
+      channelId: srcChannelId,
+      isDeleted: { $ne: true },
+      hiddenFor: { $ne: req.user._id },
+    }).populate('senderId', 'name displayTitle').lean();
+    if (!src || [MESSAGE_TYPES.SYSTEM, MESSAGE_TYPES.HANDOFF].includes(src.type)) {
+      return respond.notFound(res, 'That message is no longer available');
+    }
+    const {
+      systemEvent: _a, targetUserIds: _b, movedToChannelId: _c, transcript: _d, transcriptStatus: _e, voiceMode: _f,
+      ...copy
+    } = src.content || {};
+    type = src.type;
+    forwardedContent = src.type === MESSAGE_TYPES.AUDIO ? { ...copy, voiceMode: false } : copy;
+    const author = src.senderId && typeof src.senderId === 'object'
+      ? [src.senderId.displayTitle, src.senderId.name].filter(Boolean).join(' ').trim() || src.senderId.name
+      : null;
+    // Forwarding a forward keeps the original author and source.
+    forwarded = src.forwarded?.fromName
+      ? src.forwarded
+      : {
+          fromName: author || 'Doctor',
+          fromUserId: src.senderId?._id || src.senderId || null,
+          sourceChannelId: src.channelId,
+          sourceMessageId: src._id,
+        };
+  }
+
   // Persist trimmed text so route length checks match Mongo maxlength.
   // Server-only fields (activity lines) can never come from a client.
   const {
@@ -212,7 +256,7 @@ const sendMessage = asyncHandler(async (req, res) => {
     // (voice space) from a chat voice note (normal chat).
     clientContent.voiceMode = clientContent.voiceMode === true;
   }
-  const content =
+  const content = forwardedContent ? forwardedContent :
     rawContent && typeof clientContent.text === 'string'
       ? { ...clientContent, text: clientContent.text.trim() }
       : rawContent ? clientContent : rawContent;
@@ -330,6 +374,7 @@ const sendMessage = asyncHandler(async (req, res) => {
       ...(replyTo ? { replyTo } : {}),
       mentions: mentions || [],
       ...(clientMessageId ? { clientMessageId } : {}),
+      ...(forwarded ? { forwarded } : {}),
     });
   } catch (err) {
     // Two identical requests raced past the lookup: the unique index lets
@@ -406,11 +451,17 @@ const sendMessage = asyncHandler(async (req, res) => {
       // Live "N replies": clients bump the root from the new_message above
       // (threadId set), so no separate message_updated is sent here.
 
+      // One snapshot of who is reading the chat, taken when it was sent,
+      // for both the message and the mention notifications.
+      const { getUserIdsViewingChannel } = require('../../socket/channelViewers');
+      const viewing = await getUserIdsViewingChannel(channel._id);
+
       await notifyNewMessage({
         recipientIds,
         message: message.toObject(),
         sender: req.user,
         channel,
+        viewing,
       });
 
       if (mentions?.length > 0) {
@@ -419,6 +470,7 @@ const sendMessage = asyncHandler(async (req, res) => {
           message: message.toObject(),
           sender: req.user,
           channel,
+          viewing,
         });
       }
     } catch (err) {
@@ -708,14 +760,21 @@ const toggleReaction = asyncHandler(async (req, res) => {
     return respond.badRequest(res, 'Cannot react to group activity');
   }
 
-  await message.toggleReaction(req.body.emoji, req.user._id);
+  // `active` (optional): true = add, false = remove — lets a client send the
+  // state it shows, so a repeated tap can never flip it back by accident.
+  const want = typeof req.body.active === 'boolean' ? req.body.active : undefined;
+  let reactions;
+  try {
+    reactions = await Message.setReaction(message._id, req.body.emoji, req.user._id, want);
+  } catch (err) {
+    if (err.statusCode === 400) return respond.badRequest(res, err.message);
+    throw err;
+  }
 
   // Broadcast updated reactions to channel room
-  emitMessageUpdated(req.params.channelId, message._id, {
-    reactions: message.reactions,
-  });
+  emitMessageUpdated(req.params.channelId, message._id, { reactions });
 
-  return respond.ok(res, 'Reaction updated', { reactions: message.reactions });
+  return respond.ok(res, 'Reaction updated', { reactions });
 });
 
 /**

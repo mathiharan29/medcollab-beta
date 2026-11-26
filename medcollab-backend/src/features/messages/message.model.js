@@ -265,6 +265,21 @@ const messageSchema = new mongoose.Schema(
       default: undefined,
     },
 
+    // Forwarded copy (beta 11-26): who wrote the original and where it is.
+    // Opening the source works only for people who can read that chat.
+    forwarded: {
+      type: new mongoose.Schema(
+        {
+          fromName: { type: String, maxlength: 120 },
+          fromUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+          sourceChannelId: { type: mongoose.Schema.Types.ObjectId, ref: 'Channel' },
+          sourceMessageId: { type: mongoose.Schema.Types.ObjectId, ref: 'Message' },
+        },
+        { _id: false }
+      ),
+      default: undefined,
+    },
+
     // Set on history copied into an expanded Needl: the source message id.
     // Lets an interrupted copy be redone without duplicates (FR-NDL-29).
     copiedFromId: {
@@ -325,42 +340,76 @@ messageSchema.pre('save', async function () {
 
 // ── Instance Methods ──────────────────────────────────────────────────────────
 
+/** Limits that keep a reaction row readable. */
+const REACTION_LIMITS = Object.freeze({ perUser: 8, distinct: 20 });
+
 /**
- * Toggle one emoji for a user. At most one emoji per user (switching
- * replaces the prior reaction). Same emoji again removes it.
+ * Add or remove ONE emoji for a user; other emojis the user gave stay (a
+ * doctor may react with several, beta 11-26). Same emoji again removes it.
+ *
+ * Atomic per step ($pull / $addToSet / $push on the stored document), so two
+ * fast taps or two people reacting at once never collide. The old
+ * read-modify-save raised a VersionError → "Something went wrong".
+ *
+ * [want]: true = add, false = remove, undefined = toggle.
+ * Returns the stored reactions after the change.
  */
-messageSchema.methods.toggleReaction = function (emoji, userId) {
-  const uid = userId.toString();
-  const group = this.reactions.find((r) => r.emoji === emoji);
-  const alreadyOnThis =
-    group && group.userIds.some((id) => id.toString() === uid);
+messageSchema.statics.setReaction = async function (messageId, emoji, userId, want) {
+  const uid = new mongoose.Types.ObjectId(String(userId));
+  const current = await this.findById(messageId).select('reactions').lean();
+  if (!current) return null;
+  const mine = (current.reactions || []).filter((r) => (r.userIds || []).some((id) => String(id) === String(uid)));
+  const has = mine.some((r) => r.emoji === emoji);
+  const add = want === undefined ? !has : want;
 
-  // Remove this user from every other emoji group first (switch = replace).
-  this.reactions = this.reactions
-    .map((r) => {
-      if (r.emoji === emoji) return r;
-      return {
-        emoji: r.emoji,
-        userIds: r.userIds.filter((id) => id.toString() !== uid),
-      };
-    })
-    .filter((r) => r.userIds.length > 0);
-
-  const current = this.reactions.find((r) => r.emoji === emoji);
-  if (alreadyOnThis) {
-    if (current) {
-      current.userIds = current.userIds.filter((id) => id.toString() !== uid);
-      if (current.userIds.length === 0) {
-        this.reactions = this.reactions.filter((r) => r.emoji !== emoji);
+  if (!add) {
+    await this.updateOne(
+      { _id: messageId, reactions: { $elemMatch: { emoji, userIds: uid } } },
+      { $pull: { 'reactions.$.userIds': uid } }
+    );
+  } else if (!has) {
+    if (mine.length >= REACTION_LIMITS.perUser) {
+      const err = new Error(`You can add up to ${REACTION_LIMITS.perUser} reactions to a message`);
+      err.statusCode = 400;
+      throw err;
+    }
+    // Join an existing emoji group, else start one (retry once on a race
+    // where someone else started the same group in between).
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const joined = await this.updateOne(
+        { _id: messageId, 'reactions.emoji': emoji },
+        { $addToSet: { 'reactions.$.userIds': uid } }
+      );
+      if (joined.matchedCount > 0) break;
+      const started = await this.updateOne(
+        {
+          _id: messageId,
+          'reactions.emoji': { $ne: emoji },
+          [`reactions.${REACTION_LIMITS.distinct - 1}`]: { $exists: false },
+        },
+        { $push: { reactions: { emoji, userIds: [uid] } } }
+      );
+      if (started.matchedCount > 0) break;
+      const full = await this.exists({ _id: messageId, [`reactions.${REACTION_LIMITS.distinct - 1}`]: { $exists: true } });
+      if (full) {
+        const err = new Error('This message has too many different reactions');
+        err.statusCode = 400;
+        throw err;
       }
     }
-  } else if (current) {
-    current.userIds.push(userId);
-  } else {
-    this.reactions.push({ emoji, userIds: [userId] });
   }
+  // Drop emoji groups nobody uses any more.
+  await this.updateOne({ _id: messageId }, { $pull: { reactions: { userIds: { $size: 0 } } } });
+  const after = await this.findById(messageId).select('reactions').lean();
+  return after?.reactions || [];
+};
+messageSchema.statics.REACTION_LIMITS = REACTION_LIMITS;
 
-  return this.save();
+/** Compatibility wrapper (one emoji toggled for one user). */
+messageSchema.methods.toggleReaction = async function (emoji, userId) {
+  const reactions = await this.constructor.setReaction(this._id, emoji, userId);
+  this.reactions = reactions || [];
+  return this;
 };
 
 const Message = mongoose.model('Message', messageSchema);

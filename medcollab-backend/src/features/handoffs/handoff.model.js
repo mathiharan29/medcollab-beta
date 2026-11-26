@@ -258,7 +258,18 @@ const handoffSchema = new mongoose.Schema(
           ref: 'User',
           required: true,
         },
-        text: { type: String, required: true, maxlength: 1000, trim: true },
+        // Text, a voice note, or both (beta 11-26: reply by voice).
+        text: {
+          type: String,
+          maxlength: 1000,
+          trim: true,
+          default: '',
+          validate: {
+            validator(v) { return Boolean((v && v.trim()) || this.voiceNote?.url); },
+            message: 'A note needs text or a voice note',
+          },
+        },
+        voiceNote: { type: voiceNoteSchema, default: null },
         kind: {
           type: String,
           enum: ['note', 'cant_cover', 'covered_late', 'reassign', 'missed'],

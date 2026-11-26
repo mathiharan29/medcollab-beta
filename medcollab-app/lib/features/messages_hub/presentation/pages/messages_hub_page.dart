@@ -247,16 +247,6 @@ class _MessagesHeader extends StatelessWidget {
                   Expanded(
                     child: Text('Messages', style: AppTextStyles.screenTitle),
                   ),
-                  // Needl Voice: its own voice-only space (not a chat mode).
-                  IconButton(
-                    key: const Key('open-voice-hub'),
-                    tooltip: 'Needl Voice',
-                    onPressed: () => context.push(AppRoutes.voiceHub),
-                    icon: Icon(
-                      Icons.record_voice_over_outlined,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
                   IconButton(
                     tooltip: 'Search',
                     onPressed: onSearch,

@@ -149,8 +149,13 @@ handoffRouter.post(
   '/:id/notes',
   validateMongoId('id'),
   [
-    body('text').trim().notEmpty().withMessage('Note text is required')
-      .isLength({ max: 1000 }).withMessage('Note cannot exceed 1000 characters'),
+    // Text, a voice note, or both (beta 11-26: reply by voice).
+    body('text').optional({ nullable: true }).isString().trim()
+      .isLength({ max: 1000 }).withMessage('Note cannot exceed 1000 characters')
+      .custom((text, { req }) => {
+        if (!text && !req.body?.voiceNote) throw new Error('Note text is required');
+        return true;
+      }),
     body('kind').optional().isIn(['note', 'cant_cover', 'covered_late', 'reassign', 'missed']),
     handleValidationErrors,
   ],
