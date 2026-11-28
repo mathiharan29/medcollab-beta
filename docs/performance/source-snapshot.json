@@ -1,0 +1,380 @@
+{
+  "schemaVersion": 1,
+  "repository": "mathiharan29/medcollab-beta",
+  "sourceSha": "4c01dc24247aa95a73e286a2b42c7f2f81257c7a",
+  "hashPolicy": "SHA-256 over UTF-8 text normalized to LF; excludes checkout line-ending differences",
+  "files": [
+    {
+      "id": "package",
+      "path": "medcollab-backend/package.json",
+      "line": 1,
+      "sha256": "672cfdf790d0fa50cce9fcdc5bd73d33b47821dff3f762468ec603383aa24561"
+    },
+    {
+      "id": "app",
+      "path": "medcollab-backend/src/app.js",
+      "line": 1,
+      "sha256": "d51bf17837151192c26f546399948e750cd5d4f28caaebf188278c20685da9c3"
+    },
+    {
+      "id": "server",
+      "path": "medcollab-backend/src/server.js",
+      "line": 82,
+      "sha256": "7b72acb19e305d2bf07c672176545d62d6c2ccb94f8abdd3105537c15d9f7cba"
+    },
+    {
+      "id": "db",
+      "path": "medcollab-backend/src/config/database.js",
+      "line": 56,
+      "sha256": "aaeeb44a190287c996e9f1455ab0248df63fea7c4f951949281b7cf1fd0b137b"
+    },
+    {
+      "id": "railway",
+      "path": "medcollab-backend/railway.json",
+      "line": 1,
+      "sha256": "77fff2499b9cf814e7dd6aa6069031ceb6abe5ed8cf9576f75f2b704310b9680"
+    },
+    {
+      "id": "auth-middleware",
+      "path": "medcollab-backend/src/middleware/auth.js",
+      "line": 37,
+      "sha256": "befc75ff7a33ae4da44ab59b9ae7e9c5632f12ba406eebc27ad233d986b4cf31"
+    },
+    {
+      "id": "limits",
+      "path": "medcollab-backend/src/middleware/rateLimiter.js",
+      "line": 60,
+      "sha256": "f5fbe79aa96de687d7cd256de613958e44712c012a1d7f2cc21a06a4ee3a0e3a"
+    },
+    {
+      "id": "auth",
+      "path": "medcollab-backend/src/features/auth/auth.controller.js",
+      "line": 1,
+      "sha256": "f19f4623ad55294631e660a30ec9076226c00f5938785f3f32f488ec85b57a71"
+    },
+    {
+      "id": "auth-routes",
+      "path": "medcollab-backend/src/features/auth/auth.routes.js",
+      "line": 1,
+      "sha256": "c253f38838efbdd3e07473959b7b3090ecce368a97f9a50f4051f4548b1565be"
+    },
+    {
+      "id": "otp-model",
+      "path": "medcollab-backend/src/features/auth/otp.model.js",
+      "line": 70,
+      "sha256": "a1227f57c0c736a5c95061ca25f54665b12189ac5338318cd13769cfb6320fad"
+    },
+    {
+      "id": "otp-service",
+      "path": "medcollab-backend/src/services/otp.service.js",
+      "line": 1,
+      "sha256": "6f20ece71e5c38de62605bf2aaf8cd00fe91194d6bbf64d1c6fe10b891371f1c"
+    },
+    {
+      "id": "msg91",
+      "path": "medcollab-backend/src/services/msg91Widget.service.js",
+      "line": 107,
+      "sha256": "86bc77db5c0d283bcc3756782c18b50c56e43e0b9ed87d427e360b90995bb87f"
+    },
+    {
+      "id": "users",
+      "path": "medcollab-backend/src/features/users/user.controller.js",
+      "line": 1,
+      "sha256": "503cc9c503f4f7026e2ee80ab4a34dc2234f3385b6d3bb3d9010a74bb9f032f2"
+    },
+    {
+      "id": "user-routes",
+      "path": "medcollab-backend/src/features/users/user.routes.js",
+      "line": 1,
+      "sha256": "3b244da209872d3c71e57765c37eb8d4cd1c952b0b1b9f4e0532c9bbfffda682"
+    },
+    {
+      "id": "user-model",
+      "path": "medcollab-backend/src/features/users/user.model.js",
+      "line": 1,
+      "sha256": "e0737a609ab4c3595ace12921f240d2245fff09422d0395bc28fbbf09d5a1727"
+    },
+    {
+      "id": "spaces",
+      "path": "medcollab-backend/src/features/spaces/space.controller.js",
+      "line": 1,
+      "sha256": "4dcdc87395727be12e47904f7dce60612ebfadfdb132d6df9a0038f89d99622c"
+    },
+    {
+      "id": "space-routes",
+      "path": "medcollab-backend/src/features/spaces/space.routes.js",
+      "line": 1,
+      "sha256": "b774080394e1c5d54d7b9ac9d783bcdea6933e26d78ed4c1ef554012e326b163"
+    },
+    {
+      "id": "space-model",
+      "path": "medcollab-backend/src/features/spaces/space.model.js",
+      "line": 1,
+      "sha256": "31b2443833aa99befb0e66df0c17c27102ce0138bba98e32b6c961142fb16613"
+    },
+    {
+      "id": "channels",
+      "path": "medcollab-backend/src/features/channels/channel.controller.js",
+      "line": 1,
+      "sha256": "59ce7b1db19354dc2ce4e114c810168bb543e998e107482ef44adf98c7d56911"
+    },
+    {
+      "id": "channel-routes",
+      "path": "medcollab-backend/src/features/channels/channel.routes.js",
+      "line": 1,
+      "sha256": "e688cc807efbb3ba14f271e7fca6f31e60d993ed4bea95a2af00a1110cf63f32"
+    },
+    {
+      "id": "channel-model",
+      "path": "medcollab-backend/src/features/channels/channel.model.js",
+      "line": 150,
+      "sha256": "e20317f29952266170fbb6d6d9dd9bad5a5e562c961d6a7d18bdce8c814dbc28"
+    },
+    {
+      "id": "messages",
+      "path": "medcollab-backend/src/features/messages/message.controller.js",
+      "line": 1,
+      "sha256": "4afdbcd2248b9e788cc18f6d2505d967d341c7650b9c7bc2616934900da8d21d"
+    },
+    {
+      "id": "message-routes",
+      "path": "medcollab-backend/src/features/messages/message.routes.js",
+      "line": 1,
+      "sha256": "849b780282bf27a7d27441cc362801ce936c0b26208f4ced138a52b27bd3c618"
+    },
+    {
+      "id": "message-model",
+      "path": "medcollab-backend/src/features/messages/message.model.js",
+      "line": 1,
+      "sha256": "efadc49077391eb15940d0a5b70c8796e8f37ef8079ee6c59d1f66c126c786d5"
+    },
+    {
+      "id": "requests",
+      "path": "medcollab-backend/src/features/message-requests/messageRequest.controller.js",
+      "line": 1,
+      "sha256": "b60042f898b8d0f8a4f220057f10ea727eaabb2bbdbc4f77e1aeb937ba1d401c"
+    },
+    {
+      "id": "request-routes",
+      "path": "medcollab-backend/src/features/message-requests/messageRequest.routes.js",
+      "line": 1,
+      "sha256": "2139079ec305de7deebf73a1bae1a832b5001a8fdef49b50c1769202f63d3b0b"
+    },
+    {
+      "id": "request-model",
+      "path": "medcollab-backend/src/features/message-requests/messageRequest.model.js",
+      "line": 1,
+      "sha256": "b666e2c30765a45689519d7c525ca8e4d3efc33c00a4760a80a2516a918ed9be"
+    },
+    {
+      "id": "handoffs",
+      "path": "medcollab-backend/src/features/handoffs/handoff.controller.js",
+      "line": 1,
+      "sha256": "a78d30fc632973960de0de78fd166fa80cfb3576ce2d898ccece417454cecfd9"
+    },
+    {
+      "id": "handoff-routes",
+      "path": "medcollab-backend/src/features/handoffs/handoff.routes.js",
+      "line": 1,
+      "sha256": "bcc94c21f4e6b7336eb3bf219c71f63b80454976dce8aee2d5d9e59b950e03c9"
+    },
+    {
+      "id": "handoff-model",
+      "path": "medcollab-backend/src/features/handoffs/handoff.model.js",
+      "line": 1,
+      "sha256": "0549d639a2627e6d5825d2623e45d2b6fd5e44716829e8cfcedc3f439bf79c87"
+    },
+    {
+      "id": "notifications",
+      "path": "medcollab-backend/src/features/notifications/notification.controller.js",
+      "line": 1,
+      "sha256": "1ed26245e7252af931fef7dd4137492c4c1066d26f03edda64314ed7df986418"
+    },
+    {
+      "id": "notification-routes",
+      "path": "medcollab-backend/src/features/notifications/notification.routes.js",
+      "line": 1,
+      "sha256": "557dfbb9a9b01b9855638b6d2c2cd7f9854d8ad2b305682e162edf215d216c91"
+    },
+    {
+      "id": "notification-model",
+      "path": "medcollab-backend/src/features/notifications/notification.model.js",
+      "line": 1,
+      "sha256": "20f6e8b4ece874b4b511f29385db72cf3dc7d7572df87e5a2d483c355fd8eed9"
+    },
+    {
+      "id": "notify",
+      "path": "medcollab-backend/src/services/notification.service.js",
+      "line": 1,
+      "sha256": "d51f09bc91f29f8e520adc108994a710d449c17e12cd76d1bc8d6c19c46c1fc5"
+    },
+    {
+      "id": "search",
+      "path": "medcollab-backend/src/features/search/search.controller.js",
+      "line": 1,
+      "sha256": "038a1167667b1afdb416a1cc7750f186cae46bbcdd4c4e8ad7ed4e07094f3d86"
+    },
+    {
+      "id": "known",
+      "path": "medcollab-backend/src/utils/knownUsers.js",
+      "line": 49,
+      "sha256": "522c701abfcb818fff716335a4876a97989986c652e5c1e0a08da573f5a9371c"
+    },
+    {
+      "id": "media",
+      "path": "medcollab-backend/src/features/media/media.controller.js",
+      "line": 1,
+      "sha256": "7468ecda0b6f1af3970a5a87fa63fff24f16355cb831fd6fcbf51bb8e89a4cba"
+    },
+    {
+      "id": "media-routes",
+      "path": "medcollab-backend/src/features/media/media.routes.js",
+      "line": 1,
+      "sha256": "4ce0c7cbc1d5c4a99093b9520f4fe84e82dcb4a659113da4888db408874a55f4"
+    },
+    {
+      "id": "socket",
+      "path": "medcollab-backend/src/socket/index.js",
+      "line": 1,
+      "sha256": "75853ef868b762887608af5f5235007fe7098f7a0d13edf51ecf9516c4dc5bc3"
+    },
+    {
+      "id": "presence",
+      "path": "medcollab-backend/src/socket/handlers/presence.handler.js",
+      "line": 1,
+      "sha256": "90d7bde5e1e6013f26cd70c889099e8f679b94acb0808fa4b4203b7bc634ae34"
+    },
+    {
+      "id": "typing",
+      "path": "medcollab-backend/src/socket/handlers/message.handler.js",
+      "line": 1,
+      "sha256": "58222f8e24f51db4c5f288266c45daaf9d8ba1899224dcdb77c709e24d28a170"
+    },
+    {
+      "id": "rooms",
+      "path": "medcollab-backend/src/socket/spaceRooms.js",
+      "line": 1,
+      "sha256": "7849bb2b68bc1b6b53d1edc05b354c5a7f3bb5737cecc6c4ae503b2ec3afa4d6"
+    },
+    {
+      "id": "admin",
+      "path": "medcollab-backend/src/features/admin/admin.controller.js",
+      "line": 1,
+      "sha256": "dec7da1dcd650e1de9ab22035696958f17b3500ee3263b695546f6a4933afff0"
+    },
+    {
+      "id": "admin-routes",
+      "path": "medcollab-backend/src/features/admin/admin.routes.js",
+      "line": 1,
+      "sha256": "c1ed870159ee7cac09dc606d71276e7ca456c72bbf8398595fec32f7402cee03"
+    },
+    {
+      "id": "support",
+      "path": "medcollab-backend/src/features/support/support.controller.js",
+      "line": 1,
+      "sha256": "2b2abbe75838ad7eb771ee81dddfe2feac24ac491f7071b445ff23cca4204076"
+    },
+    {
+      "id": "support-routes",
+      "path": "medcollab-backend/src/features/support/support.routes.js",
+      "line": 1,
+      "sha256": "4af6caae13eb84037b5927f3e6db63d65c0528b0705d6db972e9572ed41f9b91"
+    },
+    {
+      "id": "dev-routes",
+      "path": "medcollab-backend/src/features/dev/dev.routes.js",
+      "line": 1,
+      "sha256": "4660ef5d14c2edef2d94cb9092498e966987f8c0c92b573481e30591d3a2f75c"
+    },
+    {
+      "id": "client-socket",
+      "path": "medcollab-app/lib/core/socket/socket_client.dart",
+      "line": 1,
+      "sha256": "ce7711e8c6de3aa372dcf6a6511660756563db4a7219a085a4a2135910aa84e5"
+    },
+    {
+      "id": "client-cache",
+      "path": "medcollab-app/lib/core/chat/chat_transcript_cache.dart",
+      "line": 1,
+      "sha256": "0973f741c2a698d21fa4c272a0108cc56530adf2b5f7a834a86294be9f20a3ad"
+    },
+    {
+      "id": "runtime",
+      "path": "scripts/vocle-runtime-lock.json",
+      "line": 1,
+      "sha256": "dfbd0bedb897acfb40b7c3ac1e6d4cd94178eb92e1c3f6e81da611beabc8efa4"
+    },
+    {
+      "id": "decisions",
+      "path": "docs/PRODUCT_DECISIONS_2026-10-25.md",
+      "line": 1,
+      "sha256": "a44d03c60880167213b548576eba1788e13f9a679725ca1d8bd83a6f0c3f8857"
+    },
+    {
+      "id": "provider-preload",
+      "path": "tests/functional-regression/providers/preload.cjs",
+      "line": 1,
+      "sha256": "bfcf9659e42ddd502418cca6826953ddf0d7f3f779cb7d3b807c0e59d6386950"
+    },
+    {
+      "id": "ci-functional",
+      "path": ".github/workflows/vocle-functional-regression.yml",
+      "line": 1,
+      "sha256": "33bc05a2b1dbf653fb77d2cf7eba56b3905ae59132e93c9000ead1d4735b4b89"
+    },
+    {
+      "id": "ci-security",
+      "path": ".github/workflows/vocle-api-realtime-security.yml",
+      "line": 1,
+      "sha256": "8b6109aaac4590be7f0038b3d1e8f7baac4589ee687fabccf5940fa97c6fc641"
+    },
+    {
+      "id": "ci-cloudinary",
+      "path": ".github/workflows/vocle-cloudinary-security.yml",
+      "line": 1,
+      "sha256": "d4c41adefcfaf8edeefe3b13b0abd9fad4c2bf0ab01f15557340173557763450"
+    },
+    {
+      "id": "ci-reporting",
+      "path": ".github/workflows/vocle-reporting.yml",
+      "line": 1,
+      "sha256": "a6d349c31906b467119261e61fd3bc3efce0beeaa23dff0f6bbf047fcb2e626a"
+    },
+    {
+      "id": "index.js",
+      "path": "medcollab-backend/src/constants/index.js",
+      "line": 1,
+      "sha256": "4e9fc35b306f7f3df4653997145c5b5b6241c0c43748bb92f8dc96884d880b83"
+    },
+    {
+      "id": "app_constants.dart",
+      "path": "medcollab-app/lib/core/constants/app_constants.dart",
+      "line": 1,
+      "sha256": "7e833a8c26968691945c5c44f2069cd6f89b11cdee999559da655eb17d03ce62"
+    },
+    {
+      "id": "space.handler.js",
+      "path": "medcollab-backend/src/socket/handlers/space.handler.js",
+      "line": 1,
+      "sha256": "108b072c46d014db15824352c8ffd9e6d74acd0923f7a97cf50013ea9418ffba"
+    },
+    {
+      "id": "medcollab-backend/src/features/search/search.routes.js",
+      "path": "medcollab-backend/src/features/search/search.routes.js",
+      "line": 14,
+      "sha256": "e87cf8dc0efc5a1910ae77fd93a6432b6e61e68f42b4fdec91e232b85fa91a41"
+    },
+    {
+      "id": "medcollab-backend/package-lock.json",
+      "path": "medcollab-backend/package-lock.json",
+      "line": 1,
+      "sha256": "2d56a0ebb169a9bb2746598851195d7e81b507659122beef310e0e2484eb6fc0"
+    },
+    {
+      "id": "medcollab-app/pubspec.lock",
+      "path": "medcollab-app/pubspec.lock",
+      "line": 1,
+      "sha256": "76edf7c379a756f4467954e06b029a729744cec43301635436ae302f6247b286"
+    }
+  ]
+}
